@@ -110,8 +110,16 @@ def _odbc_value(value: str) -> str:
     return "{" + value.replace("}", "}}") + "}"
 
 
-def connect(settings: Settings):
-    """Open the run's single ODBC connection. Fails fast; never retries."""
+# Read-only probes: SQL naming (NAM=0) and commit mode *NONE (CMT=0).
+DEFAULT_ATTRIBUTES = {"NAM": "0", "CMT": "0"}
+
+
+def connect(settings: Settings, attributes: dict[str, str] | None = None, autocommit: bool = True):
+    """Open the run's single ODBC connection. Fails fast; never retries.
+
+    ``attributes`` are extra ODBC connection keywords that override
+    DEFAULT_ATTRIBUTES (e.g. {"CMT": "1", "DBQ": "MYLIB"}).
+    """
     import pyodbc
 
     preflight = tcp_check(settings.host, settings.database_port)
@@ -123,18 +131,20 @@ def connect(settings: Settings):
             EXIT_UNREACHABLE,
         )
 
-    # Read-only probes: SQL naming (NAM=0) and commit mode *NONE (CMT=0).
     parts = [
         f"DRIVER={_odbc_value(DRIVER)}",
         f"SYSTEM={settings.host}",
         f"UID={_odbc_value(settings.user)}",
         f"PWD={_odbc_value(settings.password)}",
         f"SSL={int(settings.ssl)}",
-        "NAM=0",
-        "CMT=0",
     ]
+    merged = {**DEFAULT_ATTRIBUTES, **(attributes or {})}
+    # Attribute values are plain keywords/numbers/library names, never braced.
+    if any(set(";{}=") & set(f"{key}{value}") for key, value in merged.items()):
+        raise ProbeError("config", "invalid character in connection attributes", EXIT_CONFIG)
+    parts += [f"{key}={value}" for key, value in merged.items()]
     try:
-        return pyodbc.connect(";".join(parts), timeout=LOGIN_TIMEOUT_SECONDS, autocommit=True)
+        return pyodbc.connect(";".join(parts), timeout=LOGIN_TIMEOUT_SECONDS, autocommit=autocommit)
     except pyodbc.Error as exc:
         # "from None": do not chain anything that could carry the connection string.
         raise classify_connect_error(exc, settings) from None

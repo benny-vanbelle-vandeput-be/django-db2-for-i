@@ -68,6 +68,13 @@ def probe(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
+def probe_write(session: nox.Session) -> None:
+    """CHANGES THE IBM i: write probe w01 (temporary table). Dry run unless -- --execute."""
+    session.install("-e", ".")
+    session.run("python", "probes/w01_commitment.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
 def setup_journal(session: nox.Session) -> None:
     """CHANGES THE IBM i: create QSQJRN in a test library. Dry run unless -- --execute."""
     session.install("-e", ".")
