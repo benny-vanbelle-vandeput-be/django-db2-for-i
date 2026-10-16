@@ -112,3 +112,41 @@ CRTJRN JRN(<USER>2/QSQJRN) JRNRCV(<USER>2/QSQJRN0001) MNGRCV(*SYSTEM) DLTRCV(*YE
 - Removal (not run): `nox -s setup_journal -- --undo [--execute]` runs `DLTJRN`
   and then `DLTJRNRCV ... DLTOPT(*IGNINQMSG)` for every `QSQJRN*` receiver.
   `DLTJRN` fails while tables are still journaled to `QSQJRN`.
+
+### Session behaviour (`probe -- session`)
+Run 2026-10-16 23:56 UTC (read-only). Connection attributes: `NAM=0`,
+`DBQ=<default library>`, `CMT=1`, `DFT=5`, `TFT=2`, autocommit off.
+
+- **Default schema:** with `DBQ` set, `CURRENT SCHEMA` is the `DBQ` library and
+  `CURRENT PATH` is `"QSYS","QSYS2","SYSPROC","SYSIBMADM","<library>"`.
+- **Date/time types:** pyodbc returns `datetime.date`, `datetime.time` and
+  `datetime.datetime` (microseconds included) for `DATE`, `TIME`, `TIMESTAMP`.
+  The `DFT`/`TFT` formats only affect string renderings: `CHAR(CURRENT DATE)` =
+  `2026-10-16`, `CHAR(CURRENT TIME)` = `23.56.08` (ISO time on IBM i uses
+  dots), `CHAR(CURRENT TIMESTAMP)` = `2026-10-16-23.56.08.587941`.
+- **String to date/time:** `CAST` accepts `13.45.30` and `13:45:30` for `TIME`,
+  and both `2026-10-17 13:45:30.123456` and `2026-10-17-13.45.30.123456` for
+  `TIMESTAMP`, as literals and as parameters.
+- **Isolation level:** `CURRENT ISOLATION` does not exist (`SQL0104`).
+  `QSYS2.DB_TRANSACTION_INFO WHERE JOB_NAME = QSYS2.JOB_NAME` works and shows
+  `DEFAULT_LOCK_LEVEL` = `*CS` for `CMT=1`, `LOCK_SCOPE` = `*ACTGRP`,
+  commitment definition `*DFTACTGRP`.
+- **Unicode (casts of parameters):** length checks happen **in the ODBC driver**,
+  before the server: too-long input fails with SQLSTATE `22001`
+  (`CWB0111 - Input data is too big to fit into field`), not with silent
+  truncation. Characters that the target CCSID cannot represent fail with
+  `22018` (`CWBNL0107`).
+
+  | Input | `NVARCHAR(10)` | `VARCHAR(10) CCSID 1208` | `VARCHAR(10) CCSID 273` |
+  |---|---|---|---|
+  | `é` × 10 | ok, 10 chars | `22001` (20 bytes) | ok |
+  | `é` × 11 | `22001` | `22001` | `22001` |
+  | emoji × 1 | ok | ok (4 bytes) | `22018` |
+  | emoji × 5 | ok (10 UTF-16 units), `CHARACTER_LENGTH` = 5 | `22001` | `22018` |
+  | emoji × 10 | `22001` (20 UTF-16 units) | `22001` | `22018` |
+  | `aé` + emoji | ok, 3 chars | ok, 3 chars | `22018` |
+
+  So `NVARCHAR(n)` counts UTF-16 code units: it matches Django's `max_length`
+  for every BMP character, while a non-BMP character (emoji) uses 2 of the
+  `n` units. `VARCHAR(n) CCSID 1208` counts bytes. The `INSERT` behaviour
+  into real columns is covered by write probe `w01_commitment.py`.
