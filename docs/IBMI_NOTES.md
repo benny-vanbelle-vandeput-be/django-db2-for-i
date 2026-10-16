@@ -27,15 +27,60 @@ Checked 2026-10-16 against IBM's repository
 
 Terms of use reviewed by the project owner on 2026-10-16 before any live probe.
 
-### Reachability and TLS
-Pending: `nox -s probe -- reachability`.
+Probes run 2026-10-16/17 (UTC) with `ibm-iaccess` 1.1.0.29 from the `tests` container.
+User profile, library names and client IP are not recorded here; libraries
+follow PUB400's naming pattern `<USER>1`, `<USER>2`, `<USER>B`.
 
-### Connection (`SELECT 1 FROM SYSIBM.SYSDUMMY1`)
-Pending: `nox -s probe -- connect`.
+### Reachability and TLS (`probe -- reachability`)
+- TCP open: 449 (as-svrmap), 8471 (as-database), 8476 (as-signon),
+  9471 (as-database-s), 9476 (as-signon-s).
+- TLS on 9471 and 9476: TLS 1.3, certificate `CN=pub400.com` issued by
+  Sectigo Public Server Authentication CA DV E36, valid until 2027-04-18.
+  **Trusted by the Debian CA store in the container** (no extra CA needed), so
+  `DB2I_SSL=1` works as is.
 
-### OS release, TR level, Db2 PTF Group level, CCSID
-Pending: `nox -s probe -- sysinfo`.
+### Connection (`probe -- connect`)
+- `SELECT 1 FROM SYSIBM.SYSDUMMY1` returns 1 over TLS.
+- SQLGetInfo: `SQL_DBMS_NAME` = `DB2/400 SQL`, `SQL_DBMS_VER` = `07.05.0015`,
+  `SQL_DRIVER_NAME` = `libcwbodbc.so`, `SQL_DRIVER_VER` = `07.01.029`,
+  `SQL_DRIVER_ODBC_VER` = `03.51`, `SQL_SERVER_NAME` = `PUB400.COM`.
+- Server job: `nnnnnn/QUSER/QZDASSINIT` (the TLS database server job);
+  `QSYS2.NETSTAT_JOB_INFO` confirms local port 9471 (`as-database-s`).
+- With SQL naming (`NAM=0`) and no `DBQ`, `CURRENT SCHEMA` is the user profile
+  name, which is **not** one of the user's libraries. The backend must set the
+  schema explicitly.
+- Wrong password: SQLSTATE `28000`, driver message
+  `Communication link failure. comm rc=8002 - CWBSY0002 - Password for user ... is not correct, Password length = <n>, ...`.
+  The message contains the **password length**; probes redact it. The backend
+  must do the same in its error mapping (phase 1).
 
-### Libraries and journaling
-Pending: `nox -s probe -- libraries`. The libraries are referred to here as
-`<default library>` and `<other library>`, not by name.
+### OS release, TR level, Db2 PTF Group level, CCSID (`probe -- sysinfo`)
+- OS release: **IBM i 7.5** (`SYSIBMADM.ENV_SYS_INFO`: `OS_VERSION` 7, `OS_RELEASE` 5).
+- TR level and Db2 PTF Group level: **unavailable**. `QSYS2.GROUP_PTF_INFO`
+  fails with `SQL0443 - NOT AUTHORIZED TO COMMAND WRKPTFGRP` for a normal
+  PUB400 user. Consequence for `capabilities.py`: features that depend on TR or
+  PTF level must be detected with targeted feature probes or configured via
+  `OPTIONS`, not by reading PTF groups.
+- System values (`QSYS2.SYSTEM_VALUE_INFO`): `QCCSID` = **273** (EBCDIC
+  Germany/Austria), `QLANGID` = `ENU`, `QCNTRYID` = `US`, `QTIMZON` = `Q0000UTC`,
+  `QUTCOFFSET` = `+0000`.
+- Job CCSID of the database server job: `CCSID` = 273, `DEFAULT_CCSID` = 273
+  (`QSYS2.ACTIVE_JOB_INFO`). Not 65535.
+- Catalog facts found on the way: `QSYS2.GET_JOB_INFO` has no CCSID column;
+  `CCSID` and `DEFAULT_CCSID` are output columns of `QSYS2.ACTIVE_JOB_INFO`
+  (specific name `QSQACTJOB`), per `QSYS2.SYSPARMS`.
+
+### Libraries and journaling (`probe -- libraries`)
+The user owns three libraries (found via `QSYS2.OBJECT_OWNERSHIP`), all
+visible as SQL schemas:
+
+| Library | Text | Existing tables | `QSQJRN` | Journal receivers | `QDFTJRN` |
+|---|---|---|---|---|---|
+| `<USER>1` | "*CURLIB your current library" | 208 | no | none | no |
+| `<USER>2` | "second library" | 0 | no | none | no |
+| `<USER>B` | "for backup data" | 0 | no | none | no |
+
+**None of the libraries is journaled.** Tables created there are not journaled,
+so commitment control (transactions) will not work until a journal exists.
+Creating a journal receiver and `QSQJRN` journal changes the system and is a
+separate proposal that needs approval.
