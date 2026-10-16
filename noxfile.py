@@ -19,7 +19,9 @@ DJANGO_PYTHONS = {
 NEWEST_DJANGO = "6.1"
 NEWEST_PYTHON = DJANGO_PYTHONS[NEWEST_DJANGO][-1]
 
-OFFLINE_MATRIX = [(python, django) for django, pythons in DJANGO_PYTHONS.items() for python in pythons]
+OFFLINE_MATRIX = [
+    (python, django) for django, pythons in DJANGO_PYTHONS.items() for python in pythons
+]
 
 
 def install(session: nox.Session, django: str, *groups: str) -> None:
@@ -56,3 +58,10 @@ def pub400(session: nox.Session) -> None:
     # Exit code 5 ("no tests collected") is accepted until the first pub400
     # tests exist (phase 1); remove it then.
     session.run("pytest", "-m", "pub400", *session.posargs, success_codes=[0, 5])
+
+
+@nox.session(python=NEWEST_PYTHON)
+def probe(session: nox.Session) -> None:
+    """Read-only IBM i probes: nox -s probe -- [reachability|connect|sysinfo|libraries|all]."""
+    session.install("-e", ".")
+    session.run("python", "probes/run.py", *session.posargs)
