@@ -1,7 +1,8 @@
 # Single entry point:  docker compose run --rm tests nox -s <session>
 #
 # The "full" image contains the IBM i Access ODBC Driver (IBM license):
-# local use only, never push it to a public registry.
+# local use only, never push it to a public registry. Services deliberately have
+# no image: name, so compose builds locally and never pulls from a registry.
 
 name: django-db2-for-i
 
@@ -19,8 +20,6 @@ services:
   # Full environment with the IBM i Access ODBC Driver (offline, probe, pub400, full tiers).
   tests:
     <<: *common
-    image: django-db2-for-i:full
-    pull_policy: build
     platform: linux/amd64
     build:
       context: .
@@ -34,8 +33,6 @@ services:
   # No IBM software: offline tier and lint only. Used by CI.
   offline:
     <<: *common
-    image: django-db2-for-i:offline
-    pull_policy: build
     build:
       context: .
       dockerfile: docker/Dockerfile
