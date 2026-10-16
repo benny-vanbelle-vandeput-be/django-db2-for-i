@@ -8,4 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Project license (BSD-3-Clause), contributing guide, README, and changelog.
+- Phase 0: project skeleton.
+  - BSD-3-Clause license, contributing guide, README, changelog.
+  - `pyproject.toml` (Django 6.1, pyodbc required) and the backend package
+    layout as documented stubs.
+  - Container environment: `docker/Dockerfile` with `offline` and `full`
+    targets (IBM i Access ODBC Driver pinned by version and SHA256),
+    `compose.yaml`, devcontainer, `.env.example`.
+  - nox sessions `lint`, `offline` (Python 3.12–3.14 × Django 6.1), `pub400`,
+    `probe`; pytest tier markers and an offline connection guard.
+  - GitHub Actions workflow for the offline tier.
+  - Read-only IBM i probes (`reachability`, `connect`, `sysinfo`, `libraries`).
+  - Docs: `DECISIONS.md`, `DJANGO_VERSIONS.md`, `IBMI_NOTES.md` with the
+    PUB400 findings, `TEST_STATUS.md`.
+- Claude Code project settings deny access to `.env`.
