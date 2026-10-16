@@ -51,7 +51,9 @@ def run(settings: Settings, conn) -> dict[str, Any]:
         run_query(
             conn,
             "this connection (QSYS2.NETSTAT_JOB_INFO)",
-            "SELECT * FROM QSYS2.NETSTAT_JOB_INFO WHERE JOB_NAME = QSYS2.JOB_NAME "
+            # Only server-side columns: REMOTE_ADDRESS would be the caller's public IP.
+            "SELECT CONNECTION_TYPE, LOCAL_PORT, LOCAL_PORT_NAME, JOB_NAME "
+            "FROM QSYS2.NETSTAT_JOB_INFO WHERE JOB_NAME = QSYS2.JOB_NAME "
             "FETCH FIRST 5 ROWS ONLY",
         ),
     ]

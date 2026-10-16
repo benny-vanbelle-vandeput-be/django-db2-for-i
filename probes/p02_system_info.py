@@ -38,15 +38,21 @@ QUERIES = [
         "FROM QSYS2.SYSTEM_VALUE_INFO "
         "WHERE SYSTEM_VALUE_NAME IN ('QCCSID', 'QLANGID', 'QCNTRYID', 'QTIMZON', 'QUTCOFFSET')",
     ),
-    (
-        "Job CCSID (QSYS2.GET_JOB_INFO)",
-        "SELECT V_CCSID, V_DEFAULT_CCSID FROM TABLE(QSYS2.GET_JOB_INFO('*')) X",
-    ),
 ]
+
+# CCSID and DEFAULT_CCSID are output columns of ACTIVE_JOB_INFO (specific name
+# QSQACTJOB), found via QSYS2.SYSPARMS; GET_JOB_INFO has no CCSID column.
+JOB_INFO = (
+    "Job CCSID (QSYS2.ACTIVE_JOB_INFO, this job)",
+    "SELECT JOB_NAME, CCSID, DEFAULT_CCSID "
+    "FROM TABLE(QSYS2.ACTIVE_JOB_INFO(JOB_NAME_FILTER => '*', DETAILED_INFO => 'ALL')) X "
+    "WHERE JOB_NAME = QSYS2.JOB_NAME",
+)
 
 
 def run(settings: Settings, conn) -> dict[str, Any]:
     queries = [run_query(conn, label, sql) for label, sql in QUERIES]
+    queries.append(run_query(conn, *JOB_INFO))
     for result in queries:
         print_query(result)
     return {"queries": queries}
