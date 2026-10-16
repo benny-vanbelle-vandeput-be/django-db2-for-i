@@ -84,3 +84,31 @@ visible as SQL schemas:
 so commitment control (transactions) will not work until a journal exists.
 Creating a journal receiver and `QSQJRN` journal changes the system and is a
 separate proposal that needs approval.
+
+### Journal setup in the `default` library (`nox -s setup_journal -- --execute`)
+Approved by the project owner and run 2026-10-16 23:49 UTC against `<USER>2`
+(the `default` library). The `other` library is not journaled yet (phase 1
+configures only `default`). Commands, via `CALL QSYS2.QCMDEXC(?)` on a
+connection with SQL naming and `CMT=0`:
+
+```
+CRTJRNRCV JRNRCV(<USER>2/QSQJRN0001) THRESHOLD(100000) TEXT('django-db2-for-i test journal')
+CRTJRN JRN(<USER>2/QSQJRN) JRNRCV(<USER>2/QSQJRN0001) MNGRCV(*SYSTEM) DLTRCV(*YES) TEXT('django-db2-for-i test journal')
+```
+
+- A normal PUB400 user **is authorized** to run `CRTJRNRCV` and `CRTJRN` in
+  their own library; both completed without messages.
+- Effective receiver settings (`QSYS2.JOURNAL_RECEIVER_INFO`):
+  **`THRESHOLD` = 100000** (as requested, KB), `RECEIVER_MAXIMUM_SIZE` =
+  `*MAXOPT2`, status `ATTACHED`, `SIZE` = 2628 directly after creation.
+- Effective journal settings (`QSYS2.JOURNAL_INFO`): `JOURNAL_STATE` = `*ACTIVE`,
+  `MANAGE_RECEIVER_OPTION` = `*SYSTEM` (delay 10), `DELETE_RECEIVER_OPTION` =
+  `YES` (delay 10), `REMOVE_INTERNAL_ENTRIES` = `YES`, `MESSAGE_QUEUE` =
+  `QSYSOPR`, `JOURNALED_OBJECT_LIMIT` = `*MAX250K`.
+- Verification: `CREATE TABLE <USER>2.DJJRNCHK (ID INTEGER)` was **journaled
+  automatically** to `<USER>2/QSQJRN` (`QSYS2.OBJECT_STATISTICS`: `JOURNALED` =
+  `YES`), without `STRJRNPF` or a `QDFTJRN` data area. The table was dropped
+  afterwards.
+- Removal (not run): `nox -s setup_journal -- --undo [--execute]` runs `DLTJRN`
+  and then `DLTJRNRCV ... DLTOPT(*IGNINQMSG)` for every `QSQJRN*` receiver.
+  `DLTJRN` fails while tables are still journaled to `QSQJRN`.
