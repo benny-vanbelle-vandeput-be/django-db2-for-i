@@ -16,6 +16,7 @@ import dataclasses
 import datetime as dt
 import json
 import os
+import re
 import socket
 import time
 from pathlib import Path
@@ -28,6 +29,8 @@ RESULTS_DIR = Path(__file__).resolve().parent.parent / "test-results" / "probes"
 
 # Database host server ports: as-database (plain) and as-database-s (TLS).
 DATABASE_PORT = {False: 8471, True: 9471}
+
+_PASSWORD_LENGTH = re.compile(r"(password length\s*=\s*)\d+", re.IGNORECASE)
 
 EXIT_CONFIG = 1
 EXIT_UNREACHABLE = 2
@@ -81,10 +84,11 @@ class Settings:
         return DATABASE_PORT[self.ssl]
 
     def scrub(self, text: str) -> str:
-        """Remove the password from text that may be printed or stored."""
+        """Remove the password (and its length) from text that may be printed or stored."""
         if self.password:
             text = text.replace(self.password, "***")
-        return text
+        # CWBSY0002 messages include "Password length = <n>".
+        return _PASSWORD_LENGTH.sub(r"\1***", text)
 
 
 # --- TCP / connection -------------------------------------------------------
