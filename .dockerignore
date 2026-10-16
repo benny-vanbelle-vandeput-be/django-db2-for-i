@@ -1,0 +1,14 @@
+# Never send secrets to the build context
+.env
+.env.*
+
+.git
+.nox
+.venv
+vendor
+test-results
+**/__pycache__
+.pytest_cache
+.ruff_cache
+dist
+build

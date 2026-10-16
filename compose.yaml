@@ -1,0 +1,46 @@
+# Single entry point:  docker compose run --rm tests nox -s <session>
+#
+# The "full" image contains the IBM i Access ODBC Driver (IBM license):
+# local use only, never push it to a public registry.
+
+name: django-db2-for-i
+
+x-common: &common
+  working_dir: /workspace
+  volumes:
+    # The repo, including the gitignored test-results/ and vendor/ directories,
+    # so logs and Django checkouts are visible on the host.
+    - .:/workspace
+    # nox virtualenvs stay off the (slow) macOS bind mount.
+    - nox-envs:/workspace/.nox
+    - uv-cache:/home/dev/.cache/uv
+
+services:
+  # Full environment with the IBM i Access ODBC Driver (offline, probe, pub400, full tiers).
+  tests:
+    <<: *common
+    image: django-db2-for-i:full
+    pull_policy: build
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: full
+    # Connection settings (DB2I_*). Optional so offline sessions work without it.
+    env_file:
+      - path: .env
+        required: false
+
+  # No IBM software: offline tier and lint only. Used by CI.
+  offline:
+    <<: *common
+    image: django-db2-for-i:offline
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: offline
+
+volumes:
+  nox-envs:
+  uv-cache:

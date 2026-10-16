@@ -33,7 +33,28 @@ built locally or in private CI, and **never pushed to a public registry**.
 
 ## Development
 
-Setup instructions for the containerized environment will follow in phase 0.
+All development and test runs happen in a container. The host only needs
+Docker (e.g. Docker Desktop) with the `docker compose` plugin.
+
+```sh
+cp .env.example .env          # then fill in DB2I_* (never commit .env)
+docker compose build          # builds the "offline" and "full" images
+docker compose run --rm tests nox --list
+docker compose run --rm tests nox -s offline
+```
+
+| Service | Build target | Contents | Use |
+|---|---|---|---|
+| `tests` | `full` | uv, Python 3.12–3.14, nox, unixODBC, IBM i Access ODBC Driver | all tiers, probes |
+| `offline` | `offline` | same, without the IBM driver | offline tier, lint, CI |
+
+- **Apple Silicon:** IBM publishes the Linux ODBC driver for amd64, i386 and
+  ppc64el, not arm64. The `tests` service sets `platform: linux/amd64`, so it
+  runs under emulation on arm64 hosts.
+- **Licensing:** the `full` image contains the IBM i Access ODBC Driver.
+  Build it locally or in private CI only, and **never push it to a public
+  registry**. The `offline` image contains no IBM software.
+- The devcontainer (`.devcontainer/`) attaches to the `tests` service.
 
 ## License
 

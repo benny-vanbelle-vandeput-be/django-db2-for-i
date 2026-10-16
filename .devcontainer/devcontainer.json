@@ -1,0 +1,14 @@
+{
+  "name": "django-db2-for-i",
+  "dockerComposeFile": ["../compose.yaml"],
+  "service": "tests",
+  "runServices": ["tests"],
+  "workspaceFolder": "/workspace",
+  "overrideCommand": true,
+  "remoteUser": "dev",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "charliermarsh.ruff"]
+    }
+  }
+}
