@@ -162,6 +162,7 @@ class CapabilityConfig:
         if value is None:
             return cls()
         if isinstance(value, str):
+            from_profile(value)  # Validate early.
             return cls(profile=value)
         if isinstance(value, Mapping):
             values = dict(value)
