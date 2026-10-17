@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `Cast(..., CharField())` without `max_length`, and ordering by a `Value`
+  with a `CharField` output (which Django wraps in such a cast), cast to
+  `NVARCHAR(16370)`; they produced `CAST(... AS None)` (SQL0204).
+
 ## [0.1.0a2] - 2026-10-18
 
 ### Added

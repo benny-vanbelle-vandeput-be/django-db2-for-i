@@ -35,6 +35,8 @@ from django.db.backends.base.operations import BaseDatabaseOperations
 from django.db.backends.utils import truncate_name
 from django.utils import timezone
 
+from .expressions import NVARCHAR_MAX
+
 logger = logging.getLogger("django_db2_for_i")
 
 # Django lookup type -> Db2 for i function (probe ``extract``, docs/IBMI_NOTES.md).
@@ -66,6 +68,9 @@ class DatabaseOperations(BaseDatabaseOperations):
         "BigAutoField": "BIGINT",
         "SmallAutoField": "SMALLINT",
     }
+    # Cast(x, CharField()) without max_length, also used by Django to order by
+    # a Value: the largest NVARCHAR a cast round-trips (probe string_limits).
+    cast_char_field_without_max_length = f"NVARCHAR({NVARCHAR_MAX})"
 
     def max_name_length(self) -> int:
         return self.connection.capabilities.max_name_length

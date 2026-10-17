@@ -25,7 +25,7 @@ from decimal import Decimal
 from django.core.management.color import no_style
 from django.db.models import Case as CaseExpr
 from django.db.models import CharField, DecimalField, IntegerField, Value, When
-from django.db.models.functions import Coalesce, Extract
+from django.db.models.functions import Cast, Coalesce, Extract
 from django.db.models.sql import DeleteQuery, InsertQuery, UpdateQuery
 
 from django_db2_for_i import capabilities
@@ -230,6 +230,14 @@ CASES: tuple[Case, ...] = (
         (DEFAULTS,),
     ),
     # Pagination (OFFSET / FETCH FIRST) and exists().
+    # Ordering by a Value: Django wraps it in Cast(..., output_field); a
+    # CharField without max_length uses cast_char_field_without_max_length.
+    Case(
+        "queries/order_by_value_char",
+        "query",
+        _select(lambda: Author.objects.order_by(Value("1", output_field=CharField()), "-name")),
+        (AUTHOR,),
+    ),
     Case(
         "queries/slice_offset_fetch",
         "query",
@@ -341,6 +349,12 @@ CASES: tuple[Case, ...] = (
         (AUTHOR,),
     ),
     Case("expressions/arithmetic", "query", _annotate(lambda: Value(1) + Value(2)), (AUTHOR,)),
+    Case(
+        "expressions/cast_char_without_max_length",
+        "query",
+        _annotate(lambda: Cast("id", CharField())),
+        (AUTHOR,),
+    ),
     # DML with backend-specific values.
     Case("dml/insert_book", "dml", _insert_book, (BOOK,)),
     Case("dml/update_boolean", "dml", _update_boolean, (BOOK,)),
