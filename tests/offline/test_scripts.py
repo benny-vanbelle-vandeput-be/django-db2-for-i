@@ -156,6 +156,8 @@ def test_render_and_collect(tmp_path) -> None:
     assert "| basic | 6.1 | 60 | 55 | 0 | 0 | 3 | 2 | 0 | OK |" in text
     assert "| transactions | 6.1 | 80 | 67 | 4 | 1 | 5 | 2 | 1 | FAILED |" in text
     assert "`supports_transactions`" in text
+    # True by Django's default too, but enabled explicitly by the backend.
+    assert "`uses_savepoints`" in text
     assert "identity restart deferred in TestCase (SQL0910)" in text
     assert "goldens," in text
 

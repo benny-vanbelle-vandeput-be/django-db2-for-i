@@ -94,16 +94,12 @@ def collect(results_dir: Path = RESULTS) -> list[ModuleResult]:
 
 
 def feature_section() -> list[str]:
-    from django.db.backends.base.features import BaseDatabaseFeatures
-
     from django_db2_for_i import features
 
     cls = features.DatabaseFeatures
-    enabled = sorted(
-        name
-        for name, value in vars(cls).items()
-        if value is True and getattr(BaseDatabaseFeatures, name, None) is not True
-    )
+    # Every flag the backend's class sets to True, also those Django defaults
+    # to True: features.py lists them all explicitly (False until enabled).
+    enabled = sorted(name for name, value in vars(cls).items() if value is True)
     lines = ["## Feature flags set to True by the backend", ""]
     lines += [f"- `{name}`" for name in enabled] or ["- (none)"]
     lines += [
