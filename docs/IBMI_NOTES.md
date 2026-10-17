@@ -439,6 +439,43 @@ the probes' settings (pyodbc, `ibm-iaccess` 1.1.0.29).
   UTF-16 units with NotSupportedError (pyodbc chooses LOB or NVARCHAR binding
   from the driver's parameter description, which the backend cannot see).
 
+### Column DEFAULT constants (`nox -s probe_defaults`)
+2026-10-17, one connection, only `DECLARE GLOBAL TEMPORARY TABLE SESSION.x`
+(QTEMP, gone at disconnect), one `INSERT` per table and reading the stored
+value back. Found because Django's `basic` tests failed during setup with
+`DEFAULT CAST(1 AS INTEGER)` (SQL0574).
+
+**Accepted forms:** bare constants and special registers only.
+- Accepted, and stored as written: `1`, `-1`, `9223372036854775807`, `1.50`
+  (DECIMAL), `1.5E0` (DOUBLE), `'abc'`, `''`, `'100%'`, `TRUE` (BOOLEAN),
+  `'2026-01-02'` (DATE), `CURRENT_TIMESTAMP`, `BX'01AB'` (BLOB, via the
+  `pub400` goldens).
+- Rejected: `CAST(<constant> AS <type>)` for every type tried (**SQL0574**),
+  `(1)` and `1 + 1` (**SQL0104**).
+
+**String constants are stored wrongly in two cases (no error):**
+- An escaped quote: `DEFAULT 'O''Brien'` stores `O''Brien` in NVARCHAR and
+  NCLOB, `O'Brie ` in VARCHAR(10), `O'Brie n  ` in CHAR(10).
+- `N'...'` stores the quote correctly in NVARCHAR, VARCHAR and NCLOB, but
+  truncates CHAR values: `N'<32 hex digits>'` in CHAR(32) keeps 16 characters,
+  `N'O''Brien'` in CHAR(10) gives `O'Bri`.
+- Any non-ASCII character in the statement text (`é`, `€`, emoji; with or
+  without `N`) fails in the ODBC driver with **`HY001` "Memory allocation
+  error" (30027)**. An emoji-only `'😀'` was stored as `'=\x00'`. Whether this
+  also affects non-ASCII text outside DEFAULT clauses is not verified yet (the
+  backend sends values as parameters).
+- **`UX'<UTF-16 hex>'`** is stored correctly in NVARCHAR, NCHAR, NCLOB, CHAR and
+  VARCHAR (quotes, `€`, emoji, empty string). VARCHAR (single-byte CCSID)
+  replaces characters it cannot represent with SUB (`x1A`), as for any value.
+
+**Backend rule** (`schema.string_literal()`): printable ASCII without a quote
+is written as `'...'`; anything else as `UX'...'`.
+
+**ALTER TABLE ... DROP COLUMN** on a table with rows was cancelled with
+**`HY008` "Operation cancelled" (30071)** in the `pub400` tier (2026-10-17).
+Probably the `CPA32B2` inquiry message ("change of file may cause data to be
+lost") answered with its default reply (cancel); to be probed in phase 4.
+
 ### Journal setup in the `other` library (`nox -s setup_journal -- --library other --execute`)
 Approved by the project owner and run 2026-10-17 against `<USER>B` (the
 `other` library). The dry run first confirmed: owned by our user, no journal

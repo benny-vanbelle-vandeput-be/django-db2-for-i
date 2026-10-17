@@ -4,7 +4,9 @@ import datetime as dt
 from decimal import Decimal
 
 import pytest
-from django.db import connection
+from django.apps import apps
+from django.db import NotSupportedError, connection, models
+from django.db.models.functions import Now
 
 from tests.testapp.models import Author, Book, Node, Tag
 
@@ -83,8 +85,8 @@ def test_foreign_keys_use_no_action(monkeypatch: pytest.MonkeyPatch) -> None:
         (False, "FALSE"),
         (42, "42"),
         (Decimal("1.50"), "1.50"),
-        (1.5, "1.5"),
-        ("it's", "'it''s'"),
+        (1.5, "1.5E0"),
+        ("it's", "UX'0069007400270073'"),
         ("100%", "'100%'"),
         (dt.date(2026, 10, 17), "'2026-10-17'"),
         (dt.time(13, 45, 30), "'13:45:30'"),
@@ -108,3 +110,99 @@ def test_quote_value_rejects_unknown_types() -> None:
 def test_prepare_default_escapes_percent() -> None:
     with connection.schema_editor(collect_sql=True) as editor:
         assert editor.prepare_default("100%") == "'100%%'"
+
+
+# --- Column DEFAULT literals (prepare_default) ------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("value", "literal"),
+    [
+        ("Brien", "'Brien'"),
+        ("O'Brien", "UX'004F00270042007200690065006E'"),
+        ("", "''"),
+        ("100%", "'100%%'"),
+        ("h\u00e9 \u20ac", "UX'006800E9002020AC'"),
+        ("\U0001f600", "UX'D83DDE00'"),
+        ("a\nb", "UX'0061000A0062'"),
+        ("12345678123456781234567812345678", "'12345678123456781234567812345678'"),
+        (True, "TRUE"),
+        (False, "FALSE"),
+        (0, "0"),
+        (-1, "-1"),
+        (2**63 - 1, "9223372036854775807"),
+        (Decimal("1.50"), "1.50"),
+        (Decimal("-0.001"), "-0.001"),
+        (Decimal("1E+3"), "1000"),
+        (1.5, "1.5E0"),
+        (-2.0, "-2.0E0"),
+        (1e20, "1E+20"),
+        (dt.date(2026, 1, 2), "'2026-01-02'"),
+        (dt.time(13, 45, 30), "'13:45:30'"),
+        (dt.datetime(2026, 1, 2, 13, 45, 30, 123456), "'2026-01-02 13:45:30.123456'"),
+        (dt.datetime(2026, 1, 2, 13, 45, 30), "'2026-01-02 13:45:30'"),
+        (b"\x01\xab", "BX'01AB'"),
+        (None, "NULL"),
+    ],
+)
+def test_prepare_default_per_type(value, literal: str) -> None:
+    with connection.schema_editor(collect_sql=True) as editor:
+        assert editor.prepare_default(value) == literal
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        object(),
+        [1, 2],
+        Decimal("NaN"),
+        Decimal("Infinity"),
+        float("inf"),
+        float("nan"),
+        dt.datetime(2026, 1, 2, tzinfo=dt.UTC),
+        dt.time(13, 45, tzinfo=dt.UTC),
+        dt.timedelta(seconds=1),
+    ],
+    ids=repr,
+)
+def test_prepare_default_without_a_rule_is_not_supported(value) -> None:
+    with (
+        connection.schema_editor(collect_sql=True) as editor,
+        pytest.raises(NotSupportedError),
+    ):
+        editor.prepare_default(value)
+
+
+def test_requires_literal_defaults() -> None:
+    assert connection.features.requires_literal_defaults is True
+
+
+def _create_sql(**fields) -> str:
+    model = type(
+        "DefaultProbe",
+        (models.Model,),
+        {"__module__": __name__, "Meta": type("Meta", (), {"app_label": "testapp"}), **fields},
+    )
+    try:
+        with connection.schema_editor(collect_sql=True) as editor:
+            editor.create_model(model)
+        return editor.collected_sql[0]
+    finally:
+        apps.all_models["testapp"].pop("defaultprobe", None)
+        apps.clear_cache()
+
+
+def test_db_default_is_a_bare_constant_without_cast() -> None:
+    sql = _create_sql(n=models.IntegerField(primary_key=True, db_default=1))
+    assert '"N" INTEGER DEFAULT 1 NOT NULL PRIMARY KEY' in sql
+    assert "CAST" not in sql
+
+
+def test_db_default_none_writes_no_default() -> None:
+    sql = _create_sql(n=models.IntegerField(null=True, db_default=None))
+    assert sql.endswith('"N" INTEGER);')
+
+
+def test_db_default_expression_is_not_supported() -> None:
+    with pytest.raises(NotSupportedError, match="only constants"):
+        _create_sql(n=models.DateTimeField(db_default=Now()))

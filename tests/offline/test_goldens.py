@@ -25,7 +25,7 @@ from tests.golden import (
     read,
 )
 from tests.golden_cases import CASES, CASES_BY_NAME, build_case
-from tests.testapp.models import Author, Book, Node, Tag
+from tests.testapp.models import Author, Book, Defaults, Node, Tag
 
 PROFILES = sorted(capabilities.PROFILES)
 PAIRS = [(profile, case) for profile in PROFILES for case in CASES]
@@ -114,8 +114,9 @@ UNQUOTED_QUALIFIED = re.compile(r"\b([A-Za-z_#@$][\w#@$]*)\s*\.\s*[A-Za-z_\"]")
 
 
 def allowed_identifiers() -> set[str]:
-    names = {"A", "X"}  # aliases: exists() and the annotation in golden_cases
-    for model in (Author, Book, Node, Tag):
+    # Aliases (exists() and the annotation) and the column the AddField golden adds.
+    names = {"A", "X", "NICKNAME"}
+    for model in (Author, Book, Defaults, Node, Tag):
         names.add(model._meta.db_table.upper())
         names.update(field.column.upper() for field in model._meta.local_fields)
     return names
