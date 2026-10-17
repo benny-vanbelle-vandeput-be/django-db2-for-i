@@ -334,3 +334,22 @@ def test_immediate_restart_is_not_logged(wrapper, caplog) -> None:
     with caplog.at_level("DEBUG", logger="django_db2_for_i"):
         wrapper.ops.execute_sql_flush(FLUSH)
     assert "deferred" not in caplog.text
+
+
+# --- Case-insensitive lookups ----------------------------------------------------------
+
+
+@pytest.mark.parametrize("lookup", ["iexact", "icontains", "istartswith", "iendswith"])
+def test_case_insensitive_lookups_uppercase_the_column(lookup) -> None:
+    from tests.testapp.models import Author
+
+    sql, _params = (
+        Author.objects.filter(**{f"name__{lookup}": "Ada"}).query.get_compiler("default").as_sql()
+    )
+    assert 'UPPER("TESTAPP_AUTHOR"."NAME")' in sql
+    assert "UPPER(%s)" in sql
+
+
+@pytest.mark.parametrize("lookup", ["exact", "contains", "startswith", "gt"])
+def test_case_sensitive_lookups_leave_the_column_alone(lookup) -> None:
+    assert ops.lookup_cast(lookup) == "%s"

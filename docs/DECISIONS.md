@@ -326,6 +326,28 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   signed. (Locally, `git log --show-signature` reports GitHub's merge commits as
   unverifiable until GitHub's own signing key is trusted; GitHub shows them as
   Verified.)
+- **Tag:** `signing-start` is a signed annotated tag (machine account, Verified)
+  on `0a17487`, marking the first signed commit on `main`.
 - **Alternatives:** squash merging (GitHub signs the squash commit, but the
   machine account's signatures and the individual commits are lost); keep
   rebase merging (no verifiable signatures on `main`).
+
+## 2026-10-17: Golden file format and verification
+- **Decision:** one plain `.sql` file per case under
+  `tests/offline/golden/<django>/<profile>/<group>/<name>.sql`, with a comment
+  header (`golden`, `django`, `profile`, `depends`, `params` as JSON per
+  statement with tagged non-JSON values, `verified`) and the statements in
+  execution order. Cases live in `tests/golden_cases.py`; the offline tier
+  compares, `--update-goldens` rewrites (refused when `CI` is set), and any SQL
+  or params change resets `verified`. The pub400 tier executes the stored
+  goldens: safety gate of the test library without migrate, then create, query,
+  DML (rolled back), flush (after checking the mocked catalog metadata against
+  the real catalog) and drop goldens; `--record-verification` stamps
+  "IBM i <release> on PUB400, <date>".
+- **Why:** reviewable diffs of the SQL itself; a Django level so phase 3 only
+  adds a directory; DDL verified exactly as stored (the tables are created by
+  the create goldens themselves, so nothing conflicts with migrate's tables);
+  predictable skips through declared dependencies.
+- **Meaning of "verified":** accepted by Db2 for i, not correct results.
+- **Alternatives:** JSON/YAML files (SQL hard to read and diff); verifying DDL
+  with renamed tables (would verify different SQL than the golden).

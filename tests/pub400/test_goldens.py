@@ -1,0 +1,133 @@
+"""Execute every stored golden on IBM i: is the SQL accepted by Db2 for i?
+
+"Verified" means "accepted by Db2 for i", not "returns correct results"
+(CONTRIBUTING.md). The goldens are executed exactly as stored, in this order:
+
+1. the test library's safety gate only (journal check, no foreign objects,
+   leftovers of a marked library dropped, marker written), without migrate;
+2. ``create`` goldens, which create the testapp tables the others use;
+3. ``query`` goldens; ``dml`` goldens in a transaction that is rolled back;
+4. ``flush`` goldens, after checking that the catalog metadata they were
+   generated with matches what the create goldens created;
+5. ``drop`` goldens; teardown drops whatever remains, then the marker.
+
+A golden whose create dependency did not pass is skipped with a reason.
+``pytest --record-verification`` writes "IBM i <release> on PUB400, <date>"
+into each golden that passed (review the diff, commit it in a PR).
+"""
+
+import dataclasses
+import datetime as dt
+
+import pytest
+from django.db import connection, transaction
+
+from django_db2_for_i import capabilities
+from django_db2_for_i.compat import DJANGO_SERIES
+from django_db2_for_i.creation import MARKER_TABLE
+from tests.golden import golden_path, read
+from tests.golden_cases import FLUSH_METADATA, TESTAPP_TABLES, ordered_cases
+
+RESULTS: dict[str, str] = {}  # golden name -> "passed" | "failed" | "skipped"
+
+# Goldens Db2 for i currently rejects: backend bugs found by this check, with
+# the reason. strict: once the SQL is fixed and accepted, the test reports it.
+REJECTED = {
+    "queries/exists": 'SQL0418: untyped parameter marker in the select list (SELECT ? AS "A")',
+}
+
+CASES = [
+    pytest.param(
+        case, id=case.name, marks=pytest.mark.xfail(reason=REJECTED[case.name], strict=True)
+    )
+    if case.name in REJECTED
+    else pytest.param(case, id=case.name)
+    for case in ordered_cases()
+]
+
+
+def library() -> str:
+    return connection.settings_dict["TEST"]["NAME"].upper()
+
+
+def tables() -> set[str]:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT TABLE_NAME FROM QSYS2.SYSTABLES "
+            "WHERE SYSTEM_TABLE_SCHEMA = %s AND SYSTEM_TABLE = 'N'",
+            [library()],
+        )
+        return {name.rstrip() for (name,) in cursor.fetchall()}
+
+
+@pytest.fixture(scope="module", autouse=True)
+def marked_empty_library(django_db_blocker):
+    with django_db_blocker.unblock():
+        creation = connection.creation
+        creation._create_test_db(verbosity=0, autoclobber=True, keepdb=False)
+        try:
+            leftover = tables() - {MARKER_TABLE}
+            if leftover:
+                pytest.fail(f"{library()} is not empty after setup: {sorted(leftover)}")
+            yield
+        finally:
+            creation._destroy_test_db(library(), 0)
+            assert tables() == set(), f"tables left in {library()}: {sorted(tables())}"
+
+
+@pytest.fixture
+def live(django_db_blocker):
+    with django_db_blocker.unblock():
+        yield connection
+
+
+def execute(cursor, sql, params, kind) -> None:
+    # DDL and flush goldens are final SQL (collected without parameters);
+    # query and DML goldens use %s placeholders.
+    if kind in ("create", "drop", "flush"):
+        cursor.execute(sql)
+    else:
+        cursor.execute(sql, list(params))
+        if cursor.description:
+            cursor.fetchall()
+
+
+def run_golden(live, kind, golden) -> None:
+    if kind == "flush":
+        actual = live.ops._flush_metadata([table.upper() for table in TESTAPP_TABLES])
+        if actual != FLUSH_METADATA:
+            pytest.fail(
+                "the catalog metadata the flush golden was generated with does not match "
+                f"the tables the create goldens made: generated with {FLUSH_METADATA}, "
+                f"catalog has {actual}. Not verified."
+            )
+        live.ops.execute_sql_flush([sql for sql, _ in golden.statements])
+        return
+    if kind == "dml":
+        with transaction.atomic(using=live.alias), live.cursor() as cursor:
+            for sql, params in golden.statements:
+                execute(cursor, sql, params, kind)
+            transaction.set_rollback(True, using=live.alias)
+        return
+    with live.cursor() as cursor:
+        for sql, params in golden.statements:
+            execute(cursor, sql, params, kind)
+
+
+@pytest.mark.parametrize("case", CASES)
+def test_golden_is_accepted(case, live, request) -> None:
+    release = live.capabilities.release
+    profile = capabilities.profile_for_release(release)
+    path = golden_path(DJANGO_SERIES, profile, case.name)
+    golden = read(path)
+    blocked = [name for name in golden.depends if RESULTS.get(name) != "passed"]
+    if blocked:
+        RESULTS[case.name] = "skipped"
+        pytest.skip(f"depends on {', '.join(blocked)}, which did not pass")
+    RESULTS[case.name] = "failed"
+    run_golden(live, case.kind, golden)
+    RESULTS[case.name] = "passed"
+    if request.config.getoption("--record-verification"):
+        stamp = f"IBM i {release[0]}.{release[1]} on PUB400, {dt.datetime.now(dt.UTC):%Y-%m-%d}"
+        if golden.verified != stamp:
+            path.write_text(dataclasses.replace(golden, verified=stamp).render())

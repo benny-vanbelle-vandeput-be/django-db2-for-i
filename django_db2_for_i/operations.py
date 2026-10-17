@@ -41,6 +41,18 @@ class DatabaseOperations(BaseDatabaseOperations):
         name = truncate_name(name, self.max_name_length()).upper()
         return '"{}"'.format(name.replace('"', '""'))
 
+    # --- Lookups -------------------------------------------------------------------
+
+    _CASE_INSENSITIVE_LOOKUPS = frozenset({"iexact", "icontains", "istartswith", "iendswith"})
+
+    def lookup_cast(self, lookup_type: str, internal_type: str | None = None) -> str:
+        # The operators uppercase the right-hand side (see base.operators);
+        # the column must be uppercased too, or the comparison stays
+        # case-sensitive.
+        if lookup_type in self._CASE_INSENSITIVE_LOOKUPS:
+            return "UPPER(%s)"
+        return "%s"
+
     # --- Inserts ------------------------------------------------------------------
 
     def last_insert_id(self, cursor, table_name: str, pk_name: str) -> int | None:

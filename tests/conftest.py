@@ -45,3 +45,41 @@ def _forbid_connections_offline(
         raise OfflineConnectionError("offline tests must not open a database connection")
 
     monkeypatch.setattr("pyodbc.connect", refuse)
+
+
+# --- Golden files (tests/golden.py) ----------------------------------------------
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    group = parser.getgroup("goldens")
+    group.addoption(
+        "--update-goldens",
+        action="store_true",
+        help="rewrite golden files from the current SQL (offline tier; never in CI)",
+    )
+    group.addoption(
+        "--record-verification",
+        action="store_true",
+        help="mark goldens accepted by IBM i as verified (pub400 tier)",
+    )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    import os
+
+    if config.getoption("--update-goldens") and os.environ.get("CI"):
+        raise pytest.UsageError("--update-goldens must not be used in CI")
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config: pytest.Config) -> None:
+    from tests.golden import UNVERIFIED, all_golden_paths, read
+
+    if "offline" not in (config.option.markexpr or ""):
+        return
+    goldens = [read(path) for path in all_golden_paths()]
+    unverified = sorted(
+        f"{g.django}/{g.profile}/{g.name}" for g in goldens if g.verified == UNVERIFIED
+    )
+    terminalreporter.write_sep("-", f"goldens: {len(goldens)}, unverified: {len(unverified)}")
+    for name in unverified:
+        terminalreporter.write_line(f"  unverified: {name}")
