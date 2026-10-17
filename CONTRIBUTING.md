@@ -83,3 +83,39 @@ docker compose run --rm tests nox -s test_status   # regenerate docs/TEST_STATUS
   the library.
 - Known failures go into `DatabaseFeatures.expected_failures` /
   `django_test_skips` under one of the fixed `REASON_*` strings.
+
+## Releases
+
+Releases are alpha releases on GitHub only (no PyPI). **Contributors and
+Claude never create release tags; the maintainer creates and signs them.**
+
+1. **Release PR** (prepared like any other PR): set `__version__` in
+   `django_db2_for_i/__init__.py` (the single source of the version), move
+   the `Unreleased` entries of `CHANGELOG.md` into a `## [<version>] -
+   <date>` section and update the comparison links at the bottom. The
+   offline tier checks that `__version__` has a CHANGELOG section.
+2. **The maintainer merges it** and tags the merge commit on `main` from
+   their own release clone, signed with their OpenPGP (GPG) key:
+
+   ```sh
+   git switch main && git pull --ff-only
+   git log -1 --show-signature          # the merge commit of the release PR
+   git tag -s v<version> -m "v<version>"
+   git tag -v v<version>                # check the signature locally
+   git push origin v<version>
+   ```
+
+   The tag must be annotated (`-s` makes a signed, annotated tag), signed
+   with the key whose public part is stored ASCII-armored in the admin-only
+   Actions variable `RELEASE_SIGNING_KEY`, point to a commit on `main`, and
+   equal `v` + `__version__`.
+3. **The release workflow** (`.github/workflows/release.yml`) verifies all of
+   that (`scripts/verify_release_tag.py`), builds the sdist and wheel, runs
+   the offline tier against the installed wheel (`nox -s wheel`) and creates
+   a GitHub **pre-release** with both files and the version's CHANGELOG
+   section (`scripts/changelog_section.py`). If any check fails, nothing is
+   published; fix the cause, delete the tag (`git push --delete origin
+   v<version>`, `git tag -d v<version>`) and tag again.
+
+Published tags are never moved or recreated. `v0.1.0a1` predates this
+workflow and its code reports version `0.0.1.dev0` (see `CHANGELOG.md`).

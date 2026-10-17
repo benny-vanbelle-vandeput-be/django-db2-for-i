@@ -569,3 +569,28 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   characters (22018). Result column names and error messages need a UTF-8
   process locale.
 
+## 2026-10-18: Releases from OpenPGP-signed tags, GitHub pre-releases only
+- **Decision (project owner):** alpha releases are GitHub pre-releases (sdist
+  and wheel), not PyPI. Only the maintainer creates release tags, signed with
+  their OpenPGP (GPG) key in their own release clone. The release workflow
+  (`.github/workflows/release.yml`) refuses a tag that is unannotated,
+  unsigned, signed by another key, not on `main`, not `v` + `__version__`,
+  or without a CHANGELOG section (`scripts/verify_release_tag.py`). The
+  public key is stored ASCII-armored in the admin-only Actions variable
+  `RELEASE_SIGNING_KEY`, not in the repository. `__version__` in
+  `django_db2_for_i/__init__.py` is the single version source (hatch reads
+  it). Before publishing, the offline tier runs against the installed wheel
+  (`nox -s wheel`), from a copy of the tests without the source package.
+- **Why:** a release is created only from a commit the maintainer signed off
+  on, and a pull request cannot change the trusted key (a key file in the
+  repository could be replaced in the same PR as the workflow); testing the
+  wheel catches packaging mistakes (missing modules or files) that tests
+  against the source tree cannot.
+- **Verification details:** the key is imported into an empty, temporary
+  GnuPG home; the signature must produce `GOODSIG` and a `VALIDSIG` whose
+  primary key fingerprint is the imported key's; `BADSIG`, `ERRSIG`,
+  `EXPSIG`, `EXPKEYSIG`, `REVKEYSIG` and `NO_PUBKEY` are refused. A variable
+  with a secret key or more than one key is refused.
+- **Not changed:** the existing `v0.1.0a1` tag (made before this workflow;
+  its code reports `0.0.1.dev0`) is not moved or recreated.
+
