@@ -145,3 +145,32 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Alternatives:** read the TR / PTF group level (not authorized for normal
   users on PUB400); probe every capability on every connection (extra load
   on shared systems for no gain).
+
+## 2026-10-17: Database settings mapping
+- **Decision:** `NAME` is the default schema (library), uppercased and passed
+  as `DBQ`; `HOST` is the system; `PORT` is refused (the driver uses the
+  database host server port, 8471 or 9471 with TLS). Backend options live in
+  `OPTIONS`: `ssl`, `isolation_level`, `login_timeout`, `driver`,
+  `driver_attributes`, `capabilities`; unknown keys are refused.
+- **Why:** an IBM i system has one relational database; what Django calls a
+  database maps to a schema, which is also what test database creation
+  creates or reuses. Refusing unknown options and `PORT` catches typos and
+  settings that would otherwise be silently ignored.
+- **Alternatives:** `NAME` = RDB name with the schema in `OPTIONS` (makes the
+  test database a schema setting, against Django's model).
+
+## 2026-10-17: Rows are plain tuples
+- **Decision:** the pyodbc driver converts `pyodbc.Row` objects to tuples in
+  `fetchone`/`fetchmany`/`fetchall`.
+- **Why:** the driver interface promises tuples; Django and its test suite
+  compare rows with tuples (`pyodbc.Row` is not equal to a tuple). Found by
+  the pub400 smoke check.
+- **Cost:** one tuple per row; revisit with benchmarks in a tuning phase.
+
+## 2026-10-17: BOOLEAN is required for now
+- **Decision:** `BooleanField` maps to `BOOLEAN`. A server or configuration
+  without `has_boolean_type` is refused with `NotSupportedError` when the
+  capabilities are resolved.
+- **Why:** the minimum release 7.5 has BOOLEAN; the `SMALLINT` + `CHECK`
+  fallback (needed only if 7.4 is ever added) is not implemented yet, and a
+  silent wrong mapping would be worse than a clear error.

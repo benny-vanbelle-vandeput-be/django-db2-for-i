@@ -283,3 +283,7 @@ SQLGetInfo limits as reported by the driver: `SQL_MAX_SCHEMA_NAME_LEN` 130,
 - `SQL_MAX_ROW_SIZE` 32740 differs from the 32,766-byte row length used in
   DECISIONS.md (NVARCHAR decision). The real limit is to be verified with a
   DDL probe (phase 4) before anything depends on the exact value.
+- Repeated 2026-10-17 08:16 UTC after the first Django run (`nox -s pub400`,
+  Django `connection.cursor()` with new statement texts and parameter
+  markers, `XDYNAMIC=0`): **no `*SQLPKG` objects** owned by the user or in
+  the test libraries. This is the confirmation promised above.
