@@ -66,3 +66,18 @@ def test_pagination_sql_runs(live) -> None:
         assert cursor.fetchall() == [(2,), (3,)]
         cursor.execute(base + live.ops.limit_offset_sql(0, 2))
         assert cursor.fetchall() == [(1,), (2,)]
+
+
+def test_long_string_guard(live) -> None:
+    import django.db
+
+    with live.cursor() as cursor:
+        cursor.execute(
+            "SELECT CHARACTER_LENGTH(CAST(%s AS NCLOB(1M))) FROM SYSIBM.SYSDUMMY1", ["é" * 8184]
+        )
+        assert cursor.fetchone() == (8184,)  # the largest string that is sent arrives intact
+        with pytest.raises(django.db.NotSupportedError, match="Long texts may lose characters"):
+            cursor.execute(
+                "SELECT CHARACTER_LENGTH(CAST(%s AS NCLOB(1M))) FROM SYSIBM.SYSDUMMY1",
+                ["é" * 8185],
+            )

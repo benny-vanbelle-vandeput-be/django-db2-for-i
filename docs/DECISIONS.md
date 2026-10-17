@@ -391,3 +391,17 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   fail later and less clearly.
 - **Alternatives:** exact lengths (one SQL text per length); `DBCLOB` above
   the maximum (rejected: silent data loss).
+
+## 2026-10-17: Refuse string parameters longer than 8184 UTF-16 units
+- **Decision (project owner):** the pyodbc driver refuses every string
+  parameter longer than 8184 UTF-16 units with `NotSupportedError`, in
+  `execute()` and `executemany()`, before anything is sent. Bytes are not
+  limited. The root cause investigation (write path, read path, BLOB) follows
+  after phase 1.
+- **Why:** string parameters bound as LOB lose characters silently from 8185
+  units on (probe `string_limits`); silent data loss must not exist, even
+  temporarily. Whether pyodbc binds a parameter as LOB depends on the
+  driver's description of the target, which is not visible to the backend, so
+  the guard cannot be limited to LOB-bound parameters.
+- **Cost:** values of 8185 to 16370 units for `NVARCHAR` targets (which arrive
+  intact) are refused as well, including `Value` strings in that range.
