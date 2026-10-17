@@ -33,6 +33,8 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
 - **Respect shared systems.** Never run the full Django suite against PUB400 or any shared system
   (see "Initial test system: PUB400" for what is allowed).
 - Record non-obvious design decisions in `docs/DECISIONS.md` (date, decision, why, alternatives).
+- Before opening a PR that touches backend code (`django_db2_for_i/`), run the **full**
+  pub400 tier (`nox -s pub400`), not a subset, and report the result in the PR.
 - At the end of each phase: update `docs/TEST_STATUS.md`, `CHANGELOG.md`, commit,
   and summarize what was done and what comes next.
 - All code, comments and docs in English.
