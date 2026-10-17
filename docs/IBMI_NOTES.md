@@ -438,3 +438,15 @@ the probes' settings (pyodbc, `ibm-iaccess` 1.1.0.29).
 - **Guard:** the pyodbc driver refuses every string parameter longer than 8184
   UTF-16 units with NotSupportedError (pyodbc chooses LOB or NVARCHAR binding
   from the driver's parameter description, which the backend cannot see).
+
+### Journal setup in the `other` library (`nox -s setup_journal -- --library other --execute`)
+Approved by the project owner and run 2026-10-17 against `<USER>B` (the
+`other` library). The dry run first confirmed: owned by our user, no journal
+objects, and no objects at all (`QSYS2.OBJECT_STATISTICS(..., '*ALL')` empty).
+Same commands as for `default` (`CRTJRNRCV ... THRESHOLD(100000)`, `CRTJRN ...
+MNGRCV(*SYSTEM) DLTRCV(*YES)`), both accepted without messages. Result:
+`JOURNAL_STATE` `*ACTIVE`, `MANAGE_RECEIVER_OPTION` `*SYSTEM`,
+`DELETE_RECEIVER_OPTION` `YES`, `RECEIVER_MAXIMUM_SIZE` `*MAXOPT2`, receiver
+`THRESHOLD` 100000; the check table `DJJRNCHK` was journaled automatically
+(`JOURNALED` = `YES`) and dropped; the library has no tables afterwards. The
+`other` alias opens a second connection to PUB400 only when a test uses it.
