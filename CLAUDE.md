@@ -204,8 +204,11 @@ Three tiers, selectable via pytest markers / nox sessions.
   config uses `gh auth git-credential` for pushes, so the keychain is not used.
 - `main` is protected by a ruleset: changes only through pull requests with one
   approval by the maintainer, the `offline` check passing on an up-to-date
-  branch, linear history, rebase merges only. Never push to `main` directly and
-  never force-push it.
+  branch, merge commits only (no rebase or squash merging), signed commits
+  required. Never push to `main` directly and never force-push it.
+- Every commit on `main` must be signed: the PR commits by the machine
+  account's signing key, the merge commit by GitHub. Rebase merging is not
+  used because it recreates the commits without signatures.
 - One branch per logical change, named `<type>/<topic>` (`feat/`, `fix/`,
   `docs/`, `test/`, `ci/`, `chore/`), created from the current `origin/main`.
 - Commits: conventional messages; author is the maintainer (noreply address),
@@ -213,11 +216,12 @@ Three tiers, selectable via pytest markers / nox sessions.
   signed with the machine account's SSH signing key (all set in the
   repository's local git config). Never commit with a personal email address.
 - Before every push: `nox -s lint offline` passes locally.
-- When a PR branch is behind `main`, Claude rebases it onto `main` and pushes it
-  itself (`git push --force-with-lease`, PR branches only). The maintainer never
-  uses GitHub's "Update branch" button: with "approval of the most recent push"
-  that would make the maintainer the last pusher, so nobody could approve the PR
-  anymore.
+- Before review, and whenever a PR branch is behind `main`, Claude rebases it
+  onto `main` and pushes it itself (`git push --force-with-lease`, PR branches
+  only), so every PR is up to date and its commits stay signed. The maintainer
+  never uses GitHub's "Update branch" button: with "approval of the most recent
+  push" that would make the maintainer the last pusher, so nobody could approve
+  the PR anymore.
 - Claude opens pull requests and answers review comments, but never merges; the
   maintainer reviews and merges.
 
