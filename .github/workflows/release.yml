@@ -1,0 +1,115 @@
+# Release for a v* tag: verify the tag, build sdist + wheel, run the offline
+# tier against the installed wheel, publish a GitHub pre-release with both
+# files and the version's CHANGELOG section. No PyPI.
+#
+# Only the maintainer creates and signs release tags (CONTRIBUTING.md,
+# "Releases"). The tag must be annotated, OpenPGP-signed by the key in the
+# admin-only Actions variable RELEASE_SIGNING_KEY (ASCII-armored public key),
+# on main, and equal to v + django_db2_for_i.__version__.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # The checkout may hold the tag ref without the annotated tag object
+      # (needed for the signature); fetch it explicitly, and main for the
+      # ancestry check.
+      - name: Fetch the tag object and main
+        run: >
+          git fetch --force --no-tags origin
+          "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
+          "refs/heads/main:refs/remotes/origin/main"
+
+      - name: Verify the tag
+        env:
+          RELEASE_SIGNING_KEY: ${{ vars.RELEASE_SIGNING_KEY }}
+        run: python3 scripts/verify_release_tag.py "$GITHUB_REF_NAME" --main-ref origin/main
+
+  build:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build offline image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: offline
+          tags: django-db2-for-i-offline:ci
+          load: true
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Builds dist/ and runs the offline tier against the installed wheel.
+      - name: nox -s wheel
+        run: >
+          docker run --rm
+          --user "$(id -u):$(id -g)"
+          -e CI
+          -e HOME=/tmp/home
+          -e UV_CACHE_DIR=/tmp/uv-cache
+          -v "$PWD:/workspace"
+          -w /workspace
+          django-db2-for-i-offline:ci
+          nox -s wheel
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Check the built files
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          ls -l dist/
+          test -f "dist/django_db2_for_i-${version}-py3-none-any.whl"
+          test -f "dist/django_db2_for_i-${version}.tar.gz"
+          test "$(ls dist/ | wc -l)" -eq 2
+
+      - name: Create the GitHub pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/changelog_section.py "${GITHUB_REF_NAME#v}" > notes.md
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --verify-tag --prerelease \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file notes.md

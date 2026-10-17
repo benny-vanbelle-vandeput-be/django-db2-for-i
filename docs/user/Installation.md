@@ -1,7 +1,7 @@
 # Installation
 
-> **Not yet on PyPI.** The backend is in early development; install it from
-> the repository.
+> **Alpha, not on PyPI.** Releases are published as
+> [GitHub releases](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases) with an sdist and a wheel.
 
 ## Requirements
 
@@ -15,6 +15,16 @@
   port (8471, or 9471 with TLS), see [IBM i requirements](IBM-i-Requirements.md)
 
 ## Install
+
+A release (replace the version with the one you want):
+
+```sh
+pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0a2"
+```
+
+Or download the wheel from the release page and install it with
+`pip install django_db2_for_i-<version>-py3-none-any.whl`. The latest
+development state (unreleased, may break):
 
 ```sh
 pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git"

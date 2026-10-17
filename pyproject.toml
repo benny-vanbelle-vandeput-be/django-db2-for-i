@@ -18,7 +18,7 @@ dependencies = [
     "pyodbc>=5.3",
 ]
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 3 - Alpha",
     "Framework :: Django",
     "Framework :: Django :: 6.1",
     "Intended Audience :: Developers",
@@ -30,6 +30,13 @@ classifiers = [
     "Topic :: Database",
 ]
 keywords = ["django", "db2", "ibm i", "as400", "iseries", "odbc"]
+
+[project.urls]
+Homepage = "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i"
+Documentation = "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/wiki"
+Source = "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i"
+Issues = "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues"
+Changelog = "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 test = ["pytest>=9", "pytest-django>=4.11"]

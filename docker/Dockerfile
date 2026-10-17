@@ -20,7 +20,7 @@ FROM debian:${DEBIAN_TAG} AS offline
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates curl git libodbc2 odbcinst unixodbc \
+        ca-certificates curl git gnupg libodbc2 odbcinst unixodbc \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=uv /uv /uvx /usr/local/bin/
