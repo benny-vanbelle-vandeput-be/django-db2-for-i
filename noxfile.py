@@ -55,9 +55,13 @@ def offline(session: nox.Session, django: str) -> None:
 def pub400(session: nox.Session) -> None:
     """Tier 2: curated smoke set against PUB400 (newest Python, newest Django)."""
     install(session, NEWEST_DJANGO, "test")
-    # Exit code 5 ("no tests collected") is accepted until the first pub400
-    # tests exist (phase 1); remove it then.
-    session.run("pytest", "-m", "pub400", *session.posargs, success_codes=[0, 5])
+    session.run(
+        "pytest",
+        "-m",
+        "pub400",
+        "--ds=tests.django_settings.settings_pub400",
+        *session.posargs,
+    )
 
 
 @nox.session(python=NEWEST_PYTHON)
