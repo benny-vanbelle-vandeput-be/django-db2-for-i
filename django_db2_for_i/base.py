@@ -16,27 +16,37 @@ Settings::
                 "driver": "pyodbc",
                 "driver_attributes": {},     # extra driver keywords, e.g. {"XDYNAMIC": "1"}
                 "capabilities": None,        # profile name and/or overrides
+                "inquiry_message_reply": None,  # e.g. "*SYSRPYL" (see inquiry.py)
             },
         }
     }
 
 ``PORT`` is not supported: the driver connects to the database host server
 port (8471, or 9471 with TLS).
+
+``inquiry_message_reply`` (opt-in): the job's INQMSGRPY for the whole
+connection, so that an administrator's system reply list entry can allow
+ALTER TABLE changes that may lose data (CPA32B2). The value read at connect
+is restored at close (inquiry.py, docs/DECISIONS.md).
 """
 
 from __future__ import annotations
 
+import logging
 import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
 from django.core.exceptions import ImproperlyConfigured
-from django.db import NotSupportedError
+from django.db import DatabaseError, NotSupportedError
 from django.db.backends.base.base import NO_DB_ALIAS, BaseDatabaseWrapper
 from django.utils.functional import cached_property
 
 from . import capabilities as caps
-from . import expressions  # noqa: F401  (registers as_db2_for_i() methods)
+from . import (
+    expressions,  # noqa: F401  (registers as_db2_for_i() methods)
+    inquiry,
+)
 from .client import DatabaseClient
 from .creation import DatabaseCreation
 from .drivers import base as Database
@@ -48,8 +58,18 @@ from .schema import DatabaseSchemaEditor
 from .validation import DatabaseValidation
 
 OPTION_NAMES = frozenset(
-    {"ssl", "isolation_level", "login_timeout", "driver", "driver_attributes", "capabilities"}
+    {
+        "ssl",
+        "isolation_level",
+        "login_timeout",
+        "driver",
+        "driver_attributes",
+        "capabilities",
+        inquiry.OPTION,
+    }
 )
+
+logger = logging.getLogger("django_db2_for_i")
 
 # "%s" -> "?" and "%%" -> "%"; any other "%" is left alone.
 _FORMAT_MARKER = re.compile(r"%([s%])")
@@ -181,6 +201,10 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._capabilities: caps.ServerCapabilities | None = None
+        # INQMSGRPY read before the backend changed it on this connection's
+        # job (None: unchanged); restored at close.
+        self._inquiry_reply_original: str | None = None
+        self._inquiry_reply_active: str | None = None
 
     # --- Configuration ---------------------------------------------------------
 
@@ -223,6 +247,17 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         return capabilities
 
     @cached_property
+    def inquiry_message_reply(self) -> str | None:
+        """OPTIONS['inquiry_message_reply'], validated; None when not set."""
+        value = self.options.get(inquiry.OPTION)
+        if value is None:
+            return None
+        try:
+            return inquiry.normalize_reply(value)
+        except ValueError as exc:
+            raise ImproperlyConfigured(f"OPTIONS['{inquiry.OPTION}']: {exc}") from None
+
+    @cached_property
     def driver(self) -> Database.Driver:
         try:
             return get_driver(self.options.get("driver", "pyodbc"))
@@ -250,6 +285,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             Database.normalize_isolation_level(options.get("isolation_level", "*CS"))
         except ValueError as exc:
             raise ImproperlyConfigured(f"OPTIONS['isolation_level']: {exc}") from None
+        _ = self.inquiry_message_reply  # validate before connecting
         params = Database.ConnectionParams(
             host=settings_dict["HOST"],
             user=settings_dict["USER"],
@@ -263,6 +299,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         return {"params": params}
 
     def get_new_connection(self, conn_params: dict[str, Any]) -> Database.Connection:
+        # A new connection is a new job: nothing to restore from the old one.
+        self._inquiry_reply_original = self._inquiry_reply_active = None
         try:
             return self.driver.connect(
                 conn_params["params"], autocommit=self.settings_dict["AUTOCOMMIT"]
@@ -288,6 +326,67 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                 raise NotSupportedError(str(exc)) from None
             self._capabilities = self._checked(detected)
         super().init_connection_state()
+        if self.inquiry_message_reply is not None:
+            self._change_inquiry_reply(self.inquiry_message_reply)
+
+    # --- Inquiry message reply (inquiry.py) --------------------------------------
+
+    def set_inquiry_message_reply(self, value: str) -> None:
+        """Set the job's INQMSGRPY (*RQD, *DFT, *SYSRPYL) for this connection.
+
+        The value the job had before is read first and restored by
+        ``restore_inquiry_message_reply()`` or when the connection closes.
+        If it cannot be read, nothing is changed and DatabaseError is raised.
+        """
+        reply = inquiry.normalize_reply(value)
+        self.ensure_connection()
+        self._change_inquiry_reply(reply)
+
+    def restore_inquiry_message_reply(self) -> bool:
+        """Restore the INQMSGRPY read before the first change; False if unchanged."""
+        original = self._inquiry_reply_original
+        if original is None or self.connection is None:
+            return False
+        with self.wrap_database_errors, self.connection.cursor() as cursor:
+            cursor.execute(inquiry.change_sql(original))
+        self._inquiry_reply_original = self._inquiry_reply_active = None
+        return True
+
+    def _change_inquiry_reply(self, reply: str) -> None:
+        with self.wrap_database_errors, self.connection.cursor() as cursor:
+            if self._inquiry_reply_original is None:
+                try:
+                    original = inquiry.read_reply(cursor)
+                except (inquiry.InquiryReplyError, Database.Error) as exc:
+                    raise DatabaseError(
+                        f"Database '{self.alias}': the job's current inquiry message reply "
+                        f"could not be read ({exc}), so it is not changed to {reply}: it "
+                        "could not be restored when the connection closes."
+                    ) from None
+                self._inquiry_reply_original = original
+            cursor.execute(inquiry.change_sql(reply))
+        self._inquiry_reply_active = reply
+        logger.debug(
+            "Inquiry message reply of database '%s' set to %s (restores %s at close).",
+            self.alias,
+            reply,
+            self._inquiry_reply_original,
+        )
+
+    def _close(self):
+        if self.connection is not None and self._inquiry_reply_original is not None:
+            try:
+                self.restore_inquiry_message_reply()
+            except Exception as exc:  # closing must not fail because of this
+                logger.warning(
+                    "Database '%s': could not restore the job's inquiry message reply %s "
+                    "before closing: %s",
+                    self.alias,
+                    self._inquiry_reply_original,
+                    exc,
+                )
+            self._inquiry_reply_original = self._inquiry_reply_active = None
+        return super()._close()
 
     def _run_probe(self, sql: str) -> bool:
         """Targeted capability probe: True if the statement succeeds."""

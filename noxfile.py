@@ -161,6 +161,20 @@ def probe_savepoints(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
+def probe_inquiry(session: nox.Session) -> None:
+    """Write probe 08 (QTEMP and own job only): DROP COLUMN inquiry message."""
+    session.install("-e", ".")
+    session.run("python", "probes/w08_inquiry.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
+def probe_job_reuse(session: nox.Session) -> None:
+    """Write probe 09 (own job only, two sequential connections): INQMSGRPY after disconnect."""
+    session.install("-e", ".")
+    session.run("python", "probes/w09_job_reuse.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
 def setup_journal(session: nox.Session) -> None:
     """CHANGES THE IBM i: create QSQJRN in a test library. Dry run unless -- --execute."""
     session.install("-e", ".")

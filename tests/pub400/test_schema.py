@@ -213,7 +213,7 @@ def test_add_not_null_field_with_python_default(live, empty) -> None:
     """Existing rows get the literal default; the column keeps no default.
 
     The column is not removed again: DROP COLUMN on a table with rows is
-    cancelled (HY008, docs/IBMI_NOTES.md, phase 4); the module fixture drops
+    cancelled by CPA32B2 (HY008, docs/IBMI_NOTES.md); the module fixture drops
     the table.
     """
     with live.cursor() as cursor:

@@ -31,6 +31,7 @@ DATABASES = {
 | `driver` | `"pyodbc"` | Driver implementation; `pyodbc` is the only one. |
 | `driver_attributes` | `{}` | Extra ODBC connection keywords, e.g. `{"XDYNAMIC": "1"}`. Keywords the backend sets itself (credentials, `DBQ`, `SSL`, `CMT`) cannot be overridden. |
 | `capabilities` | detected | What the server can do; detected from the server version on connect. A profile name (`"7.5"`) or a mapping with `"profile"` and single overrides. Mainly for tests without a server. |
+| `inquiry_message_reply` | not set | `"*SYSRPYL"`, `"*DFT"` or `"*RQD"`: the IBM i job's inquiry message reply (`INQMSGRPY`) for the whole connection. Needed with `"*SYSRPYL"` (plus a system reply list entry) to allow `DROP COLUMN` and narrowing column changes, see [IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data). The value the job had is read at connect and restored at close. Not set: the backend never changes the job attribute. |
 
 Unknown option names raise `ImproperlyConfigured`, so typos do not go
 unnoticed.

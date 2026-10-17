@@ -23,6 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     PUB400 findings, `TEST_STATUS.md`.
 - Claude Code project settings deny access to `.env`.
 
+### Added (backend)
+- `OPTIONS["inquiry_message_reply"]` (opt-in): the IBM i job's inquiry message
+  reply for the connection, restored to the original value at close, plus
+  `connection.set_inquiry_message_reply()` / `restore_inquiry_message_reply()`.
+  With `"*SYSRPYL"` and an administrator's `ADDRPYLE MSGID(CPA32B2) RPY('I')`,
+  `DROP COLUMN` and narrowing column changes are allowed.
+- An `ALTER TABLE` cancelled by inquiry message CPA32B2 (HY008) raises an
+  `OperationalError` that explains the cause and the fix.
+
 ### Enabled features
 - Savepoints (`uses_savepoints`, `can_release_savepoints`): nested `atomic()`
   blocks use `SAVEPOINT ... ON ROLLBACK RETAIN CURSORS`. Django's
