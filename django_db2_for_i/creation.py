@@ -23,6 +23,9 @@ DATABASE; everything runs on the alias's own connection. Safety rules
 - Teardown drops everything not in the marker's snapshot, then the marker.
   With ``--keepdb`` nothing is dropped. Because the snapshot lives in the
   library, a crashed run is cleaned up by the next run.
+- ``TEST["MODULE_SET"]`` (optional) names the test modules of the run and is
+  stored in the marker: with ``--keepdb``, leftovers of another module set are
+  dropped automatically instead of being reused.
 """
 
 from __future__ import annotations
@@ -48,6 +51,7 @@ MARKER_TABLE = "DJDB2I_TEST_MARKER"
 _DROP_KIND = {"V": "VIEW", "A": "ALIAS"}
 _SYSTEM_NAME = re.compile(r"^[A-Z#@$][A-Z0-9#@$_]{0,9}$")
 _NOT_FOUND = -204
+_COLUMN_NOT_FOUND = -206
 
 JOURNAL_HELP = (
     "Create one (see docs/user/IBM-i-Requirements.md):\n"
@@ -67,12 +71,17 @@ class Marker:
     run_id: str
     created_at: dt.datetime | None
     snapshot: frozenset[str]
+    # The test modules the tables were created for (TEST["MODULE_SET"]).
+    module_set: str | None = None
+    # Written by an older backend version without the MODULE_SET column.
+    legacy: bool = False
 
 
 @dataclasses.dataclass(frozen=True)
 class SetupPlan:
     drop: tuple[str, ...]  # tables from earlier runs to drop before migrating
     snapshot: frozenset[str]  # tables that belong to the library
+    module_set_changed: bool = False  # keepdb, but the leftovers are another module set's
 
 
 # --- Pure decision logic (offline tested) --------------------------------------------
@@ -87,11 +96,15 @@ def plan_setup(
     keepdb: bool,
     autoclobber: bool,
     confirm: Callable[[list[str]], bool],
+    module_set: str | None = None,
 ) -> SetupPlan:
     """Decide what setup may do with the tables already in ``library``.
 
     ``inventory`` maps the library's table/view names (uppercase) to their
     TABLE_TYPE; ``allowed`` are the tables of the models under test.
+    ``module_set`` names the test modules of this run: with ``keepdb``,
+    leftovers of another module set are dropped automatically, so tables of
+    different modules do not pile up in the library.
     Raises TestDatabaseRefused when the library is not safe to use.
     """
     objects = set(inventory) - {MARKER_TABLE}
@@ -113,8 +126,12 @@ def plan_setup(
             "if you are sure they hold no data you need."
         )
     remnants = sorted(objects - marker.snapshot)
-    if not remnants or keepdb:
+    if not remnants:
         return SetupPlan((), marker.snapshot)
+    if keepdb:
+        if module_set is None or marker.module_set == module_set:
+            return SetupPlan((), marker.snapshot)
+        return SetupPlan(tuple(remnants), marker.snapshot, module_set_changed=True)
     if not autoclobber and not confirm(remnants):
         raise TestDatabaseRefused("Tests cancelled; nothing was changed.")
     return SetupPlan(tuple(remnants), marker.snapshot)
@@ -181,6 +198,7 @@ class DatabaseCreation(BaseDatabaseCreation):
             )
             logger.warning(message)
             self.log(f"WARNING: {message}")
+        module_set = normalize_module_set(self.connection.settings_dict["TEST"].get("MODULE_SET"))
         with self.connection.cursor() as cursor:
             self._check_library(cursor, library)
             inventory = self._inventory(cursor, library)
@@ -193,12 +211,28 @@ class DatabaseCreation(BaseDatabaseCreation):
                 keepdb=keepdb,
                 autoclobber=autoclobber,
                 confirm=lambda remnants: self._confirm(library, remnants),
+                module_set=module_set,
             )
             if plan.drop:
-                if verbosity >= 1:
+                if plan.module_set_changed:
+                    message = (
+                        f"Test library {library} holds tables of another module set "
+                        f"({marker.module_set or 'unknown'}); dropping them for {module_set}."
+                    )
+                    logger.info(message)
+                    if verbosity >= 1:
+                        self.log(message)
+                elif verbosity >= 1:
                     self.log(f"Dropping {len(plan.drop)} table(s) left by an earlier test run...")
                 self._drop(cursor, library, plan.drop, inventory)
-            self._write_marker(cursor, library, plan.snapshot, create=marker is None)
+            self._write_marker(
+                cursor,
+                library,
+                plan.snapshot,
+                module_set,
+                create=marker is None,
+                recreate=marker is not None and marker.legacy,
+            )
         return library
 
     def _destroy_test_db(self, test_database_name, verbosity) -> None:
@@ -275,20 +309,45 @@ class DatabaseCreation(BaseDatabaseCreation):
         return {(child.rstrip(), parent.rstrip()) for child, parent in cursor.fetchall()}
 
     def _read_marker(self, cursor, library: str) -> Marker:
-        cursor.execute(
-            f"SELECT RUN_ID, CREATED_AT, TABLE_NAME FROM {_qualified(library, MARKER_TABLE)}"
-        )
-        run_id, created_at, snapshot = "", None, set()
-        for row_run_id, row_created_at, table_name in cursor.fetchall():
+        table = _qualified(library, MARKER_TABLE)
+        legacy = False
+        try:
+            cursor.execute(f"SELECT RUN_ID, CREATED_AT, TABLE_NAME, MODULE_SET FROM {table}")
+            rows = cursor.fetchall()
+        except Exception as exc:
+            if getattr(exc.__cause__, "sqlcode", None) != _COLUMN_NOT_FOUND:
+                raise
+            # A marker from before MODULE_SET existed: still a test library.
+            legacy = True
+            cursor.execute(f"SELECT RUN_ID, CREATED_AT, TABLE_NAME, NULL FROM {table}")
+            rows = cursor.fetchall()
+        run_id, created_at, module_set, snapshot = "", None, None, set()
+        for row_run_id, row_created_at, table_name, row_module_set in rows:
             if table_name is None:
                 run_id, created_at = row_run_id.rstrip(), row_created_at
+                module_set = row_module_set.rstrip() if row_module_set else None
             else:
                 snapshot.add(table_name.rstrip())
-        return Marker(run_id, created_at, frozenset(snapshot))
+        return Marker(run_id, created_at, frozenset(snapshot), module_set, legacy)
 
-    def _write_marker(self, cursor, library: str, snapshot: frozenset[str], create: bool) -> None:
+    def _write_marker(
+        self,
+        cursor,
+        library: str,
+        snapshot: frozenset[str],
+        module_set: str | None,
+        *,
+        create: bool,
+        recreate: bool = False,
+    ) -> None:
         for sql, params in marker_statements(
-            library, uuid.uuid4().hex, _utcnow(), snapshot, create=create
+            library,
+            uuid.uuid4().hex,
+            _utcnow(),
+            snapshot,
+            module_set,
+            create=create,
+            recreate=recreate,
         ):
             cursor.execute(sql, params)
 
@@ -332,21 +391,41 @@ class DatabaseCreation(BaseDatabaseCreation):
 
 
 def marker_statements(
-    library: str, run_id: str, now: dt.datetime, snapshot: Iterable[str], *, create: bool
+    library: str,
+    run_id: str,
+    now: dt.datetime,
+    snapshot: Iterable[str],
+    module_set: str | None = None,
+    *,
+    create: bool,
+    recreate: bool = False,
 ) -> list[tuple[str, list]]:
-    """SQL (and params) that (create and) rewrite the marker for a new run."""
+    """SQL (and params) that (create and) rewrite the marker for a new run.
+
+    ``recreate`` replaces a marker table written by an older version (without
+    the MODULE_SET column).
+    """
     table = _qualified(library, MARKER_TABLE)
     statements: list[tuple[str, list]] = []
-    if create:
+    if recreate:
+        statements.append((f"DROP TABLE {table}", []))
+    if create or recreate:
         statements.append(
             (
                 f"CREATE TABLE {table} (RUN_ID CHAR(32) NOT NULL, "
-                "CREATED_AT TIMESTAMP NOT NULL, TABLE_NAME NVARCHAR(128))",
+                "CREATED_AT TIMESTAMP NOT NULL, TABLE_NAME NVARCHAR(128), "
+                "MODULE_SET NVARCHAR(1000))",
                 [],
             )
         )
-    statements.append((f"DELETE FROM {table}", []))
-    statements.append((f"INSERT INTO {table} (RUN_ID, CREATED_AT) VALUES (%s, %s)", [run_id, now]))
+    else:
+        statements.append((f"DELETE FROM {table}", []))
+    statements.append(
+        (
+            f"INSERT INTO {table} (RUN_ID, CREATED_AT, MODULE_SET) VALUES (%s, %s, %s)",
+            [run_id, now, module_set],
+        )
+    )
     statements.extend(
         (
             f"INSERT INTO {table} (RUN_ID, CREATED_AT, TABLE_NAME) VALUES (%s, %s, %s)",
@@ -355,6 +434,15 @@ def marker_statements(
         for name in sorted(snapshot)
     )
     return statements
+
+
+def normalize_module_set(value) -> str | None:
+    """``"transactions, basic"`` or a list -> ``"basic,transactions"``; empty -> None."""
+    if not value:
+        return None
+    parts = value.split(",") if isinstance(value, str) else value
+    labels = sorted({str(part).strip() for part in parts if str(part).strip()})
+    return ",".join(labels) or None
 
 
 def _qualified(library: str, name: str) -> str:

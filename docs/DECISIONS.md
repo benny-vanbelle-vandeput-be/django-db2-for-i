@@ -405,3 +405,30 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   the guard cannot be limited to LOB-bound parameters.
 - **Cost:** values of 8185 to 16370 units for `NVARCHAR` targets (which arrive
   intact) are refused as well, including `Value` strings in that range.
+
+## 2026-10-17: Running Django's test suite on PUB400
+- **Decision:** `scripts/runtests.sh <version> [--clean] <module>...` runs
+  `runtests.py` in the tests container, one call per module, with
+  `--parallel=1 --noinput` and `--keepdb` unless `--clean`. It refuses runs
+  without modules (the full suite) or with more than three modules, both on
+  the host and in the container. Output is scrubbed of `DB2I_PASSWORD` and
+  written to `test-results/<version>/<module>.log` with a header (module,
+  Django and backend commits, keepdb, start) and footer (exit code, end).
+  `scripts/update_test_status.py` generates `docs/TEST_STATUS.md` from the logs,
+  the backend's True feature flags, the expected failures/skips per reason and
+  the golden status.
+- **Two databases:** Django's test settings must define `default` and `other`
+  (Django's contributing docs; a test class using an undefined alias fails with
+  `ImproperlyConfigured`). `other` is the second PUB400 library, journaled with
+  `setup_journal --library other` (approved), guarded by its own marker. It opens
+  a second connection only when a selected test uses it. Library names come
+  from `.env` only. The pytest pub400 tier keeps using `default` only.
+- **Module set in the marker (project owner):** `TEST["MODULE_SET"]` (set per run
+  from `DB2I_TEST_MODULES`) is stored in the marker's header row. With `--keepdb`,
+  leftovers are reused only for the same module set; for another set they are
+  dropped automatically, so tables of different modules do not pile up (1 GB
+  quota). A marker written before the column existed is recognised and
+  recreated.
+- **Alternatives:** `"other": {"TEST": {"MIRROR": "default"}}` (one library, but
+  tests that expect separate databases fail); one `runtests.py` call for all
+  modules (one log, and keepdb could not tell module sets apart).

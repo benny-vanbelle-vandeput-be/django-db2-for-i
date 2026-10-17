@@ -57,3 +57,29 @@ SQL and params with them on every run.
   the reason) when one of them fails on IBM i.
 - **No system names:** goldens must not contain library or user profile names;
   the verification header names only the release and "PUB400".
+
+## Running Django's own test suite
+
+On a shared system such as PUB400 only single, small modules run, never the
+full suite:
+
+```sh
+scripts/runtests.sh 6.1 basic              # reuse the test library (--keepdb)
+scripts/runtests.sh 6.1 --clean basic      # fully clean run
+docker compose run --rm tests nox -s test_status   # regenerate docs/TEST_STATUS.md
+```
+
+- Needs a checkout of Django in `vendor/django-<version>` on
+  `stable/<version>.x` (gitignored); the script tells you how to clone it.
+- Settings: `tests/django_settings/settings_runtests_pub400.py`; `default` and
+  `other` are the two journaled libraries from `.env`
+  (`DB2I_DEFAULT_LIBRARY`, `DB2I_OTHER_LIBRARY`), each guarded by the test
+  marker table. `other` connects only when a selected test uses it.
+- The scripts refuse runs without modules or with more than three, always
+  use `--parallel=1 --noinput`, and write one log per module to
+  `test-results/<version>/<module>.log`, with the password scrubbed.
+- With `--keepdb` the marker table records the module; running another
+  module drops the previous module's tables first, so tables do not pile up in
+  the library.
+- Known failures go into `DatabaseFeatures.expected_failures` /
+  `django_test_skips` under one of the fixed `REASON_*` strings.
