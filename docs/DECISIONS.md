@@ -542,3 +542,30 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   for the column types the backend creates).
 - **Not changed:** `Value` strings are still limited to `NVARCHAR(16370)`
   casts; a longer cast rule can follow with its own tests.
+
+## 2026-10-17: Statement text and string parameters as UTF-8
+- **Decision:** the pyodbc driver calls `setencoding("utf-8", SQL_CHAR)` on
+  every connection and sets `UNICODESQL=1` and `CCSID=1208` (reserved, not
+  overridable). Reading keeps pyodbc's defaults (UTF-16). The schema
+  editor's `quote_value()` writes strings as plain `'...'` constants with
+  doubled quotes; column defaults keep `UX'...'` (`default_literal()`).
+- **Why:** with the backend's settings (pyodbc pooling off), the driver's
+  wide-character statement functions silently convert statement text to the
+  job CCSID (273 on PUB400), so `€` and emoji in SQL text were lost (probe
+  `probe_encoding`, docs/IBMI_NOTES.md; with pooling on, the same calls fail
+  with HY001). Only the narrow functions with UTF-8, `UNICODESQL=1` (the
+  statement reaches the server as Unicode) and `CCSID=1208` (the client code
+  page no longer depends on the process locale) carry every character,
+  emoji included; verified for literals, comments, aliases, parameters into
+  every column type, reading, result column names and error messages. Plain
+  string constants are needed for `COMMENT ON`, which rejects `UX'...'`.
+- **Alternatives:** `UNICODESQL=1` alone on the wide-character path (simpler,
+  parameters stay UTF-16; rejected: characters outside the BMP, such as
+  emoji, are still garbled silently); keeping `UX'...'` everywhere (rejected:
+  `COMMENT ON` refuses it).
+- **Limits found on the way** (server rules, not fixable on the client):
+  names and `COMMENT ON` text must use characters of the job CCSID
+  (SQL0104); `VARCHAR`/`CHAR` columns in the job CCSID refuse other
+  characters (22018). Result column names and error messages need a UTF-8
+  process locale.
+
