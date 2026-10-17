@@ -6,7 +6,7 @@ reserved, unresolvable name and the conftest guard refuses connections.
 
 SECRET_KEY = "offline-tests-not-secret"
 USE_TZ = True
-INSTALLED_APPS: list[str] = []
+INSTALLED_APPS = ["tests.testapp"]
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 DATABASES = {

@@ -20,7 +20,7 @@ def env(name: str, default: str | None = None) -> str:
 
 SECRET_KEY = "pub400-tests-not-secret"
 USE_TZ = True
-INSTALLED_APPS: list[str] = []
+INSTALLED_APPS = ["tests.testapp"]
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 DATABASES = {

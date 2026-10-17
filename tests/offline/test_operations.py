@@ -200,3 +200,31 @@ def test_sql_flush_self_reference(monkeypatch) -> None:
 def test_children_first_breaks_cycles() -> None:
     order = _children_first({"A", "B"}, {("A", "B"), ("B", "A")})
     assert sorted(order) == ["A", "B"]
+
+
+# --- TIME truncation and identity reset ----------------------------------------------
+
+
+def test_time_microseconds_are_truncated() -> None:
+    # Db2 for i TIME has no fractional seconds (docs/DECISIONS.md).
+    assert ops.adapt_timefield_value(dt.time(13, 45, 30, 123456)) == dt.time(13, 45, 30)
+
+
+def test_sequence_reset_sql(monkeypatch) -> None:
+    from tests.testapp.models import Author, Book, Node, Tag
+
+    queried = []
+
+    def next_value(table, column):
+        queried.append((table, column))
+        return {"testapp_author": 1, "testapp_book": 101, "testapp_node": 7}[table]
+
+    monkeypatch.setattr(ops, "_next_identity_value", next_value)
+    statements = ops.sequence_reset_sql(no_style(), [Author, Book, Node, Tag])
+    assert statements == [
+        'ALTER TABLE "TESTAPP_AUTHOR" ALTER COLUMN "ID" RESTART WITH 1',
+        'ALTER TABLE "TESTAPP_BOOK" ALTER COLUMN "ID" RESTART WITH 101',
+        'ALTER TABLE "TESTAPP_NODE" ALTER COLUMN "ID" RESTART WITH 7',
+    ]
+    # Tag has a UUID primary key: no identity, no query.
+    assert ("testapp_tag", "id") not in queried

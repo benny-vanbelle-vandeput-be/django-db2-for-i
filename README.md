@@ -23,6 +23,18 @@ DATABASES = {
 | Python | 3.12, 3.13, 3.14 (subject to each Django version's own support) |
 | IBM i | 7.5 and later |
 
+## Known limitations
+
+- **`TimeField` has no fractional seconds.** Db2 for i `TIME` stores whole
+  seconds only; the backend truncates microseconds before saving and in
+  lookups, so `filter(t=value)` matches what was stored. Use a
+  `DateTimeField` if you need sub-second precision.
+- **Identifiers are uppercased.** Table and column names are created in
+  uppercase; mixed-case `db_table` / `db_column` names are not preserved.
+- **Every table Django writes to must be journaled.** Libraries created with
+  `CREATE SCHEMA` are; libraries created with `CRTLIB` need a `QSQJRN`
+  journal (see `docs/IBMI_NOTES.md`).
+
 ## IBM i Access ODBC Driver
 
 The backend connects through pyodbc and the IBM i Access ODBC Driver. The driver
