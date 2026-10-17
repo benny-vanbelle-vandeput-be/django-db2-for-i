@@ -1,0 +1,16 @@
+# gitleaks configuration: the default rules plus documented false positives.
+# Run: gitleaks git --redact --log-opts="--all" .
+
+title = "django-db2-for-i"
+# [[allowlists]] with condition/regexTarget needs gitleaks 8.25 or later.
+minVersion = "v8.25.0"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "SHA256 checksum of IBM's public ibm-iaccess .deb in the Dockerfile; not a secret"
+condition = "AND"
+paths = ['''^docker/Dockerfile$''']
+regexTarget = "line"
+regexes = ['''ARG IACCESS_SHA256=[0-9a-f]{64}''']
