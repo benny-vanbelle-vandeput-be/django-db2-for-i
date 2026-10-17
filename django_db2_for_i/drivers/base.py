@@ -101,8 +101,23 @@ class ConnectionParams:
     attributes: Mapping[str, str] = dataclasses.field(default_factory=dict)
 
     @property
-    def secrets(self) -> tuple[str, ...]:
-        return (self.password,) if self.password else ()
+    def secrets(self) -> Secrets:
+        return Secrets((self.password,) if self.password else ())
+
+
+class Secrets(tuple):
+    """Values to redact from messages. Never shows them in its repr.
+
+    Tracebacks (pytest, Django's debug page, logging) print the arguments and
+    locals of every frame; a plain tuple would print the password.
+    """
+
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        return f"Secrets(<{len(self)} redacted>)"
+
+    __str__ = __repr__
 
 
 # --- Commitment control -----------------------------------------------------------

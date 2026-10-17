@@ -224,9 +224,15 @@ class Driver(base.Driver):
         import pyodbc
 
         pyodbc.pooling = False
-        dsn = connection_string(params)
-        raw = _call(
-            params.secrets,
-            lambda: pyodbc.connect(dsn, timeout=params.login_timeout, autocommit=autocommit),
-        )
+        # The connection string (with PWD) is built inside _connect(), so it is
+        # never a local of a frame that ends up in a traceback.
+        raw = _call(params.secrets, _connect, params, autocommit)
         return Connection(raw, params.secrets)
+
+
+def _connect(params: base.ConnectionParams, autocommit: bool) -> Any:
+    import pyodbc
+
+    return pyodbc.connect(
+        connection_string(params), timeout=params.login_timeout, autocommit=autocommit
+    )

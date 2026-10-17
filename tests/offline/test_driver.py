@@ -322,3 +322,42 @@ def test_cursor_fetchone_end_of_data() -> None:
     raw = FakeFetchCursor()
     raw.fetchone = lambda: None
     assert pyodbc_driver.Cursor(raw, ()).fetchone() is None
+
+
+# --- Secrets never appear in tracebacks ------------------------------------------
+
+
+def test_secrets_repr_is_redacted() -> None:
+    secrets = params().secrets
+    assert PASSWORD in secrets  # still usable for redaction
+    assert PASSWORD not in repr(secrets)
+    assert PASSWORD not in str(secrets)
+
+
+def frame_values(error: BaseException) -> list[str]:
+    """repr() of every argument and local in the error's traceback frames."""
+    values = []
+    tb = error.__traceback__
+    while tb is not None:
+        values.extend(repr(value) for value in tb.tb_frame.f_locals.values())
+        tb = tb.tb_next
+    return values
+
+
+def test_connect_traceback_frames_carry_no_password(monkeypatch: pytest.MonkeyPatch) -> None:
+    def failing_connect(dsn: str, **kwargs):
+        raise pyodbc.Error("28000", f"{SIGNON_FAILED} dsn={dsn}")
+
+    monkeypatch.setattr(pyodbc, "connect", failing_connect)
+    with pytest.raises(base.OperationalError) as info:
+        pyodbc_driver.Driver().connect(params())
+    values = frame_values(info.value)
+    assert values, "expected traceback frames"
+    assert not [value for value in values if PASSWORD in value]
+
+
+def test_cursor_traceback_frames_carry_no_password() -> None:
+    raw = FakeRawCursor(pyodbc.IntegrityError("23000", DUPLICATE_KEY))
+    with pytest.raises(base.IntegrityError) as info:
+        pyodbc_driver.Cursor(raw, params().secrets).execute("INSERT INTO T VALUES (1)")
+    assert not [value for value in frame_values(info.value) if PASSWORD in value]
