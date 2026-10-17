@@ -38,6 +38,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_paramstyle_pyformat = False
     # PUB400 limits connections per client.
     test_db_allows_multiple_connections = False
+    # DDL is not parameterized: defaults are written as literals.
+    requires_literal_defaults = True
+    # Columns are nullable unless NOT NULL is given; no bare NULL keyword.
+    implied_column_null = True
 
     @cached_property
     def has_native_boolean_field(self) -> bool:
