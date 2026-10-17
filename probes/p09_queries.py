@@ -200,6 +200,48 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         (),
         [(True,)],
     ),
+    # Exists() rewrite candidates for the select list (EXISTS is rejected
+    # there): a scalar subquery that stops at the first row, IS NOT NULL.
+    (
+        "subquery",
+        "(SELECT 1 ... FETCH FIRST 1 ROW ONLY) IS NOT NULL in select list",
+        f"SELECT X, (SELECT 1 FROM {V3.replace('T (X)', 'U (Y)')} WHERE Y > X "
+        f"FETCH FIRST 1 ROW ONLY) IS NOT NULL FROM {V3} ORDER BY X",
+        (),
+        [(1, True), (2, True), (3, False)],
+    ),
+    (
+        "subquery",
+        "CASE WHEN (SELECT 1 ... FETCH FIRST 1 ROW ONLY) IS NOT NULL THEN TRUE ELSE FALSE",
+        f"SELECT X, CASE WHEN (SELECT 1 FROM {V3.replace('T (X)', 'U (Y)')} WHERE Y > X "
+        f"FETCH FIRST 1 ROW ONLY) IS NOT NULL THEN TRUE ELSE FALSE END FROM {V3} ORDER BY X",
+        (),
+        [(1, True), (2, True), (3, False)],
+    ),
+    (
+        "subquery",
+        "first-row subquery IS NOT NULL with a marker",
+        f"SELECT X, (SELECT 1 FROM {V3.replace('T (X)', 'U (Y)')} WHERE Y > X + "
+        f"CAST(? AS INTEGER) FETCH FIRST 1 ROW ONLY) IS NOT NULL FROM {V3} ORDER BY X",
+        (1,),
+        [(1, True), (2, False), (3, False)],
+    ),
+    (
+        "subquery",
+        "first-row subquery IS NOT NULL in WHERE and ORDER BY",
+        f"SELECT X FROM {V3} WHERE (SELECT 1 {D} WHERE X > 1 FETCH FIRST 1 ROW ONLY) "
+        f"IS NOT NULL ORDER BY (SELECT 1 {D} WHERE X > 2 FETCH FIRST 1 ROW ONLY) IS NOT NULL, X",
+        (),
+        [(2,), (3,)],
+    ),
+    (
+        "subquery",
+        "COUNT(*) > 0 in select list (control)",
+        f"SELECT X, (SELECT COUNT(*) FROM {V3.replace('T (X)', 'U (Y)')} WHERE Y > X) > 0 "
+        f"FROM {V3} ORDER BY X",
+        (),
+        [(1, True), (2, True), (3, False)],
+    ),
     # --- boolean expressions
     ("boolean", "predicate in select list", f"SELECT 1 = 1 {D}", (), [(True,)]),
     (
@@ -269,6 +311,22 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         f"SELECT DISTINCT X FROM {VN} ORDER BY CASE WHEN X IS NULL THEN 0 ELSE 1 END, X",
         (),
         [(None,), (1,), (2,)],
+    ),
+    (
+        "nulls",
+        "DISTINCT, ORDER BY expression with a marker (also selected)",
+        f"SELECT DISTINCT X + CAST(? AS INTEGER), X + CAST(? AS INTEGER) IS NOT NULL FROM {VN} "
+        "ORDER BY X + CAST(? AS INTEGER) IS NOT NULL, X + CAST(? AS INTEGER)",
+        (0, 0, 0, 0),
+        [(None, False), (1, True), (2, True)],
+    ),
+    (
+        "nulls",
+        "DISTINCT, ORDER BY select-list positions (with markers)",
+        f"SELECT DISTINCT X + CAST(? AS INTEGER), X + CAST(? AS INTEGER) IS NOT NULL FROM {VN} "
+        "ORDER BY 2 ASC, 1 ASC",
+        (0, 0),
+        [(None, False), (1, True), (2, True)],
     ),
     # --- regular expressions
     ("regex", "REGEXP_LIKE", f"SELECT 1 {D} WHERE REGEXP_LIKE('abc', 'a.c')", (), [(1,)]),

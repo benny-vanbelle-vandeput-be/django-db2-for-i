@@ -596,7 +596,12 @@ subquery in the select list works. `GROUP BY 1` (select index) is rejected
 in the select list it is rejected (SQL0104), also inside `CASE WHEN EXISTS
 (...) THEN ...` and inside a derived table's select list; `CASE WHEN 1 IN
 (subquery)` in the select list is rejected too (SQL0115). `CASE WHEN
-(SELECT COUNT(*) ...) > 0` works.
+(SELECT COUNT(*) ...) > 0` works. **Rewrite for `Exists()` in the select
+list** that stops at the first row: `(SELECT 1 FROM ... WHERE ... FETCH
+FIRST 1 ROW ONLY) IS NOT NULL` works as a select-list predicate (BOOLEAN),
+also correlated, with a parameter marker inside, and in `WHERE` / `ORDER
+BY`; `CASE WHEN <that> THEN TRUE ELSE FALSE END` works too. `(SELECT
+COUNT(*) ...) > 0` gives the same results but counts every matching row.
 
 **Boolean expressions** (7.5 BOOLEAN): predicates in the select list
 (`1 = 1`, `X > 1`) return `True`/`False`; a boolean column alone and
@@ -609,7 +614,12 @@ Django's emulation `ORDER BY X IS NOT NULL, X` works, **except with
 select list; a predicate or a `CASE` that is not selected fails with
 SQL0214 ("ORDER BY expression is not valid"). Selecting the predicate as
 well (`SELECT DISTINCT X, X IS NOT NULL ... ORDER BY X IS NOT NULL, X`)
-works.
+works, **but not when the expression contains parameter markers**: then the
+ORDER BY expression never matches the selected one, even with identical
+text (SQL0214 on the backend's connection; "Internal driver error" (30101)
+on the probe's connection), typed or untyped markers alike. Ordering by
+select-list positions (`ORDER BY 2 ASC, 1 ASC`) works with markers, `DESC`
+and `FETCH FIRST`; BOOLEAN sorts FALSE before TRUE (used by `compiler.py`).
 
 **Regular expressions.** `REGEXP_LIKE(value, pattern)` works with a constant
 or a typed marker as pattern, with flag `'i'`, and with backreferences
