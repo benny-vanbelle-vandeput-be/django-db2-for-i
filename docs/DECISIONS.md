@@ -268,3 +268,39 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   `django_test_expected_failures` is the union.
 - **Why:** entries can be counted and found per cause (the measure of
   progress), and a fixed string avoids near-duplicate reasons.
+
+## 2026-10-17: Test databases in an existing library, guarded by a marker table
+- **Decision:** with `TEST = {"NAME": "<library>", "CREATE_DB": False}` tests
+  run in an existing, journaled library; creating test schemas is not
+  implemented yet (`NotSupportedError`). Setup and teardown run on the
+  alias's own connection; `_nodb_cursor()` always raises. Safety gate
+  (project owner):
+  - setup checks that the library exists and has an active `QSQJRN` journal;
+  - a library without the marker table `DJDB2I_TEST_MARKER` must contain no
+    user table or view, otherwise setup refuses, also with `--noinput`
+    (it may be a production library, even if it holds only Django tables);
+  - setup creates/rewrites the marker: run id, timestamp and a snapshot of
+    the tables that belong to the library (empty when it was empty);
+  - in a marked library, tables not in the snapshot are leftovers of earlier
+    runs: dropped after confirmation or with `--noinput`, reused with
+    `--keepdb`;
+  - teardown drops everything not in the snapshot (views, then tables
+    children first), then the marker; nothing with `--keepdb`; on a failed
+    drop the marker stays, so the next run can finish the cleanup;
+  - `TEST["NAME"]` equal to `NAME` is allowed (PUB400 has only two libraries)
+    but logged as a warning.
+- **Why:** PUB400 users cannot create schemas and connections per client are
+  limited; the marker makes "is this a test library?" explicit instead of
+  guessing from table names.
+- **Alternatives:** drop any table of the models under test (rejected: would
+  drop production data in a library that holds only Django tables); a
+  separate `OPTIONS` flag instead of Django's (Oracle-style) `TEST` keys.
+- **pub400 tier:** `nox -s pub400` passes `--reuse-db` (keepdb) by default;
+  `nox -s pub400 -- --create-db` runs fully clean.
+
+## 2026-10-17: Ignore system catalog views when listing tables
+- **Decision:** introspection and test database creation list only
+  `QSYS2.SYSTABLES` rows with `SYSTEM_TABLE = 'N'`.
+- **Why:** Db2 for i adds SQL catalog views (`SYSCST`, ...) to a library with
+  its first constraint (docs/IBMI_NOTES.md); they are not Django's and must
+  never be dropped or reported as foreign objects.

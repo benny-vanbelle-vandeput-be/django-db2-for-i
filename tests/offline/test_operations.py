@@ -12,7 +12,7 @@ from django.db.models.expressions import Col
 from django.test.utils import override_settings
 
 from django_db2_for_i.base import DatabaseWrapper
-from django_db2_for_i.operations import _children_first
+from django_db2_for_i.operations import children_first
 
 ops = connection.ops
 
@@ -198,7 +198,7 @@ def test_sql_flush_self_reference(monkeypatch) -> None:
 
 
 def test_children_first_breaks_cycles() -> None:
-    order = _children_first({"A", "B"}, {("A", "B"), ("B", "A")})
+    order = children_first({"A", "B"}, {("A", "B"), ("B", "A")})
     assert sorted(order) == ["A", "B"]
 
 

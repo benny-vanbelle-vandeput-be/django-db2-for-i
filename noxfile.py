@@ -53,8 +53,14 @@ def offline(session: nox.Session, django: str) -> None:
 
 @nox.session(python=NEWEST_PYTHON)
 def pub400(session: nox.Session) -> None:
-    """Tier 2: curated smoke set against PUB400 (newest Python, newest Django)."""
+    """Tier 2: curated smoke set against PUB400 (newest Python, newest Django).
+
+    Reuses the test library by default (pytest-django --reuse-db, Django's
+    keepdb: safe with the test marker table, and saves DDL on PUB400).
+    Fully clean run: nox -s pub400 -- --create-db
+    """
     install(session, NEWEST_DJANGO, "test")
+    reuse = [] if "--create-db" in session.posargs else ["--reuse-db"]
     session.run(
         "pytest",
         "-m",
@@ -63,6 +69,7 @@ def pub400(session: nox.Session) -> None:
         # Short tracebacks: no function arguments (defense in depth, together
         # with the report redaction in tests/redaction.py).
         "--tb=short",
+        *reuse,
         *session.posargs,
     )
 
@@ -100,6 +107,13 @@ def probe_sequence(session: nox.Session) -> None:
     """CHANGES THE IBM i: write probe w04 (sequence + tables). Dry run unless -- --execute."""
     session.install("-e", ".")
     session.run("python", "probes/w04_sequence.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
+def probe_drop(session: nox.Session) -> None:
+    """CHANGES THE IBM i: write probe w05 (tables + view). Dry run unless -- --execute."""
+    session.install("-e", ".")
+    session.run("python", "probes/w05_drop.py", *session.posargs)
 
 
 @nox.session(python=NEWEST_PYTHON)

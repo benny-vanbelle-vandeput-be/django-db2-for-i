@@ -30,6 +30,18 @@ allows that on journaled tables. Without a journal you get **SQL7008**, see
 - Tables that existed before the journal was created are **not** journaled
   automatically; start journaling for them with `STRJRNPF`.
 
+## Test library
+
+Django's test runner needs an existing library for tests (see
+[Configuration](Configuration.md#test-database-test)): journaled as above,
+and holding nothing but test data. A fresh library created with `CRTLIB` plus
+a `QSQJRN` journal is fine.
+
+When the first constraint (for example a primary key) is created in a library,
+Db2 for i adds SQL catalog views to it (`SYSCST`, `SYSKEYCST`, `SYSREFCST`,
+`SYSCHKCST`, `SYSCSTCOL`, `SYSCSTDEP`). They belong to the system; the backend
+ignores them and never drops them.
+
 ## Authorities
 
 > **Partly documented.** What has been verified so far:
