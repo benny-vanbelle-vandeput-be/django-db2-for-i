@@ -62,6 +62,8 @@ _TIME_PARTS = {
 
 
 class DatabaseOperations(BaseDatabaseOperations):
+    compiler_module = "django_db2_for_i.compiler"
+
     # Cast types where data_types holds more than a type (the identity clause).
     cast_data_types = {
         "AutoField": "INTEGER",

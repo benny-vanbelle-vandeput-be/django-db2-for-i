@@ -15,6 +15,7 @@ from decimal import Decimal
 
 import pytest
 from django.db import connection, models
+from django.db.models import F, Max, OuterRef, Subquery
 
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
 from tests.testapp.models import Author, Book, Defaults, Document, Node, Tag
@@ -204,6 +205,68 @@ def test_non_ascii_comments(live) -> None:
             [table],
         )
         assert cursor.fetchone() == ("Ä Ö Ü ß é",)
+
+
+def test_distinct_with_emulated_null_ordering(live, empty) -> None:
+    """SELECT DISTINCT + nulls_first / nulls_last (hidden predicate column, compiler.py).
+
+    Same rows as computed in Python, duplicates removed, and the hidden
+    columns never reach model instances, values() or values_list().
+    """
+    one = dt.datetime(2026, 1, 1, tzinfo=dt.UTC)
+    two = dt.datetime(2026, 2, 1, tzinfo=dt.UTC)
+    a1, a2, _ = (Author.objects.create(name=name) for name in ("a1", "a2", "a3"))
+    for author, title, published in [
+        (a1, "t1", None),
+        (a1, "t1", None),  # duplicate row
+        (a1, "t2", one),
+        (a2, "t2", one),  # same (title, published) as the row before
+        (a2, "t3", two),
+    ]:
+        Book.objects.create(author=author, title=title, published=published)
+
+    first = F("published").asc(nulls_first=True)
+    pairs = Book.objects.order_by(first, "title").distinct().values_list("title", "published")
+    assert list(pairs) == [("t1", None), ("t2", one), ("t3", two)]
+    last = F("published").desc(nulls_last=True)
+    titles = Book.objects.order_by(last).distinct().values_list("title", flat=True)
+    assert list(titles) == ["t3", "t2", "t1"]
+    dicts = list(Book.objects.order_by(first, "title").distinct().values("title", "published"))
+    assert dicts == [
+        {"title": "t1", "published": None},
+        {"title": "t2", "published": one},
+        {"title": "t3", "published": two},
+    ]
+
+    # Django's own case: order authors by an annotated subquery, NULLs first.
+    newest = (
+        Book.objects.filter(author=OuterRef("pk"))
+        .order_by()
+        .values("author")
+        .annotate(m=Max("published"))
+        .values("m")
+    )
+    authors = (
+        Author.objects.annotate(last=Subquery(newest, output_field=models.DateTimeField()))
+        .order_by(F("last").asc(nulls_first=True), "name")
+        .distinct()
+    )
+    assert [(a.name, a.last) for a in authors] == [("a3", None), ("a1", one), ("a2", two)]
+    assert list(authors.values_list("name", "last")) == [
+        ("a3", None),
+        ("a1", one),
+        ("a2", two),
+    ]
+    assert [sorted(row) for row in authors.values("name")] == [["name"]] * 3
+    # With a parameter in the subquery (as in Django's ordering tests).
+    newest_t = newest.filter(title__icontains="T")
+    with_param = (
+        Author.objects.annotate(last=Subquery(newest_t, output_field=models.DateTimeField()))
+        .order_by(F("last").desc(nulls_last=True), "name")
+        .distinct()
+        .values_list("name", "last")
+    )
+    assert list(with_param) == [("a2", two), ("a1", one), ("a3", None)]
 
 
 def test_pagination(live, empty) -> None:
