@@ -610,6 +610,9 @@ Plan, one read-only or QTEMP-only probe per step, recording each result here:
 2. Driver keywords that affect conversion: CCSID / `UNICODESQL`-style
    options, `TRANSLATE`, `MAXFIELDLEN`, `BLOCKSIZE`/LOB settings
    (IBM i Access ODBC keyword documentation).
+   Also the query option `SQL_TRANSLATE_ASCII_TO_JOB` (listed by
+   `QSYS2.OVERRIDE_QAQQINI`, which makes a job-level QAQQINI copy in QTEMP
+   without touching a library).
 3. Re-run the three findings for each combination; one setting may explain
    all three.
 4. If a setting fixes them: change the driver defaults (`drivers/pyodbc.py`),
