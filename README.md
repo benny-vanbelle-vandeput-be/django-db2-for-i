@@ -23,6 +23,12 @@ DATABASES = {
 | Python | 3.12, 3.13, 3.14 (subject to each Django version's own support) |
 | IBM i | 7.5 and later |
 
+## Documentation
+
+User documentation: [`docs/user/`](docs/user/Home.md), also published as the
+[wiki](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/wiki)
+(a generated mirror; edit `docs/user/`, never the wiki).
+
 ## Known limitations
 
 - **`TimeField` has no fractional seconds.** Db2 for i `TIME` stores whole
