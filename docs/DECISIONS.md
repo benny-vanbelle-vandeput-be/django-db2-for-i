@@ -134,8 +134,10 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   connection needed, used offline) and/or override single capabilities;
   unknown names and wrong types are rejected.
 - **Releases:** below 7.5 is refused. A newer release than any profile uses
-  the newest profile, with its actual release recorded (capabilities rarely
-  disappear; a new profile is added once that release is probed).
+  the newest profile, with its actual release recorded, and logs a warning on
+  logger `django_db2_for_i` (once per server and process, because detection
+  is cached). Capabilities rarely disappear; a new profile is added once that
+  release is probed.
 - **Targeted probes:** none yet. Everything in the 7.5 profile was verified
   on PUB400 (probe `features`) and is part of 7.5 itself according to IBM's
   release history. PUB400's TR level cannot be read, so features added by a

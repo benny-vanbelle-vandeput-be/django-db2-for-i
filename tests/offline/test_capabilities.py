@@ -113,10 +113,18 @@ def test_detect_7_5() -> None:
     assert caps.source == "detected 07.05.0015 (profile 7.5)"
 
 
-def test_detect_newer_release_keeps_actual_release() -> None:
-    caps = capabilities.detect("07.06.0000", no_probes)
+def test_detect_newer_release_warns(caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level("WARNING", logger="django_db2_for_i"):
+        caps = capabilities.detect("07.06.0000", no_probes)
     assert caps.release == (7, 6)
     assert caps.has_boolean_type is True
+    assert "IBM i 7.6 has no capability profile yet; using profile 7.5" in caplog.text
+
+
+def test_detect_known_release_does_not_warn(caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level("WARNING", logger="django_db2_for_i"):
+        capabilities.detect("07.05.0015", no_probes)
+    assert caplog.text == ""
 
 
 def test_detect_unsupported_release() -> None:

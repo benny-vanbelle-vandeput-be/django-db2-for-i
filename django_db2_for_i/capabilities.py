@@ -24,11 +24,14 @@ In both cases individual capabilities can be overridden::
 from __future__ import annotations
 
 import dataclasses
+import logging
 import re
 from collections.abc import Callable, Mapping
 from typing import Any
 
 MINIMUM_RELEASE = (7, 5)
+
+logger = logging.getLogger("django_db2_for_i")
 
 
 class CapabilityError(ValueError):
@@ -206,6 +209,14 @@ def detect(
     if detected is None:
         release = parse_release(server_version)
         name = profile_for_release(release)
+        if release > PROFILES[name]["release"]:
+            logger.warning(
+                "IBM i %d.%d has no capability profile yet; using profile %s. "
+                "Capabilities added in %d.%d are not used.",
+                *release,
+                name,
+                *release,
+            )
         values = dict(PROFILES[name])
         values["release"] = release
         for probe in TARGETED_PROBES:
