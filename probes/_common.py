@@ -110,8 +110,10 @@ def _odbc_value(value: str) -> str:
     return "{" + value.replace("}", "}}") + "}"
 
 
-# Read-only probes: SQL naming (NAM=0) and commit mode *NONE (CMT=0).
-DEFAULT_ATTRIBUTES = {"NAM": "0", "CMT": "0"}
+# Read-only probes: SQL naming (NAM=0), commit mode *NONE (CMT=0), and no
+# extended dynamic SQL packages (XDYNAMIC=0; the driver default 1 creates
+# *SQLPKG objects in QGPL).
+DEFAULT_ATTRIBUTES = {"NAM": "0", "CMT": "0", "XDYNAMIC": "0"}
 
 
 def connect(settings: Settings, attributes: dict[str, str] | None = None, autocommit: bool = True):

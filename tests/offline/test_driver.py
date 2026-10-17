@@ -49,6 +49,7 @@ def test_connection_string_defaults() -> None:
         "TRUEAUTOCOMMIT": "1",
         "DFT": "5",
         "TFT": "2",
+        "XDYNAMIC": "0",
     }
 
 
@@ -73,6 +74,14 @@ def test_connection_string_attributes_override_defaults() -> None:
     kw = keywords(dsn)
     assert kw["TRUEAUTOCOMMIT"] == "0"
     assert kw["BLOCKSIZE"] == "256"
+
+
+def test_connection_string_extended_dynamic_can_be_enabled() -> None:
+    attributes = {"XDYNAMIC": "1", "DFTPKGLIB": "DJPKG", "PKG": "A/DEFAULT(IBM),2,0,1,0,512"}
+    kw = keywords(connection_string(params(attributes=attributes)))
+    assert kw["XDYNAMIC"] == "1"
+    assert kw["DFTPKGLIB"] == "DJPKG"
+    assert kw["PKG"] == "A/DEFAULT(IBM),2,0,1,0,512"
 
 
 @pytest.mark.parametrize("keyword", ["PWD", "uid", "DRIVER", "SYSTEM", "DBQ", "SSL", "CMT"])

@@ -10,6 +10,13 @@ Connection defaults (all documented in docs/IBMI_NOTES.md / DECISIONS.md):
   so a failing statement leaves no partial changes. Requires journaled tables.
 - ``DFT=5`` / ``TFT=2``: ISO date and time formats for string renderings
   (pyodbc itself returns ``datetime`` objects).
+- ``XDYNAMIC=0``: no extended dynamic SQL packages. The driver default (1)
+  creates ``*SQLPKG`` objects on the server (in ``QGPL`` by default). Django's
+  many distinct statements and the test suite's create/drop churn make them
+  useless or harmful. To enable them for tuning, pass driver attributes, e.g.
+  ``{"XDYNAMIC": "1", "DFTPKGLIB": "<library>", "PKG": "A/DEFAULT(IBM),2,0,1,0,512"}``
+  (``DFTPKGLIB``: package library, default ``QGPL``; ``PKG``: package usage,
+  see IBM's "Connection string keywords", package properties).
 - ``SSL``: TLS on the database host server (port 9471) unless disabled.
 - CCSID: pyodbc uses the ODBC wide-character API (UTF-16), so no client CCSID
   keyword is needed; data is converted from the column CCSID by the driver.
@@ -33,10 +40,12 @@ CONNECTION_DEFAULTS: Mapping[str, str] = {
     "TRUEAUTOCOMMIT": "1",
     "DFT": "5",
     "TFT": "2",
+    "XDYNAMIC": "0",
 }
 
-# CMT keyword values per commitment control level, from the IBM i Access ODBC
-# documentation. Only CMT=1 -> *CS has been verified by a probe (session).
+# CMT keyword values per commitment control level, from IBM's "Connection
+# string keywords" documentation. Only CMT=1 -> *CS has been verified by a
+# probe (session).
 COMMIT_MODES: Mapping[str, str] = {
     "*NONE": "0",
     "*CS": "1",
