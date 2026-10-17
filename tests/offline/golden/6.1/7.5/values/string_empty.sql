@@ -4,4 +4,4 @@
 -- depends: ddl/create_author
 -- params: [[""]]
 -- verified: IBM i 7.5 on PUB400, 2026-10-17
-SELECT CAST(%s AS NVARCHAR(1)) AS "X" FROM "TESTAPP_AUTHOR";
+SELECT CAST(%s AS NVARCHAR(32)) AS "X" FROM "TESTAPP_AUTHOR";

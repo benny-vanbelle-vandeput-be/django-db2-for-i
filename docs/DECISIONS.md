@@ -373,3 +373,21 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   would do the same with more code.
 - **Also:** `cast_data_types` maps the AutoFields to plain integer types, since
   their `data_types` carry the identity clause.
+
+## 2026-10-17: Value cast rules: precedence, buckets, maximum, unsupported types
+- **Decision:** an explicit `output_field` always wins over the inferred type
+  (detected from the expression's constructor arguments); the integer range
+  rule applies only to inferred types. Inferred string lengths are rounded up
+  to the buckets 32, 256, 1024, 4000, 16370 units, so different value lengths
+  share one SQL text. Strings longer than 16370 units are refused with
+  `NotSupportedError` instead of a `DBCLOB` cast. Value types without a rule
+  (UUID, bytes, timedelta, JSON, ...) raise `NotSupportedError` naming the
+  type; their rules come with the field support in later phases. The DB-API
+  `Binary` constructor is added (Django's `BinaryField` calls it).
+- **Why:** plan cache reuse for statements with string values; 16370 is the
+  largest `NVARCHAR` a cast round-trips exactly, above it the server fails
+  with SQL0901; a `DBCLOB` cast loses characters from 8185 on (probe
+  `string_limits`); an untyped marker or invalid SQL for unknown types would
+  fail later and less clearly.
+- **Alternatives:** exact lengths (one SQL text per length); `DBCLOB` above
+  the maximum (rejected: silent data loss).

@@ -257,6 +257,8 @@ CASES: tuple[Case, ...] = (
         (AUTHOR,),
     ),
     Case("values/string_empty", "query", _annotate(lambda: Value("")), (AUTHOR,)),
+    Case("values/string_bucket_1024", "query", _annotate(lambda: Value("x" * 300)), (AUTHOR,)),
+    Case("values/float", "query", _annotate(lambda: Value(1.5)), (AUTHOR,)),
     Case(
         "values/string_max_length",
         "query",
