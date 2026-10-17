@@ -10,6 +10,11 @@ enabling one is a visible one-line change.
 from django.db.backends.base.features import BaseDatabaseFeatures
 from django.utils.functional import cached_property
 
+# Fixed reasons for skips and expected failures, so related entries can be
+# found and counted (docs/DECISIONS.md).
+REASON_TIME_FRACTIONS = "Db2 for i TIME has no fractional seconds"
+REASON_IDENTITY_RESTART_DEFERRED = "identity restart deferred in TestCase (SQL0910)"
+
 
 class DatabaseFeatures(BaseDatabaseFeatures):
     minimum_database_version = (7, 5)
@@ -125,7 +130,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     has_json_object_function = False
     supports_json_negative_indexing = False
 
-    # Known failures of Django's own test suite, with a reason per entry.
-    # Filled from real runs (phase 1, step 9).
+    # Known failures of Django's own test suite, grouped by one fixed reason
+    # string each (see the REASON_* constants). Filled from real runs (phase 1,
+    # step 9).
     django_test_skips: dict[str, set[str]] = {}
-    django_test_expected_failures: set[str] = set()
+    expected_failures: dict[str, set[str]] = {
+        REASON_TIME_FRACTIONS: set(),
+        REASON_IDENTITY_RESTART_DEFERRED: set(),
+    }
+    django_test_expected_failures: set[str] = set().union(*expected_failures.values())

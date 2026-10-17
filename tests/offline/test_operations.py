@@ -311,3 +311,26 @@ def test_sequence_reset_in_atomic_block_is_deferred(wrapper, monkeypatch) -> Non
     assert wrapper.events == [
         ("execute", ['ALTER TABLE "TESTAPP_AUTHOR" ALTER COLUMN "ID" RESTART WITH 8'])
     ]
+
+
+def test_deferred_flush_restart_is_logged(wrapper, caplog) -> None:
+    wrapper.in_atomic_block = True
+    with caplog.at_level("DEBUG", logger="django_db2_for_i"):
+        wrapper.ops.execute_sql_flush(FLUSH)
+    assert "Identity restart deferred until commit (SQL0910)" in caplog.text
+    assert 'ALTER TABLE "PARENT" ALTER COLUMN "ID" RESTART WITH 1' in caplog.text
+
+
+def test_deferred_sequence_reset_is_logged(wrapper, caplog) -> None:
+    from tests.testapp.models import Author
+
+    wrapper.in_atomic_block = True
+    with caplog.at_level("DEBUG", logger="django_db2_for_i"):
+        wrapper.ops.sequence_reset_sql(no_style(), [Author])
+    assert "sequence reset for testapp_author" in caplog.text
+
+
+def test_immediate_restart_is_not_logged(wrapper, caplog) -> None:
+    with caplog.at_level("DEBUG", logger="django_db2_for_i"):
+        wrapper.ops.execute_sql_flush(FLUSH)
+    assert "deferred" not in caplog.text

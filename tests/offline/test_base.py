@@ -241,3 +241,17 @@ def test_quote_name_truncates_to_max_name_length() -> None:
 
 def test_identifier_converter() -> None:
     assert make_wrapper().introspection.identifier_converter("BASIC_ARTICLE") == "basic_article"
+
+
+def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
+    from django_db2_for_i import features
+
+    cls = features.DatabaseFeatures
+    assert set(cls.expected_failures) == {
+        features.REASON_TIME_FRACTIONS,
+        features.REASON_IDENTITY_RESTART_DEFERRED,
+    }
+    assert features.REASON_IDENTITY_RESTART_DEFERRED == (
+        "identity restart deferred in TestCase (SQL0910)"
+    )
+    assert cls.django_test_expected_failures == set().union(*cls.expected_failures.values())

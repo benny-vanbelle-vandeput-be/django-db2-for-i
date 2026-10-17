@@ -16,6 +16,7 @@ connection's time zone (UTC unless the database's ``TIME_ZONE`` is set) and
 made aware again when read.
 """
 
+import logging
 import uuid
 from collections import defaultdict
 from collections.abc import Iterable
@@ -26,6 +27,8 @@ from django.db import NotSupportedError
 from django.db.backends.base.operations import BaseDatabaseOperations
 from django.db.backends.utils import truncate_name
 from django.utils import timezone
+
+logger = logging.getLogger("django_db2_for_i")
 
 
 class DatabaseOperations(BaseDatabaseOperations):
@@ -139,8 +142,9 @@ class DatabaseOperations(BaseDatabaseOperations):
         """
         if self.connection.in_atomic_block:
             models = list(model_list)
-            self.connection.on_commit(
-                lambda: self._execute(self._identity_reset_statements(no_style(), models))
+            self._after_transaction(
+                lambda: self._execute(self._identity_reset_statements(no_style(), models)),
+                "sequence reset for " + ", ".join(m._meta.db_table for m in models),
             )
             return []
         return self._identity_reset_statements(style, model_list)
@@ -180,15 +184,21 @@ class DatabaseOperations(BaseDatabaseOperations):
             for sql in statements:
                 cursor.execute(sql)
 
-    def _after_transaction(self, func) -> None:
+    def _after_transaction(self, func, description: str) -> None:
         """Run ``func`` now, or after the commit if an atomic block is active.
 
         For identity restarts (``ALTER TABLE``), which fail with SQL0910 in a
         transaction that has pending changes on the table. Never uses a
         second connection. If the outer transaction is rolled back (or never
-        committed, as in ``TestCase``), ``func`` does not run.
+        committed, as in ``TestCase``), ``func`` does not run; the DEBUG log
+        line lets IntegrityErrors from colliding keys be traced back to it.
         """
         if self.connection.in_atomic_block:
+            logger.debug(
+                "Identity restart deferred until commit (SQL0910) on database '%s': %s",
+                self.connection.alias,
+                description,
+            )
             self.connection.on_commit(func)
         else:
             func()
@@ -204,7 +214,9 @@ class DatabaseOperations(BaseDatabaseOperations):
         restarts = [sql for sql in sql_list if _is_identity_restart(sql)]
         super().execute_sql_flush([sql for sql in sql_list if not _is_identity_restart(sql)])
         if restarts:
-            self._after_transaction(lambda: self._execute(restarts))
+            self._after_transaction(
+                lambda: self._execute(restarts), "flush: " + "; ".join(restarts)
+            )
 
     def sql_flush(self, style, tables, *, reset_sequences=False, allow_cascade=False):
         """Empty ``tables``.
