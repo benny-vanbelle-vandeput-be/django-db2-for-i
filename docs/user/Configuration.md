@@ -49,5 +49,41 @@ The backend connects with these IBM i Access ODBC keywords:
 | `DFT` / `TFT` | `5` / `2` | ISO date and time formats. |
 | `SSL` | from `ssl` | TLS. |
 
-> **Not documented yet:** test database settings (`TEST`), including the
-> planned mode that reuses an existing library instead of creating a schema.
+## Test database (`TEST`)
+
+The backend does not create test schemas yet. Tests run in an **existing,
+journaled library** that holds nothing but test data:
+
+```python
+DATABASES = {
+    "default": {
+        # ...
+        "TEST": {"NAME": "MYTESTLIB", "CREATE_DB": False},
+    }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `CREATE_DB` | Must be `False` (reuse an existing library; never `CREATE SCHEMA` / `DROP SCHEMA`). Without it, running tests raises `NotSupportedError`. |
+| `NAME` | **Required.** System name of the test library (1 to 10 characters). It may equal the database `NAME`, but a warning is logged: only do that for a library used for nothing but tests. |
+
+How the backend protects your data:
+
+- Before the tests, it checks that the library exists and has an active
+  `QSQJRN` journal, see [IBM i requirements](IBM-i-Requirements.md).
+- It creates a marker table, `DJDB2I_TEST_MARKER`, that identifies the
+  library as a test library and records each run.
+- A library **without** the marker must not contain any table or view
+  (system catalog views such as `SYSCST` are ignored). Otherwise the tests do
+  not start, also not with `--noinput`, because the library might be a
+  production library.
+- A library **with** the marker may contain tables from an earlier (for
+  example crashed) test run. They are dropped after you confirm, or with
+  `--noinput`; with `--keepdb` they are reused.
+- After the tests, only tables created by test runs are dropped, then the
+  marker. With `--keepdb` nothing is dropped.
+- It never opens a second database connection for this.
+
+Failures are reported as `TestDatabaseRefused` with an explanation; see
+[Troubleshooting](Troubleshooting.md#test-library-refused).

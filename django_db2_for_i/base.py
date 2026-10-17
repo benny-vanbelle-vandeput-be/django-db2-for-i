@@ -309,6 +309,15 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         with self.wrap_database_errors:
             self.connection.autocommit = autocommit
 
+    def _nodb_cursor(self):
+        # Django opens this extra connection for CREATE/DROP DATABASE. This
+        # backend never does: test databases are existing libraries
+        # (TEST['CREATE_DB'] = False), and shared systems limit connections.
+        raise NotSupportedError(
+            "Db2 for i backend: no connection without a database is opened; use "
+            "TEST['CREATE_DB'] = False with an existing library for tests."
+        )
+
     def is_usable(self) -> bool:
         try:
             with self.connection.cursor() as cursor:

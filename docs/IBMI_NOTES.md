@@ -365,3 +365,38 @@ transaction steps.
   (102-120) after the restart.
 - Catalog: `QSYS2.SYSSEQUENCES` (`DATA_TYPE` INTEGER, `START` 1, `INCREMENT`
   1, `CACHE` 20, `CYCLE` NO, `ORDER` NO). Sequences are `*DTAARA` objects.
+
+### DROP TABLE with foreign keys and views (`probe_drop`)
+Requested by the project owner; run 2026-10-17 12:11 UTC with `w05_drop.py`
+on temporary objects in `<USER>2` (journaled), dropped afterwards.
+
+| Statement | Result |
+|---|---|
+| `DROP TABLE parent RESTRICT` (child has a foreign key to it) | refused: `SQL0478 - Object ... of type FILE cannot be dropped` |
+| `DROP TABLE parent` (no option) | parent dropped, **the child's foreign key is dropped too**, child stays |
+| `DROP TABLE parent CASCADE` | same as without option |
+| `DROP TABLE child` (no option) while a view selects from it | child and **the view** are dropped |
+
+So `DROP TABLE` without an option behaves like `CASCADE`. Test database
+cleanup still drops views first, then tables children first, so each object
+is dropped explicitly; an object already gone (SQLCODE -204) is not an error.
+
+Also found on the way: `ALTER TABLE lib.t ADD CONSTRAINT c ...` with an
+**unqualified** constraint name fails with `SQL5051 - Qualifier <x> not same
+as name <lib>` when the connection's current schema is not the table's
+library: an unqualified constraint name takes the current schema, and a
+constraint must be in its table's schema. The backend connects with
+`DBQ = NAME` (and `NAME` is the test library during tests), so its own
+constraints are in the right schema.
+
+### SQL catalog views in a library (`pub400` tier)
+Found 2026-10-17: the default library contained six views nobody had created
+explicitly: `SYSCHKCST`, `SYSCST`, `SYSCSTCOL`, `SYSCSTDEP`, `SYSKEYCST`,
+`SYSREFCST` (`QSYS2.SYSTABLES`: `TABLE_TYPE` = `V`, `FILE_TYPE` = `D`,
+`SYSTEM_TABLE` = `Y`; object attribute `LF`, text "SQL catalog view", owned by
+the library's owner). They were created at 2026-10-17 00:07:25 UTC, when
+`probe_autocommit` created the first table with a primary key in this
+`CRTLIB` library; the `other` library (never had constraints) has none. Db2
+for i adds these constraint catalog views to a library with its first
+constraint. Catalog queries that list a library's tables must filter
+`SYSTEM_TABLE = 'N'` (introspection and test database creation do).

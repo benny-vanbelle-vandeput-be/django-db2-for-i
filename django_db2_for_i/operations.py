@@ -245,7 +245,7 @@ class DatabaseOperations(BaseDatabaseOperations):
             for name in names
             if name not in parents
         ]
-        for name in _children_first(parents, references):
+        for name in children_first(parents, references):
             statements.append(f"{style.SQL_KEYWORD('DELETE FROM')} {table_sql(name)}")
             if reset_sequences and name in identities:
                 column, start = identities[name]
@@ -299,7 +299,7 @@ def _is_identity_restart(sql: str) -> bool:
     return sql.lstrip().upper().startswith("ALTER TABLE")
 
 
-def _children_first(tables: Iterable[str], references: set[tuple[str, str]]) -> list[str]:
+def children_first(tables: Iterable[str], references: set[tuple[str, str]]) -> list[str]:
     """Order ``tables`` so that a table comes before the tables it references.
 
     Self-references are ignored (one DELETE removes all rows). Cycles are
