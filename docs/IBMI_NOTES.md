@@ -400,3 +400,32 @@ the library's owner). They were created at 2026-10-17 00:07:25 UTC, when
 for i adds these constraint catalog views to a library with its first
 constraint. Catalog queries that list a library's tables must filter
 `SYSTEM_TABLE = 'N'` (introspection and test database creation do).
+
+### Long strings: NVARCHAR limit and LOB parameter truncation (`probe -- string_limits`)
+Read-only (casts on `SYSIBM.SYSDUMMY1`), 2026-10-17, one connection with
+the probes' settings (pyodbc, `ibm-iaccess` 1.1.0.29).
+
+**Maximum NVARCHAR length in a cast:**
+- `CAST(? AS NVARCHAR(n))` with a one-character parameter is accepted up to
+  n = 16381; from n = 16382 on (also 16384, 32739, 32740) the server fails with
+  **`SQL0901 - SQL system error`** (an internal error, not a clean refusal).
+- `CAST(? AS NVARCHAR(16370))` round-trips parameters of up to 16370
+  characters exactly (ASCII and `é`); 16371 characters fail cleanly with
+  `22001` (`CWB0111`). An earlier run of `NVARCHAR(16381)` with a
+  16381-character parameter failed with `SQL0302 - Conversion error`.
+- So **16370** is the verified usable maximum.
+
+**LOB-typed parameters lose characters (data loss, not fixed):**
+- Through `CAST(? AS DBCLOB(1M))`, `NCLOB(1M)` or `CLOB(1M) CCSID 1208`, the
+  server sees **one character less than was sent from 8185 characters on**:
+  8184 characters arrive intact, 8185 arrive as 8184, 16370 as 16369, 24555
+  as 24553 (two lost), 32768 as 32766. No error, no warning.
+- The same lengths through `NVARCHAR(16370)` or `VARCHAR(32000) CCSID 1208`
+  arrive intact.
+- 8184 characters are 16368 bytes in UTF-16; the loss looks like an
+  off-by-one in how pyodbc and the IBM i Access driver pass long LOB
+  parameters (data at execution, in chunks). Not investigated further yet.
+- Consequence: writing more than 8184 characters into an `NCLOB` column
+  (Django `TextField`) very likely loses characters. To be confirmed with a
+  write probe and fixed before `TextField` is supported (see
+  docs/user/Known-Limitations.md).

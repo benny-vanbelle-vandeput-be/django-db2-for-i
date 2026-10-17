@@ -13,34 +13,76 @@ select list, in ``CASE ... THEN ? ELSE ?``, in ``COALESCE(col, ?)`` and in
 ``CAST(? AS <type>)``. Plain filter parameters (``filter(x=1)``) are not
 ``Value`` expressions and stay ``?``.
 
-Type rules (output_field, explicit or resolved from the Python value):
+An explicit ``output_field`` always takes precedence over the type inferred
+from the Python value. Type rules:
 
-- string without ``max_length``: ``NVARCHAR(<length>)``, the value's length in
-  UTF-16 code units (minimum 1); with ``max_length``: ``NVARCHAR(max_length)``;
-- integer: ``INTEGER``, ``BIGINT`` outside the INTEGER range, ``DECIMAL(n, 0)``
-  outside the BIGINT range;
+- strings (CharField, TextField) without ``max_length``: ``NVARCHAR(<bucket>)``,
+  the value's UTF-16 length rounded up to 32, 256, 1024, 4000 or 16370, so
+  values of different lengths share one SQL text (statement cache); with
+  ``max_length``: ``NVARCHAR(max_length)``. Longer than 16370 units: refused
+  (DBCLOB casts lose characters, docs/IBMI_NOTES.md);
+- integers whose type was inferred: ``INTEGER``, ``BIGINT`` outside the
+  INTEGER range, ``DECIMAL(n, 0)`` outside the BIGINT range;
 - Decimal without ``max_digits``: ``DECIMAL(p, s)`` from the value's digits;
-  with ``max_digits`` / ``decimal_places``: those;
-- ``None`` with a known output_field: ``CAST(NULL AS <type>)`` (for strings and
-  decimals without length/precision: ``NVARCHAR(1)`` / ``DECIMAL(31, 0)``);
-  ``None`` without one: plain ``NULL``, there is no type to cast to;
-- everything else: the field's cast type (BOOLEAN, DATE, TIME, TIMESTAMP(6),
-  DOUBLE, CHAR(32) for UUIDs, ...).
+- ``None`` with a known output_field: ``CAST(NULL AS <type>)``; without one:
+  plain ``NULL``, there is no type to cast to;
+- booleans, other integer fields, floats, dates, times, datetimes: the
+  field's cast type (BOOLEAN, ..., DOUBLE, DATE, TIME, TIMESTAMP(6)).
+
+Any other type (UUID, bytes, timedelta, JSON, ...) raises NotSupportedError;
+its rule comes with the field support in a later phase.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 
-from django.db.models import CharField, DecimalField, IntegerField
+from django.db import NotSupportedError
+from django.db.models import CharField, DecimalField, IntegerField, TextField
 from django.db.models.expressions import Value
 
 INTEGER_RANGE = (-(2**31), 2**31 - 1)
 BIGINT_RANGE = (-(2**63), 2**63 - 1)
+# Largest NVARCHAR(n) a cast accepts with a value of that length (probe
+# string_limits: NVARCHAR(16382) and up fail with SQL0901).
+NVARCHAR_MAX = 16370
+STRING_BUCKETS = (32, 256, 1024, 4000, NVARCHAR_MAX)
+
+SUPPORTED_TYPES = frozenset(
+    {
+        "CharField",
+        "TextField",
+        "BooleanField",
+        "SmallIntegerField",
+        "IntegerField",
+        "BigIntegerField",
+        "PositiveSmallIntegerField",
+        "PositiveIntegerField",
+        "PositiveBigIntegerField",
+        "SmallAutoField",
+        "AutoField",
+        "BigAutoField",
+        "FloatField",
+        "DecimalField",
+        "DateField",
+        "DateTimeField",
+        "TimeField",
+    }
+)
 
 
 def utf16_length(text: str) -> int:
     return len(text.encode("utf-16-le")) // 2
+
+
+def string_type(length: int) -> str:
+    for bucket in STRING_BUCKETS:
+        if length <= bucket:
+            return f"NVARCHAR({bucket})"
+    raise NotSupportedError(
+        f"Db2 for i backend: a string Value of {length} UTF-16 units is longer than "
+        f"NVARCHAR({NVARCHAR_MAX}); longer strings cannot be used as expression values yet."
+    )
 
 
 def decimal_type(value: Decimal) -> str:
@@ -53,13 +95,37 @@ def decimal_type(value: Decimal) -> str:
     return f"DECIMAL({max(integer_digits + scale, 1)}, {scale})"
 
 
-def value_cast_type(value, output_field, connection) -> str:
-    """The SQL type for a ``Value`` holding ``value`` (already prepared)."""
-    if isinstance(output_field, CharField) and output_field.max_length is None:
-        return f"NVARCHAR({max(utf16_length(value), 1) if value is not None else 1})"
+def _internal_type(output_field) -> str:
+    if isinstance(output_field, (CharField, TextField)):
+        return "TextField" if isinstance(output_field, TextField) else "CharField"
+    return output_field.get_internal_type()
+
+
+def value_cast_type(
+    value, output_field, connection, *, explicit: bool, python_type: str | None = None
+) -> str:
+    """The SQL type for a ``Value`` holding ``value`` (already prepared).
+
+    ``explicit``: the output_field was given, not inferred from the value.
+    ``python_type``: the original value's type name, for error messages.
+    """
+    internal = _internal_type(output_field)
+    if internal not in SUPPORTED_TYPES:
+        raise NotSupportedError(
+            f"Db2 for i backend: Value of type {python_type or type(value).__name__} with "
+            "output field "
+            f"{output_field.__class__.__name__} is not supported yet."
+        )
+    if internal in ("CharField", "TextField"):
+        max_length = getattr(output_field, "max_length", None)
+        if max_length is None or internal == "TextField":
+            return string_type(utf16_length(value) if value is not None else 0)
+        if max_length > NVARCHAR_MAX:
+            return string_type(max_length)  # raises
+        return f"NVARCHAR({max_length})"
     if isinstance(output_field, DecimalField) and output_field.max_digits is None:
         return decimal_type(Decimal(value)) if value is not None else "DECIMAL(31, 0)"
-    if type(output_field) is IntegerField and isinstance(value, int):
+    if not explicit and type(output_field) is IntegerField and isinstance(value, int):
         if INTEGER_RANGE[0] <= value <= INTEGER_RANGE[1]:
             return "INTEGER"
         if BIGINT_RANGE[0] <= value <= BIGINT_RANGE[1]:
@@ -68,15 +134,33 @@ def value_cast_type(value, output_field, connection) -> str:
     return output_field.cast_db_type(connection)
 
 
+def explicit_output_field(expression: Value):
+    """The output_field passed to ``Value(...)``, or None if it was inferred."""
+    args, kwargs = getattr(expression, "_constructor_args", ((), {}))
+    return kwargs.get("output_field", args[1] if len(args) > 1 else None)
+
+
 def value_as_db2_for_i(self, compiler, connection, **extra_context):
     sql, params = self.as_sql(compiler, connection, **extra_context)
     if sql not in ("%s", "NULL"):
         return sql, params  # a field's own placeholder SQL: leave it alone
     output_field = self._output_field_or_none
-    if output_field is None:
-        return sql, params  # untyped NULL: nothing to cast to
     value = params[0] if params else None
-    return f"CAST({sql} AS {value_cast_type(value, output_field, connection)})", params
+    if output_field is None:
+        if value is not None:
+            raise NotSupportedError(
+                f"Db2 for i backend: Value of type {type(self.value).__name__} has no SQL type; "
+                "pass output_field."
+            )
+        return sql, params  # untyped NULL: nothing to cast to
+    cast_type = value_cast_type(
+        value,
+        output_field,
+        connection,
+        explicit=explicit_output_field(self) is not None,
+        python_type=type(self.value).__name__,
+    )
+    return f"CAST({sql} AS {cast_type})", params
 
 
 Value.as_db2_for_i = value_as_db2_for_i
