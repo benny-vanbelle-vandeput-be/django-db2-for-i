@@ -286,6 +286,36 @@ def test_connect_sends_text_as_utf8_through_the_narrow_functions(
     assert connection._raw.encoding == ("utf-8", pyodbc.SQL_CHAR)
 
 
+@pytest.fixture
+def fresh_locale_warning(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(pyodbc_driver, "_locale_warned", False)
+    monkeypatch.setattr(pyodbc, "connect", lambda dsn, **kwargs: FakeRawConnection())
+
+    def codeset(name: str) -> None:
+        monkeypatch.setattr(pyodbc_driver.locale, "nl_langinfo", lambda item: name)
+
+    return codeset
+
+
+def test_non_utf8_locale_warns_once_at_connect(fresh_locale_warning, caplog) -> None:
+    fresh_locale_warning("ANSI_X3.4-1968")
+    with caplog.at_level("WARNING", logger="django_db2_for_i"):
+        pyodbc_driver.Driver().connect(params())
+        pyodbc_driver.Driver().connect(params())
+    warnings = [r for r in caplog.records if "process locale is not UTF-8" in r.getMessage()]
+    assert len(warnings) == 1
+    assert "codeset ANSI_X3.4-1968" in warnings[0].getMessage()
+    assert "LANG=C.UTF-8" in warnings[0].getMessage()
+
+
+@pytest.mark.parametrize("codeset", ["UTF-8", "utf8"])
+def test_utf8_locale_does_not_warn(fresh_locale_warning, caplog, codeset) -> None:
+    fresh_locale_warning(codeset)
+    with caplog.at_level("WARNING", logger="django_db2_for_i"):
+        pyodbc_driver.Driver().connect(params())
+    assert "process locale" not in caplog.text
+
+
 def test_maxwrite_covers_every_accepted_string() -> None:
     longest = "\U0001f600" * (pyodbc_driver.MAX_STRING_PARAM_UNITS // 2)
     assert len(longest.encode("utf-16-le")) <= pyodbc_driver.MAXWRITE

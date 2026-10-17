@@ -33,10 +33,20 @@ character can appear in SQL and in `NVARCHAR`, `NCHAR` and `NCLOB` columns
 - **Comments** (`COMMENT ON`, used once `db_comment` is supported): the text
   must use characters of the job CCSID; others fail with `SQL0104`.
 
-Result column names and error messages with non-ASCII characters are only
-decoded correctly when the Python process runs in a UTF-8 locale. That is
-Python's default, also in the plain `C`/`POSIX` locale (PEP 538), but setting
-`LC_ALL=C` explicitly switches it off.
+### Run in a UTF-8 locale
+
+In a process locale that is not UTF-8, the IBM i Access ODBC driver garbles
+non-ASCII characters in **result column names and error messages**. Data
+values (literals, parameters, results) stay correct. The backend logs a
+warning on the `django_db2_for_i` logger at the first connection when the
+locale is not UTF-8.
+
+Python uses UTF-8 by default, also in the plain `C`/`POSIX` locale (PEP
+538), but an explicit `LC_ALL=C` (or another non-UTF-8 locale) switches it
+off. **Fix:** run with a UTF-8 locale, for example `LANG=C.UTF-8` with
+`LC_ALL` unset, or `LC_ALL=C.UTF-8`. pyodbc's metadata decoding
+(`setdecoding(SQL_WMETADATA, ...)`) cannot repair it: the driver returns the
+text already broken.
 
 ## Table and column names are uppercase
 

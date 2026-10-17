@@ -39,11 +39,15 @@ and shared systems such as PUB400 limit connections per client.
 
 from __future__ import annotations
 
+import locale
+import logging
 import re
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from . import base
+
+logger = logging.getLogger(__name__)
 
 DRIVER_NAME = "IBM i Access ODBC Driver"
 
@@ -267,6 +271,40 @@ class Connection(base.Connection):
         return str(_call(self._secrets, self._raw.getinfo, pyodbc.SQL_DBMS_VER))
 
 
+# --- Process locale -------------------------------------------------------------
+
+# In a non-UTF-8 process locale (e.g. LC_ALL=C) the driver returns non-ASCII
+# characters in result column names and error messages garbled; data values
+# are not affected (probe_locale, docs/IBMI_NOTES.md). pyodbc's metadata
+# decoding cannot repair it, so the backend warns once per process.
+_locale_warned = False
+
+
+def locale_problem() -> str | None:
+    """A description of the process locale if it is not UTF-8, else None."""
+    try:
+        codeset = locale.nl_langinfo(locale.CODESET)
+    except (AttributeError, ValueError):  # no nl_langinfo (Windows)
+        return None
+    if codeset.replace("-", "").lower() == "utf8":
+        return None
+    return f"LC_CTYPE={locale.setlocale(locale.LC_CTYPE)}, codeset {codeset}"
+
+
+def warn_about_locale() -> None:
+    global _locale_warned
+    problem = None if _locale_warned else locale_problem()
+    if problem:
+        _locale_warned = True
+        logger.warning(
+            "The process locale is not UTF-8 (%s): the IBM i Access ODBC driver garbles "
+            "non-ASCII characters in result column names and error messages (data values "
+            "are not affected). Run with a UTF-8 locale, e.g. LANG=C.UTF-8 and LC_ALL unset "
+            "(docs/user/Troubleshooting.md, 'Garbled column names or error messages').",
+            problem,
+        )
+
+
 class Driver(base.Driver):
     name = "pyodbc"
 
@@ -274,6 +312,7 @@ class Driver(base.Driver):
         import pyodbc
 
         pyodbc.pooling = False
+        warn_about_locale()
         # The connection string (with PWD) is built inside _connect(), so it is
         # never a local of a frame that ends up in a traceback.
         raw = _call(params.secrets, _connect, params, autocommit)
