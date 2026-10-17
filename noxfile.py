@@ -75,6 +75,36 @@ def pub400(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
+def django_tests(session: nox.Session) -> None:
+    """Tier 3 on a shared system: Django's runtests.py for named modules (scripts/runtests.sh).
+
+    nox -s django_tests -- <django-version> [--clean] <module> [<module> ...]
+    """
+    if not session.posargs:
+        session.error("usage: nox -s django_tests -- <django-version> [--clean] <module> ...")
+    version = session.posargs[0]
+    checkout = f"vendor/django-{version}"
+    # Django from the vendor checkout (stable/<version>.x); the backend without
+    # dependency resolution, since the checkout's version is a pre-release.
+    session.install("-e", checkout)
+    session.install("--no-deps", "-e", ".")
+    others = [
+        dependency
+        for dependency in PYPROJECT["project"]["dependencies"]
+        if not dependency.lower().startswith("django")
+    ]
+    session.install(*others)
+    session.run("python", "scripts/run_django_tests.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
+def test_status(session: nox.Session) -> None:
+    """Regenerate docs/TEST_STATUS.md from the logs in test-results/."""
+    install(session, NEWEST_DJANGO)
+    session.run("python", "scripts/update_test_status.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
 def probe(session: nox.Session) -> None:
     """Read-only IBM i probes: nox -s probe -- [reachability|connect|sysinfo|libraries|all]."""
     session.install("-e", ".")
