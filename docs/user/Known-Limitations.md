@@ -42,6 +42,30 @@ object without a key can get an `IntegrityError` (duplicate key). Workaround:
 give such objects explicit keys, or use `TransactionTestCase` (expected to
 work because `loaddata` commits there; not verified yet).
 
+## Dropping a table also drops what depends on it
+
+On Db2 for i, `DROP TABLE` without an option behaves like `DROP TABLE ...
+CASCADE`: it also drops the views that select from the table and the foreign
+keys in other tables that reference it, and the referencing tables lose those
+constraints without notice. `RESTRICT` would refuse instead (SQL0478).
+
+The backend's schema editor drops tables this way, so **removing a Django
+model (for example with a migration that deletes it) also drops non-Django
+views and foreign keys that depend on its table**, including objects created
+outside Django. Check for dependent objects before deleting a model whose
+table is used by other applications.
+
+## Tables must be in the library given as NAME
+
+Unqualified constraint names (such as the names of foreign key constraints
+Django adds) resolve to the connection's current schema, which is the library
+given as `NAME`. Db2 for i requires a constraint to be in the same schema as
+its table, so creating a constraint on a table in another library fails with
+`SQL5051 - Qualifier ... not same as name ...`. Models whose `db_table` points
+to another library are therefore **not supported yet**; this is planned for
+phase 4 (schema editor completeness). (Verified for foreign key constraints;
+index names in another library have not been tested yet.)
+
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and
