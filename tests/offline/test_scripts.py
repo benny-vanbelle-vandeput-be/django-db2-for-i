@@ -29,7 +29,12 @@ status = load("update_test_status")
     ("version", "modules", "message"),
     [
         ("6.1", [], "full Django test suite"),
-        ("6.1", ["a", "b", "c", "d"], "at most 3 modules"),
+        ("6.1", ["a", "b", "c", "d"], "at most 3 labels"),
+        (
+            "6.1",
+            ["basic", "basic.tests.A.test_a", "basic.tests.A.test_b", "basic.tests.B"],
+            "at most 3",
+        ),
         ("6.1", ["../etc"], "not a test module label"),
         ("6.1", ["basic/tests.py"], "not a test module label"),
         ("6.1", ["."], "not a test module label"),
@@ -52,6 +57,17 @@ def test_runs_that_are_refused(version, modules, message) -> None:
 )
 def test_runs_that_are_allowed(modules) -> None:
     runner.validate("6.1", modules)
+
+
+def test_labels_share_the_module_set_and_log_apart(monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(runner, "ROOT", tmp_path)
+    assert runner.top_module("basic.tests.ModelTest.test_x") == "basic"
+    assert runner.top_module("basic") == "basic"
+    assert runner.log_path("6.1", "basic") == tmp_path / "test-results/6.1/basic.log"
+    assert (
+        runner.log_path("6.1", "basic.tests.ModelTest.test_x")
+        == tmp_path / "test-results/6.1/labels/basic.tests.ModelTest.test_x.log"
+    )
 
 
 def test_runtests_command_is_serial_and_noninteractive() -> None:
