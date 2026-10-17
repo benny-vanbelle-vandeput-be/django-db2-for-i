@@ -187,3 +187,25 @@ unchanged.
 
 For `NVARCHAR`, `LENGTH` counts UTF-16 code units and `CHARACTER_LENGTH`
 counts characters (code points).
+
+### Statement atomicity in autocommit mode (`probe_autocommit`)
+Requested by the project owner; run 2026-10-17 00:07 UTC with
+`w02_autocommit.py` on a journaled table in `<USER>2` (`DJAUTOC (ID INTEGER NOT
+NULL PRIMARY KEY)`, created and dropped). Connection `NAM=0`, `CMT=1`,
+autocommit on, one connection per run. After seeding `ID=1`, the statement
+`INSERT ... VALUES (2), (3), (1)` fails with `SQL0803` (duplicate key,
+SQLSTATE `23000`) in both runs.
+
+| `TRUEAUTOCOMMIT` | Rows after the failed statement | `NUMBER_COMMITS` / `NUMBER_ROLLBACKS` |
+|---|---|---|
+| `0` (driver default) | `1, 2, 3`: **not atomic**, rows 2 and 3 stay | 0 / 1 |
+| `1` | `1`: **atomic** | 2 / 2 |
+
+- With `TRUEAUTOCOMMIT=0` the driver runs autocommit statements outside
+  commitment control (no commits are counted), even with `CMT=1` and a
+  journaled table. This also explains why autocommit `INSERT`/`UPDATE` worked
+  on the unjournaled table in `probe_write`.
+- With `TRUEAUTOCOMMIT=1` each autocommit statement runs under commitment
+  control and is committed or rolled back as a whole.
+- Not probed yet: `TRUEAUTOCOMMIT=1` on an unjournaled table. Expected
+  `SQL7008` (commitment control needs a journal), to be confirmed.

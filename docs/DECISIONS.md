@@ -96,3 +96,16 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   wastes row length); `VARCHAR(n)` in the job CCSID (no emoji, CCSID-dependent).
 - **Revisit:** if the emoji deviation shows up in Django's test suite, consider
   `NVARCHAR(2n)` plus a `CHARACTER_LENGTH` check constraint.
+
+## 2026-10-17: TrueAutoCommit=1 is the driver default
+- **Decision:** the pyodbc driver connects with `TRUEAUTOCOMMIT=1`.
+- **Why:** Django assumes a single statement in autocommit mode is atomic.
+  Probe `probe_autocommit` (docs/IBMI_NOTES.md) shows that with the driver
+  default `TRUEAUTOCOMMIT=0`, a multi-row `INSERT` that fails on its last row
+  leaves the earlier rows behind; with `TRUEAUTOCOMMIT=1` it leaves none.
+- **Consequence:** every data change, also in autocommit mode, runs under
+  commitment control, so every table Django writes to must be journaled
+  (libraries need a `QSQJRN` journal). `SQLCODE -7008` gets an explicit error
+  message pointing at that.
+- **Alternatives:** keep `TRUEAUTOCOMMIT=0` (works on unjournaled libraries,
+  but breaks statement atomicity silently); `CMT=0` (*NONE; no transactions).
