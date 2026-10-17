@@ -578,6 +578,69 @@ and `CAST(? AS TIME)` parameters, for 2005-07-28 (Thursday), 2021-01-01
   (`30.123456`); `EXTRACT(ISODOW FROM x)` is rejected (SQL0104).
 - The backend uses the scalar functions throughout.
 
+### SQL features for phase 2 (`probe -- queries`)
+2026-10-18, read-only (`SYSIBM.SYSDUMMY1`, `VALUES`, derived tables, two
+catalog views), one connection.
+
+**Compound queries.** `UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT` work, also
+with typed markers in the parts. `INTERSECT ALL` and `EXCEPT ALL` are
+rejected (SQL0104, "valid tokens: DISTINCT"). Parenthesised parts are
+accepted, also with `ORDER BY` + `FETCH FIRST` or `OFFSET` inside a part;
+`ORDER BY` by column name or position and `FETCH FIRST` after the compound
+work; a `UNION` inside `IN (...)` works.
+
+**Subqueries.** `IN (subquery ... FETCH FIRST n ROWS ONLY)` and with
+`OFFSET` work; a scalar subquery in `GROUP BY` works; a correlated scalar
+subquery in the select list works. `GROUP BY 1` (select index) is rejected
+(SQL0122). **`EXISTS` is accepted only as a search condition** (`WHERE`):
+in the select list it is rejected (SQL0104), also inside `CASE WHEN EXISTS
+(...) THEN ...` and inside a derived table's select list; `CASE WHEN 1 IN
+(subquery)` in the select list is rejected too (SQL0115). `CASE WHEN
+(SELECT COUNT(*) ...) > 0` works.
+
+**Boolean expressions** (7.5 BOOLEAN): predicates in the select list
+(`1 = 1`, `X > 1`) return `True`/`False`; a boolean column alone and
+`NOT column` work in `WHERE`; `CAST(? AS BOOLEAN)` works.
+
+**NULL ordering.** NULLs sort as the largest value (last ascending, first
+descending). `NULLS FIRST` / `NULLS LAST` are rejected (SQL0199).
+
+**Regular expressions.** `REGEXP_LIKE(value, pattern)` works with a constant
+or a typed marker as pattern, with flag `'i'`, and with backreferences
+(`'^(ab)\1$'`).
+
+**Arithmetic.** Integer division truncates toward zero (`7 / 2` = 3,
+`-7 / 2` = -3, also for typed markers); `MOD(-7, 3)` = -1; `POWER` returns
+DOUBLE (`POWER(2, 10)` = 1024.0); `BITAND`, `BITOR`, `BITXOR`, `BITNOT`
+work; DECIMAL + DOUBLE gives DOUBLE.
+
+**Strings.** `CONCAT` and `||` with NULL give NULL. `LIKE CAST(? AS
+NVARCHAR(n)) ESCAPE '\'` works with escaped `%` / `_`. `UPPER` of a marker
+`'straße'` gives `'STRAßE'` (no expansion of `ß`).
+
+**LOB values.** `NCLOB` values (derived tables), a stored `DBCLOB` column
+(`QSYS2.SYSPACKAGESTMTSTAT.STATEMENT_TEXT`, empty result, the statements
+compile) and a stored `BLOB` column (`QSYS2.SYSVARIABLEDEP.PARM_SIGNATURE`)
+are **accepted in `ORDER BY`, `GROUP BY` and `DISTINCT`**, and in `UNION`
+(which implies DISTINCT). `NCLOB = NCLOB`, `NCLOB = ?` (untyped and typed
+marker), `NCLOB LIKE ?`, `UPPER(NCLOB)` and `NCLOB IN (subquery)` work. (The
+expected restriction on LOBs in these clauses does not apply on 7.5.)
+
+**Aggregates.** `STDDEV`/`STDDEV_SAMP`, `VARIANCE`/`VAR_SAMP` (DOUBLE),
+`COUNT(DISTINCT)`, `ANY_VALUE`, `LISTAGG(...) WITHIN GROUP (ORDER BY ...)`
+work; `AVG` of INTEGER returns INTEGER (`AVG(3, 1, 2)` = 2). `BIT_AND` does
+not exist (SQL0204). `FILTER (WHERE ...)` is rejected (SQL0104). An
+aggregate over no rows gives NULL (`COUNT` 0); `COALESCE(SUM(...), CAST(?
+AS INTEGER))` works.
+
+**Temporal.** `TIMESTAMP - TIMESTAMP` gives a DECIMAL duration
+(`1013000.000001` = 1 day 1 h 30 min 0.000001 s as `yyyymmddhhmmss.ffffff`);
+`TIMESTAMPDIFF(1, CHAR(<duration>))` gives microseconds; `TIMESTAMP + n
+MICROSECONDS` works; a DATE compared with a string constant works.
+
+**Parameter markers.** 8192 typed markers in one statement are accepted;
+10000 fail with SQL0101 ("statement too long or complex", at prepare).
+
 ### Journal setup in the `other` library (`nox -s setup_journal -- --library other --execute`)
 Approved by the project owner and run 2026-10-17 against `<USER>B` (the
 `other` library). The dry run first confirmed: owned by our user, no journal
