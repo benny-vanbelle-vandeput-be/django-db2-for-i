@@ -393,6 +393,8 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   the maximum (rejected: silent data loss).
 
 ## 2026-10-17: Refuse string parameters longer than 8184 UTF-16 units
+*Superseded by "pyodbc maxwrite; string parameters up to 1M UTF-16 units" below.*
+
 - **Decision (project owner):** the pyodbc driver refuses every string
   parameter longer than 8184 UTF-16 units with `NotSupportedError`, in
   `execute()` and `executemany()`, before anything is sent. Bytes are not
@@ -513,3 +515,30 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   costs time and space for large tables; it must not run silently on
   production data.
 
+## 2026-10-17: pyodbc maxwrite; string parameters up to 1M UTF-16 units
+- **Decision:** the pyodbc driver sets `Connection.maxwrite` to 4 MiB on every
+  connection, and refuses string parameters longer than 1,048,576 UTF-16
+  units (`MAX_STRING_PARAM_UNITS`) with `NotSupportedError` before sending.
+  Bytes are not limited. Replaces the 8184-unit guard.
+- **Why:** root cause of the LOB parameter loss (probe `probe_encoding`,
+  docs/IBMI_NOTES.md): pyodbc sends a parameter larger than its limit as
+  data-at-execution, in chunks of that limit; without `maxwrite` the limit
+  for strings is the driver's `SQL_WVARCHAR` size, 16369, an odd byte count
+  that splits UTF-16 units, which the driver drops for LOB targets. With
+  `maxwrite` above every accepted string, strings are always bound in one
+  buffer; verified on PUB400 for `NCLOB`, `DBCLOB`, `CLOB CCSID 1208` and
+  `NVARCHAR` targets, accented and emoji texts, and the maximum itself
+  (pub400 tier, `Document` model). 1M units is the capacity of the
+  `TextField` column (`NCLOB` = `NCLOB(1M)`). 4 MiB covers that maximum in
+  UTF-16 (2 MiB) and in UTF-8 (at most 3 bytes per UTF-16 unit), so the
+  limit stays correct if statement encoding moves to UTF-8. Above `maxwrite`
+  pyodbc chunks again: harmless for bytes (`BLOB` verified with chunks), not
+  for strings, hence the refusal.
+- **Alternatives:** `setinputsizes` per parameter (verified: does not avoid
+  the chunking); an even `maxwrite` without a string limit (an even chunk
+  size can still split a surrogate pair or, in UTF-8, a multi-byte
+  character; unverified, so refused); no limit with a much larger
+  `maxwrite` (one buffer per value, memory grows with the value; not needed
+  for the column types the backend creates).
+- **Not changed:** `Value` strings are still limited to `NVARCHAR(16370)`
+  casts; a longer cast rule can follow with its own tests.
