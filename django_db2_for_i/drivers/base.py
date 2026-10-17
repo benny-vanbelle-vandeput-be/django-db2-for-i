@@ -86,14 +86,15 @@ DEFAULT_LOGIN_TIMEOUT = 10
 class ConnectionParams:
     """Driver-independent connection parameters.
 
-    ``default_schema`` is the library used for unqualified names.
-    ``attributes`` are driver-specific extras (e.g. ODBC keywords).
+    ``default_schema`` is the library used for unqualified names (``None``:
+    the driver's default). ``attributes`` are driver-specific extras (e.g.
+    ODBC keywords).
     """
 
     host: str
     user: str
     password: str = dataclasses.field(repr=False)
-    default_schema: str
+    default_schema: str | None
     ssl: bool = True
     isolation_level: str = "*CS"
     login_timeout: int = DEFAULT_LOGIN_TIMEOUT
@@ -256,6 +257,12 @@ class Cursor(abc.ABC):
 
     def __iter__(self) -> Iterator[tuple]:
         return iter(self.fetchone, None)
+
+    def __enter__(self) -> Cursor:
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        self.close()
 
 
 class Connection(abc.ABC):

@@ -293,3 +293,32 @@ def test_cursor_execute_translates_errors() -> None:
     with pytest.raises(base.IntegrityError) as info:
         pyodbc_driver.Cursor(raw, ()).execute("INSERT INTO T VALUES (1)")
     assert info.value.__context__ is None
+
+
+class FakeRow(list):
+    """Stands in for pyodbc.Row: a sequence that is not a tuple."""
+
+
+class FakeFetchCursor:
+    def fetchone(self):
+        return FakeRow([1, "a"])
+
+    def fetchmany(self, size):
+        return [FakeRow([i]) for i in range(size)]
+
+    def fetchall(self):
+        return [FakeRow([1]), FakeRow([2])]
+
+
+def test_cursor_fetch_returns_tuples() -> None:
+    cursor = pyodbc_driver.Cursor(FakeFetchCursor(), ())
+    assert type(cursor.fetchone()) is tuple
+    assert cursor.fetchone() == (1, "a")
+    assert cursor.fetchmany(2) == [(0,), (1,)]
+    assert all(type(row) is tuple for row in cursor.fetchall())
+
+
+def test_cursor_fetchone_end_of_data() -> None:
+    raw = FakeFetchCursor()
+    raw.fetchone = lambda: None
+    assert pyodbc_driver.Cursor(raw, ()).fetchone() is None

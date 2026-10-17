@@ -84,10 +84,11 @@ def connection_string(params: base.ConnectionParams) -> str:
         "UID": _braced(params.user),
         "PWD": _braced(params.password),
         "SSL": "1" if params.ssl else "0",
-        "DBQ": _plain("DBQ", params.default_schema),
         "CMT": COMMIT_MODES[isolation],
         **CONNECTION_DEFAULTS,
     }
+    if params.default_schema is not None:
+        keywords["DBQ"] = _plain("DBQ", params.default_schema)
     for name, value in params.attributes.items():
         key = str(name).upper()
         if key in RESERVED_KEYWORDS or not key.isalnum():
@@ -170,14 +171,16 @@ class Cursor(base.Cursor):
         _call(self._secrets, self._raw.executemany, sql, param_list)
         return self
 
+    # pyodbc returns pyodbc.Row objects; the interface promises plain tuples.
     def fetchone(self) -> tuple | None:
-        return _call(self._secrets, self._raw.fetchone)
+        row = _call(self._secrets, self._raw.fetchone)
+        return None if row is None else tuple(row)
 
     def fetchmany(self, size: int) -> list[tuple]:
-        return _call(self._secrets, self._raw.fetchmany, size)
+        return [tuple(row) for row in _call(self._secrets, self._raw.fetchmany, size)]
 
     def fetchall(self) -> list[tuple]:
-        return _call(self._secrets, self._raw.fetchall)
+        return [tuple(row) for row in _call(self._secrets, self._raw.fetchall)]
 
     def close(self) -> None:
         _call(self._secrets, self._raw.close)
