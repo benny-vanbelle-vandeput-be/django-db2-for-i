@@ -75,16 +75,22 @@ to another library are therefore **not supported yet**; this is planned for
 phase 4 (schema editor completeness). (Verified for foreign key constraints;
 index names in another library have not been tested yet.)
 
-## Long texts may lose characters (TextField)
+## Long texts may lose characters: strings over 8184 characters are refused
 
-**Known bug, not fixed yet.** Parameters sent as LOB values (`NCLOB`,
-`DBCLOB`, `CLOB`) arrive at the server **one character short from 8185
-characters on** (two from about 24,500), without an error. A `TextField` is an
-`NCLOB` column, so writing texts longer than 8184 characters very likely loses
-characters. Until this is fixed, do not store texts longer than 8184
-characters in a `TextField`. (Strings up to 16370 characters used as
-expression values are cast to `NVARCHAR` and arrive intact; longer ones are
-refused.)
+The IBM i Access ODBC driver (with pyodbc) **loses characters of string
+parameters bound as LOB values** (`NCLOB`, `DBCLOB`, `CLOB`): from 8185
+characters on, one character is dropped (two from about 24,500), without an
+error. A `TextField` is an `NCLOB` column.
+
+To prevent silent data loss, the backend **refuses every string parameter
+longer than 8184 UTF-16 units** (an emoji counts as two) with
+`NotSupportedError`, before anything is sent. This also refuses long values
+for `CharField(max_length > 8184)` columns, which would arrive intact: the
+backend cannot see in advance whether the driver binds a parameter as a LOB.
+
+Not affected: bytes (`BinaryField`, `BLOB`) and reading long `NCLOB` / `BLOB`
+values, both verified up to 300,000 characters/bytes. The root cause is being
+investigated.
 
 ## Features not available yet
 

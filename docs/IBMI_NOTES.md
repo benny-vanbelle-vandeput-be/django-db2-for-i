@@ -429,3 +429,12 @@ the probes' settings (pyodbc, `ibm-iaccess` 1.1.0.29).
   (Django `TextField`) very likely loses characters. To be confirmed with a
   write probe and fixed before `TextField` is supported (see
   docs/user/Known-Limitations.md).
+- **Not affected** (read-only checks, 2026-10-17): bytes parameters through
+  `CAST(? AS BLOB(1M))` (8184 to 70,000 bytes) and `VARBINARY(32000)` arrive
+  intact; reading server-built `NCLOB` and `BLOB` values (built by
+  concatenating LOB pieces, up to 300,000 characters/bytes) returns them
+  intact. (`REPEAT()` results above about 32K are NULL, so large test values
+  must be concatenated.) The loss is on the write path for strings only.
+- **Guard:** the pyodbc driver refuses every string parameter longer than 8184
+  UTF-16 units with NotSupportedError (pyodbc chooses LOB or NVARCHAR binding
+  from the driver's parameter description, which the backend cannot see).

@@ -144,6 +144,29 @@ def _call[T](secrets: Sequence[str], func: Callable[..., T], *args: Any) -> T:
     raise error
 
 
+# --- Long string parameters -----------------------------------------------------
+
+# String parameters bound as LOB (NCLOB, DBCLOB, CLOB) lose characters from
+# 8185 UTF-16 units on, silently (probe string_limits, docs/IBMI_NOTES.md).
+# pyodbc picks the binding from the driver's description of the target, which
+# is not visible here, so every longer string is refused, including ones that
+# would be bound as NVARCHAR and arrive intact. Bytes are not affected.
+MAX_STRING_PARAM_UNITS = 8184
+
+
+def check_string_params(params: Sequence[Any]) -> None:
+    for position, value in enumerate(params, start=1):
+        if isinstance(value, str) and len(value) > MAX_STRING_PARAM_UNITS // 2:
+            units = len(value.encode("utf-16-le")) // 2
+            if units > MAX_STRING_PARAM_UNITS:
+                raise base.NotSupportedError(
+                    f"String parameter {position} has {units} UTF-16 units; strings longer "
+                    f"than {MAX_STRING_PARAM_UNITS} are refused because the IBM i Access ODBC "
+                    "driver loses characters of long LOB values (docs/user/"
+                    "Known-Limitations.md, 'Long texts may lose characters')."
+                )
+
+
 # --- Connection and cursor ------------------------------------------------------
 
 
@@ -164,10 +187,13 @@ class Cursor(base.Cursor):
         if params is None:
             _call(self._secrets, self._raw.execute, sql)
         else:
+            check_string_params(params)
             _call(self._secrets, self._raw.execute, sql, params)
         return self
 
     def executemany(self, sql: str, param_list: Sequence[Sequence[Any]]) -> Cursor:
+        for params in param_list:
+            check_string_params(params)
         _call(self._secrets, self._raw.executemany, sql, param_list)
         return self
 

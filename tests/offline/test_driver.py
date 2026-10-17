@@ -367,3 +367,68 @@ def test_binary_constructor() -> None:
     # Django's BinaryField.get_db_prep_value() calls connection.Database.Binary().
     assert base.Binary(b"\x00\x01") == b"\x00\x01"
     assert base.Binary(memoryview(b"ab")) == b"ab"
+
+
+# --- Long string guard (LOB data loss) ---------------------------------------------
+
+
+class RecordingRawCursor:
+    def __init__(self):
+        self.calls = []
+
+    def execute(self, *args):
+        self.calls.append(("execute", *args))
+
+    def executemany(self, *args):
+        self.calls.append(("executemany", *args))
+
+
+LIMIT = pyodbc_driver.MAX_STRING_PARAM_UNITS
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["x" * LIMIT, "é" * LIMIT, "\U0001f600" * (LIMIT // 2), b"\x00" * 100_000, 10**30],
+    ids=["ascii at limit", "accented at limit", "emoji at limit", "long bytes", "int"],
+)
+def test_values_up_to_the_limit_are_sent(value) -> None:
+    raw = RecordingRawCursor()
+    pyodbc_driver.Cursor(raw, ()).execute("VALUES ?", [value])
+    assert raw.calls == [("execute", "VALUES ?", [value])]
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["x" * (LIMIT + 1), "é" * (LIMIT + 1), "a" + "\U0001f600" * (LIMIT // 2)],
+    ids=["ascii", "accented", "emoji counts two units"],
+)
+def test_longer_strings_are_refused_before_sending(value) -> None:
+    raw = RecordingRawCursor()
+    with pytest.raises(base.NotSupportedError, match="Long texts may lose characters"):
+        pyodbc_driver.Cursor(raw, ()).execute("VALUES ?, ?", [1, value])
+    assert raw.calls == []
+
+
+def test_executemany_checks_every_row() -> None:
+    raw = RecordingRawCursor()
+    rows = [["short"], ["x" * (LIMIT + 1)]]
+    with pytest.raises(base.NotSupportedError, match="String parameter 1 has 8185 UTF-16 units"):
+        pyodbc_driver.Cursor(raw, ()).executemany("VALUES ?", rows)
+    assert raw.calls == []
+
+
+def test_sql_without_params_is_not_checked() -> None:
+    raw = RecordingRawCursor()
+    pyodbc_driver.Cursor(raw, ()).execute("VALUES '" + "x" * (LIMIT + 10) + "'")
+    assert len(raw.calls) == 1
+
+
+def test_guard_reaches_django_as_not_supported_error() -> None:
+    import django.db
+    from django.db import connection
+
+    with (
+        pytest.raises(django.db.NotSupportedError, match="Long texts may lose characters"),
+        connection.wrap_database_errors,
+    ):
+        pyodbc_driver.Cursor(RecordingRawCursor(), ()).execute("VALUES ?", ["x" * (LIMIT + 1)])
