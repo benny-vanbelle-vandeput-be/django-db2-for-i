@@ -142,3 +142,15 @@ def test_non_ascii_names_in_description_and_errors(live) -> None:
         assert cursor.description[0][0] == "ÄÖÜ"
         with pytest.raises(django.db.ProgrammingError, match='"ÄÖÜX" in QTEMP'):
             cursor.execute('SELECT * FROM QTEMP."ÄÖÜX"')
+
+
+@pytest.mark.parametrize(
+    "text", ["O'Brien's", "''", "Grüße, O'Brien", "€ \U0001f600 'quoted'"], ids=repr
+)
+def test_quote_value_literal_round_trip(live, text) -> None:
+    """The schema editor's string literal reads back unchanged (quotes, non-ASCII)."""
+    with live.schema_editor(collect_sql=True) as editor:
+        literal = editor.quote_value(text)
+    with live.cursor() as cursor:
+        cursor.execute(f"SELECT {literal} FROM SYSIBM.SYSDUMMY1")
+        assert cursor.fetchone() == (text,)
