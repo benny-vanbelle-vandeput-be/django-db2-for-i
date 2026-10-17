@@ -77,6 +77,9 @@ class NotSupportedError(DatabaseError):
 apilevel = "2.0"
 paramstyle = "qmark"
 
+# DB-API 2.0 type constructor; Django's BinaryField calls Database.Binary().
+Binary = bytes
+
 # --- Connection parameters ------------------------------------------------------
 
 DEFAULT_LOGIN_TIMEOUT = 10

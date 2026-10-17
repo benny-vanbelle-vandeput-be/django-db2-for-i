@@ -361,3 +361,9 @@ def test_cursor_traceback_frames_carry_no_password() -> None:
     with pytest.raises(base.IntegrityError) as info:
         pyodbc_driver.Cursor(raw, params().secrets).execute("INSERT INTO T VALUES (1)")
     assert not [value for value in frame_values(info.value) if PASSWORD in value]
+
+
+def test_binary_constructor() -> None:
+    # Django's BinaryField.get_db_prep_value() calls connection.Database.Binary().
+    assert base.Binary(b"\x00\x01") == b"\x00\x01"
+    assert base.Binary(memoryview(b"ab")) == b"ab"
