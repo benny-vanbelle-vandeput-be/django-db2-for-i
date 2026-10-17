@@ -228,3 +228,86 @@ def test_sequence_reset_sql(monkeypatch) -> None:
     ]
     # Tag has a UUID primary key: no identity, no query.
     assert ("testapp_tag", "id") not in queried
+
+
+# --- Identity restarts outside transactions (SQL0910) --------------------------------
+
+
+@pytest.fixture
+def wrapper(monkeypatch):
+    """A fresh wrapper whose SQL execution and on_commit are recorded."""
+    from django.db.backends.base.operations import BaseDatabaseOperations
+
+    settings_dict = dict(connection.settings_dict)
+    settings_dict["OPTIONS"] = dict(settings_dict["OPTIONS"])
+    wrapper = DatabaseWrapper(settings_dict, alias="offline_test")
+    wrapper.events = []
+    wrapper.pending_on_commit = []
+    monkeypatch.setattr(
+        BaseDatabaseOperations,
+        "execute_sql_flush",
+        lambda self, sql_list: wrapper.events.append(("atomic flush", list(sql_list))),
+    )
+    monkeypatch.setattr(
+        wrapper.ops, "_execute", lambda statements: wrapper.events.append(("execute", statements))
+    )
+    monkeypatch.setattr(wrapper, "on_commit", wrapper.pending_on_commit.append)
+    monkeypatch.setattr(wrapper.ops, "_next_identity_value", lambda table, column: 8)
+    return wrapper
+
+
+FLUSH = [
+    'TRUNCATE TABLE "CHILD" RESTART IDENTITY',
+    'DELETE FROM "PARENT"',
+    'ALTER TABLE "PARENT" ALTER COLUMN "ID" RESTART WITH 1',
+]
+
+
+def test_flush_restarts_after_its_atomic_block(wrapper) -> None:
+    wrapper.ops.execute_sql_flush(FLUSH)
+    # Data statements in Django's atomic block, then the restart, in that order.
+    assert wrapper.events == [("atomic flush", FLUSH[:2]), ("execute", FLUSH[2:])]
+    assert wrapper.pending_on_commit == []
+
+
+def test_flush_in_outer_atomic_block_defers_restarts(wrapper) -> None:
+    wrapper.in_atomic_block = True
+    wrapper.ops.execute_sql_flush(FLUSH)
+    assert wrapper.events == [("atomic flush", FLUSH[:2])]
+    (callback,) = wrapper.pending_on_commit
+    callback()  # as on commit
+    assert wrapper.events[-1] == ("execute", FLUSH[2:])
+
+
+def test_flush_without_restarts_registers_nothing(wrapper) -> None:
+    wrapper.in_atomic_block = True
+    wrapper.ops.execute_sql_flush(FLUSH[:2])
+    assert wrapper.events == [("atomic flush", FLUSH[:2])]
+    assert wrapper.pending_on_commit == []
+
+
+def test_sequence_reset_outside_atomic_returns_sql(wrapper) -> None:
+    from tests.testapp.models import Author
+
+    assert wrapper.ops.sequence_reset_sql(no_style(), [Author]) == [
+        'ALTER TABLE "TESTAPP_AUTHOR" ALTER COLUMN "ID" RESTART WITH 8'
+    ]
+    assert wrapper.pending_on_commit == []
+
+
+def test_sequence_reset_in_atomic_block_is_deferred(wrapper, monkeypatch) -> None:
+    from tests.testapp.models import Author
+
+    wrapper.in_atomic_block = True
+    queried = []
+    monkeypatch.setattr(
+        wrapper.ops, "_next_identity_value", lambda table, column: queried.append(table) or 8
+    )
+    assert wrapper.ops.sequence_reset_sql(no_style(), [Author]) == []
+    assert queried == []  # MAX(pk) is computed only after the commit
+    (callback,) = wrapper.pending_on_commit
+    callback()
+    assert queried == ["testapp_author"]
+    assert wrapper.events == [
+        ("execute", ['ALTER TABLE "TESTAPP_AUTHOR" ALTER COLUMN "ID" RESTART WITH 8'])
+    ]
