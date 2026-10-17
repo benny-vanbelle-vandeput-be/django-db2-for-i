@@ -125,3 +125,21 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   library via `DFTPKGLIB` (still churn).
 - **Revisit:** in a tuning phase with benchmarks, together with block fetch,
   lazy close and `QAQQINI` options (all out of scope until then).
+
+## 2026-10-17: Capability detection and profiles
+- **Decision:** `capabilities.py` selects a profile by OS release (from
+  `SQL_DBMS_VER`, e.g. `07.05.0015`), then runs targeted probes for
+  capabilities that depend on TR / Db2 PTF Group level, caching the result per
+  `(host, server version)`. `OPTIONS["capabilities"]` can name a profile (no
+  connection needed, used offline) and/or override single capabilities;
+  unknown names and wrong types are rejected.
+- **Releases:** below 7.5 is refused. A newer release than any profile uses
+  the newest profile, with its actual release recorded (capabilities rarely
+  disappear; a new profile is added once that release is probed).
+- **Targeted probes:** none yet. Everything in the 7.5 profile was verified
+  on PUB400 (probe `features`) and is part of 7.5 itself according to IBM's
+  release history. PUB400's TR level cannot be read, so features added by a
+  later 7.5 TR must get a targeted probe, not a profile value.
+- **Alternatives:** read the TR / PTF group level (not authorized for normal
+  users on PUB400); probe every capability on every connection (extra load
+  on shared systems for no gain).

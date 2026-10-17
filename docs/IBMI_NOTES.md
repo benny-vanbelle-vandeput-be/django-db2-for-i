@@ -261,3 +261,25 @@ user and those in the `default` and `other` libraries.
   application name (`PYTHON...`), so other Python users may have packages
   with similar names there. Never delete a package without checking
   `OBJOWNER` and `OBJCREATED` first.
+
+### SQL features for the capability profiles (`probe -- features`)
+Read-only, 2026-10-17 07:55 UTC on PUB400 (IBM i 7.5, TR level not readable).
+Evidence for the `"7.5"` profile in `capabilities.py`.
+
+| Capability | Checks | Result |
+|---|---|---|
+| `has_boolean_type` | `TRUE`/`FALSE` literals, `CAST(1 AS BOOLEAN)`, `CAST(NULL AS BOOLEAN)`, `CAST(? AS BOOLEAN)` with Python `True`/`False`, `WHERE CAST(? AS BOOLEAN) IS TRUE` | all ok; pyodbc returns Python **`bool`** (and `None` for NULL) |
+| `has_limit_offset` | `ORDER BY ... LIMIT 1 OFFSET 0`, and `LIMIT ? OFFSET ?` | ok |
+| `has_offset_fetch` | `OFFSET 0 ROWS FETCH FIRST 1 ROWS ONLY`, and with parameters | ok |
+| `has_json_functions` | `JSON_OBJECT('a' VALUE 1)` (returns `{"a":1}`), `JSON_VALUE(... RETURNING INTEGER)`, `JSON_TABLE` | ok |
+
+SQLGetInfo limits as reported by the driver: `SQL_MAX_SCHEMA_NAME_LEN` 130,
+`SQL_MAX_TABLE_NAME_LEN` 128, `SQL_MAX_COLUMN_NAME_LEN` 128,
+`SQL_MAX_IDENTIFIER_LEN` **18**, `SQL_MAX_INDEX_SIZE` 2000,
+`SQL_MAX_ROW_SIZE` **32740**, `SQL_MAX_STATEMENT_LEN` 2097152.
+
+- `SQL_MAX_IDENTIFIER_LEN` 18 contradicts the 128-character table/column
+  limits reported alongside it; it is not used.
+- `SQL_MAX_ROW_SIZE` 32740 differs from the 32,766-byte row length used in
+  DECISIONS.md (NVARCHAR decision). The real limit is to be verified with a
+  DDL probe (phase 4) before anything depends on the exact value.
