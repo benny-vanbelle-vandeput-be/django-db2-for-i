@@ -73,3 +73,26 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Why:** hatchling supports SPDX `license` and `license-files` and is widely used.
   Running CI in the same image as local development keeps one environment.
 - **Alternatives:** `uv_build`, setuptools; running nox directly on the runner.
+
+## 2026-10-17: CharField maps to NVARCHAR (CCSID 1200)
+- **Decision:** `CharField(max_length=n)` (and the other `max_length` string
+  fields) map to `NVARCHAR(n)`, i.e. UTF-16 (CCSID 1200).
+- **Why:** probes `session` and `probe_write` (docs/IBMI_NOTES.md) show that
+  `NVARCHAR(n)` counts UTF-16 code units. That equals Django's `max_length`
+  (code points) for every BMP character: `é` × 10 fits in `NVARCHAR(10)`,
+  `é` × 11 is rejected. `VARCHAR(n) CCSID 1208` counts bytes, so `é` × 10
+  does not fit in `VARCHAR(10)`. The job CCSID (273) cannot store emoji at all.
+- **Known deviation:** a non-BMP character (emoji) takes 2 of the `n` units, so
+  a value that passes Django's `max_length` validation can be rejected by the
+  driver (`22001`, never truncated). Example: 6 emoji fit `max_length=10` in
+  Django but not `NVARCHAR(10)`.
+- **Row length impact:** Db2 for i limits a row to 32,766 bytes (LOB columns
+  excepted). `NVARCHAR(n)` uses 2 bytes per unit plus a 2-byte length, so
+  `CharField(max_length=255)` takes 512 bytes; about 63 such columns fill a
+  row. With `VARCHAR CCSID 1208` sized in bytes the same column could take
+  half (ASCII) but would not enforce `max_length`.
+- **Alternatives:** `VARCHAR(n) CCSID 1208` (byte length, rejects non-ASCII
+  values at `max_length`); `VARCHAR(4n) CCSID 1208` (no length enforcement,
+  wastes row length); `VARCHAR(n)` in the job CCSID (no emoji, CCSID-dependent).
+- **Revisit:** if the emoji deviation shows up in Django's test suite, consider
+  `NVARCHAR(2n)` plus a `CHARACTER_LENGTH` check constraint.

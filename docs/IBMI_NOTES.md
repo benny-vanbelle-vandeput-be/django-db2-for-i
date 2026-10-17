@@ -150,3 +150,40 @@ Run 2026-10-16 23:56 UTC (read-only). Connection attributes: `NAM=0`,
   for every BMP character, while a non-BMP character (emoji) uses 2 of the
   `n` units. `VARCHAR(n) CCSID 1208` counts bytes. The `INSERT` behaviour
   into real columns is covered by write probe `w01_commitment.py`.
+
+### Commitment control on an unjournaled table, Unicode columns (`probe_write`)
+Approved by the project owner and run 2026-10-17 00:01 UTC with
+`w01_commitment.py` against `<USER>B` (no `QSQJRN`). Connection `NAM=0`,
+`CMT=1` (*CS). Table `DJPROBE (ID INTEGER NOT NULL, NV NVARCHAR(10),
+V8 VARCHAR(10) CCSID 1208)`, created (not journaled, `JOURNALED` = `NO`) and
+dropped again.
+
+| Step | Result |
+|---|---|
+| *CS, autocommit **on**: `INSERT`, then `UPDATE` | both **ok** |
+| *CS, autocommit **off**: `INSERT` | **`SQL7008`** (`DJPROBE in <USER>B not valid for operation`), SQLSTATE `HY000` |
+| autocommit on, `INSERT ... WITH NC` | ok |
+
+- So with `CMT=1`, **autocommit statements do not need a journaled table**;
+  only real transactions (autocommit off, i.e. Django's `atomic()`) do. The
+  driver's mechanism for this (e.g. the `TrueAutoCommit` keyword) has not been
+  probed yet; do not rely on it until it is.
+- `SQL7008` arrives with the generic SQLSTATE `HY000`; error mapping must look
+  at the SQL code (`-7008`), not only the SQLSTATE.
+
+Unicode `INSERT` (with `WITH NC`) into real columns behaves exactly like the
+casts in the session probe: the ODBC driver rejects too-long values with
+`22001` (`CWB0111`), nothing is truncated, and every accepted value round-trips
+unchanged.
+
+| Input | `NVARCHAR(10)` | `VARCHAR(10) CCSID 1208` |
+|---|---|---|
+| `é` × 10 | ok (`LENGTH` 10, `CHARACTER_LENGTH` 10) | `22001` |
+| `é` × 11 | `22001` | `22001` |
+| emoji × 1 | ok (`LENGTH` 2, `CHARACTER_LENGTH` 1) | ok (`LENGTH` 4, `CHARACTER_LENGTH` 1) |
+| emoji × 5 | ok (`LENGTH` 10, `CHARACTER_LENGTH` 5) | `22001` |
+| emoji × 6 | `22001` | `22001` |
+| emoji × 10 | `22001` | `22001` |
+
+For `NVARCHAR`, `LENGTH` counts UTF-16 code units and `CHARACTER_LENGTH`
+counts characters (code points).
