@@ -19,7 +19,7 @@ DATABASES = {
 | `HOST` | **Required.** Host name of the IBM i system. |
 | `USER`, `PASSWORD` | IBM i user profile and password. |
 | `PORT` | **Not supported** (raises an error). The driver uses the database host server port: 9471 with TLS, 8471 without. |
-| `TIME_ZONE` | As in Django. With `USE_TZ = True`, datetimes are stored in this time zone (UTC if not set), see [Known limitations](Known-Limitations.md). |
+| `TIME_ZONE` | As in Django. With `USE_TZ = True`, datetimes are stored in this time zone (UTC if not set). Date lookups and functions require Django's current time zone to be the same, see [Known limitations](Known-Limitations.md#time-zones). |
 
 ## OPTIONS
 

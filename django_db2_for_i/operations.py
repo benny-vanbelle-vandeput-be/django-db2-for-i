@@ -14,6 +14,13 @@ Date/time values are passed to the driver as ``date`` / ``time`` /
 type: with ``USE_TZ`` aware datetimes are stored as naive values in the
 connection's time zone (UTC unless the database's ``TIME_ZONE`` is set) and
 made aware again when read.
+
+Extracting date/time parts (``__year``, ``__week_day``, ``Extract()``) uses
+scalar functions (probe ``extract``). Time zone rule for every date function
+that takes ``tzname``: Db2 for i stores datetimes in the connection's time
+zone (``connection.timezone_name``); ``tzname`` None (``USE_TZ = False``) or
+equal to it needs no conversion, any other zone raises NotSupportedError.
+There is no fixed-offset conversion: it would be wrong across DST changes.
 """
 
 import logging
@@ -29,6 +36,27 @@ from django.db.backends.utils import truncate_name
 from django.utils import timezone
 
 logger = logging.getLogger("django_db2_for_i")
+
+# Django lookup type -> Db2 for i function (probe ``extract``, docs/IBMI_NOTES.md).
+# EXTRACT(SECOND ...) returns fractional seconds and EXTRACT has no ISODOW, so
+# scalar functions are used throughout. DAYOFWEEK is 1 = Sunday .. 7 = Saturday
+# and DAYOFWEEK_ISO 1 = Monday .. 7 = Sunday, Django's week_day and
+# iso_week_day; WEEK_ISO is the ISO-8601 week, Django's week.
+_DATE_PARTS = {
+    "year": "YEAR(%s)",
+    "iso_year": "INTEGER(VARCHAR_FORMAT(%s, 'IYYY'))",
+    "quarter": "QUARTER(%s)",
+    "month": "MONTH(%s)",
+    "week": "WEEK_ISO(%s)",
+    "week_day": "DAYOFWEEK(%s)",
+    "iso_week_day": "DAYOFWEEK_ISO(%s)",
+    "day": "DAY(%s)",
+}
+_TIME_PARTS = {
+    "hour": "HOUR(%s)",
+    "minute": "MINUTE(%s)",
+    "second": "SECOND(%s)",  # whole seconds, as Django expects
+}
 
 
 class DatabaseOperations(BaseDatabaseOperations):
@@ -93,6 +121,37 @@ class DatabaseOperations(BaseDatabaseOperations):
                 f"FETCH FIRST {limit} ROWS ONLY" if limit else None,
             )
             if sql
+        )
+
+    # --- Extracting date/time parts ---------------------------------------------------
+
+    def date_extract_sql(self, lookup_type, sql, params):
+        return self._extract_sql(_DATE_PARTS, lookup_type, sql, params)
+
+    def time_extract_sql(self, lookup_type, sql, params):
+        return self._extract_sql(_TIME_PARTS, lookup_type, sql, params)
+
+    def datetime_extract_sql(self, lookup_type, sql, params, tzname):
+        self._check_tzname(tzname)
+        return self._extract_sql(_DATE_PARTS | _TIME_PARTS, lookup_type, sql, params)
+
+    @staticmethod
+    def _extract_sql(parts, lookup_type, sql, params):
+        try:
+            template = parts[lookup_type]
+        except KeyError:
+            raise ValueError(f"Invalid lookup type: {lookup_type!r}") from None
+        return template % sql, params
+
+    def _check_tzname(self, tzname) -> None:
+        """No conversion when ``tzname`` is None or the connection's zone."""
+        if tzname is None or tzname == self.connection.timezone_name:
+            return
+        raise NotSupportedError(
+            f"Db2 for i stores datetimes in the database time zone "
+            f"'{self.connection.timezone_name}' (DATABASES['{self.connection.alias}']"
+            f"['TIME_ZONE']); converting them to '{tzname}' is not supported yet. Use the "
+            "same zone for Django's TIME_ZONE (or the tzinfo argument) and the database."
         )
 
     # --- Date/time values -------------------------------------------------------------

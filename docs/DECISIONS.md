@@ -456,3 +456,23 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   expression defaults are not supported (`supports_expression_defaults =
   False`).
 
+## 2026-10-17: Date functions run in the database time zone only
+- **Decision (project owner):** `DATABASES[alias]["TIME_ZONE"]`
+  (`connection.timezone_name`, UTC if not set) is the zone in which Db2 for i
+  stores datetimes. Date functions that take `tzname` (`datetime_extract_sql`
+  now; trunc and cast when they are implemented) do no conversion when
+  `tzname` is None (`USE_TZ = False`) or equals that zone, and raise
+  `NotSupportedError` naming both zones otherwise.
+- **Why:** there is no time zone aware timestamp type and no time zone
+  database on the server side that the backend uses; a fixed-offset
+  conversion would be wrong across DST changes.
+- **Later:** real conversion (e.g. through a zone table or server function)
+  belongs to a later phase (Django's `timezones` tests).
+- **Extract functions:** scalar functions (`YEAR`, `WEEK_ISO`, `DAYOFWEEK`,
+  `DAYOFWEEK_ISO`, `SECOND`, ...) instead of `EXTRACT`, because
+  `EXTRACT(SECOND ...)` returns fractions and `EXTRACT` has no ISO day of the
+  week (probe `extract`). ISO year: `INTEGER(VARCHAR_FORMAT(x, 'IYYY'))`
+  (one occurrence of the expression, so its parameters are not repeated).
+- **Test settings:** the offline and pub400 tiers set `TIME_ZONE = "UTC"`
+  (Django's default `America/Chicago` would differ from the database's UTC).
+

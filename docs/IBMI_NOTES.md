@@ -504,6 +504,25 @@ Result: `uses_savepoints` and `can_release_savepoints` enabled. Django's
 `transactions` module went from 15 passed / 73 skipped to 85 passed /
 3 skipped (no failures).
 
+### Extracting date/time parts (`probe -- extract`)
+Read-only (`SYSIBM.SYSDUMMY1`), 2026-10-17. Each candidate expression was
+evaluated on timestamp literals, `CAST(? AS TIMESTAMP(6))`, `CAST(? AS DATE)`
+and `CAST(? AS TIME)` parameters, for 2005-07-28 (Thursday), 2021-01-01
+(Friday, ISO 2020-W53), 2024-12-30 (Monday, ISO 2025-W01), 2023-01-01
+(Sunday, ISO 2022-W52) and 2026-10-17 (Saturday), and compared with Python's
+`isocalendar()` and Django's conventions.
+
+- Correct, returning `int`: `YEAR`, `QUARTER`, `MONTH`, `WEEK_ISO` (ISO week),
+  `DAYOFWEEK` (1 = Sunday .. 7 = Saturday, Django's `week_day`),
+  `DAYOFWEEK_ISO` (1 = Monday .. 7 = Sunday, `iso_week_day`), `DAY`, `HOUR`,
+  `MINUTE`, `SECOND` (whole seconds); ISO year as
+  `INTEGER(VARCHAR_FORMAT(x, 'IYYY'))` and as
+  `YEAR(x + (4 - DAYOFWEEK_ISO(x)) DAYS)`.
+- `EXTRACT(YEAR|QUARTER|MONTH|WEEK|DOW|DAY|HOUR|MINUTE FROM x)` also correct.
+  `EXTRACT(SECOND FROM x)` returns `DECIMAL` with the fraction
+  (`30.123456`); `EXTRACT(ISODOW FROM x)` is rejected (SQL0104).
+- The backend uses the scalar functions throughout.
+
 ### Journal setup in the `other` library (`nox -s setup_journal -- --library other --execute`)
 Approved by the project owner and run 2026-10-17 against `<USER>B` (the
 `other` library). The dry run first confirmed: owned by our user, no journal
@@ -515,3 +534,33 @@ MNGRCV(*SYSTEM) DLTRCV(*YES)`), both accepted without messages. Result:
 `THRESHOLD` 100000; the check table `DJJRNCHK` was journaled automatically
 (`JOURNALED` = `YES`) and dropped; the library has no tables afterwards. The
 `other` alias opens a second connection to PUB400 only when a test uses it.
+
+## Open investigation: string encoding (after 0.1.0a1)
+
+Three findings may share one cause in how strings travel between pyodbc,
+the IBM i Access ODBC driver and the server (client CCSID / wide-character
+handling):
+
+1. Non-ASCII characters in **statement text** (`é`, `€`, emoji) fail with
+   `HY001` "Memory allocation error" (column DEFAULT probe, `probe_defaults`).
+2. An escaped quote in a DEFAULT constant, `'O''Brien'`, is stored literally
+   as `O''Brien` (NVARCHAR) or garbled (CHAR/VARCHAR), while `UX'...'` is
+   stored correctly (`probe_defaults`).
+3. **LOB parameters** lose one character from 8185 characters on
+   (`probe -- string_limits`).
+
+Plan, one read-only or QTEMP-only probe per step, recording each result here:
+
+1. pyodbc encoding settings: `setencoding()` / `setdecoding()` for `SQL_CHAR`
+   and `SQL_WCHAR` (UTF-8 vs UTF-16LE, `ctype`), and what the backend sets now.
+2. Driver keywords that affect conversion: CCSID / `UNICODESQL`-style
+   options, `TRANSLATE`, `MAXFIELDLEN`, `BLOCKSIZE`/LOB settings
+   (IBM i Access ODBC keyword documentation).
+3. Re-run the three findings for each combination; one setting may explain
+   all three.
+4. If a setting fixes them: change the driver defaults (`drivers/pyodbc.py`),
+   drop the `UX'...'` workaround if no longer needed and the 8184-unit
+   parameter guard, and update docs/user.
+
+Does not block 0.1.0a1.
+

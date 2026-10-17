@@ -29,6 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `transactions` tests: 85 passed, 3 skipped, no failures.
 
 ### Fixed
+- Date and datetime lookups and `Extract()` (`__year`, `__month`, `__day`,
+  `__week_day`, `__iso_week_day`, `__week`, `__quarter`, `__iso_year`,
+  `__hour`, `__minute`, `__second`) are implemented. They run in the
+  database's time zone; another current time zone raises `NotSupportedError`
+  (see docs/user/Known-Limitations.md).
 - Column defaults (`db_default`, and Python defaults when a migration adds a
   NOT NULL column) are written as bare literals with one rule per type;
   `CAST(...)` in a DEFAULT was rejected (SQL0574). Strings with quotes or
