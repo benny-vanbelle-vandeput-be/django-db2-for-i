@@ -109,3 +109,19 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   message pointing at that.
 - **Alternatives:** keep `TRUEAUTOCOMMIT=0` (works on unjournaled libraries,
   but breaks statement atomicity silently); `CMT=0` (*NONE; no transactions).
+
+## 2026-10-17: Extended dynamic SQL packages off (XDYNAMIC=0)
+- **Decision:** the pyodbc driver connects with `XDYNAMIC=0`; the probes do too.
+  Enabling packages is possible through driver attributes in `OPTIONS`
+  (`XDYNAMIC`, `DFTPKGLIB`, `PKG`), but nothing sets them.
+- **Why:** the driver default is `XDYNAMIC=1` (IBM's connection string keyword
+  documentation), which creates `*SQLPKG` objects on the server, in `QGPL` by
+  default. The phase 1 probes created `QGPL/PYTHONANBI` that way
+  (docs/IBMI_NOTES.md). That is a write on a shared system, uses storage, may
+  need authority on the package library, and Django's many distinct
+  statements plus the test suite's create/drop churn make packages useless
+  or harmful.
+- **Alternatives:** keep the default (packages in `QGPL`); packages in our own
+  library via `DFTPKGLIB` (still churn).
+- **Revisit:** in a tuning phase with benchmarks, together with block fetch,
+  lazy close and `QAQQINI` options (all out of scope until then).

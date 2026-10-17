@@ -209,3 +209,46 @@ SQLSTATE `23000`) in both runs.
   control and is committed or rolled back as a whole.
 - Not probed yet: `TRUEAUTOCOMMIT=1` on an unjournaled table. Expected
   `SQL7008` (commitment control needs a journal), to be confirmed.
+
+### ODBC connection string keywords (IBM documentation)
+Checked 2026-10-17 in IBM's
+[Connection string keywords](https://www.ibm.com/docs/en/i/7.4?topic=details-connection-string-keywords)
+(IBM i 7.4 docs; no 7.5-specific page found):
+
+| Keyword (ODBC.INI name) | Values | Driver default |
+|---|---|---|
+| `NAM` (`Naming`) | 0 = *SQL, 1 = *SYS | 0 |
+| `DBQ` (`DefaultLibraries`) | library list | `QGPL` |
+| `CMT` (`CommitMode`) | 0 *NONE, 1 *CS, 2 *CHG, 3 *ALL, 4 *RR | **2** (*CHG) |
+| `TRUEAUTOCOMMIT` (`TrueAutoCommit`) | 0 = autocommit under *NONE, 1 = under the connection's level | 0 |
+| `DFT` (`DateFormat`) | 5 = *ISO | 5 |
+| `TFT` (`TimeFormat`) | 2 = *ISO (`hh.mm.ss`) | 0 (*HMS) |
+| `XDYNAMIC` (`ExtendedDynamic`) | 0 = off, 1 = on | **1** |
+| `DFTPKGLIB` (`DefaultPkgLibrary`) | package library; only with `XDYNAMIC=1` | `QGPL` |
+| `PKG` (`DefaultPackage`) | `A/DEFAULT(IBM),x,0,y,z,0`; only with `XDYNAMIC=1` | `A/DEFAULT(IBM),2,0,1,0,512` |
+| `SSL` | 0 = password only, 1 = all traffic | 0 |
+
+- The `TRUEAUTOCOMMIT` description matches `probe_autocommit`.
+- The page says `SSL` is supported only on Windows. That is outdated for the
+  Linux driver: `probe -- connect` showed `SSL=1` connections on port 9471
+  (`as-database-s`).
+- Only `CMT=1` → *CS has been verified by a probe; the other `CMT` values are
+  taken from this page.
+
+### Extended dynamic SQL packages (`probe -- packages`)
+Read-only, 2026-10-17 07:37 UTC. Lists `*SQLPKG` objects owned by the current
+user and those in the `default` and `other` libraries.
+
+- Before `XDYNAMIC=0` was set: the earlier probe runs (driver default
+  `XDYNAMIC=1`) had created **`QGPL/PYTHONANBI`** (`*SQLPKG`, owned by the
+  PUB400 user, 196608 bytes), created 2026-10-16 23:56:08 UTC (first
+  `probe -- session` run, the first probe with parameter markers), last
+  changed 23:56:37. No packages in `<USER>2` or `<USER>B`. So a normal PUB400
+  user can create packages in `QGPL`.
+- After setting `XDYNAMIC=0` in the probes and the driver, a new
+  `probe -- session` run followed by `probe -- packages` (07:38 UTC) shows no
+  new package and `QGPL/PYTHONANBI` unchanged. That run repeated already-seen
+  statements, so it is weak evidence; the check is repeated after the first
+  Django test run.
+- `QGPL/PYTHONANBI` still exists. Removing it (`DLTSQLPKG`) changes the system
+  and needs approval.
