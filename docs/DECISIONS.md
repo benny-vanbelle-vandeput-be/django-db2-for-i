@@ -326,6 +326,8 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   signed. (Locally, `git log --show-signature` reports GitHub's merge commits as
   unverifiable until GitHub's own signing key is trusted; GitHub shows them as
   Verified.)
+- **Tag:** `signing-start` is a signed annotated tag (machine account, Verified)
+  on `0a17487`, marking the first signed commit on `main`.
 - **Alternatives:** squash merging (GitHub signs the squash commit, but the
   machine account's signatures and the individual commits are lost); keep
   rebase merging (no verifiable signatures on `main`).
