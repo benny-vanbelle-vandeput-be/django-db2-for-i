@@ -70,6 +70,8 @@ def _style():
 def test_table_list(live) -> None:
     tables = {info.name: info.type for info in live.introspection.get_table_list(live.cursor())}
     assert {table: tables.get(table) for table in TABLES} == dict.fromkeys(TABLES, "t")
+    # The SQL catalog views Db2 creates in a library with constraints are not listed.
+    assert "syscst" not in tables
 
 
 def test_table_description(live) -> None:
