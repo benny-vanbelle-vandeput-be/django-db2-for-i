@@ -1,7 +1,7 @@
 """Smoke check: Django's connection.cursor() against the configured IBM i.
 
-No test database is created; the tests only run SELECT statements on the
-single connection of the ``default`` alias (read-only).
+No test database is created; the tests run SELECT statements on the single
+connection of the ``default`` alias, and write only to a QTEMP table.
 """
 
 import pytest
@@ -94,3 +94,51 @@ def test_strings_over_the_maximum_are_refused(live) -> None:
         pytest.raises(django.db.NotSupportedError, match="longer than 1M characters"),
     ):
         cursor.execute("SELECT CAST(%s AS NCLOB(2M)) FROM SYSIBM.SYSDUMMY1", ["x" * (limit + 1)])
+
+
+def test_non_ascii_statement_text(live) -> None:
+    """Literals, comments and parameters with non-ASCII characters (UTF-8 statement text)."""
+    with live.cursor() as cursor:
+        cursor.execute("SELECT N'é€\U0001f600', 'éÄß' FROM SYSIBM.SYSDUMMY1 -- Grüße")
+        assert cursor.fetchone() == ("é€\U0001f600", "éÄß")
+        cursor.execute(
+            "SELECT N'Ångström', CAST(%s AS NVARCHAR(10)) FROM SYSIBM.SYSDUMMY1", ["€\U0001f600"]
+        )
+        assert cursor.fetchone() == ("Ångström", "€\U0001f600")
+
+
+@pytest.fixture
+def job_ccsid_table(live):
+    """A QTEMP table with a VARCHAR column in the job CCSID (273 on PUB400)."""
+    with live.cursor() as cursor:
+        cursor.execute(
+            "DECLARE GLOBAL TEMPORARY TABLE SESSION.DJVC (K INTEGER, V VARCHAR(10)) "
+            "ON COMMIT PRESERVE ROWS WITH REPLACE"
+        )
+    yield "SESSION.DJVC"
+    with live.cursor() as cursor:
+        cursor.execute("DROP TABLE SESSION.DJVC")
+
+
+def test_varchar_in_the_job_ccsid(live, job_ccsid_table) -> None:
+    import django.db
+
+    with live.cursor() as cursor:
+        cursor.execute(f"INSERT INTO {job_ccsid_table} VALUES (1, %s)", ["éÄß"])
+        cursor.execute(f"INSERT INTO {job_ccsid_table} VALUES (2, 'éÄß')")
+        cursor.execute(f"SELECT V FROM {job_ccsid_table} ORDER BY K")
+        assert cursor.fetchall() == [("éÄß",), ("éÄß",)]
+        # A character the column's CCSID cannot hold is refused, not replaced.
+        with pytest.raises(django.db.DataError, match="22018"):
+            cursor.execute(f"INSERT INTO {job_ccsid_table} VALUES (3, %s)", ["€"])
+
+
+def test_non_ascii_names_in_description_and_errors(live) -> None:
+    """Correct with pooling off (the driver's setting) in a UTF-8 process locale."""
+    import django.db
+
+    with live.cursor() as cursor:
+        cursor.execute('SELECT 1 AS "ÄÖÜ" FROM SYSIBM.SYSDUMMY1')
+        assert cursor.description[0][0] == "ÄÖÜ"
+        with pytest.raises(django.db.ProgrammingError, match='"ÄÖÜX" in QTEMP'):
+            cursor.execute('SELECT * FROM QTEMP."ÄÖÜX"')

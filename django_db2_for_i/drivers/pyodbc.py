@@ -18,8 +18,17 @@ Connection defaults (all documented in docs/IBMI_NOTES.md / DECISIONS.md):
   (``DFTPKGLIB``: package library, default ``QGPL``; ``PKG``: package usage,
   see IBM's "Connection string keywords", package properties).
 - ``SSL``: TLS on the database host server (port 9471) unless disabled.
-- CCSID: pyodbc uses the ODBC wide-character API (UTF-16), so no client CCSID
-  keyword is needed; data is converted from the column CCSID by the driver.
+- Statement text and string parameters travel as UTF-8 (probe_encoding,
+  docs/IBMI_NOTES.md): the driver's wide-character statement functions
+  (``SQLExecDirectW`` / ``SQLPrepareW``) fail with HY001 for any non-ASCII
+  character, so pyodbc is set to the narrow functions with
+  ``setencoding("utf-8", SQL_CHAR)``; ``UNICODESQL=1`` makes the driver send
+  the statement to the server as Unicode (otherwise it is converted to the job
+  CCSID, and characters outside it silently become SUB); ``CCSID=1208`` fixes
+  the driver's client code page to UTF-8 (otherwise it follows the process
+  locale, and a non-UTF-8 locale silently corrupts text). Results and
+  metadata are still read with pyodbc's defaults (UTF-16). These three belong
+  together, so ``UNICODESQL`` and ``CCSID`` cannot be overridden.
 
 ``maxwrite``: long string parameters are bound in one buffer instead of in
 chunks (see "Long string parameters" below).
@@ -44,6 +53,8 @@ CONNECTION_DEFAULTS: Mapping[str, str] = {
     "DFT": "5",
     "TFT": "2",
     "XDYNAMIC": "0",
+    "UNICODESQL": "1",
+    "CCSID": "1208",
 }
 
 # CMT keyword values per commitment control level, from IBM's "Connection
@@ -58,7 +69,9 @@ COMMIT_MODES: Mapping[str, str] = {
 }
 
 # Set by the connection itself; attributes cannot override them.
-RESERVED_KEYWORDS = frozenset({"DRIVER", "DSN", "SYSTEM", "UID", "PWD", "DBQ", "SSL", "CMT"})
+RESERVED_KEYWORDS = frozenset(
+    {"DRIVER", "DSN", "SYSTEM", "UID", "PWD", "DBQ", "SSL", "CMT", "UNICODESQL", "CCSID"}
+)
 
 _SQLSTATE = re.compile(r"^[0-9A-Z]{5}$")
 # pyodbc formats driver messages as "[SQLSTATE] text (native error) (function)".
@@ -273,5 +286,6 @@ def _connect(params: base.ConnectionParams, autocommit: bool) -> Any:
     raw = pyodbc.connect(
         connection_string(params), timeout=params.login_timeout, autocommit=autocommit
     )
+    raw.setencoding(encoding="utf-8", ctype=pyodbc.SQL_CHAR)
     raw.maxwrite = MAXWRITE
     return raw

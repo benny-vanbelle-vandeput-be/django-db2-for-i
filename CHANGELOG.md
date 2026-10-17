@@ -85,3 +85,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for string parameters rises from 8184 to 1,048,576 UTF-16 units (the
   capacity of a `TextField` column); longer strings are refused with
   `NotSupportedError`. Bytes have no limit.
+- Non-ASCII text in SQL statements is sent as Unicode: statement text and
+  string parameters travel as UTF-8 (pyodbc `setencoding("utf-8",
+  SQL_CHAR)`, driver keywords `UNICODESQL=1` and `CCSID=1208`, which can no
+  longer be overridden). Before, the IBM i Access ODBC driver converted
+  statement text to the job CCSID and silently replaced characters outside
+  it (`€` in CCSID 273, emoji). `SchemaEditor.quote_value()` writes strings
+  as plain `'...'` constants (column defaults keep `UX'...'`).

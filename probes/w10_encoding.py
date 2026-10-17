@@ -41,6 +41,7 @@ VARIANTS: dict[str, tuple[dict[str, str], str | None, dict[str, str]]] = {
     "base": ({}, None, {}),
     "utf8_sql_char": ({}, "utf8", {}),
     "unicodesql": ({"UNICODESQL": "1"}, None, {}),
+    "unicodesql_locale_c": ({"UNICODESQL": "1"}, None, {"LC_ALL": "C"}),
     "ccsid_1208": ({"CCSID": "1208"}, None, {}),
     "ccsid_1200": ({"CCSID": "1200"}, None, {}),
     "locale_c_utf8": ({}, None, {"LC_ALL": "C.UTF-8"}),
@@ -58,6 +59,9 @@ VARIANTS: dict[str, tuple[dict[str, str], str | None, dict[str, str]]] = {
         "utf8",
         {"LC_ALL": "C"},
     ),
+    # The planned driver defaults: setencoding only (pyodbc's default decoding),
+    # UNICODESQL=1, CCSID=1208 and the driver's maxwrite.
+    "fix_a": ({"UNICODESQL": "1", "CCSID": "1208"}, "fix_a", {}),
 }
 # Variants whose C check runs every binding mode (the others: default binding).
 FULL_BINDINGS = {"base", "unicodesql"}
@@ -179,6 +183,87 @@ def check_a(probe: Probe) -> dict[str, Any]:
         print_step(step)
         value = step["rows"][0][0] if step["ok"] and step.get("rows") else None
         out[label] = "ok" if value == expected else (step.get("error") or f"got {value!r}")
+    return out
+
+
+# --- Read path, metadata, VARCHAR in the job CCSID -----------------------------------------
+
+
+def check_read_meta(probe: Probe) -> dict[str, Any]:
+    """Values written with UX constants and with parameters, read back; column names."""
+    print("\n# read path and metadata")
+    out: dict[str, Any] = {}
+    table = "SESSION.DJENCR"
+    created = probe.run(
+        "read: declare",
+        f"DECLARE GLOBAL TEMPORARY TABLE {table} (K INTEGER, V VARCHAR(20), C CHAR(10), "
+        "N NVARCHAR(20), L NCLOB(1K)) ON COMMIT PRESERVE ROWS WITH REPLACE",
+        fetch=False,
+    )
+    if not created["ok"]:
+        print_step(created)
+        return {"error": created["error"]}
+    ux = "UX'00E920ACD83DDE00'"  # é € emoji, independent of the statement encoding
+    probe.run(
+        "read: insert UX constants",
+        f"INSERT INTO {table} VALUES (1, {ux}, {ux}, {ux}, {ux})",
+        fetch=False,
+    )
+    text = "é€\U0001f600"
+    print_step(
+        probe.run(
+            "read: insert parameters",
+            f"INSERT INTO {table} VALUES (2, ?, ?, ?, ?)",
+            (text, text, text, text),
+            fetch=False,
+        )
+    )
+    # Only characters CCSID 273 can represent (the VARCHAR and CHAR columns).
+    print_step(
+        probe.run(
+            "read: insert parameters in CCSID 273",
+            f"INSERT INTO {table} VALUES (3, ?, ?, ?, ?)",
+            ("éÄß", "éÄß", "éÄß", "éÄß"),
+            fetch=False,
+        )
+    )
+    for key in (1, 2, 3):
+        step = probe.run(f"read: row {key}", f"SELECT V, C, N, L FROM {table} WHERE K = {key}")
+        print_step(step)
+        out[f"row {key}"] = step.get("rows") or step.get("error")
+    import pyodbc
+
+    for alias in ("ÄÖÜ", "EURO€"):
+        cursor = probe.conn.cursor()
+        try:
+            cursor.execute(f'SELECT 1 AS "{alias}" {DUMMY}')
+            names = [column[0] for column in cursor.description]
+        except pyodbc.Error as exc:
+            names = error_text(exc)
+        finally:
+            cursor.close()
+        print(f"  {'column name ' + alias:<52} {names}")
+        out[f"column name {alias}"] = names
+    # The same names written with Unicode escapes: ASCII-only statement text,
+    # so the base variant can answer too.
+    for label, sql in [
+        ("column name U&ÄÖÜ (escaped)", f'SELECT 1 AS U&"\\00C4\\00D6\\00DC" {DUMMY}'),
+        ("error message U&ÄÖÜX (escaped)", 'SELECT * FROM QTEMP.U&"\\00C4\\00D6\\00DCX"'),
+    ]:
+        cursor = probe.conn.cursor()
+        try:
+            cursor.execute(sql)
+            value = [column[0] for column in cursor.description]
+        except pyodbc.Error as exc:
+            value = error_text(exc)
+        finally:
+            cursor.close()
+        print(f"  {label:<52} {value!r}")
+        out[label] = value
+    # Error messages are decoded like metadata by pyodbc.
+    missing = probe.run("error message with a non-ASCII name", 'SELECT * FROM QTEMP."ÄÖÜX"')
+    print(f"  {'error message with a non-ASCII name':<52} {missing.get('error')}")
+    out["error message"] = missing.get("error")
     return out
 
 
@@ -426,6 +511,9 @@ def apply_encoding(probe: Probe, setup: str | None) -> dict[str, Any]:
     if setup == "utf8":
         probe.conn.setencoding(encoding="utf-8", ctype=pyodbc.SQL_CHAR)
         probe.conn.setdecoding(pyodbc.SQL_CHAR, encoding="utf-8")
+    elif setup == "fix_a":
+        probe.conn.setencoding(encoding="utf-8", ctype=pyodbc.SQL_CHAR)
+        probe.conn.maxwrite = 4 * 1024 * 1024
     elif setup == "qaqqini":
         for label, sql in [
             ("OVERRIDE_QAQQINI(1): job copy in QTEMP", "CALL QSYS2.OVERRIDE_QAQQINI(1, '', '')"),
@@ -448,7 +536,13 @@ def apply_encoding(probe: Probe, setup: str | None) -> dict[str, Any]:
 
 
 def run_variant(name: str) -> int:
+    import pyodbc
+
     keywords, setup, _env = VARIANTS[name]
+    # As the backend (drivers/pyodbc.py). With pyodbc's default (pooling on),
+    # non-ASCII result column names and error messages come back garbled on the
+    # UTF-8 path; findings A and C are the same either way.
+    pyodbc.pooling = False
     conn = None
     try:
         settings = Settings.from_env(need_credentials=True)
@@ -459,6 +553,7 @@ def run_variant(name: str) -> int:
         result["facts"] = facts(probe)
         result["encoding"] = apply_encoding(probe, setup)
         result["A"] = check_a(probe)
+        result["read_meta"] = check_read_meta(probe)
         result["B"] = check_b(probe)
         full = name in FULL_BINDINGS
         result["C"] = check_c(probe, full)

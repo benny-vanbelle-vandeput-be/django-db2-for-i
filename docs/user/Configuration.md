@@ -29,7 +29,7 @@ DATABASES = {
 | `isolation_level` | `"*CS"` | Commitment control level: `*NONE`, `*CHG`, `*CS`, `*ALL`, `*RR`, or the SQL names (`"read committed"`, `"repeatable read"`, `"serializable"`, ...). Only `*CS` has been tested. |
 | `login_timeout` | `10` | Seconds to wait for the connection. |
 | `driver` | `"pyodbc"` | Driver implementation; `pyodbc` is the only one. |
-| `driver_attributes` | `{}` | Extra ODBC connection keywords, e.g. `{"XDYNAMIC": "1"}`. Keywords the backend sets itself (credentials, `DBQ`, `SSL`, `CMT`) cannot be overridden. |
+| `driver_attributes` | `{}` | Extra ODBC connection keywords, e.g. `{"XDYNAMIC": "1"}`. Keywords the backend sets itself (credentials, `DBQ`, `SSL`, `CMT`, `UNICODESQL`, `CCSID`) cannot be overridden. |
 | `capabilities` | detected | What the server can do; detected from the server version on connect. A profile name (`"7.5"`) or a mapping with `"profile"` and single overrides. Mainly for tests without a server. |
 | `inquiry_message_reply` | not set | `"*SYSRPYL"`, `"*DFT"` or `"*RQD"`: the IBM i job's inquiry message reply (`INQMSGRPY`) for the whole connection. Needed with `"*SYSRPYL"` (plus a system reply list entry) to allow `DROP COLUMN` and narrowing column changes, see [IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data). The value the job had is read at connect and restored at close. Not set: the backend never changes the job attribute. |
 
@@ -49,6 +49,13 @@ The backend connects with these IBM i Access ODBC keywords:
 | `XDYNAMIC` | `0` | No extended dynamic SQL packages (`*SQLPKG` objects in `QGPL`). |
 | `DFT` / `TFT` | `5` / `2` | ISO date and time formats. |
 | `SSL` | from `ssl` | TLS. |
+| `UNICODESQL` | `1` | Statements reach the server as Unicode, so any character can appear in SQL text. |
+| `CCSID` | `1208` | The driver's client code page is UTF-8, whatever the process locale. |
+
+Statement text and string parameters are sent as UTF-8 (pyodbc
+`setencoding("utf-8", SQL_CHAR)`), and long strings in one piece (pyodbc
+`maxwrite`). `UNICODESQL` and `CCSID` belong to this setup and cannot be
+overridden.
 
 ## Test database (`TEST`)
 

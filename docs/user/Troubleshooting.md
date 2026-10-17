@@ -68,6 +68,21 @@ nothing has been changed when it is raised.
 | "... contains tables of the Django models under test ... but no DJDB2I_TEST_MARKER table" | The library looks like an application library. Use an empty library; drop the tables yourself only if you are sure they hold no data you need. |
 | "Could not drop ... object(s)" | Cleanup failed; the marker is kept so the next run (with `--noinput`) can finish the cleanup. |
 
+## 22018: "CWBNL0107 - Converted ... errors found"
+
+A string parameter contains a character the target column's CCSID cannot
+hold, for example `€` or an emoji in a `VARCHAR` column in CCSID 273. Django
+creates `NVARCHAR`/`NCLOB` columns, which hold any character; the error comes
+from columns created outside Django. See
+[Known limitations](Known-Limitations.md#text-outside-the-job-ccsid).
+
+## Garbled column names or error messages
+
+Non-ASCII characters in result column names or error messages are garbled
+when the Python process does not run in a UTF-8 locale, for example with
+`LC_ALL=C`. Unset `LC_ALL` or set a UTF-8 locale (`LC_ALL=C.UTF-8`). Data
+values are not affected.
+
 ## More errors
 
 > **Not documented yet.** Further entries (sign-on failures, TLS certificate

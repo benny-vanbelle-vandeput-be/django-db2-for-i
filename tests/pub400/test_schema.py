@@ -169,6 +169,43 @@ def test_long_text_and_binary_round_trip(live, empty, text) -> None:
     assert bytes(document.data) == data
 
 
+def test_non_ascii_comments(live) -> None:
+    """COMMENT ON through Django's path (quote_value: a plain '...' constant).
+
+    supports_comments stays off; this checks the statements the flag would emit.
+    Characters of the job CCSID (273 on PUB400) work, quotes included. Others
+    (euro sign, emoji) make the constant a graphic one, which COMMENT ON
+    rejects (SQL0104, docs/IBMI_NOTES.md).
+    """
+    import django.db
+
+    table = Document._meta.db_table.upper()  # catalog names are upper case
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(live.features, "supports_comments", True)
+        with live.schema_editor() as editor:
+            editor.alter_db_table_comment(Document, None, "Grüße, O'Brien")
+            field = Document._meta.get_field("text")
+            editor.execute(editor._alter_column_comment_sql(Document, field, None, "Ä Ö Ü ß é")[0])
+        with (
+            pytest.raises(django.db.ProgrammingError, match="SQL0104"),
+            live.schema_editor() as editor,
+        ):
+            editor.alter_db_table_comment(Document, None, "Grüße €")
+    with live.cursor() as cursor:
+        cursor.execute(
+            "SELECT LONG_COMMENT FROM QSYS2.SYSTABLES "
+            "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s",
+            [table],
+        )
+        assert cursor.fetchone() == ("Grüße, O'Brien",)
+        cursor.execute(
+            "SELECT LONG_COMMENT FROM QSYS2.SYSCOLUMNS "
+            "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s AND COLUMN_NAME = 'TEXT'",
+            [table],
+        )
+        assert cursor.fetchone() == ("Ä Ö Ü ß é",)
+
+
 def test_pagination(live, empty) -> None:
     for name in "abcde":
         Author.objects.create(name=name)

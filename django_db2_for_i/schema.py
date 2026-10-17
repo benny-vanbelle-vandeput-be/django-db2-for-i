@@ -28,10 +28,10 @@ def string_literal(value: str) -> str:
 
     In a column DEFAULT, Db2 for i stores an escaped quote wrongly ('O''Brien'
     becomes O''Brien in NVARCHAR, a garbled value in CHAR/VARCHAR), N'...'
-    truncates CHAR values, and any non-ASCII character in the statement text
-    fails in the ODBC driver (memory allocation error). The UTF-16 hex
-    constant is stored correctly in every string column type (probe
-    ``probe_defaults``, docs/IBMI_NOTES.md).
+    truncates CHAR values. The UTF-16 hex constant is stored correctly in
+    every string column type (probe ``probe_defaults``, docs/IBMI_NOTES.md),
+    whatever the statement encoding; non-ASCII text uses it too, so the DDL
+    stays ASCII.
     """
     if all(" " <= char <= "~" and char != "'" for char in value):
         return f"'{value}'"
@@ -109,9 +109,17 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         return bool(messages & set(inquiry.CANCEL_MESSAGES))
 
     def quote_value(self, value) -> str:
-        """An SQL literal for ``value`` (used for collected SQL)."""
+        """An SQL literal for ``value`` (collected SQL, COMMENT ON).
+
+        Strings are plain ``'...'`` constants with doubled quotes: statement
+        text is UTF-8 (drivers/pyodbc.py), and COMMENT ON accepts only a plain
+        string constant (``UX'...'`` fails with SQL0104). Column DEFAULTs use
+        default_literal() instead, see string_literal().
+        """
         if value is None:
             return "NULL"
+        if isinstance(value, str):
+            return "'" + value.replace("'", "''") + "'"
         try:
             return default_literal(value)
         except NotSupportedError:

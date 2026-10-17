@@ -634,7 +634,13 @@ each runs the same checks for the three findings:
 
 ### Step 2: variants and results
 
-| Variant | A (statement text) | B (DEFAULT `'O''Brien'`) | C (LOB > 8184 chars) |
+**Correction (2026-10-17, during fix A):** the first runs below used pyodbc's
+default `pyodbc.pooling = True`. The backend connects with pooling **off**
+(`drivers/pyodbc.py`), and with pooling off finding A looks different: see
+"Step 2 repeated with pooling off" after this table. B and C are the same
+either way. Kept for the record:
+
+| Variant (pooling on) | A (statement text) | B (DEFAULT `'O''Brien'`) | C (LOB > 8184 chars) |
 |---|---|---|---|
 | base (pyodbc defaults) | HY001 for every non-ASCII character, also in a comment or an alias; an emoji literal returns `'=\x00'` | wrong | loses characters |
 | `UNICODESQL=1` | same as base | wrong | loses |
@@ -671,6 +677,47 @@ emoji (`€` is 3 bytes, and 32739 = 3 x 10913, so it never splits). With
 gives the same picture; BLOB values are always intact. The read path is
 intact: a 40,000-character NCLOB built on the server reads back complete.
 
+### Step 2 repeated with pooling off (the backend's setting)
+
+`probe_encoding` now sets `pyodbc.pooling = False` like the backend; all
+variants rerun, plus `UNICODESQL=1` under `LC_ALL=C` and the planned fix
+(`fix_a`: `setencoding("utf-8", SQL_CHAR)` only, pyodbc's default decoding,
+`UNICODESQL=1`, `CCSID=1208`, `maxwrite`). Statement text checks: `'é'`,
+`N'é€'`, `N'😀'` literals, comments, aliases; read and metadata checks:
+values written with `UX'...'` and with parameters into `VARCHAR(20)` (job
+CCSID 273), `CHAR(10)`, `NVARCHAR(20)`, `NCLOB(1K)` and read back, result
+column name `"ÄÖÜ"`, error message for `QTEMP."ÄÖÜX"`.
+
+| Variant (pooling off) | A: `N'é€'` / `N'😀'` | Column name / error message |
+|---|---|---|
+| base (the backend before this fix) | **silently** `'é\x1a'` / `'=\x00'`: converted to job CCSID 273 (`é` survives, `€` becomes SUB, emoji garbage); no HY001 | correct |
+| `CCSID=1208`, `LC_ALL=C.UTF-8`, QAQQINI | same as base | correct |
+| `CCSID=1200` | the process crashes (segmentation fault) | - |
+| `UNICODESQL=1` (W path) | `'é€'` correct / emoji **silently** `'=\x00'` (IBM documents UNICODESQL as UCS-2) | correct |
+| `UNICODESQL=1` + `CCSID=1208` (W path) | as `UNICODESQL=1` | correct |
+| `UNICODESQL=1`, `LC_ALL=C` (W path) | `'é¬'` / HY001 | error message garbled |
+| utf-8 / `SQL_CHAR` | `'é\x1a'` / `'\x1a'` (job CCSID 273) | correct |
+| utf-8 / `SQL_CHAR` + `UNICODESQL=1` | **correct** / **correct** | correct |
+| utf-8 / `SQL_CHAR` + `UNICODESQL=1`, `LC_ALL=C` | mojibake in statement text and parameters | statements fail |
+| utf-8 / `SQL_CHAR` + `UNICODESQL=1` + `CCSID=1208`, `LC_ALL=C` | **correct** / **correct** | garbled |
+| **`fix_a`** | **correct** / **correct** | correct |
+
+In every variant: parameters `'éÄß'` round-trip through all four column
+types; a parameter with a character CCSID 273 cannot hold (`€`, emoji)
+into `VARCHAR`/`CHAR` fails with `22018` (`CWBNL0107`) instead of being
+replaced, while a `UX'...'` constant is stored with SUB; reading
+`NVARCHAR`/`NCLOB` values with emoji is correct; `"EURO€"` as an identifier
+is rejected by the server (SQL0104; identifiers must fit the job CCSID).
+`COMMENT ON ... IS '<text>'` (pub400 tier, fix A): text in the job CCSID is
+stored correctly, quotes included (`Grüße, O''Brien` reads back as
+`Grüße, O'Brien`); with `€` or an emoji the server treats the constant as a
+graphic constant (its message shows it as `UX'...'`) and rejects it with
+SQL0104, valid token `<CHARSTRING>`; `UX'...'` itself is rejected the same
+way. C
+is unchanged (`maxwrite` needed on both paths). With pooling **on**, result
+column names and error messages with non-ASCII characters come back garbled
+on the UTF-8 path even in a UTF-8 locale; the backend never enables pooling.
+
 B in more forms, all with the same wrong result in every variant: `CREATE
 TABLE QTEMP.x` (not only declared temporary tables), and `ALTER TABLE ...
 ADD COLUMN ... DEFAULT 'O''Brien'`. The same constant in `SELECT` and in
@@ -690,10 +737,13 @@ ADD COLUMN ... DEFAULT 'O''Brien'`. The same constant in `SELECT` and in
   split multi-byte characters (22018). **Fix**: set `Connection.maxwrite`
   high enough that pyodbc never uses data-at-execution; every value is then
   bound in one buffer.
-- **A, root cause narrowed to the driver's wide-character statement path.**
-  `SQLExecDirectW` / `SQLPrepareW` in the Linux driver fail with HY001 for
-  any non-ASCII UTF-16 unit before anything reaches the server, independent
-  of `UNICODESQL`, `CCSID`, locale and QAQQINI. The narrow path works:
+- **A, the driver's wide-character statement path.** With the backend's
+  settings (pooling off), `SQLExecDirectW` / `SQLPrepareW` silently convert
+  statement text to the job CCSID (273): characters outside it become SUB
+  or garbage, without an error. (HY001 occurs only with pyodbc pooling on,
+  as in the first probe runs.) `UNICODESQL=1` on the W path fixes BMP
+  characters but still garbles characters outside the BMP (emoji), as IBM
+  documents it as UCS-2. The narrow path works:
   pyodbc `setencoding("utf-8", SQL_CHAR)` sends UTF-8 bytes through
   `SQLExecDirect`/`SQLPrepare`; `UNICODESQL=1` makes the driver send the
   statement to the server as Unicode (without it the statement is converted
@@ -703,19 +753,22 @@ ADD COLUMN ... DEFAULT 'O''Brien'`. The same constant in `SELECT` and in
   silently corrupts statement text and string parameters). **Fix**: all
   three together. Note that `setencoding` also changes how `str`
   parameters are sent (UTF-8 `SQL_C_CHAR`), which the probe verified.
+  Result column names and error messages are decoded correctly in a UTF-8
+  process locale (Python's default, PEP 538); in a non-UTF-8 locale
+  (`LC_ALL=C`) they are garbled, also on the W path.
 - **B, no fix found on the client.** Identical for EBCDIC statement text
   (W path), UTF-8 and Unicode statement text, declared temporary and regular
   tables, `CREATE TABLE` and `ADD COLUMN`, and for job CCSID 273 and 37
   (`probe_job_ccsid`, below). It is server-side handling of an escaped quote
   in a column DEFAULT. The `UX'...'` constants stay.
 
-### Proposed next steps (not implemented yet)
+### Next steps
 
-1. Driver fix for C: `maxwrite`, then remove the 8184-unit guard.
+1. Driver fix for C: `maxwrite`, the 8184-unit guard replaced by a 1M-unit
+   limit (done, PR #18).
 2. Driver fix for A: `setencoding("utf-8", SQL_CHAR)` + `UNICODESQL=1` +
-   `CCSID=1208`, checked against reading (`setdecoding` left at pyodbc's
-   defaults unless a probe shows a need), metadata and `VARCHAR` columns in
-   CCSID 273.
+   `CCSID=1208` as driver defaults; `setdecoding` stays at pyodbc's
+   defaults (the checks above need nothing else).
 3. B: keep `UX'...'` (decided by the project owner).
 
 ### Job CCSID and finding B (`nox -s probe_job_ccsid`)
