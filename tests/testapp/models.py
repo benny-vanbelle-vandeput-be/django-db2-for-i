@@ -31,6 +31,13 @@ class Tag(models.Model):
     label = models.SlugField(unique=True)
 
 
+class Document(models.Model):
+    """Long values: TextField (NCLOB) and BinaryField (BLOB)."""
+
+    text = models.TextField()
+    data = models.BinaryField(null=True)
+
+
 class Defaults(models.Model):
     """One db_default per literal rule of DatabaseSchemaEditor.prepare_default()."""
 

@@ -16,9 +16,10 @@ from decimal import Decimal
 import pytest
 from django.db import connection, models
 
-from tests.testapp.models import Author, Book, Defaults, Node, Tag
+from django_db2_for_i.drivers import pyodbc as pyodbc_driver
+from tests.testapp.models import Author, Book, Defaults, Document, Node, Tag
 
-MODELS = (Author, Book, Node, Tag, Defaults)
+MODELS = (Author, Book, Node, Tag, Defaults, Document)
 TABLES = {model._meta.db_table for model in MODELS}
 
 
@@ -148,6 +149,24 @@ def test_values_round_trip(live, empty) -> None:
     assert Book.objects.filter(reading_time=dt.time(1, 2, 3, 456789)).count() == 1
     tag = Tag.objects.create(label="db2")
     assert Tag.objects.get(label="db2").pk == tag.pk
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "é" * 8185,  # past the first old chunk boundary
+        "\U0001f600" * 20000,  # surrogate pairs across chunk boundaries
+        "x" * (pyodbc_driver.MAX_STRING_PARAM_UNITS - 1) + "€",  # the maximum, 1M units
+    ],
+    ids=["8185 accented", "20000 emoji", "1M units"],
+)
+def test_long_text_and_binary_round_trip(live, empty, text) -> None:
+    data = bytes(range(256)) * 4096  # 1 MiB, the BLOB column's capacity
+    pk = Document.objects.create(text=text, data=data).pk
+    document = Document.objects.get(pk=pk)
+    assert len(document.text) == len(text)
+    assert document.text == text
+    assert bytes(document.data) == data
 
 
 def test_pagination(live, empty) -> None:

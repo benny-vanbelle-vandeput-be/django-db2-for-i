@@ -29,7 +29,7 @@ from django.db.models.functions import Coalesce, Extract
 from django.db.models.sql import DeleteQuery, InsertQuery, UpdateQuery
 
 from django_db2_for_i import capabilities
-from tests.testapp.models import Author, Book, Defaults, Node, Tag
+from tests.testapp.models import Author, Book, Defaults, Document, Node, Tag
 
 KINDS = ("create", "query", "dml", "flush", "drop")
 
@@ -221,6 +221,8 @@ CASES: tuple[Case, ...] = (
     Case(TAG, "create", _ddl(Tag)),
     # Column DEFAULT literals, one per prepare_default() rule (no CAST).
     Case(DEFAULTS, "create", _ddl(Defaults)),
+    # TextField and BinaryField: NCLOB and BLOB (1M, the default length).
+    Case("ddl/create_document", "create", _ddl(Document)),
     Case(
         "ddl/add_field_not_null_default",
         "create",
