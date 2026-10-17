@@ -4,10 +4,10 @@
 DATABASES = {
     "default": {
         "ENGINE": "django_db2_for_i",
-        "NAME": "MYLIB",             # default schema (library)
+        "NAME": "MYLIB",  # default schema (library)
         "HOST": "ibmi.example.com",  # the IBM i system
         "USER": "MYUSER",
-        "PASSWORD": "...",           # e.g. from an environment variable
+        "PASSWORD": "...",  # e.g. from an environment variable
         "OPTIONS": {},
     }
 }
