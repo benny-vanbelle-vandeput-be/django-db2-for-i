@@ -7,7 +7,7 @@ from decimal import Decimal
 import pytest
 from django.core.management.color import no_style
 from django.db import NotSupportedError, connection
-from django.db.models import DateTimeField, UUIDField
+from django.db.models import CharField, DateTimeField, UUIDField
 from django.db.models.expressions import Col
 from django.test.utils import override_settings
 from django.utils import timezone
@@ -431,3 +431,9 @@ def test_week_day_lookup_with_a_current_time_zone_other_than_the_database() -> N
 
     with timezone.override("Europe/Brussels"), pytest.raises(NotSupportedError):
         Book.objects.filter(published__week_day=1).query.get_compiler("default").as_sql()
+
+
+def test_cast_char_field_without_max_length() -> None:
+    assert connection.ops.cast_char_field_without_max_length == "NVARCHAR(16370)"
+    assert CharField().cast_db_type(connection) == "NVARCHAR(16370)"
+    assert CharField(max_length=20).cast_db_type(connection) == "NVARCHAR(20)"
