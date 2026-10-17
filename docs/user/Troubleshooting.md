@@ -78,10 +78,16 @@ from columns created outside Django. See
 
 ## Garbled column names or error messages
 
+Log message: *"The process locale is not UTF-8 (...): the IBM i Access ODBC
+driver garbles non-ASCII characters in result column names and error
+messages"*.
+
 Non-ASCII characters in result column names or error messages are garbled
 when the Python process does not run in a UTF-8 locale, for example with
-`LC_ALL=C`. Unset `LC_ALL` or set a UTF-8 locale (`LC_ALL=C.UTF-8`). Data
-values are not affected.
+`LC_ALL=C`. Data values are not affected. Run with a UTF-8 locale:
+`LANG=C.UTF-8` with `LC_ALL` unset, or `LC_ALL=C.UTF-8` (for a service, set
+it in its environment, e.g. `Environment=LANG=C.UTF-8` in a systemd unit).
+See [Known limitations](Known-Limitations.md#run-in-a-utf-8-locale).
 
 ## More errors
 

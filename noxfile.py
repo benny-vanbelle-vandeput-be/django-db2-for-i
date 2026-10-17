@@ -193,3 +193,10 @@ def probe_job_ccsid(session: nox.Session) -> None:
     """Write probe 11 (QTEMP and own job, restored): job CCSID 37 and finding B."""
     session.install("-e", ".")
     session.run("python", "probes/w11_job_ccsid.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
+def probe_locale(session: nox.Session) -> None:
+    """Write probe 12 (QTEMP only, one connection per locale): non-UTF-8 locale."""
+    install(session, NEWEST_DJANGO)
+    session.run("python", "probes/w12_locale.py", *session.posargs, env={"PYTHONPATH": "."})
