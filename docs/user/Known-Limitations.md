@@ -57,13 +57,14 @@ table is used by other applications.
 
 ## Tables must be in the library given as NAME
 
-Unqualified constraint names (primary keys, foreign keys, indexes) resolve to
-the connection's current schema, which is the library given as `NAME`. Db2
-for i requires a constraint to be in the same schema as its table, so
-creating a constraint on a table in another library fails with `SQL5051 -
-Qualifier ... not same as name ...`. Models whose `db_table` points to
-another library are therefore **not supported yet**; this is planned for
-phase 4 (schema editor completeness).
+Unqualified constraint names (such as the names of foreign key constraints
+Django adds) resolve to the connection's current schema, which is the library
+given as `NAME`. Db2 for i requires a constraint to be in the same schema as
+its table, so creating a constraint on a table in another library fails with
+`SQL5051 - Qualifier ... not same as name ...`. Models whose `db_table` points
+to another library are therefore **not supported yet**; this is planned for
+phase 4 (schema editor completeness). (Verified for foreign key constraints;
+index names in another library have not been tested yet.)
 
 ## Features not available yet
 
