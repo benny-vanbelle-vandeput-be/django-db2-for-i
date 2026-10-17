@@ -333,3 +333,35 @@ also runs `limit_offset_sql()` output against the server.)
 `QSYS2.SYSREFCST` links a foreign key (`CONSTRAINT_SCHEMA/NAME`) to the
 referenced key (`UNIQUE_CONSTRAINT_SCHEMA/NAME`); `QSYS2.SYSCST` gives each
 constraint's `TABLE_SCHEMA/TABLE_NAME` and `CONSTRAINT_TYPE`.
+
+### Identity restart inside a transaction: SQL0910 (`pub400` tier)
+Found 2026-10-17 by the `pub400` schema tests: `ALTER TABLE t ALTER COLUMN id
+RESTART WITH n` fails with `SQL0910 - Object T in <library> type *FILE has a
+pending change` (SQLCODE -910, SQLSTATE `HY000`) when the same transaction
+already changed rows of `t` (e.g. `DELETE FROM t` in Django's
+`execute_sql_flush()` atomic block, or rows inserted by `loaddata`).
+Confirmed by `probe_sequence` (baseline step).
+
+### SEQUENCE objects as key generator (`probe_sequence`)
+Requested by the project owner; run 2026-10-17 09:00 UTC with
+`w04_sequence.py` on a sequence and two tables in `<USER>2` (journaled), all
+dropped afterwards. One connection, backend settings, autocommit off for the
+transaction steps.
+
+- **`DEFAULT NEXT VALUE FOR <sequence>` is not supported** in a column
+  definition: `SQL0199 - Keyword VALUE not expected` (SQLSTATE `42000`). The
+  probe fell back to inserting `NEXT VALUE FOR <sequence>` explicitly in the
+  `VALUES` list.
+- **`ALTER SEQUENCE ... RESTART WITH 101` works inside a transaction that has
+  pending row changes** on the table (no SQL0910); the next generated value was
+  101.
+- `PREVIOUS VALUE FOR <sequence>` returns a Python `int`: the last value this
+  job generated (1 after the first insert; still 1 after an insert with an
+  explicit key 100; 101 after the restart; the **last** row's value, 123,
+  after a multi-row insert).
+- **Rollback** removed the rows but **not the restart**: the next value after
+  the rollback was 121, not 2. `ALTER SEQUENCE` is not undone by a rollback,
+  and the default `CACHE 20` makes the job skip the rest of its cached values
+  (102-120) after the restart.
+- Catalog: `QSYS2.SYSSEQUENCES` (`DATA_TYPE` INTEGER, `START` 1, `INCREMENT`
+  1, `CACHE` 20, `CYCLE` NO, `ORDER` NO). Sequences are `*DTAARA` objects.
