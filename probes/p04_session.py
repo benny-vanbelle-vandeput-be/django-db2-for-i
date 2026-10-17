@@ -26,6 +26,7 @@ from __future__ import annotations
 from typing import Any
 
 from _common import ProbeError, Settings
+from _common import run_values as values
 
 NEEDS_CONNECTION = True
 
@@ -50,47 +51,6 @@ UNICODE_CASES = {
     "mixed a+e-acute+emoji": "aé" + EMOJI,
 }
 UNICODE_TARGETS = ("NVARCHAR(10)", "VARCHAR(10) CCSID 1208", "VARCHAR(10) CCSID 273")
-
-
-def values(conn, label: str, sql: str, params: tuple = ()) -> dict[str, Any]:
-    """Run one read-only query; record values (repr), Python types and driver messages."""
-    import pyodbc
-
-    result: dict[str, Any] = {"label": label, "sql": sql, "params": list(params)}
-    cursor = conn.cursor()
-    try:
-        cursor.execute(sql, params)
-        columns = [col[0] for col in cursor.description]
-        rows = cursor.fetchall()
-        result.update(
-            ok=True,
-            rows=[
-                {
-                    c: {"repr": repr(v), "type": type(v).__name__}
-                    for c, v in zip(columns, row, strict=True)
-                }
-                for row in rows
-            ],
-            messages=[str(m) for m in getattr(cursor, "messages", []) or []],
-        )
-    except pyodbc.Error as exc:
-        args = exc.args
-        result.update(
-            ok=False,
-            sqlstate=str(args[0]) if len(args) > 1 else "",
-            message=str(args[1] if len(args) > 1 else exc),
-        )
-    finally:
-        cursor.close()
-    print(f"\n# {label}")
-    if not result["ok"]:
-        print(f"  error: {result['sqlstate']} {result['message']}")
-    else:
-        for row in result["rows"]:
-            print("  " + ", ".join(f"{c}={d['repr']} ({d['type']})" for c, d in row.items()))
-        for message in result["messages"]:
-            print(f"  message: {message}")
-    return result
 
 
 def run(settings: Settings, conn) -> dict[str, Any]:

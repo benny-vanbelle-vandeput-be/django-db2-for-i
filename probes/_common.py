@@ -258,6 +258,50 @@ def run_statement(conn, label: str, sql: str, params: tuple = ()) -> dict[str, A
     return result
 
 
+def run_values(conn, label: str, sql: str, params: tuple = ()) -> dict[str, Any]:
+    """Run one read-only query; record values (repr), Python types and driver messages.
+
+    Prints the result. Errors are captured, never raised.
+    """
+    import pyodbc
+
+    result: dict[str, Any] = {"label": label, "sql": sql, "params": list(params)}
+    cursor = conn.cursor()
+    try:
+        cursor.execute(sql, params)
+        columns = [col[0] for col in cursor.description]
+        rows = cursor.fetchall()
+        result.update(
+            ok=True,
+            rows=[
+                {
+                    c: {"repr": repr(v), "type": type(v).__name__}
+                    for c, v in zip(columns, row, strict=True)
+                }
+                for row in rows
+            ],
+            messages=[str(m) for m in getattr(cursor, "messages", []) or []],
+        )
+    except pyodbc.Error as exc:
+        args = exc.args
+        result.update(
+            ok=False,
+            sqlstate=str(args[0]) if len(args) > 1 else "",
+            message=str(args[1] if len(args) > 1 else exc),
+        )
+    finally:
+        cursor.close()
+    print(f"\n# {label}")
+    if not result["ok"]:
+        print(f"  error: {result['sqlstate']} {result['message']}")
+    else:
+        for row in result["rows"]:
+            print("  " + ", ".join(f"{c}={d['repr']} ({d['type']})" for c, d in row.items()))
+        for message in result["messages"]:
+            print(f"  message: {message}")
+    return result
+
+
 # --- Output -----------------------------------------------------------------
 
 

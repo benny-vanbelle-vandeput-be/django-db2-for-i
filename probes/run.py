@@ -1,7 +1,7 @@
 """Run read-only IBM i probes.
 
 Usage (inside the "tests" container):
-    nox -s probe -- [reachability|connect|sysinfo|libraries|packages|all] ...
+    nox -s probe -- [reachability|connect|sysinfo|libraries|packages|features|all] ...
     nox -s probe -- session
 
 Probes run sequentially and share at most one ODBC connection per run.
@@ -20,6 +20,7 @@ import p02_system_info
 import p03_libraries
 import p04_session
 import p05_packages
+import p06_features
 from _common import ProbeError, Settings, connect, write_result
 
 PROBES = {
@@ -29,6 +30,7 @@ PROBES = {
     "libraries": p03_libraries,
     "session": p04_session,
     "packages": p05_packages,
+    "features": p06_features,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
