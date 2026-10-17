@@ -14,6 +14,7 @@ from django_db2_for_i.creation import (
     TestDatabaseRefused,
     drop_order,
     marker_statements,
+    normalize_module_set,
     plan_setup,
     tables_to_drop,
 )
@@ -27,13 +28,31 @@ def never_confirm(remnants):
     raise AssertionError("must not ask")
 
 
-def plan(inventory, marker=None, *, keepdb=False, autoclobber=False, confirm=never_confirm):
+def plan(
+    inventory,
+    marker=None,
+    *,
+    keepdb=False,
+    autoclobber=False,
+    confirm=never_confirm,
+    module_set=None,
+):
     return plan_setup(
-        LIB, inventory, ALLOWED, marker, keepdb=keepdb, autoclobber=autoclobber, confirm=confirm
+        LIB,
+        inventory,
+        ALLOWED,
+        marker,
+        keepdb=keepdb,
+        autoclobber=autoclobber,
+        confirm=confirm,
+        module_set=module_set,
     )
 
 
 MARKED = {MARKER_TABLE: "T"}
+HEADER_INSERT = (
+    f'INSERT INTO "DJTEST"."{MARKER_TABLE}" (RUN_ID, CREATED_AT, MODULE_SET) VALUES (%s, %s, %s)'
+)
 EMPTY_MARKER = Marker("a" * 32, dt.datetime(2026, 10, 17), frozenset())
 
 
@@ -122,16 +141,71 @@ def test_drop_order_views_aliases_then_children_first() -> None:
 
 def test_marker_statements() -> None:
     now = dt.datetime(2026, 10, 17, 12, 0)
-    statements = marker_statements(LIB, "r" * 32, now, {"KEEP"}, create=True)
+    statements = marker_statements(LIB, "r" * 32, now, {"KEEP"}, "basic", create=True)
     sql = [s for s, _ in statements]
     assert sql[0].startswith(f'CREATE TABLE "DJTEST"."{MARKER_TABLE}" (RUN_ID CHAR(32) NOT NULL')
-    assert sql[1] == f'DELETE FROM "DJTEST"."{MARKER_TABLE}"'
-    assert statements[2] == (
-        f'INSERT INTO "DJTEST"."{MARKER_TABLE}" (RUN_ID, CREATED_AT) VALUES (%s, %s)',
-        ["r" * 32, now],
+    assert "MODULE_SET NVARCHAR(1000)" in sql[0]
+    assert statements[1] == (
+        HEADER_INSERT,
+        ["r" * 32, now, "basic"],
     )
-    assert statements[3][1] == ["r" * 32, now, "KEEP"]
-    assert [s for s, _ in marker_statements(LIB, "r" * 32, now, (), create=False)] == sql[1:3]
+    assert statements[2][1] == ["r" * 32, now, "KEEP"]
+    rewrite = [s for s, _ in marker_statements(LIB, "r" * 32, now, (), create=False)]
+    assert rewrite == [f'DELETE FROM "DJTEST"."{MARKER_TABLE}"', sql[1]]
+
+
+def test_marker_statements_recreate_a_legacy_marker() -> None:
+    now = dt.datetime(2026, 10, 17, 12, 0)
+    sql = [
+        s
+        for s, _ in marker_statements(LIB, "r" * 32, now, (), "basic", create=False, recreate=True)
+    ]
+    assert sql[0] == f'DROP TABLE "DJTEST"."{MARKER_TABLE}"'
+    assert sql[1].startswith(f'CREATE TABLE "DJTEST"."{MARKER_TABLE}"')
+    assert len(sql) == 3
+
+
+@pytest.mark.parametrize(
+    ("value", "normalized"),
+    [
+        (None, None),
+        ("", None),
+        ("basic", "basic"),
+        ("transactions, basic", "basic,transactions"),
+        (["transactions", "basic", "basic"], "basic,transactions"),
+        (" , ", None),
+    ],
+)
+def test_normalize_module_set(value, normalized) -> None:
+    assert normalize_module_set(value) == normalized
+
+
+# --- keepdb and the module set ---------------------------------------------------
+
+
+def marker_for(module_set):
+    return Marker("a" * 32, None, frozenset(), module_set)
+
+
+INVENTORY = MARKED | {"TESTAPP_AUTHOR": "T"}
+
+
+@pytest.mark.parametrize("module_set", ["basic", None])
+def test_keepdb_reuses_tables_of_the_same_module_set(module_set) -> None:
+    result = plan(INVENTORY, marker_for("basic"), keepdb=True, module_set=module_set)
+    assert result.drop == () and not result.module_set_changed
+
+
+@pytest.mark.parametrize("old", ["transactions", None])
+def test_keepdb_drops_tables_of_another_module_set_without_asking(old) -> None:
+    result = plan(INVENTORY, marker_for(old), keepdb=True, module_set="basic")
+    assert result.drop == ("TESTAPP_AUTHOR",)
+    assert result.module_set_changed
+
+
+def test_module_set_change_never_bypasses_the_marker_gate() -> None:
+    with pytest.raises(TestDatabaseRefused, match="may be a production library"):
+        plan({"TESTAPP_AUTHOR": "T"}, None, keepdb=True, module_set="basic")
 
 
 # --- Settings ----------------------------------------------------------------------
@@ -172,7 +246,10 @@ def test_nodb_cursor_is_never_opened() -> None:
 class FakeCatalog:
     """Answers the creation's catalog queries and records every statement."""
 
-    def __init__(self, inventory, marker_rows=(), *, library=True, journal="*ACTIVE", fail=()):
+    def __init__(
+        self, inventory, marker_rows=(), *, library=True, journal="*ACTIVE", fail=(), legacy=False
+    ):
+        self.legacy = legacy  # marker table without the MODULE_SET column
         self.inventory = dict(inventory)
         self.marker_rows = list(marker_rows)
         self.library = library
@@ -190,6 +267,9 @@ class FakeCatalog:
 
     def execute(self, sql, params=None):
         self.executed.append((sql, list(params or [])))
+        if self.legacy and "MODULE_SET FROM" in sql:
+            error = Database.DatabaseError("column not found", sqlcode=-206)
+            raise django.db.DatabaseError("column not found") from error
         if sql.startswith("DROP "):
             name = sql.rsplit(".", 1)[1].strip('"')
             if name in self.fail:
@@ -208,7 +288,7 @@ class FakeCatalog:
         if "QSYS2.SYSREFCST" in sql:
             return []
         if sql.startswith("SELECT RUN_ID"):
-            return self.marker_rows
+            return [tuple(row) + (None,) * (4 - len(row)) for row in self.marker_rows]
         return []
 
     def fetchone(self):
@@ -239,10 +319,7 @@ def test_setup_on_empty_library_creates_marker(setup_with) -> None:
     catalog = FakeCatalog({})
     assert setup_with(catalog)._create_test_db(0, autoclobber=False) == LIB
     assert catalog.statements[0].startswith(f'CREATE TABLE "DJTEST"."{MARKER_TABLE}"')
-    assert catalog.statements[1:] == [
-        f'DELETE FROM "DJTEST"."{MARKER_TABLE}"',
-        f'INSERT INTO "DJTEST"."{MARKER_TABLE}" (RUN_ID, CREATED_AT) VALUES (%s, %s)',
-    ]
+    assert catalog.statements[1:] == [HEADER_INSERT]
 
 
 def test_setup_with_marker_drops_remnants_and_rewrites_marker(setup_with) -> None:
@@ -255,7 +332,7 @@ def test_setup_with_marker_drops_remnants_and_rewrites_marker(setup_with) -> Non
         'DROP VIEW "DJTEST"."OLD_VIEW"',
         'DROP TABLE "DJTEST"."TESTAPP_AUTHOR"',
         f'DELETE FROM "DJTEST"."{MARKER_TABLE}"',
-        f'INSERT INTO "DJTEST"."{MARKER_TABLE}" (RUN_ID, CREATED_AT) VALUES (%s, %s)',
+        HEADER_INSERT,
     ]
     new_run_id = catalog.executed[-1][1][0]
     assert new_run_id != "o" * 32 and len(new_run_id) == 32
@@ -358,3 +435,42 @@ def test_inventory_leaves_out_system_catalog_views(setup_with) -> None:
     setup_with(catalog)._create_test_db(0, autoclobber=False)
     (inventory_sql,) = [sql for sql, _ in catalog.executed if "QSYS2.SYSTABLES" in sql]
     assert "SYSTEM_TABLE = 'N'" in inventory_sql
+
+
+def test_legacy_marker_is_recognised_and_recreated(setup_with) -> None:
+    catalog = FakeCatalog(
+        {MARKER_TABLE: "T", "TESTAPP_AUTHOR": "T"},
+        marker_rows=[("o" * 32, None, None)],
+        legacy=True,
+    )
+    setup_with(catalog)._create_test_db(0, autoclobber=True)
+    assert catalog.statements[:3] == [
+        'DROP TABLE "DJTEST"."TESTAPP_AUTHOR"',
+        f'DROP TABLE "DJTEST"."{MARKER_TABLE}"',
+        catalog.statements[2],
+    ]
+    assert catalog.statements[2].startswith(f'CREATE TABLE "DJTEST"."{MARKER_TABLE}"')
+
+
+def test_module_set_is_written_to_the_marker(setup_with, monkeypatch) -> None:
+    catalog = FakeCatalog({})
+    creation = setup_with(catalog)
+    monkeypatch.setitem(
+        creation.connection.settings_dict["TEST"], "MODULE_SET", "transactions,basic"
+    )
+    creation._create_test_db(0, autoclobber=False)
+    header = [params for sql, params in catalog.executed if "MODULE_SET) VALUES" in sql]
+    assert header[0][2] == "basic,transactions"
+
+
+def test_changed_module_set_with_keepdb_drops_and_logs(setup_with, monkeypatch, caplog) -> None:
+    catalog = FakeCatalog(
+        {MARKER_TABLE: "T", "TESTAPP_AUTHOR": "T"},
+        marker_rows=[("o" * 32, None, None, "transactions")],
+    )
+    creation = setup_with(catalog)
+    monkeypatch.setitem(creation.connection.settings_dict["TEST"], "MODULE_SET", "basic")
+    with caplog.at_level("INFO", logger="django_db2_for_i"):
+        creation._create_test_db(0, autoclobber=False, keepdb=True)
+    assert 'DROP TABLE "DJTEST"."TESTAPP_AUTHOR"' in catalog.statements
+    assert "another module set (transactions); dropping them for basic" in caplog.text

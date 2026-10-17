@@ -67,6 +67,7 @@ DATABASES = {
 |---|---|
 | `CREATE_DB` | Must be `False` (reuse an existing library; never `CREATE SCHEMA` / `DROP SCHEMA`). Without it, running tests raises `NotSupportedError`. |
 | `NAME` | **Required.** System name of the test library (1 to 10 characters). It may equal the database `NAME`, but a warning is logged: only do that for a library used for nothing but tests. |
+| `MODULE_SET` | Optional. Names the test modules of a run (for example `"basic"`); stored in the marker table. With `--keepdb`, tables left by a run for another module set are dropped instead of reused. Used by the project's own test tooling. |
 
 How the backend protects your data:
 
