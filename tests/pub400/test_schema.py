@@ -230,3 +230,37 @@ def test_add_not_null_field_with_python_default(live, empty) -> None:
             "AND TABLE_NAME = 'TESTAPP_DEFAULTS' AND COLUMN_NAME = 'NICKNAME'"
         )
         assert cursor.fetchone()[0] == "N"
+
+
+# --- Extracting date/time parts --------------------------------------------------------
+
+
+def test_extract_values(live, empty) -> None:
+    """Django's conventions on an ISO week edge: Sunday 2023-01-01 is ISO 2022-W52."""
+    from django.db.models.functions import Extract
+
+    author = Author.objects.create(name="a")
+    Book.objects.create(
+        author=author,
+        title="t",
+        published=dt.datetime(2023, 1, 1, 13, 45, 30, 123456, tzinfo=dt.UTC),
+        reading_time=dt.time(6, 7, 8),
+    )
+    lookups = ("year", "iso_year", "quarter", "month", "week", "week_day", "iso_week_day")
+    lookups += ("day", "hour", "minute", "second")
+    values = Book.objects.values(**{lookup: Extract("published", lookup) for lookup in lookups})
+    assert values.get() == {
+        "year": 2023,
+        "iso_year": 2022,
+        "quarter": 1,
+        "month": 1,
+        "week": 52,
+        "week_day": 1,
+        "iso_week_day": 7,
+        "day": 1,
+        "hour": 13,
+        "minute": 45,
+        "second": 30,
+    }
+    assert Book.objects.filter(published__week_day=1, published__iso_week_day=7).count() == 1
+    assert Book.objects.filter(reading_time__second=8).count() == 1

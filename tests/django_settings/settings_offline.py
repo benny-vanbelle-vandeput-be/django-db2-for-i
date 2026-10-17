@@ -6,6 +6,9 @@ reserved, unresolvable name and the conftest guard refuses connections.
 
 SECRET_KEY = "offline-tests-not-secret"
 USE_TZ = True
+# The database stores UTC (no DATABASES TIME_ZONE); date functions need the
+# same zone (DatabaseOperations._check_tzname).
+TIME_ZONE = "UTC"
 INSTALLED_APPS = ["tests.testapp"]
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 

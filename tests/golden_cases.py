@@ -25,7 +25,7 @@ from decimal import Decimal
 from django.core.management.color import no_style
 from django.db.models import Case as CaseExpr
 from django.db.models import CharField, DecimalField, IntegerField, Value, When
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Extract
 from django.db.models.sql import DeleteQuery, InsertQuery, UpdateQuery
 
 from django_db2_for_i import capabilities
@@ -349,6 +349,63 @@ CASES: tuple[Case, ...] = (
     Case("flush/testapp_reset_sequences", "flush", _flush, (AUTHOR, BOOK, NODE, TAG)),
     # DROP TABLE (cascades on Db2 for i).
     Case("ddl/drop_tag", "drop", _drop(Tag), (TAG,)),
+)
+
+EXTRACT_LOOKUPS = (
+    "year",
+    "iso_year",
+    "quarter",
+    "month",
+    "week",
+    "week_day",
+    "iso_week_day",
+    "day",
+    "hour",
+    "minute",
+    "second",
+)
+
+# Extract on a DateTimeField, one golden per lookup type; on a DateField and a
+# TimeField; and the week_day / iso_week_day mapping in WHERE.
+CASES = (
+    *CASES,
+    *(
+        Case(
+            f"extract/datetime_{lookup}",
+            "query",
+            _select(
+                lambda lookup=lookup: Book.objects.annotate(x=Extract("published", lookup)).values(
+                    "x"
+                )
+            ),
+            (BOOK,),
+        )
+        for lookup in EXTRACT_LOOKUPS
+    ),
+    Case(
+        "extract/date_week_day",
+        "query",
+        _select(lambda: Defaults.objects.annotate(x=Extract("day", "week_day")).values("x")),
+        (DEFAULTS,),
+    ),
+    Case(
+        "extract/time_second",
+        "query",
+        _select(lambda: Book.objects.annotate(x=Extract("reading_time", "second")).values("x")),
+        (BOOK,),
+    ),
+    Case(
+        "extract/filter_week_day_sunday",
+        "query",
+        _select(lambda: Book.objects.filter(published__week_day=1)),
+        (BOOK,),
+    ),
+    Case(
+        "extract/filter_iso_week_day_sunday",
+        "query",
+        _select(lambda: Book.objects.filter(published__iso_week_day=7)),
+        (BOOK,),
+    ),
 )
 
 CASES_BY_NAME = {case.name: case for case in CASES}

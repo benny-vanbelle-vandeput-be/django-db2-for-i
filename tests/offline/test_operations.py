@@ -10,6 +10,7 @@ from django.db import NotSupportedError, connection
 from django.db.models import DateTimeField, UUIDField
 from django.db.models.expressions import Col
 from django.test.utils import override_settings
+from django.utils import timezone
 
 from django_db2_for_i.base import DatabaseWrapper
 from django_db2_for_i.operations import children_first
@@ -365,3 +366,68 @@ def test_savepoint_sql() -> None:
     )
     assert ops.savepoint_commit_sql(sid) == 'RELEASE SAVEPOINT "S140234567890123_X1"'
     assert ops.savepoint_rollback_sql(sid) == 'ROLLBACK TO SAVEPOINT "S140234567890123_X1"'
+
+
+# --- Extracting date/time parts --------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("lookup", "sql"),
+    [
+        ("year", "YEAR(col)"),
+        ("iso_year", "INTEGER(VARCHAR_FORMAT(col, 'IYYY'))"),
+        ("quarter", "QUARTER(col)"),
+        ("month", "MONTH(col)"),
+        ("week", "WEEK_ISO(col)"),
+        ("week_day", "DAYOFWEEK(col)"),
+        ("iso_week_day", "DAYOFWEEK_ISO(col)"),
+        ("day", "DAY(col)"),
+        ("hour", "HOUR(col)"),
+        ("minute", "MINUTE(col)"),
+        ("second", "SECOND(col)"),
+    ],
+)
+def test_datetime_extract_sql(lookup, sql) -> None:
+    assert ops.datetime_extract_sql(lookup, "col", ("p",), None) == (sql, ("p",))
+
+
+def test_date_and_time_extract_only_their_parts() -> None:
+    assert ops.date_extract_sql("week_day", "col", ()) == ("DAYOFWEEK(col)", ())
+    assert ops.time_extract_sql("second", "col", ()) == ("SECOND(col)", ())
+    with pytest.raises(ValueError, match="Invalid lookup type"):
+        ops.date_extract_sql("hour", "col", ())
+    with pytest.raises(ValueError, match="Invalid lookup type"):
+        ops.time_extract_sql("year", "col", ())
+    with pytest.raises(ValueError, match="Invalid lookup type"):
+        ops.datetime_extract_sql("epoch", "col", (), None)
+
+
+def test_extract_in_the_connection_time_zone_needs_no_conversion() -> None:
+    assert connection.timezone_name == "UTC"
+    assert ops.datetime_extract_sql("hour", "col", (), "UTC") == ("HOUR(col)", ())
+
+
+def test_extract_in_another_time_zone_is_not_supported() -> None:
+    with pytest.raises(NotSupportedError, match=r"'UTC'.*'Europe/Brussels'"):
+        ops.datetime_extract_sql("hour", "col", (), "Europe/Brussels")
+
+
+def test_extract_uses_the_databases_time_zone_setting() -> None:
+    """DATABASES TIME_ZONE (existing tables in local time) is the stored zone."""
+    wrapper = DatabaseWrapper(
+        {**connection.settings_dict, "TIME_ZONE": "Europe/Brussels"}, alias="offline_test"
+    )
+    assert wrapper.timezone_name == "Europe/Brussels"
+    assert wrapper.ops.datetime_extract_sql("day", "col", (), "Europe/Brussels") == (
+        "DAY(col)",
+        (),
+    )
+    with pytest.raises(NotSupportedError, match=r"'Europe/Brussels'.*'UTC'"):
+        wrapper.ops.datetime_extract_sql("day", "col", (), "UTC")
+
+
+def test_week_day_lookup_with_a_current_time_zone_other_than_the_database() -> None:
+    from tests.testapp.models import Book
+
+    with timezone.override("Europe/Brussels"), pytest.raises(NotSupportedError):
+        Book.objects.filter(published__week_day=1).query.get_compiler("default").as_sql()
