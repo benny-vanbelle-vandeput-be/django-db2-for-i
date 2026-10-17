@@ -499,3 +499,17 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   restored at close); a QAQQINI option (none exists); rebuilding tables for
   data-losing changes (large; phase 4 only if needed).
 
+## 2026-10-17: Open question for phase 4: table rebuild for data-losing ALTER TABLE
+- **Status:** open; decide in phase 4 from the `schema` and `migrations` test
+  results (project owner).
+- **Question:** CPA32B2 fires for `DROP COLUMN` also on empty tables and for
+  every narrowing `ALTER COLUMN` (probe `probe_inquiry`). On systems without a
+  system reply list entry (`ADDRPYLE MSGID(CPA32B2) RPY('I')`), such
+  migrations fail even with `OPTIONS["inquiry_message_reply"]`. Is a
+  table-rebuild fallback needed: create the new table, copy the rows, drop the
+  old table, rename (as Django does for SQLite, `_remake_table`)?
+- **To weigh:** indexes, constraints, foreign keys pointing at the table,
+  views, triggers, authorities and journaling must be recreated; the copy
+  costs time and space for large tables; it must not run silently on
+  production data.
+
