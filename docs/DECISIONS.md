@@ -351,3 +351,25 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Meaning of "verified":** accepted by Db2 for i, not correct results.
 - **Alternatives:** JSON/YAML files (SQL hard to read and diff); verifying DDL
   with renamed tables (would verify different SQL than the golden).
+
+## 2026-10-17: Typed parameter markers for Value expressions
+- **Decision:** every `Value` expression is rendered as `CAST(? AS <type>)`
+  (or `CAST(NULL AS <type>)`), through a `Value.as_db2_for_i()` method in
+  `django_db2_for_i/expressions.py`, imported by `base.py`. Plain filter
+  parameters stay `?`. Type rules: strings without `max_length` get
+  `NVARCHAR(<UTF-16 length, at least 1>)`; integers `INTEGER`, `BIGINT` or
+  `DECIMAL(n, 0)` by range; decimals without `max_digits` the precision and
+  scale of the value; `None` with a known output field a typed NULL, without
+  one a plain `NULL`; everything else the field's cast type. One golden per
+  rule, all accepted on IBM i 7.5 (PUB400).
+- **Why:** Db2 for i rejects untyped parameter markers in the select list,
+  `CASE`, `COALESCE` and arithmetic (SQL0418, found by the `exists()` golden);
+  `QuerySet.exists()` was unusable.
+- **Why `as_<vendor>`:** Django documents monkey patching `as_<vendor>()` onto
+  expression classes as the way for third-party backends to change one
+  expression's SQL (docs/ref/models/expressions.txt, "Adding support in
+  third-party database backends"). It is the smallest change; a custom
+  `compiler.py` (overriding `SQLCompiler.compile()` for every compiler class)
+  would do the same with more code.
+- **Also:** `cast_data_types` maps the AutoFields to plain integer types, since
+  their `data_types` carry the identity clause.

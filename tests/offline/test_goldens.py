@@ -114,7 +114,7 @@ UNQUOTED_QUALIFIED = re.compile(r"\b([A-Za-z_#@$][\w#@$]*)\s*\.\s*[A-Za-z_\"]")
 
 
 def allowed_identifiers() -> set[str]:
-    names = {"A"}  # alias used by exists()
+    names = {"A", "X"}  # aliases: exists() and the annotation in golden_cases
     for model in (Author, Book, Node, Tag):
         names.add(model._meta.db_table.upper())
         names.update(field.column.upper() for field in model._meta.local_fields)

@@ -23,6 +23,15 @@ silently truncated. Example: 6 emoji fit `max_length=10` in Django but not in
 Names are created in uppercase (`basic_article` becomes `BASIC_ARTICLE`).
 Mixed-case `db_table` / `db_column` names are not preserved.
 
+## Case-insensitive lookups do not use normal indexes
+
+`iexact`, `icontains`, `istartswith` and `iendswith` compare
+`UPPER(column)` with `UPPER(value)`. A normal index on the column cannot be
+used for `UPPER(column)`, so these lookups scan the table. (`icontains` and
+`iendswith` cannot use an index anyway, as with every `LIKE '%...'`.) Options
+for a later version: a derived index on `UPPER(column)`, or a case-insensitive
+sort sequence for the connection; neither is implemented yet.
+
 ## Time zones
 
 There is no time zone aware timestamp type. With `USE_TZ = True` (Django's
@@ -65,14 +74,6 @@ its table, so creating a constraint on a table in another library fails with
 to another library are therefore **not supported yet**; this is planned for
 phase 4 (schema editor completeness). (Verified for foreign key constraints;
 index names in another library have not been tested yet.)
-
-## QuerySet.exists() fails (SQL0418)
-
-**Known bug, not fixed yet.** `QuerySet.exists()` generates
-`SELECT ? AS "A" ... FETCH FIRST 1 ROWS ONLY` with a parameter marker in the
-select list, which Db2 for i rejects: `SQL0418 - Use of parameter marker, NULL,
-or UNKNOWN not valid`. Until it is fixed, use `qs.first() is not None` or
-`qs.count() > 0`.
 
 ## Features not available yet
 

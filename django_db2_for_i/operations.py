@@ -32,6 +32,13 @@ logger = logging.getLogger("django_db2_for_i")
 
 
 class DatabaseOperations(BaseDatabaseOperations):
+    # Cast types where data_types holds more than a type (the identity clause).
+    cast_data_types = {
+        "AutoField": "INTEGER",
+        "BigAutoField": "BIGINT",
+        "SmallAutoField": "SMALLINT",
+    }
+
     def max_name_length(self) -> int:
         return self.connection.capabilities.max_name_length
 

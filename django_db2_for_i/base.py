@@ -36,6 +36,7 @@ from django.db.backends.base.base import NO_DB_ALIAS, BaseDatabaseWrapper
 from django.utils.functional import cached_property
 
 from . import capabilities as caps
+from . import expressions  # noqa: F401  (registers as_db2_for_i() methods)
 from .client import DatabaseClient
 from .creation import DatabaseCreation
 from .drivers import base as Database
