@@ -304,3 +304,28 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Why:** Db2 for i adds SQL catalog views (`SYSCST`, ...) to a library with
   its first constraint (docs/IBMI_NOTES.md); they are not Django's and must
   never be dropped or reported as foreign objects.
+
+## 2026-10-17: Merge commits instead of rebase merging; signed commits on main
+- **Decision (project owner):** pull requests are merged with merge commits
+  only (rebase and squash merging off), and the ruleset requires signed
+  commits on `main`. Claude still rebases its PR branch onto `main` before
+  review; the maintainer never uses "Update branch". History is not
+  rewritten.
+- **Why:** GitHub's rebase merge recreates the PR commits with the merging
+  user as committer and **without signatures**, so the machine account's SSH
+  signatures were lost (checked via the API: `verified=false`,
+  `reason=unsigned`). With merge commits the PR commits land unchanged, with
+  their signatures, and GitHub signs the merge commit.
+- **State of the history:** the first 59 commits on `main` are unsigned: the
+  initial push (50 commits), four direct pushes made before the ruleset
+  existed, and the rebase-merged commits of PR #1 (`89f055f`), PR #2
+  (`f5813bd`) and PR #3 (`65ca558`, `16160f6`, `6a7d259`). PR #4 was the first
+  pull request merged with a merge commit: its commits (`94ba0fc`, `0a61b88`)
+  keep the machine account's signatures and its merge commit `0a17487` is
+  signed by GitHub (all Verified). From `0a17487` on, every commit on `main` is
+  signed. (Locally, `git log --show-signature` reports GitHub's merge commits as
+  unverifiable until GitHub's own signing key is trusted; GitHub shows them as
+  Verified.)
+- **Alternatives:** squash merging (GitHub signs the squash commit, but the
+  machine account's signatures and the individual commits are lost); keep
+  rebase merging (no verifiable signatures on `main`).
