@@ -198,6 +198,29 @@ Three tiers, selectable via pytest markers / nox sessions.
 - The GitHub wiki is a generated mirror of `docs/user/`, synced by a GitHub
   Action on pushes to main. Never edit the wiki directly.
 
+## Git workflow
+- Claude works on GitHub only as the machine account `claude-v-belle-net`
+  (`GH_TOKEN`), never with the maintainer's account. This repository's local git
+  config uses `gh auth git-credential` for pushes, so the keychain is not used.
+- `main` is protected by a ruleset: changes only through pull requests with one
+  approval by the maintainer, the `offline` check passing on an up-to-date
+  branch, linear history, rebase merges only. Never push to `main` directly and
+  never force-push it.
+- One branch per logical change, named `<type>/<topic>` (`feat/`, `fix/`,
+  `docs/`, `test/`, `ci/`, `chore/`), created from the current `origin/main`.
+- Commits: conventional messages; author is the maintainer (noreply address),
+  committer is the machine account (noreply address), every commit and tag is
+  signed with the machine account's SSH signing key (all set in the
+  repository's local git config). Never commit with a personal email address.
+- Before every push: `nox -s lint offline` passes locally.
+- When a PR branch is behind `main`, Claude rebases it onto `main` and pushes it
+  itself (`git push --force-with-lease`, PR branches only). The maintainer never
+  uses GitHub's "Update branch" button: with "approval of the most recent push"
+  that would make the maintainer the last pusher, so nobody could approve the PR
+  anymore.
+- Claude opens pull requests and answers review comments, but never merges; the
+  maintainer reviews and merges.
+
 ## 8. Directory structure
 
 ```
