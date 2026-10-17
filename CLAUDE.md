@@ -305,6 +305,7 @@ django-db2-for-i/
 3. **Django 5.2 support.** Build `compat.py` from real differences, extend nox matrix,
    fill `DJANGO_VERSIONS.md`.
 4. **Schema editor completeness.** `schema`, `migrations`, `introspection`, `inspectdb`.
+   Also: verify the column order of created tables (issue #23).
 5. **Returning & bulk.** `FINAL TABLE` returning columns, `bulk_create`, constraints, indexes.
 6. **Advanced.** Window functions, `JSONField`, db functions, DB-level `on_delete` (6.1+).
 7. **PUB400 tier & release prep.** Curated smoke set, golden verification job, README, packaging.
