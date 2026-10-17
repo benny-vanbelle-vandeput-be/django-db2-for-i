@@ -1,0 +1,202 @@
+"""DatabaseOperations: pure methods (no server needed)."""
+
+import datetime as dt
+import uuid
+from decimal import Decimal
+
+import pytest
+from django.core.management.color import no_style
+from django.db import NotSupportedError, connection
+from django.db.models import DateTimeField, UUIDField
+from django.db.models.expressions import Col
+from django.test.utils import override_settings
+
+from django_db2_for_i.base import DatabaseWrapper
+from django_db2_for_i.operations import _children_first
+
+ops = connection.ops
+
+
+# --- last_insert_id ----------------------------------------------------------------
+
+
+class IdentityCursor:
+    def __init__(self, value):
+        self.value = value
+        self.sql = None
+
+    def execute(self, sql):
+        self.sql = sql
+
+    def fetchone(self):
+        return (self.value,)
+
+
+def test_last_insert_id_converts_decimal_to_int() -> None:
+    cursor = IdentityCursor(Decimal("42"))
+    value = ops.last_insert_id(cursor, "basic_article", "id")
+    assert value == 42
+    assert type(value) is int
+    assert cursor.sql == "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1"
+
+
+def test_last_insert_id_none() -> None:
+    assert ops.last_insert_id(IdentityCursor(None), "t", "id") is None
+
+
+# --- Pagination --------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("low", "high", "sql"),
+    [
+        (None, None, ""),
+        (0, None, ""),
+        (0, 10, "FETCH FIRST 10 ROWS ONLY"),
+        (5, None, "OFFSET 5 ROWS"),
+        (5, 15, "OFFSET 5 ROWS FETCH FIRST 10 ROWS ONLY"),
+    ],
+)
+def test_limit_offset_sql(low, high, sql: str) -> None:
+    assert ops.limit_offset_sql(low, high) == sql
+
+
+def test_no_limit_value() -> None:
+    assert ops.no_limit_value() is None
+
+
+def test_limit_offset_needs_capability() -> None:
+    settings_dict = dict(connection.settings_dict)
+    settings_dict["OPTIONS"] = {"capabilities": {"profile": "7.5", "has_offset_fetch": False}}
+    wrapper = DatabaseWrapper(settings_dict, alias="offline_test")
+    with pytest.raises(NotSupportedError, match="has_offset_fetch"):
+        wrapper.ops.limit_offset_sql(0, 10)
+
+
+# --- Date/time ---------------------------------------------------------------------
+
+AWARE = dt.datetime(2026, 10, 17, 15, 30, 0, 123456, tzinfo=dt.timezone(dt.timedelta(hours=2)))
+
+
+def test_aware_datetime_is_stored_as_naive_utc() -> None:
+    assert ops.adapt_datetimefield_value(AWARE) == dt.datetime(2026, 10, 17, 13, 30, 0, 123456)
+
+
+def test_naive_datetime_is_passed_unchanged() -> None:
+    naive = dt.datetime(2026, 10, 17, 13, 30)
+    assert ops.adapt_datetimefield_value(naive) is naive
+
+
+@override_settings(USE_TZ=False)
+def test_aware_datetime_without_use_tz_raises() -> None:
+    with pytest.raises(ValueError, match="USE_TZ is False"):
+        ops.adapt_datetimefield_value(AWARE)
+
+
+def test_none_values() -> None:
+    assert ops.adapt_datetimefield_value(None) is None
+    assert ops.adapt_datefield_value(None) is None
+    assert ops.adapt_timefield_value(None) is None
+
+
+def test_date_and_time_are_passed_as_objects() -> None:
+    assert ops.adapt_datefield_value(dt.date(2026, 10, 17)) == dt.date(2026, 10, 17)
+    assert ops.adapt_timefield_value(dt.time(13, 45, 30)) == dt.time(13, 45, 30)
+
+
+def test_aware_time_raises() -> None:
+    with pytest.raises(ValueError, match="timezone-aware times"):
+        ops.adapt_timefield_value(dt.time(13, 45, tzinfo=dt.UTC))
+
+
+def converters_for(field) -> list:
+    return [converter for converter in ops.get_db_converters(Col("t", field))]
+
+
+def test_datetime_read_back_as_aware_utc() -> None:
+    (converter,) = converters_for(DateTimeField())
+    value = converter(dt.datetime(2026, 10, 17, 13, 30), None, connection)
+    assert value == dt.datetime(2026, 10, 17, 13, 30, tzinfo=dt.UTC)
+    assert value.tzinfo is not None
+    assert converter(None, None, connection) is None
+
+
+@override_settings(USE_TZ=False)
+def test_datetime_without_use_tz_has_no_converter() -> None:
+    assert converters_for(DateTimeField()) == []
+
+
+def test_uuid_converter() -> None:
+    (converter,) = converters_for(UUIDField())
+    value = uuid.uuid4()
+    assert converter(value.hex, None, connection) == value
+    assert converter(None, None, connection) is None
+
+
+# --- Flush -------------------------------------------------------------------------
+
+
+def flush(monkeypatch, tables, references=(), identities=None, **kwargs) -> list[str]:
+    seen = {}
+
+    def metadata(names):
+        seen["names"] = names
+        return set(references), identities or {}
+
+    monkeypatch.setattr(ops, "_flush_metadata", metadata)
+    statements = ops.sql_flush(no_style(), tables, **kwargs)
+    assert seen["names"] == [table.upper() for table in tables]
+    return statements
+
+
+def test_sql_flush_empty_does_not_query(monkeypatch) -> None:
+    monkeypatch.setattr(ops, "_flush_metadata", lambda names: pytest.fail("queried"))
+    assert ops.sql_flush(no_style(), []) == []
+
+
+def test_sql_flush_truncates_unreferenced_tables(monkeypatch) -> None:
+    assert flush(monkeypatch, ["basic_article", "basic_tag"]) == [
+        'TRUNCATE TABLE "BASIC_ARTICLE"',
+        'TRUNCATE TABLE "BASIC_TAG"',
+    ]
+
+
+def test_sql_flush_restarts_identity_with_truncate(monkeypatch) -> None:
+    assert flush(monkeypatch, ["basic_article"], reset_sequences=True) == [
+        'TRUNCATE TABLE "BASIC_ARTICLE" RESTART IDENTITY'
+    ]
+
+
+def test_sql_flush_deletes_referenced_tables_after_children(monkeypatch) -> None:
+    # c -> b -> a, plus an unrelated table d.
+    references = {("C", "B"), ("B", "A")}
+    assert flush(monkeypatch, ["a", "b", "c", "d"], references) == [
+        'TRUNCATE TABLE "C"',
+        'TRUNCATE TABLE "D"',
+        'DELETE FROM "B"',
+        'DELETE FROM "A"',
+    ]
+
+
+def test_sql_flush_restarts_identity_after_delete(monkeypatch) -> None:
+    statements = flush(
+        monkeypatch,
+        ["parent", "child"],
+        {("CHILD", "PARENT")},
+        {"PARENT": ("ID", 1), "CHILD": ("ID", 1)},
+        reset_sequences=True,
+    )
+    assert statements == [
+        'TRUNCATE TABLE "CHILD" RESTART IDENTITY',
+        'DELETE FROM "PARENT"',
+        'ALTER TABLE "PARENT" ALTER COLUMN "ID" RESTART WITH 1',
+    ]
+
+
+def test_sql_flush_self_reference(monkeypatch) -> None:
+    assert flush(monkeypatch, ["node"], {("NODE", "NODE")}) == ['DELETE FROM "NODE"']
+
+
+def test_children_first_breaks_cycles() -> None:
+    order = _children_first({"A", "B"}, {("A", "B"), ("B", "A")})
+    assert sorted(order) == ["A", "B"]
