@@ -92,6 +92,14 @@ Not affected: bytes (`BinaryField`, `BLOB`) and reading long `NCLOB` / `BLOB`
 values, both verified up to 300,000 characters/bytes. The root cause is being
 investigated.
 
+## Database defaults must be constants
+
+`db_default` accepts constants only (strings, numbers, booleans, dates,
+times, naive datetimes, bytes), written into the table definition as
+literals. Expressions such as `db_default=Now()` raise `NotSupportedError`,
+and so do time zone aware datetimes, because Db2 for i `TIMESTAMP` has no
+time zone. `db_default=None` means "no default".
+
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and

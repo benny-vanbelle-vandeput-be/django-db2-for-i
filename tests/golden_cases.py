@@ -29,7 +29,7 @@ from django.db.models.functions import Coalesce
 from django.db.models.sql import DeleteQuery, InsertQuery, UpdateQuery
 
 from django_db2_for_i import capabilities
-from tests.testapp.models import Author, Book, Node, Tag
+from tests.testapp.models import Author, Book, Defaults, Node, Tag
 
 KINDS = ("create", "query", "dml", "flush", "drop")
 
@@ -92,6 +92,15 @@ def _ddl(*models, foreign_keys: bool = False):
         return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
 
     return build
+
+
+def _add_not_null_with_python_default(connection):
+    """AddField of a NOT NULL column with a Python default (literal, then dropped)."""
+    field = CharField(max_length=20, default="O'Brien")
+    field.set_attributes_from_name("nickname")
+    with connection.schema_editor(collect_sql=True) as editor:
+        editor.add_field(Defaults, field)
+    return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
 
 
 def _drop(model):
@@ -179,11 +188,12 @@ def _flush(connection):
     return [(sql, ()) for sql in statements]
 
 
-AUTHOR, BOOK, NODE, TAG = (
+AUTHOR, BOOK, NODE, TAG, DEFAULTS = (
     "ddl/create_author",
     "ddl/create_book",
     "ddl/create_node_fk",
     "ddl/create_tag",
+    "ddl/create_defaults",
 )
 
 CASES: tuple[Case, ...] = (
@@ -193,6 +203,14 @@ CASES: tuple[Case, ...] = (
     Case(BOOK, "create", _ddl(Book)),
     Case(NODE, "create", _ddl(Node, foreign_keys=True)),
     Case(TAG, "create", _ddl(Tag)),
+    # Column DEFAULT literals, one per prepare_default() rule (no CAST).
+    Case(DEFAULTS, "create", _ddl(Defaults)),
+    Case(
+        "ddl/add_field_not_null_default",
+        "create",
+        _add_not_null_with_python_default,
+        (DEFAULTS,),
+    ),
     # Pagination (OFFSET / FETCH FIRST) and exists().
     Case(
         "queries/slice_offset_fetch",

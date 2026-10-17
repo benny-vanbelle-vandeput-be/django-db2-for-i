@@ -147,6 +147,13 @@ def probe_drop(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
+def probe_defaults(session: nox.Session) -> None:
+    """Write probe 06 (QTEMP only, nothing persists): accepted column DEFAULT forms."""
+    session.install("-e", ".")
+    session.run("python", "probes/w06_defaults.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
 def setup_journal(session: nox.Session) -> None:
     """CHANGES THE IBM i: create QSQJRN in a test library. Dry run unless -- --execute."""
     session.install("-e", ".")

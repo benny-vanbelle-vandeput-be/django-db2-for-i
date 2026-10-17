@@ -10,13 +10,15 @@ stays off until Django's test suite backs it.
 """
 
 import datetime as dt
+import uuid
+from decimal import Decimal
 
 import pytest
-from django.db import connection
+from django.db import connection, models
 
-from tests.testapp.models import Author, Book, Node, Tag
+from tests.testapp.models import Author, Book, Defaults, Node, Tag
 
-MODELS = (Author, Book, Node, Tag)
+MODELS = (Author, Book, Node, Tag, Defaults)
 TABLES = {model._meta.db_table for model in MODELS}
 
 
@@ -179,7 +181,52 @@ def test_flush_with_foreign_keys(live) -> None:
     assert 'DELETE FROM "TESTAPP_NODE"' in statements
     assert 'TRUNCATE TABLE "TESTAPP_BOOK" RESTART IDENTITY' in statements
     live.ops.execute_sql_flush(statements)
-    assert [m.objects.count() for m in MODELS] == [0, 0, 0, 0]
+    assert [m.objects.count() for m in MODELS] == [0] * len(MODELS)
     assert Author.objects.create(name="b").pk == 1
     assert Node.objects.create().pk == 1
     live.ops.execute_sql_flush(statements)
+
+
+# --- Column defaults ---------------------------------------------------------------
+
+
+def test_db_defaults_are_stored_as_written(live, empty) -> None:
+    """Every prepare_default() literal reaches the row unchanged (also "%")."""
+    with live.cursor() as cursor:
+        cursor.execute('INSERT INTO "TESTAPP_DEFAULTS" ("NOTHING") VALUES (NULL)')
+    row = Defaults.objects.get()
+    assert (row.text, row.flag, row.number, row.amount, row.ratio) == (
+        "O'Brien 100%",
+        True,
+        -1,
+        Decimal("1.50"),
+        1.5,
+    )
+    assert (row.day, row.clock) == (dt.date(2026, 1, 2), dt.time(13, 45, 30))
+    assert row.stamp == dt.datetime(2026, 1, 2, 13, 45, 30, 123456, tzinfo=dt.UTC)
+    assert bytes(row.data) == b"\x01\xab"
+    assert row.code == uuid.UUID("12345678-1234-5678-1234-567812345678")
+    assert row.nothing is None
+
+
+def test_add_not_null_field_with_python_default(live, empty) -> None:
+    """Existing rows get the literal default; the column keeps no default.
+
+    The column is not removed again: DROP COLUMN on a table with rows is
+    cancelled (HY008, docs/IBMI_NOTES.md, phase 4); the module fixture drops
+    the table.
+    """
+    with live.cursor() as cursor:
+        cursor.execute('INSERT INTO "TESTAPP_DEFAULTS" ("NOTHING") VALUES (NULL)')
+    field = models.CharField(max_length=20, default="O'Brien")
+    field.set_attributes_from_name("nickname")
+    with live.schema_editor() as editor:
+        editor.add_field(Defaults, field)
+    with live.cursor() as cursor:
+        cursor.execute('SELECT "NICKNAME" FROM "TESTAPP_DEFAULTS"')
+        assert cursor.fetchall() == [("O'Brien",)]
+        cursor.execute(
+            "SELECT HAS_DEFAULT FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA = CURRENT SCHEMA "
+            "AND TABLE_NAME = 'TESTAPP_DEFAULTS' AND COLUMN_NAME = 'NICKNAME'"
+        )
+        assert cursor.fetchone()[0] == "N"

@@ -1,6 +1,8 @@
 """Models used by the offline and pub400 tiers."""
 
+import datetime
 import uuid
+from decimal import Decimal
 
 from django.db import models
 
@@ -27,3 +29,21 @@ class Node(models.Model):
 class Tag(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     label = models.SlugField(unique=True)
+
+
+class Defaults(models.Model):
+    """One db_default per literal rule of DatabaseSchemaEditor.prepare_default()."""
+
+    text = models.CharField(max_length=20, db_default="O'Brien 100%")
+    flag = models.BooleanField(db_default=True)
+    number = models.IntegerField(db_default=-1)
+    amount = models.DecimalField(max_digits=5, decimal_places=2, db_default=Decimal("1.50"))
+    ratio = models.FloatField(db_default=1.5)
+    day = models.DateField(db_default=datetime.date(2026, 1, 2))
+    clock = models.TimeField(db_default=datetime.time(13, 45, 30))
+    stamp = models.DateTimeField(
+        db_default=datetime.datetime(2026, 1, 2, 13, 45, 30, 123456, tzinfo=datetime.UTC)
+    )
+    data = models.BinaryField(db_default=b"\x01\xab")
+    code = models.UUIDField(db_default=uuid.UUID("12345678-1234-5678-1234-567812345678"))
+    nothing = models.IntegerField(null=True, db_default=None)

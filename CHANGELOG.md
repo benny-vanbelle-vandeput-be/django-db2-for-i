@@ -22,3 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Docs: `DECISIONS.md`, `DJANGO_VERSIONS.md`, `IBMI_NOTES.md` with the
     PUB400 findings, `TEST_STATUS.md`.
 - Claude Code project settings deny access to `.env`.
+
+### Fixed
+- Column defaults (`db_default`, and Python defaults when a migration adds a
+  NOT NULL column) are written as bare literals with one rule per type;
+  `CAST(...)` in a DEFAULT was rejected (SQL0574). Strings with quotes or
+  non-ASCII characters use `UX'...'` constants, because Db2 for i stores
+  escaped quotes in DEFAULT constants wrongly. Unsupported values raise
+  `NotSupportedError`.
+

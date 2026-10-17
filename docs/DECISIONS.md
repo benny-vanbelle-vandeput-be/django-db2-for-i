@@ -432,3 +432,27 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Alternatives:** `"other": {"TEST": {"MIRROR": "default"}}` (one library, but
   tests that expect separate databases fail); one `runtests.py` call for all
   modules (one log, and keepdb could not tell module sets apart).
+
+## 2026-10-17: Column defaults are bare literals, one rule per type
+- **Decision:** `requires_literal_defaults = True` (already set): both Python
+  defaults written while a migration adds a NOT NULL column and `db_default`
+  go through `DatabaseSchemaEditor.prepare_default()`. `db_default_sql()` no
+  longer compiles the `Value` (which gave `CAST(? AS ...)`, rejected with
+  SQL0574): it prepares the value like the field's own values and writes a
+  literal. Rules: strings as `'...'` (printable ASCII without quotes) or
+  `UX'<UTF-16 hex>'` (everything else), booleans `TRUE`/`FALSE`, integers,
+  `Decimal` in fixed-point notation, floats with an exponent (`1.5E0`), naive
+  date/time/datetime in ISO format, bytes `BX'..'`. `None` means no default:
+  `db_default=None` writes no DEFAULT clause. Everything else (aware
+  datetimes, NaN/infinity, other types) raises `NotSupportedError`.
+- **Why:** Db2 for i accepts only bare constants and special registers in a
+  DEFAULT, and stores escaped quotes and non-ASCII constants wrongly (probe
+  `probe_defaults`, docs/IBMI_NOTES.md); the UX constant is stored correctly in
+  every string column type.
+- **Alternatives:** `N'...'` (truncates CHAR values); `'...'` with doubled
+  quotes (stores `O''Brien`); refusing strings with quotes (needlessly strict).
+- **Later improvement:** `db_default=Now()` could map to the
+  `CURRENT_TIMESTAMP` special register (accepted as a DEFAULT); for now
+  expression defaults are not supported (`supports_expression_defaults =
+  False`).
+
