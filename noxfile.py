@@ -52,6 +52,38 @@ def offline(session: nox.Session, django: str) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
+def wheel(session: nox.Session) -> None:
+    """Build sdist + wheel into dist/ and run the offline tier against the installed wheel.
+
+    The tests run from a copy of tests/, scripts/, pyproject.toml and
+    CHANGELOG.md without the django_db2_for_i source tree, so the import
+    comes from the wheel (checked before pytest runs).
+    """
+    import glob
+    import shutil
+    import tempfile
+
+    shutil.rmtree("dist", ignore_errors=True)
+    session.run("uv", "build", "--out-dir", "dist", external=True)
+    (built,) = glob.glob("dist/*.whl")
+    session.install(*nox.project.dependency_groups(PYPROJECT, "test"))
+    session.install(built, f"Django~={NEWEST_DJANGO}.0")
+    with tempfile.TemporaryDirectory(prefix="wheel-test-") as tmp:
+        for name in ("tests", "scripts"):
+            shutil.copytree(name, f"{tmp}/{name}", ignore=shutil.ignore_patterns("__pycache__"))
+        for name in ("pyproject.toml", "CHANGELOG.md"):
+            shutil.copy(name, tmp)
+        session.chdir(tmp)
+        session.run(
+            "python",
+            "-c",
+            "import django_db2_for_i as m; assert 'site-packages' in m.__file__, m.__file__; "
+            "print('testing', m.__file__, m.__version__)",
+        )
+        session.run("pytest", "-m", "offline", "-p", "no:cacheprovider", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
 def pub400(session: nox.Session) -> None:
     """Tier 2: curated smoke set against PUB400 (newest Python, newest Django).
 
