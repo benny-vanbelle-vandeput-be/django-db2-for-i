@@ -50,6 +50,8 @@ def test_connection_string_defaults() -> None:
         "DFT": "5",
         "TFT": "2",
         "XDYNAMIC": "0",
+        "UNICODESQL": "1",
+        "CCSID": "1208",
     }
 
 
@@ -84,7 +86,9 @@ def test_connection_string_extended_dynamic_can_be_enabled() -> None:
     assert kw["PKG"] == "A/DEFAULT(IBM),2,0,1,0,512"
 
 
-@pytest.mark.parametrize("keyword", ["PWD", "uid", "DRIVER", "SYSTEM", "DBQ", "SSL", "CMT"])
+@pytest.mark.parametrize(
+    "keyword", ["PWD", "uid", "DRIVER", "SYSTEM", "DBQ", "SSL", "CMT", "UNICODESQL", "ccsid"]
+)
 def test_connection_string_rejects_reserved_attributes(keyword: str) -> None:
     with pytest.raises(ValueError, match="cannot be set through attributes"):
         connection_string(params(attributes={keyword: "X"}))
@@ -248,6 +252,12 @@ def test_connect_error_carries_no_secrets(monkeypatch: pytest.MonkeyPatch) -> No
 class FakeRawConnection:
     maxwrite = 0  # pyodbc's default: chunk by the driver's type sizes
 
+    def __init__(self):
+        self.encoding = None
+
+    def setencoding(self, encoding, ctype):
+        self.encoding = (encoding, ctype)
+
 
 def test_connect_disables_pooling(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = {}
@@ -266,6 +276,14 @@ def test_connect_sets_maxwrite(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(pyodbc, "connect", lambda dsn, **kwargs: FakeRawConnection())
     connection = pyodbc_driver.Driver().connect(params())
     assert connection._raw.maxwrite == pyodbc_driver.MAXWRITE
+
+
+def test_connect_sends_text_as_utf8_through_the_narrow_functions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(pyodbc, "connect", lambda dsn, **kwargs: FakeRawConnection())
+    connection = pyodbc_driver.Driver().connect(params())
+    assert connection._raw.encoding == ("utf-8", pyodbc.SQL_CHAR)
 
 
 def test_maxwrite_covers_every_accepted_string() -> None:

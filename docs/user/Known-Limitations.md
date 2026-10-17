@@ -18,6 +18,26 @@ SQLSTATE `22001` ("Input data is too big to fit into field"); it is never
 silently truncated. Example: 6 emoji fit `max_length=10` in Django but not in
 `NVARCHAR(10)`.
 
+## Text outside the job CCSID
+
+Statement text and string parameters travel as Unicode (UTF-8), so any
+character can appear in SQL and in `NVARCHAR`, `NCHAR` and `NCLOB` columns
+(every `CharField` and `TextField`). Limits come from the IBM i job CCSID
+(273 on PUB400; see `QSYS2.ACTIVE_JOB_INFO`):
+
+- **`VARCHAR` / `CHAR` columns in the job CCSID** (tables not created by
+  Django): a character the CCSID cannot hold, such as `€` in CCSID 273 or an
+  emoji, is refused with SQLSTATE `22018`, never replaced.
+- **Names**: table, column and alias names must use characters of the job
+  CCSID; others fail with `SQL0104`.
+- **Comments** (`COMMENT ON`, used once `db_comment` is supported): the text
+  must use characters of the job CCSID; others fail with `SQL0104`.
+
+Result column names and error messages with non-ASCII characters are only
+decoded correctly when the Python process runs in a UTF-8 locale. That is
+Python's default, also in the plain `C`/`POSIX` locale (PEP 538), but setting
+`LC_ALL=C` explicitly switches it off.
+
 ## Table and column names are uppercase
 
 Names are created in uppercase (`basic_article` becomes `BASIC_ARTICLE`).
