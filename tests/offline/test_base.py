@@ -190,7 +190,8 @@ def test_features() -> None:
     features = make_wrapper().features
     assert features.supports_transactions is True
     assert features.can_rollback_ddl is False
-    assert features.uses_savepoints is False
+    assert features.uses_savepoints is True
+    assert features.can_release_savepoints is True
     assert features.supports_timezones is False
     assert features.supports_paramstyle_pyformat is False
     assert features.has_native_boolean_field is True

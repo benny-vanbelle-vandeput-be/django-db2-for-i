@@ -144,6 +144,17 @@ class DatabaseOperations(BaseDatabaseOperations):
             value = uuid.UUID(value)
         return value
 
+    # --- Savepoints -------------------------------------------------------------
+
+    def savepoint_create_sql(self, sid):
+        """The ON ROLLBACK clause is required on Db2 for i (SQL0104 without it).
+
+        RETAIN CURSORS keeps open cursors usable after ROLLBACK TO SAVEPOINT
+        (RETAIN LOCKS is not valid). RELEASE and ROLLBACK TO use Django's
+        defaults (probe ``probe_savepoints``, docs/IBMI_NOTES.md).
+        """
+        return f"SAVEPOINT {self.quote_name(sid)} ON ROLLBACK RETAIN CURSORS"
+
     # --- Identity reset ----------------------------------------------------------
 
     def sequence_reset_sql(self, style, model_list):

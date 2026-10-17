@@ -162,6 +162,22 @@ def _delete_filtered(connection):
     return [(sql, params)]
 
 
+def _savepoints(connection):
+    """Django's nested atomic(): create, rollback to + release (error), release."""
+    ops = connection.ops
+    sid, inner = "s140234567890123_x1", "s140234567890123_x2"
+    statements = [
+        ops.savepoint_create_sql(sid),
+        f"INSERT INTO {ops.quote_name('testapp_author')} ({ops.quote_name('name')}) "
+        "VALUES ('savepoint')",
+        ops.savepoint_create_sql(inner),
+        ops.savepoint_rollback_sql(inner),
+        ops.savepoint_commit_sql(inner),
+        ops.savepoint_commit_sql(sid),
+    ]
+    return [(sql, ()) for sql in statements]
+
+
 def _last_insert_id(connection):
     class Recorder:
         sql = None
@@ -327,6 +343,8 @@ CASES: tuple[Case, ...] = (
     Case("dml/insert_book", "dml", _insert_book, (BOOK,)),
     Case("dml/update_boolean", "dml", _update_boolean, (BOOK,)),
     Case("dml/delete_filtered", "dml", _delete_filtered, (AUTHOR,)),
+    # Savepoints, as nested atomic() blocks use them (in the rolled-back transaction).
+    Case("dml/savepoints", "dml", _savepoints, (AUTHOR,)),
     # Flush: TRUNCATE ... RESTART IDENTITY, DELETE + RESTART for referenced tables.
     Case("flush/testapp_reset_sequences", "flush", _flush, (AUTHOR, BOOK, NODE, TAG)),
     # DROP TABLE (cascades on Db2 for i).

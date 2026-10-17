@@ -54,9 +54,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 
     # --- Optional features, all off until backed by passing Django tests -----
 
-    # Transactions and savepoints. Before enabling: probe the Db2 for i
-    # savepoint syntax (likely SAVEPOINT name ON ROLLBACK RETAIN CURSORS).
-    uses_savepoints = False
+    # Savepoints (nested atomic()): SAVEPOINT ... ON ROLLBACK RETAIN CURSORS,
+    # RELEASE SAVEPOINT, ROLLBACK TO SAVEPOINT (probe probe_savepoints).
+    uses_savepoints = True
+    can_release_savepoints = True
 
     # Queries
     allows_group_by_lob = False
