@@ -10,6 +10,9 @@ PUB400 libraries (TEST['CREATE_DB'] = False, guarded by the marker table).
 Library names come from the DB2I_* environment variables (.env), never from
 this file. DB2I_TEST_MODULES (set by the runner) is recorded in the marker
 table, so a --keepdb run for another module set cleans up the old tables.
+
+The backend's DEBUG log goes to stderr, so it lands in the runner's log next
+to the test that caused it (e.g. deferred identity restarts).
 """
 
 import os
@@ -50,3 +53,11 @@ SECRET_KEY = "django_tests_secret_key"
 # Faster password hashing in tests, as in Django's own test settings.
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"backend": {"format": "[%(name)s] %(levelname)s %(message)s"}},
+    "handlers": {"stderr": {"class": "logging.StreamHandler", "formatter": "backend"}},
+    "loggers": {"django_db2_for_i": {"handlers": ["stderr"], "level": "DEBUG", "propagate": False}},
+}
