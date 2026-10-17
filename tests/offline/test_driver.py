@@ -245,17 +245,34 @@ def test_connect_error_carries_no_secrets(monkeypatch: pytest.MonkeyPatch) -> No
     assert seen["dsn"].count("PWD=") == 1
 
 
+class FakeRawConnection:
+    maxwrite = 0  # pyodbc's default: chunk by the driver's type sizes
+
+
 def test_connect_disables_pooling(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = {}
 
     def fake_connect(dsn: str, **kwargs):
         calls.update(kwargs, pooling=pyodbc.pooling)
-        return object()
+        return FakeRawConnection()
 
     monkeypatch.setattr(pyodbc, "pooling", True)
     monkeypatch.setattr(pyodbc, "connect", fake_connect)
     pyodbc_driver.Driver().connect(params(login_timeout=7), autocommit=True)
     assert calls == {"timeout": 7, "autocommit": True, "pooling": False}
+
+
+def test_connect_sets_maxwrite(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(pyodbc, "connect", lambda dsn, **kwargs: FakeRawConnection())
+    connection = pyodbc_driver.Driver().connect(params())
+    assert connection._raw.maxwrite == pyodbc_driver.MAXWRITE
+
+
+def test_maxwrite_covers_every_accepted_string() -> None:
+    longest = "\U0001f600" * (pyodbc_driver.MAX_STRING_PARAM_UNITS // 2)
+    assert len(longest.encode("utf-16-le")) <= pyodbc_driver.MAXWRITE
+    assert len(longest.encode("utf-8")) <= pyodbc_driver.MAXWRITE
+    assert len(("\u20ac" * pyodbc_driver.MAX_STRING_PARAM_UNITS).encode()) <= pyodbc_driver.MAXWRITE
 
 
 def test_params_repr_hides_password() -> None:
@@ -404,7 +421,7 @@ def test_values_up_to_the_limit_are_sent(value) -> None:
 )
 def test_longer_strings_are_refused_before_sending(value) -> None:
     raw = RecordingRawCursor()
-    with pytest.raises(base.NotSupportedError, match="Long texts may lose characters"):
+    with pytest.raises(base.NotSupportedError, match="longer than 1M characters are refused"):
         pyodbc_driver.Cursor(raw, ()).execute("VALUES ?, ?", [1, value])
     assert raw.calls == []
 
@@ -412,7 +429,8 @@ def test_longer_strings_are_refused_before_sending(value) -> None:
 def test_executemany_checks_every_row() -> None:
     raw = RecordingRawCursor()
     rows = [["short"], ["x" * (LIMIT + 1)]]
-    with pytest.raises(base.NotSupportedError, match="String parameter 1 has 8185 UTF-16 units"):
+    message = f"String parameter 1 has {LIMIT + 1} UTF-16 units"
+    with pytest.raises(base.NotSupportedError, match=message):
         pyodbc_driver.Cursor(raw, ()).executemany("VALUES ?", rows)
     assert raw.calls == []
 
@@ -428,7 +446,7 @@ def test_guard_reaches_django_as_not_supported_error() -> None:
     from django.db import connection
 
     with (
-        pytest.raises(django.db.NotSupportedError, match="Long texts may lose characters"),
+        pytest.raises(django.db.NotSupportedError, match="longer than 1M characters are refused"),
         connection.wrap_database_errors,
     ):
         pyodbc_driver.Cursor(RecordingRawCursor(), ()).execute("VALUES ?", ["x" * (LIMIT + 1)])
