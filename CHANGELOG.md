@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a2] - 2026-10-18
+
+### Added
+- A warning is logged at the first connection when the process locale is not
+  UTF-8: the IBM i Access ODBC driver then garbles non-ASCII characters in
+  result column names and error messages (data values are not affected).
+- Release workflow (`.github/workflows/release.yml`) for signed `v*` tags:
+  verifies the tag (annotated, OpenPGP-signed by the maintainer's key, on
+  `main`, matching `__version__`, with a CHANGELOG section), builds sdist
+  and wheel, runs the offline tier against the installed wheel and publishes
+  a GitHub pre-release with both files. No PyPI.
+- Probes for the string encoding investigation (`probe_encoding`,
+  `probe_job_ccsid`, `probe_locale`); findings in `docs/IBMI_NOTES.md`.
+
+### Changed
+- Packaging: the version (`django_db2_for_i.__version__`) is the single
+  source of the package version; classifier `Development Status :: 3 -
+  Alpha`; project URLs. Alpha releases are published on GitHub only.
+
+### Fixed
+- Long strings arrive intact: string parameters of more than 8184 characters
+  bound to `NCLOB`, `DBCLOB` or `CLOB` (such as a `TextField`) lost one
+  character per 16369 bytes, silently. The cause was pyodbc sending long
+  values in chunks of an odd byte size; the pyodbc driver now sets
+  `maxwrite`, so values up to the maximum are sent in one piece. The limit
+  for string parameters rises from 8184 to 1,048,576 UTF-16 units (the
+  capacity of a `TextField` column); longer strings are refused with
+  `NotSupportedError`. Bytes have no limit.
+- Non-ASCII text in SQL statements is sent as Unicode: statement text and
+  string parameters travel as UTF-8 (pyodbc `setencoding("utf-8",
+  SQL_CHAR)`, driver keywords `UNICODESQL=1` and `CCSID=1208`, which can no
+  longer be overridden). Before, the IBM i Access ODBC driver converted
+  statement text to the job CCSID and silently replaced characters outside
+  it (`€` in CCSID 273, emoji). `SchemaEditor.quote_value()` writes strings
+  as plain `'...'` constants (column defaults keep `UX'...'`).
+
+## [0.1.0a1] - 2026-10-17
+
+Tagged as `v0.1.0a1` on commit `147e3fc`, without a release workflow. The
+code under that tag still reports version `0.0.1.dev0`
+(`django_db2_for_i.__version__`); the version number was set with 0.1.0a2.
+The tag is not moved or recreated.
+
 ### Added
 - Phase 0: project skeleton.
   - BSD-3-Clause license, contributing guide, README, changelog.
@@ -77,21 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-ASCII characters use `UX'...'` constants, because Db2 for i stores
   escaped quotes in DEFAULT constants wrongly. Unsupported values raise
   `NotSupportedError`.
-- Long strings arrive intact: string parameters of more than 8184 characters
-  bound to `NCLOB`, `DBCLOB` or `CLOB` (such as a `TextField`) lost one
-  character per 16369 bytes, silently. The cause was pyodbc sending long
-  values in chunks of an odd byte size; the pyodbc driver now sets
-  `maxwrite`, so values up to the maximum are sent in one piece. The limit
-  for string parameters rises from 8184 to 1,048,576 UTF-16 units (the
-  capacity of a `TextField` column); longer strings are refused with
-  `NotSupportedError`. Bytes have no limit.
-- Non-ASCII text in SQL statements is sent as Unicode: statement text and
-  string parameters travel as UTF-8 (pyodbc `setencoding("utf-8",
-  SQL_CHAR)`, driver keywords `UNICODESQL=1` and `CCSID=1208`, which can no
-  longer be overridden). Before, the IBM i Access ODBC driver converted
-  statement text to the job CCSID and silently replaced characters outside
-  it (`€` in CCSID 273, emoji). `SchemaEditor.quote_value()` writes strings
-  as plain `'...'` constants (column defaults keep `UX'...'`).
-- A warning is logged at the first connection when the process locale is not
-  UTF-8: the IBM i Access ODBC driver then garbles non-ASCII characters in
-  result column names and error messages (data values are not affected).
+
+[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a2...HEAD
+[0.1.0a2]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a1...v0.1.0a2
+[0.1.0a1]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases/tag/v0.1.0a1

@@ -2,18 +2,41 @@
 
 A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
-> **Status: early development (phase 0, skeleton).** The backend is not usable yet.
+> [!WARNING]
+> **Alpha.** Minimal backend (phase 1): connections, transactions and
+> savepoints, basic types, `CREATE`/`DROP TABLE`, test databases in an
+> existing library. Django's `basic` and `transactions` test modules pass;
+> queries beyond that, migrations that alter tables, and many field types
+> are not done yet. Not for production use. APIs and settings may change
+> between alpha releases. See [Known limitations](docs/user/Known-Limitations.md).
 
-## Target usage
+## Install
+
+Alpha releases are published as [GitHub releases](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases)
+(sdist and wheel), not on PyPI:
+
+```sh
+pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0a2"
+```
+
+You also need unixODBC and the IBM i Access ODBC Driver, see
+[ODBC driver setup](docs/user/ODBC-Driver-Setup.md).
+
+## Usage
 
 ```python
 DATABASES = {
     "default": {
         "ENGINE": "django_db2_for_i",
-        # connection settings: to be documented in phase 1
+        "NAME": "MYLIB",  # library (schema); becomes CURRENT SCHEMA
+        "HOST": "ibmi.example.com",
+        "USER": os.environ["DB2I_USER"],
+        "PASSWORD": os.environ["DB2I_PASSWORD"],
     }
 }
 ```
+
+All settings: [Configuration](docs/user/Configuration.md).
 
 ## Supported versions
 
