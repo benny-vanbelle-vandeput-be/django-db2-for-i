@@ -46,7 +46,7 @@ class SQLCompiler(compiler.SQLCompiler):
         return extra_select, order_by, group_by
 
     def _by_position(self, item):
-        expr, (sql, params, is_ref) = item
+        expr, (_sql, _params, is_ref) = item
         positions = self._null_ordering_positions.get(id(expr))
         if positions is None:
             return item
