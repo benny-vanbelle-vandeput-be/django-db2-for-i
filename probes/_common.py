@@ -322,5 +322,7 @@ def write_result(name: str, data: dict[str, Any], settings: Settings) -> Path:
     stamp = dt.datetime.now(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
     path = RESULTS_DIR / f"{name}-{stamp}.json"
     payload = {"probe": name, "utc": stamp, "host": settings.host, "ssl": settings.ssl, **data}
-    path.write_text(settings.scrub(json.dumps(payload, indent=2, ensure_ascii=False)) + "\n")
+    # default=str: parameters may be date/time/Decimal objects.
+    text = json.dumps(payload, indent=2, ensure_ascii=False, default=str)
+    path.write_text(settings.scrub(text) + "\n")
     return path
