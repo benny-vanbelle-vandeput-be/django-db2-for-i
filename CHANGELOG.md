@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     PUB400 findings, `TEST_STATUS.md`.
 - Claude Code project settings deny access to `.env`.
 
+### Enabled features
+- Savepoints (`uses_savepoints`, `can_release_savepoints`): nested `atomic()`
+  blocks use `SAVEPOINT ... ON ROLLBACK RETAIN CURSORS`. Django's
+  `transactions` tests: 85 passed, 3 skipped, no failures.
+
 ### Fixed
 - Column defaults (`db_default`, and Python defaults when a migration adds a
   NOT NULL column) are written as bare literals with one rule per type;
@@ -30,4 +35,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-ASCII characters use `UX'...'` constants, because Db2 for i stores
   escaped quotes in DEFAULT constants wrongly. Unsupported values raise
   `NotSupportedError`.
-

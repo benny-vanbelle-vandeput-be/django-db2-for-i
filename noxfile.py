@@ -154,6 +154,13 @@ def probe_defaults(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
+def probe_savepoints(session: nox.Session) -> None:
+    """CHANGES THE IBM i: write probe w07 (one table). Dry run unless -- --execute."""
+    session.install("-e", ".")
+    session.run("python", "probes/w07_savepoints.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
 def setup_journal(session: nox.Session) -> None:
     """CHANGES THE IBM i: create QSQJRN in a test library. Dry run unless -- --execute."""
     session.install("-e", ".")

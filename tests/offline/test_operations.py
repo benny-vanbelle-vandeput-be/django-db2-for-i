@@ -353,3 +353,15 @@ def test_case_insensitive_lookups_uppercase_the_column(lookup) -> None:
 @pytest.mark.parametrize("lookup", ["exact", "contains", "startswith", "gt"])
 def test_case_sensitive_lookups_leave_the_column_alone(lookup) -> None:
     assert ops.lookup_cast(lookup) == "%s"
+
+
+# --- Savepoints ------------------------------------------------------------------------
+
+
+def test_savepoint_sql() -> None:
+    sid = "s140234567890123_x1"
+    assert ops.savepoint_create_sql(sid) == (
+        'SAVEPOINT "S140234567890123_X1" ON ROLLBACK RETAIN CURSORS'
+    )
+    assert ops.savepoint_commit_sql(sid) == 'RELEASE SAVEPOINT "S140234567890123_X1"'
+    assert ops.savepoint_rollback_sql(sid) == 'ROLLBACK TO SAVEPOINT "S140234567890123_X1"'

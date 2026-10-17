@@ -476,6 +476,34 @@ is written as `'...'`; anything else as `UX'...'`.
 Probably the `CPA32B2` inquiry message ("change of file may cause data to be
 lost") answered with its default reply (cancel); to be probed in phase 4.
 
+### Savepoints (`nox -s probe_savepoints -- --execute`)
+2026-10-17, one connection with the backend's settings (CMT=1, autocommit
+off), one table in the `default` library (created and dropped by the probe).
+
+- `SAVEPOINT "<sid>" ON ROLLBACK RETAIN CURSORS` is accepted with a quoted,
+  Django-style name (`s<thread>_x<n>`) and with a 40-character name. The
+  `ON ROLLBACK RETAIN CURSORS` clause is **required**: `SAVEPOINT x` alone fails
+  with SQL0104; `ON ROLLBACK RETAIN LOCKS` is not valid (SQL0104). `UNIQUE` is
+  accepted.
+- `RELEASE SAVEPOINT x` and `RELEASE TO SAVEPOINT x` both work;
+  `ROLLBACK TO SAVEPOINT x` undoes the changes after the savepoint and keeps
+  the savepoint (a second ROLLBACK TO works). Django's error path, ROLLBACK TO
+  followed by RELEASE, works; afterwards the savepoint is gone (SQL0880).
+- Nesting: RELEASE of an inner savepoint keeps its changes in the outer one;
+  ROLLBACK TO the outer one undoes both. ROLLBACK TO an outer savepoint
+  destroys the inner ones (SQL0880).
+- A failed statement (SQL0803 duplicate key) inside a savepoint: ROLLBACK TO
+  and RELEASE work, and the transaction continues normally.
+- Reusing a name without `UNIQUE` replaces the earlier savepoint.
+- An open cursor survives ROLLBACK TO SAVEPOINT (RETAIN CURSORS).
+- After COMMIT the savepoints are gone (SQL0880). In autocommit mode
+  `SAVEPOINT` is accepted but the savepoint is gone at once (SQL0880 on
+  RELEASE); Django never creates savepoints in autocommit mode.
+
+Result: `uses_savepoints` and `can_release_savepoints` enabled. Django's
+`transactions` module went from 15 passed / 73 skipped to 85 passed /
+3 skipped (no failures).
+
 ### Journal setup in the `other` library (`nox -s setup_journal -- --library other --execute`)
 Approved by the project owner and run 2026-10-17 against `<USER>B` (the
 `other` library). The dry run first confirmed: owned by our user, no journal
