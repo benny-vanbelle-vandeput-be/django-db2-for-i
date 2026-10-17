@@ -77,3 +77,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-ASCII characters use `UX'...'` constants, because Db2 for i stores
   escaped quotes in DEFAULT constants wrongly. Unsupported values raise
   `NotSupportedError`.
+- Long strings arrive intact: string parameters of more than 8184 characters
+  bound to `NCLOB`, `DBCLOB` or `CLOB` (such as a `TextField`) lost one
+  character per 16369 bytes, silently. The cause was pyodbc sending long
+  values in chunks of an odd byte size; the pyodbc driver now sets
+  `maxwrite`, so values up to the maximum are sent in one piece. The limit
+  for string parameters rises from 8184 to 1,048,576 UTF-16 units (the
+  capacity of a `TextField` column); longer strings are refused with
+  `NotSupportedError`. Bytes have no limit.

@@ -102,22 +102,22 @@ to another library are therefore **not supported yet**; this is planned for
 phase 4 (schema editor completeness). (Verified for foreign key constraints;
 index names in another library have not been tested yet.)
 
-## Long texts may lose characters: strings over 8184 characters are refused
+## Strings longer than 1M characters are refused
 
-The IBM i Access ODBC driver (with pyodbc) **loses characters of string
-parameters bound as LOB values** (`NCLOB`, `DBCLOB`, `CLOB`): from 8185
-characters on, one character is dropped (two from about 24,500), without an
-error. A `TextField` is an `NCLOB` column.
+String parameters longer than **1,048,576 UTF-16 units** (1M; an emoji
+counts as two) are refused with `NotSupportedError`, before anything is
+sent. 1M characters is the capacity of a `TextField` column (`NCLOB`, which
+is `NCLOB(1M)`), so a longer value could not be stored there anyway.
 
-To prevent silent data loss, the backend **refuses every string parameter
-longer than 8184 UTF-16 units** (an emoji counts as two) with
-`NotSupportedError`, before anything is sent. This also refuses long values
-for `CharField(max_length > 8184)` columns, which would arrive intact: the
-backend cannot see in advance whether the driver binds a parameter as a LOB.
+Why a limit at all: up to it, the backend sends every string in one piece
+(pyodbc `maxwrite`). Above it pyodbc would send the value in chunks again,
+and chunked strings lose characters in the IBM i Access ODBC driver (fixed
+after 0.1.0a1 for everything up to the limit; before, strings over 8184
+characters were refused). Columns declared larger than `NCLOB(1M)` by hand
+cannot receive longer values through this backend yet.
 
-Not affected: bytes (`BinaryField`, `BLOB`) and reading long `NCLOB` / `BLOB`
-values, both verified up to 300,000 characters/bytes. The root cause is being
-investigated.
+Not limited: bytes (`BinaryField`, `BLOB`). Above 4 MiB they are sent in
+chunks, which is safe for binary data. Reading long values is not limited.
 
 ## Database defaults must be constants
 

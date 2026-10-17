@@ -21,6 +21,9 @@ Connection defaults (all documented in docs/IBMI_NOTES.md / DECISIONS.md):
 - CCSID: pyodbc uses the ODBC wide-character API (UTF-16), so no client CCSID
   keyword is needed; data is converted from the column CCSID by the driver.
 
+``maxwrite``: long string parameters are bound in one buffer instead of in
+chunks (see "Long string parameters" below).
+
 pyodbc connection pooling is switched off: Django manages connection reuse,
 and shared systems such as PUB400 limit connections per client.
 """
@@ -146,12 +149,21 @@ def _call[T](secrets: Sequence[str], func: Callable[..., T], *args: Any) -> T:
 
 # --- Long string parameters -----------------------------------------------------
 
-# String parameters bound as LOB (NCLOB, DBCLOB, CLOB) lose characters from
-# 8185 UTF-16 units on, silently (probe string_limits, docs/IBMI_NOTES.md).
-# pyodbc picks the binding from the driver's description of the target, which
-# is not visible here, so every longer string is refused, including ones that
-# would be bound as NVARCHAR and arrive intact. Bytes are not affected.
-MAX_STRING_PARAM_UNITS = 8184
+# pyodbc sends a parameter larger than its limit as data-at-execution, in
+# chunks of that limit. Without maxwrite the limit for strings is the driver's
+# SQL_WVARCHAR column size, 16369 (characters, compared with bytes): an odd
+# chunk size that splits UTF-16 units, which the driver drops for LOB targets
+# (probe_encoding, docs/IBMI_NOTES.md). With maxwrite above every accepted
+# string, strings are always bound in one buffer.
+#
+# Maximum: 1M UTF-16 units, the capacity of a TextField column (NCLOB, which
+# is NCLOB(1M)). Longer strings are refused before anything is sent, because
+# they would be chunked again. Bytes are never refused: above MAXWRITE they
+# are chunked too, which is safe for binary data.
+MAX_STRING_PARAM_UNITS = 1024 * 1024
+# Bytes; covers every accepted string in UTF-16 (2 bytes per unit) and UTF-8
+# (at most 3 bytes per UTF-16 unit).
+MAXWRITE = 4 * MAX_STRING_PARAM_UNITS
 
 
 def check_string_params(params: Sequence[Any]) -> None:
@@ -161,9 +173,8 @@ def check_string_params(params: Sequence[Any]) -> None:
             if units > MAX_STRING_PARAM_UNITS:
                 raise base.NotSupportedError(
                     f"String parameter {position} has {units} UTF-16 units; strings longer "
-                    f"than {MAX_STRING_PARAM_UNITS} are refused because the IBM i Access ODBC "
-                    "driver loses characters of long LOB values (docs/user/"
-                    "Known-Limitations.md, 'Long texts may lose characters')."
+                    f"than {MAX_STRING_PARAM_UNITS} are refused (docs/user/"
+                    "Known-Limitations.md, 'Strings longer than 1M characters are refused')."
                 )
 
 
@@ -259,6 +270,8 @@ class Driver(base.Driver):
 def _connect(params: base.ConnectionParams, autocommit: bool) -> Any:
     import pyodbc
 
-    return pyodbc.connect(
+    raw = pyodbc.connect(
         connection_string(params), timeout=params.login_timeout, autocommit=autocommit
     )
+    raw.maxwrite = MAXWRITE
+    return raw

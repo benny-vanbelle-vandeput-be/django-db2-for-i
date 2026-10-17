@@ -20,7 +20,7 @@ from the Python value. Type rules:
   the value's UTF-16 length rounded up to 32, 256, 1024, 4000 or 16370, so
   values of different lengths share one SQL text (statement cache); with
   ``max_length``: ``NVARCHAR(max_length)``. Longer than 16370 units: refused
-  (DBCLOB casts lose characters, docs/IBMI_NOTES.md);
+  (no rule for longer casts yet; NVARCHAR(16382) and up fail with SQL0901);
 - integers whose type was inferred: ``INTEGER``, ``BIGINT`` outside the
   INTEGER range, ``DECIMAL(n, 0)`` outside the BIGINT range;
 - Decimal without ``max_digits``: ``DECIMAL(p, s)`` from the value's digits;
