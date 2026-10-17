@@ -66,14 +66,6 @@ to another library are therefore **not supported yet**; this is planned for
 phase 4 (schema editor completeness). (Verified for foreign key constraints;
 index names in another library have not been tested yet.)
 
-## QuerySet.exists() fails (SQL0418)
-
-**Known bug, not fixed yet.** `QuerySet.exists()` generates
-`SELECT ? AS "A" ... FETCH FIRST 1 ROWS ONLY` with a parameter marker in the
-select list, which Db2 for i rejects: `SQL0418 - Use of parameter marker, NULL,
-or UNKNOWN not valid`. Until it is fixed, use `qs.first() is not None` or
-`qs.count() > 0`.
-
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and

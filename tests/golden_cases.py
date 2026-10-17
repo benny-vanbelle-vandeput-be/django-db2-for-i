@@ -23,6 +23,9 @@ from collections.abc import Callable, Iterator
 from decimal import Decimal
 
 from django.core.management.color import no_style
+from django.db.models import Case as CaseExpr
+from django.db.models import CharField, DecimalField, IntegerField, Value, When
+from django.db.models.functions import Coalesce
 from django.db.models.sql import DeleteQuery, InsertQuery, UpdateQuery
 
 from django_db2_for_i import capabilities
@@ -115,6 +118,11 @@ def _exists(make_queryset):
         return [(sql, params)]
 
     return build
+
+
+def _annotate(make_expression):
+    """SELECT <expression> AS "X" FROM the author table."""
+    return _select(lambda: Author.objects.annotate(x=make_expression()).values("x"))
 
 
 def _insert_book(connection):
@@ -238,6 +246,63 @@ CASES: tuple[Case, ...] = (
         (AUTHOR,),
     ),
     Case("queries/last_insert_id", "query", _last_insert_id),
+    # Value expressions: typed parameter markers (SQL0418 otherwise), one
+    # golden per type rule (django_db2_for_i/expressions.py).
+    Case("values/integer", "query", _annotate(lambda: Value(1)), (AUTHOR,)),
+    Case("values/bigint", "query", _annotate(lambda: Value(2**40)), (AUTHOR,)),
+    Case(
+        "values/string_length",
+        "query",
+        _annotate(lambda: Value("h\u00e9llo \U0001f600")),
+        (AUTHOR,),
+    ),
+    Case("values/string_empty", "query", _annotate(lambda: Value("")), (AUTHOR,)),
+    Case(
+        "values/string_max_length",
+        "query",
+        _annotate(lambda: Value("x", output_field=CharField(max_length=20))),
+        (AUTHOR,),
+    ),
+    Case(
+        "values/null_typed",
+        "query",
+        _annotate(lambda: Value(None, output_field=IntegerField())),
+        (AUTHOR,),
+    ),
+    Case(
+        "values/null_untyped_in_case",
+        "query",
+        _annotate(lambda: CaseExpr(When(name="a", then=Value(1)), default=Value(None))),
+        (AUTHOR,),
+    ),
+    Case("values/boolean", "query", _annotate(lambda: Value(True)), (AUTHOR,)),
+    Case("values/decimal", "query", _annotate(lambda: Value(Decimal("12.345"))), (AUTHOR,)),
+    Case(
+        "values/decimal_field",
+        "query",
+        _annotate(
+            lambda: Value(
+                Decimal("1.5"), output_field=DecimalField(max_digits=10, decimal_places=2)
+            )
+        ),
+        (AUTHOR,),
+    ),
+    Case("values/date", "query", _annotate(lambda: Value(dt.date(2026, 10, 17))), (AUTHOR,)),
+    Case("values/time", "query", _annotate(lambda: Value(dt.time(1, 2, 3, 456789))), (AUTHOR,)),
+    Case("values/datetime_aware", "query", _annotate(lambda: Value(AWARE)), (AUTHOR,)),
+    Case(
+        "expressions/case_when",
+        "query",
+        _annotate(lambda: CaseExpr(When(name="a", then=Value(1)), default=Value(0))),
+        (AUTHOR,),
+    ),
+    Case(
+        "expressions/coalesce",
+        "query",
+        _annotate(lambda: Coalesce("name", Value("none"))),
+        (AUTHOR,),
+    ),
+    Case("expressions/arithmetic", "query", _annotate(lambda: Value(1) + Value(2)), (AUTHOR,)),
     # DML with backend-specific values.
     Case("dml/insert_book", "dml", _insert_book, (BOOK,)),
     Case("dml/update_boolean", "dml", _update_boolean, (BOOK,)),

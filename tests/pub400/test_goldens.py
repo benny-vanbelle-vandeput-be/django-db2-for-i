@@ -32,9 +32,7 @@ RESULTS: dict[str, str] = {}  # golden name -> "passed" | "failed" | "skipped"
 
 # Goldens Db2 for i currently rejects: backend bugs found by this check, with
 # the reason. strict: once the SQL is fixed and accepted, the test reports it.
-REJECTED = {
-    "queries/exists": 'SQL0418: untyped parameter marker in the select list (SELECT ? AS "A")',
-}
+REJECTED: dict[str, str] = {}
 
 CASES = [
     pytest.param(
