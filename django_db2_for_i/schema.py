@@ -17,8 +17,10 @@ import datetime
 import math
 from decimal import Decimal
 
-from django.db import NotSupportedError
+from django.db import DatabaseError, NotSupportedError, OperationalError
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
+
+from . import inquiry
 
 
 def string_literal(value: str) -> str:
@@ -83,6 +85,29 @@ def default_literal(value) -> str:
 
 
 class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
+    def execute(self, sql, params=()):
+        """Explain an ALTER TABLE that Db2 for i cancelled (CPA32B2, see inquiry.py)."""
+        try:
+            return super().execute(sql, params)
+        except DatabaseError as exc:
+            if self._cancelled_by_inquiry(str(sql), exc):
+                active = self.connection._inquiry_reply_active
+                raise OperationalError(inquiry.cancelled_ddl_message(active)) from exc
+            raise
+
+    def _cancelled_by_inquiry(self, sql: str, exc: DatabaseError) -> bool:
+        """HY008 on ALTER TABLE, with CPA32B2/CPD32CE in the job log."""
+        sqlstate = getattr(exc.__cause__, "sqlstate", "")
+        if not inquiry.is_alter_table(sql) or sqlstate != inquiry.CANCELLED_SQLSTATE:
+            return False
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute(inquiry.JOB_LOG_SQL)
+                messages = {str(row[0]).strip() for row in cursor.fetchall()}
+        except DatabaseError:
+            return False
+        return bool(messages & set(inquiry.CANCEL_MESSAGES))
+
     def quote_value(self, value) -> str:
         """An SQL literal for ``value`` (used for collected SQL)."""
         if value is None:

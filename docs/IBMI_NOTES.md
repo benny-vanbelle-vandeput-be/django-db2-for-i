@@ -472,9 +472,63 @@ value back. Found because Django's `basic` tests failed during setup with
 is written as `'...'`; anything else as `UX'...'`.
 
 **ALTER TABLE ... DROP COLUMN** on a table with rows was cancelled with
-**`HY008` "Operation cancelled" (30071)** in the `pub400` tier (2026-10-17).
-Probably the `CPA32B2` inquiry message ("change of file may cause data to be
-lost") answered with its default reply (cancel); to be probed in phase 4.
+**`HY008` "Operation cancelled" (30071)** in the `pub400` tier (2026-10-17);
+the cause is the CPA32B2 inquiry message, see "ALTER TABLE cancelled by
+CPA32B2" below.
+
+### ALTER TABLE cancelled by CPA32B2 (`probe_inquiry`, `probe_job_reuse`)
+2026-10-17. `probe_inquiry` changes only QTEMP and its own job (every job
+attribute it changes is set back and read back); `probe_job_reuse` changes
+only its own job and uses two connections, strictly one after the other.
+
+**What happens:**
+- `ALTER TABLE ... DROP COLUMN` sends inquiry message **CPA32B2** ("Change of
+  file &1 may cause data to be lost. (C I)"), **also on an empty table**. Its
+  default reply is **`C`** (`QSYS2.MESSAGE_FILE_DATA`). Job log: CPD32CC
+  "Change to field B may result in data loss", CPD32CE "Change of file ...
+  canceled", CPF7304 "File ... not changed"; the driver reports **`HY008`
+  "Operation cancelled" (30071)**. CPA32B2 itself does not appear in the job
+  log.
+- Narrowing type changes are cancelled the same way, also when every value
+  fits: INTEGER -> SMALLINT, VARCHAR(10) -> VARCHAR(5), NVARCHAR(10) ->
+  NVARCHAR(5), DECIMAL(9, 2) -> DECIMAL(5, 2). Widening (INTEGER -> BIGINT,
+  VARCHAR(5) -> VARCHAR(10)) and `ADD COLUMN ... NOT NULL DEFAULT 0` are not.
+- The database host server jobs (`QUSER/QZDASOINIT`, `QZDASSINIT` for TLS)
+  have **`INQMSGRPY(*RQD)`** from job description `QGPL/QDFTSVR`
+  (`QSYS2.JOB_INFO.INQUIRY_MESSAGE_REPLY`; `QSYS2.GET_JOB_INFO` has no such
+  column).
+
+**Options tried:**
+- `CALL QSYS2.QCMDEXC('CHGJOB INQMSGRPY(*SYSRPYL)')` is allowed for a normal
+  user profile on its own job, and setting it back works. On PUB400 it does
+  **not** help: the only system reply list entry for CPA32B2
+  (`QSYS2.REPLY_LIST_INFO`, sequence 3282) replies `I` only for comparison
+  data `'ACS Database Schemas'` at offset 1, which DROP COLUMN's message data
+  never matches. `*DFT` would apply the default reply `C`. Adding a reply list
+  entry (`ADDRPYLE`) is a system-wide change for an administrator.
+- QAQQINI: `CRTDUPOBJ` of `QSYS/QAQQINI` is not allowed for our profile
+  (CPF2130); `CALL QSYS2.OVERRIDE_QAQQINI(1, '', '')` makes a job-level copy
+  in QTEMP without any library (`OVERRIDE_QAQQINI(3, '', '')` removes it).
+  None of its 49 options controls inquiry messages (only `MESSAGES_DEBUG`
+  mentions messages).
+- A mistake in the first `probe_inquiry` run: the original value was read
+  with a wrong column name, so the reset did not run and that server job
+  disconnected with `*SYSRPYL`. Afterwards no `QUSER` server job had
+  `*SYSRPYL`. The probe now refuses to change anything if it cannot read the
+  original value.
+
+**Job reuse after disconnect (`probe_job_reuse`, three runs):** each
+connection got a fresh `QZDASSINIT` job (prestart reuse count 1 of 200), and
+after the disconnect the job was no longer listed in `QSYS2.JOB_INFO` (status
+filter `*ALL`): on PUB400 the job ends at disconnect, so a changed `INQMSGRPY`
+cannot be inherited by the next client. Whether a reused prestart job keeps
+it on other systems could not be observed; the backend restores the original
+value explicitly at close either way.
+
+**Backend:** `OPTIONS["inquiry_message_reply"]` (opt-in, connection level)
+and the error message for a cancelled ALTER TABLE (`inquiry.py`). DROP COLUMN
+with the option stays an expected failure on PUB400 ("no CPA32B2 entry in the
+system reply list") until a dedicated IBM i with the entry is available.
 
 ### Savepoints (`nox -s probe_savepoints -- --execute`)
 2026-10-17, one connection with the backend's settings (CMT=1, autocommit
@@ -556,6 +610,9 @@ Plan, one read-only or QTEMP-only probe per step, recording each result here:
 2. Driver keywords that affect conversion: CCSID / `UNICODESQL`-style
    options, `TRANSLATE`, `MAXFIELDLEN`, `BLOCKSIZE`/LOB settings
    (IBM i Access ODBC keyword documentation).
+   Also the query option `SQL_TRANSLATE_ASCII_TO_JOB` (listed by
+   `QSYS2.OVERRIDE_QAQQINI`, which makes a job-level QAQQINI copy in QTEMP
+   without touching a library).
 3. Re-run the three findings for each combination; one setting may explain
    all three.
 4. If a setting fixes them: change the driver defaults (`drivers/pyodbc.py`),

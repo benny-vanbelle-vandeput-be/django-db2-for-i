@@ -476,3 +476,26 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Test settings:** the offline and pub400 tiers set `TIME_ZONE = "UTC"`
   (Django's default `America/Chicago` would differ from the database's UTC).
 
+## 2026-10-17: Inquiry message reply as an opt-in connection setting (CPA32B2)
+- **Decision (project owner):** `OPTIONS["inquiry_message_reply"]` (`*RQD`,
+  `*DFT` or `*SYSRPYL`; default not set). When set, the backend reads the
+  job's current `INQMSGRPY` at connect, then runs
+  `CALL QSYS2.QCMDEXC('CHGJOB INQMSGRPY(<value>)')`, for the whole connection
+  (no per-DDL variant); at close it restores the value it read, not a fixed
+  `*RQD`. If the original cannot be read, nothing is changed and a
+  `DatabaseError` explains why. Without the option the job attribute is never
+  touched. Public helpers `set_inquiry_message_reply()` and
+  `restore_inquiry_message_reply()` do the same on demand.
+- **Error message:** an `ALTER TABLE` that fails with `HY008` while the job
+  log shows CPA32B2/CPD32CE is re-raised as `OperationalError` explaining the
+  administrator's `ADDRPYLE MSGID(CPA32B2) RPY('I')` and the option.
+- **Why:** DROP COLUMN and narrowing column changes send CPA32B2 (default
+  reply cancel), also on empty tables. A system reply list entry is the IBM i
+  way to answer it; it is system-wide, so it is the administrator's decision,
+  and the backend only switches its own job to use it. On PUB400 there is no
+  matching entry and none can be added (probe `probe_inquiry`).
+- **Alternatives:** changing the attribute only around each ALTER TABLE
+  (rejected by the project owner: connection level is simpler and the value is
+  restored at close); a QAQQINI option (none exists); rebuilding tables for
+  data-losing changes (large; phase 4 only if needed).
+

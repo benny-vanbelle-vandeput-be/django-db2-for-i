@@ -35,6 +35,26 @@ running them after the commit. You can still hit it with your own DDL inside
 
 **Fix:** run the DDL outside the transaction, or commit first.
 
+## ALTER TABLE cancelled (CPA32B2, HY008)
+
+```
+OperationalError: Db2 for i cancelled this ALTER TABLE because it may lose data
+(inquiry message CPA32B2, default reply C; job log CPD32CE). ...
+```
+
+The driver itself only reports `[HY008] ... Operation cancelled. (30071)`; the
+backend checks the job log and replaces it with this explanation.
+
+**Cause:** `DROP COLUMN` or a narrowing column change (also on an empty
+table) sends inquiry message CPA32B2, and its default reply cancels the
+change.
+
+**Fix:** an administrator adds `ADDRPYLE SEQNBR(<free number>) MSGID(CPA32B2)
+RPY('I')`, and the database settings set `OPTIONS["inquiry_message_reply"] =
+"*SYSRPYL"`, see [IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data).
+If the message says the connection already uses `*SYSRPYL`, the reply list
+entry is missing or does not match.
+
 ## Test library refused
 
 Raised as `TestDatabaseRefused` before or after a test run. Before the tests,

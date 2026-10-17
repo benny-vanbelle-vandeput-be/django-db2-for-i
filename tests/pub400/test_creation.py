@@ -11,7 +11,13 @@ from django.db import connection
 from django_db2_for_i.creation import MARKER_TABLE, TestDatabaseRefused
 from tests.testapp.models import Author
 
-MODEL_TABLES = {"TESTAPP_AUTHOR", "TESTAPP_BOOK", "TESTAPP_NODE", "TESTAPP_TAG"}
+MODEL_TABLES = {
+    "TESTAPP_AUTHOR",
+    "TESTAPP_BOOK",
+    "TESTAPP_DEFAULTS",
+    "TESTAPP_NODE",
+    "TESTAPP_TAG",
+}
 
 
 def library() -> str:

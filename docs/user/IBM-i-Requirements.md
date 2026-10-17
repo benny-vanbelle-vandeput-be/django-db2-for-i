@@ -56,6 +56,43 @@ ignores them and never drops them.
 Still to be documented: authorities for creating test schemas, and the
 minimum object authorities for an application that only reads and writes data.
 
+## ALTER TABLE that may lose data
+
+`DROP COLUMN` and narrowing column changes (for example a shorter
+`max_length`, or `IntegerField` to `SmallIntegerField`) make Db2 for i send
+the inquiry message **CPA32B2** ("Change of file may cause data to be lost"),
+also for an empty table. Its default reply is "cancel", so such migrations
+fail (see [Troubleshooting](Troubleshooting.md#alter-table-cancelled-cpa32b2-hy008)).
+Widening changes and adding columns are not affected.
+
+To allow them:
+
+1. An administrator adds a system reply list entry once (pick a free
+   sequence number, see `WRKRPYLE`):
+
+   ```
+   ADDRPYLE SEQNBR(<free number>) MSGID(CPA32B2) RPY('I')
+   ```
+
+   The entry answers CPA32B2 with "ignore" for every job that uses the system
+   reply list, so check which jobs on your system run with
+   `INQMSGRPY(*SYSRPYL)` first. An entry with comparison data (`CMPDTA`) can
+   limit it, for example to one library.
+2. The database settings use the system reply list:
+
+   ```python
+   "OPTIONS": {"inquiry_message_reply": "*SYSRPYL"}
+   ```
+
+   The backend changes the job's `INQMSGRPY` when it connects (it reads the
+   current value first and refuses to change anything if it cannot) and
+   restores that value when the connection closes. For a single migration you
+   can also call `connection.set_inquiry_message_reply("*SYSRPYL")` and
+   `connection.restore_inquiry_message_reply()` yourself.
+
+The user profile needs no special authority to change its own job's
+`INQMSGRPY` (verified on a public test system).
+
 ## Network
 
 The database host server must be reachable: port **9471** (TLS, default) or
