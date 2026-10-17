@@ -25,10 +25,12 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
 
     def get_table_list(self, cursor) -> list[TableInfo]:
         types = ", ".join(f"'{code}'" for code in TABLE_TYPES)
+        # SYSTEM_TABLE = 'N': leave out the SQL catalog views (SYSCST, ...)
+        # that Db2 for i creates in a library with constraints.
         cursor.execute(
             "SELECT TABLE_NAME, TABLE_TYPE FROM QSYS2.SYSTABLES "
             f"WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_TYPE IN ({types}) "
-            "ORDER BY TABLE_NAME"
+            "AND SYSTEM_TABLE = 'N' ORDER BY TABLE_NAME"
         )
         return [
             TableInfo(self.identifier_converter(name.rstrip()), TABLE_TYPES[kind.rstrip()])
