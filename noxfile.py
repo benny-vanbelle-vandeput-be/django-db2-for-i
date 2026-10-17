@@ -179,3 +179,17 @@ def setup_journal(session: nox.Session) -> None:
     """CHANGES THE IBM i: create QSQJRN in a test library. Dry run unless -- --execute."""
     session.install("-e", ".")
     session.run("python", "probes/setup_journal.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
+def probe_encoding(session: nox.Session) -> None:
+    """Write probe 10 (QTEMP only, one connection per variant): string encoding."""
+    session.install("-e", ".")
+    session.run("python", "probes/w10_encoding.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
+def probe_job_ccsid(session: nox.Session) -> None:
+    """Write probe 11 (QTEMP and own job, restored): job CCSID 37 and finding B."""
+    session.install("-e", ".")
+    session.run("python", "probes/w11_job_ccsid.py", *session.posargs)

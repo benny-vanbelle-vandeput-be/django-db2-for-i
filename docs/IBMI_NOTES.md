@@ -436,8 +436,9 @@ the probes' settings (pyodbc, `ibm-iaccess` 1.1.0.29).
   intact. (`REPEAT()` results above about 32K are NULL, so large test values
   must be concatenated.) The loss is on the write path for strings only.
 - **Guard:** the pyodbc driver refuses every string parameter longer than 8184
-  UTF-16 units with NotSupportedError (pyodbc chooses LOB or NVARCHAR binding
-  from the driver's parameter description, which the backend cannot see).
+  UTF-16 units with NotSupportedError. (The reason given at the time, that
+  pyodbc chooses the binding from the driver's parameter description, is
+  wrong; root cause and fix: "String encoding investigation" below.)
 
 ### Column DEFAULT constants (`nox -s probe_defaults`)
 2026-10-17, one connection, only `DECLARE GLOBAL TEMPORARY TABLE SESSION.x`
@@ -589,35 +590,150 @@ MNGRCV(*SYSTEM) DLTRCV(*YES)`), both accepted without messages. Result:
 (`JOURNALED` = `YES`) and dropped; the library has no tables afterwards. The
 `other` alias opens a second connection to PUB400 only when a test uses it.
 
-## Open investigation: string encoding (after 0.1.0a1)
+## String encoding investigation (`nox -s probe_encoding`)
 
-Three findings may share one cause in how strings travel between pyodbc,
-the IBM i Access ODBC driver and the server (client CCSID / wide-character
-handling):
+2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one
+connection per variant, strictly sequential, only `SESSION.x` / `QTEMP`
+tables (and a job-level QAQQINI copy in QTEMP for one variant). Every
+variant uses the backend's connection keywords and changes one variable;
+each runs the same checks for the three findings:
 
-1. Non-ASCII characters in **statement text** (`é`, `€`, emoji) fail with
-   `HY001` "Memory allocation error" (column DEFAULT probe, `probe_defaults`).
-2. An escaped quote in a DEFAULT constant, `'O''Brien'`, is stored literally
-   as `O''Brien` (NVARCHAR) or garbled (CHAR/VARCHAR), while `UX'...'` is
-   stored correctly (`probe_defaults`).
-3. **LOB parameters** lose one character from 8185 characters on
-   (`probe -- string_limits`).
+- **A**: non-ASCII characters in statement text fail with `HY001`
+  "Memory allocation error" (found by `probe_defaults`).
+- **B**: `DEFAULT 'O''Brien'` is stored as `O''Brien` (NVARCHAR) or garbled
+  (CHAR/VARCHAR) (found by `probe_defaults`).
+- **C**: string parameters bound as LOB lose one character from 8185
+  characters on (found by `probe -- string_limits`).
 
-Plan, one read-only or QTEMP-only probe per step, recording each result here:
+### Step 1: the current situation
 
-1. pyodbc encoding settings: `setencoding()` / `setdecoding()` for `SQL_CHAR`
-   and `SQL_WCHAR` (UTF-8 vs UTF-16LE, `ctype`), and what the backend sets now.
-2. Driver keywords that affect conversion: CCSID / `UNICODESQL`-style
-   options, `TRANSLATE`, `MAXFIELDLEN`, `BLOCKSIZE`/LOB settings
-   (IBM i Access ODBC keyword documentation).
-   Also the query option `SQL_TRANSLATE_ASCII_TO_JOB` (listed by
-   `QSYS2.OVERRIDE_QAQQINI`, which makes a job-level QAQQINI copy in QTEMP
-   without touching a library).
-3. Re-run the three findings for each combination; one setting may explain
-   all three.
-4. If a setting fixes them: change the driver defaults (`drivers/pyodbc.py`),
-   drop the `UX'...'` workaround if no longer needed and the 8184-unit
-   parameter guard, and update docs/user.
+- Client: pyodbc **5.3.0**, IBM i Access ODBC Driver `libcwbodbc.so`
+  **07.01.029** (package `ibm-iaccess` 1.1.0.29), ODBC 3.51, unixODBC from
+  Debian. Server `SQL_DBMS_VER` 07.05.0015.
+- Server job: `CCSID` = 273, `DEFAULT_CCSID` = 273 (`QSYS2.ACTIVE_JOB_INFO`).
+- Process locale in the container: `LANG`/`LC_ALL` unset (POSIX), but
+  Python coerces the C locale (PEP 538): `LC_CTYPE=C.UTF-8`, codeset UTF-8.
+- The backend calls neither `setencoding()` nor `setdecoding()`, and sets no
+  `CCSID` or `UNICODESQL` keyword. pyodbc's defaults (source,
+  `connection.cpp`): `str` is encoded as UTF-16LE with `SQL_C_WCHAR`, and
+  `SQL_CHAR`, `SQL_WCHAR` and metadata are read as `SQL_C_WCHAR` (UTF-16LE).
+- **Statement text**: pyodbc calls `SQLExecDirectW` (no parameters) or
+  `SQLPrepareW` (with parameters) when the `str` encoding's ctype is
+  `SQL_C_WCHAR`, and `SQLExecDirect` / `SQLPrepare` (bytes) when it is
+  `SQL_C_CHAR` (`cursor.cpp`, `params.cpp`). Default: the `W` functions.
+- **String parameters**: pyodbc binds a `str` as `SQL_WVARCHAR` with the
+  whole value if its encoded size in **bytes** is at most the
+  `COLUMN_SIZE` that `SQLGetTypeInfo(SQL_WVARCHAR)` reports. Otherwise it
+  binds `SQL_WLONGVARCHAR` as data-at-execution and sends the value with
+  `SQLPutData` in chunks of that same size (`params.cpp`). pyodbc does not
+  ask the driver for the parameter's target type (no `SQLDescribeParam`), so
+  the earlier note in "Long strings" that the binding follows the target is
+  wrong. The driver reports `COLUMN_SIZE` **16369** for `SQL_WVARCHAR`
+  (`VARGRAPHIC() CCSID 13488`), 32739 for `SQL_VARCHAR` and `SQL_VARBINARY`.
+  `Connection.maxwrite` (0 by default) replaces these limits when it is set.
 
-Does not block 0.1.0a1.
+### Step 2: variants and results
 
+| Variant | A (statement text) | B (DEFAULT `'O''Brien'`) | C (LOB > 8184 chars) |
+|---|---|---|---|
+| base (pyodbc defaults) | HY001 for every non-ASCII character, also in a comment or an alias; an emoji literal returns `'=\x00'` | wrong | loses characters |
+| `UNICODESQL=1` | same as base | wrong | loses |
+| `CCSID=1208` | same as base | wrong | loses |
+| `UNICODESQL=1;CCSID=1208` | same as base | wrong | loses |
+| `CCSID=1200` | every statement fails, also ASCII ones: SQL0104 with a garbled message | - | - |
+| `LC_ALL=C.UTF-8` | same as base | wrong | loses |
+| QAQQINI `SQL_TRANSLATE_ASCII_TO_JOB` = `*YES` (job copy, value read back) | same as base | wrong | loses |
+| `setencoding("utf-8", SQL_CHAR)` | no error; characters in CCSID 273 correct (`é`), others silently SUB (`€`, emoji) | wrong | ok for ASCII text; multi-byte text fails with 22018 at chunk boundaries |
+| utf-8 / `SQL_CHAR` + `CCSID=1208` | same as the previous row | wrong | as the previous row |
+| utf-8 / `SQL_CHAR` + `UNICODESQL=1` | **correct** (`é`, `€`, emoji in literals, comments, aliases) | wrong | as the previous row |
+| utf-8 / `SQL_CHAR` + `UNICODESQL=1`, `LC_ALL=C` (no PEP 538 coercion) | **silent mojibake** in statement text *and* parameters (`é€` -> `Ã©â‚¬`) | wrong | lengths wrong (bytes counted as characters) |
+| utf-8 / `SQL_CHAR` + `UNICODESQL=1` + `CCSID=1208`, `LC_ALL=C` | **correct** | wrong | as with UTF-8 above |
+| `maxwrite` = 1 GiB (W path or UTF-8 path) | - | - | **correct** for every target and length |
+
+C binding modes tried on the base variant (characters seen by the server
+for 8184 / 8185 / 8186 / 16370 / 24555 / 32768 characters sent):
+
+| Binding | `NCLOB(1M)`, `DBCLOB(1M)`, `CLOB(1M) CCSID 1208` | `NVARCHAR(16370)` |
+|---|---|---|
+| default | 8184 / 8184 / 8185 / 16369 / 24553 / 32766 | intact |
+| `maxwrite` = 1 GiB | intact | intact |
+| `setinputsizes` `SQL_WVARCHAR(n)` | as default | intact |
+| `setinputsizes` `SQL_WLONGVARCHAR(n)` | as default | intact |
+| `setinputsizes` `SQL_WLONGVARCHAR(0)` (data-at-execution) | as default | intact |
+
+Multi-byte texts (`é`, `€`, emoji repeated 8185 to 20000 times) through
+`NCLOB(1M)`: default binding on the W path loses one character per broken
+chunk, and emoji texts come back as invalid UTF-16 (a lone surrogate was
+stored); default binding on the UTF-8 path fails with `22018` for `é` and
+emoji (`€` is 3 bytes, and 32739 = 3 x 10913, so it never splits). With
+`maxwrite` every text round-trips on both paths. Writing into a QTEMP table
+(`NCLOB(1M)`, `BLOB(1M)`, 8184 to 70,000 characters/bytes) and reading back
+gives the same picture; BLOB values are always intact. The read path is
+intact: a 40,000-character NCLOB built on the server reads back complete.
+
+B in more forms, all with the same wrong result in every variant: `CREATE
+TABLE QTEMP.x` (not only declared temporary tables), and `ALTER TABLE ...
+ADD COLUMN ... DEFAULT 'O''Brien'`. The same constant in `SELECT` and in
+`INSERT ... VALUES` is correct (`O'Brien`, length 7).
+
+### Conclusions
+
+- **C, root cause found (pyodbc).** pyodbc compares the parameter's size in
+  bytes with `SQLGetTypeInfo`'s `COLUMN_SIZE`, which is in characters, and
+  uses that number as the `SQLPutData` chunk size. The driver reports 16369
+  for `SQL_WVARCHAR`, so strings of 8185 characters or more (over 16369 bytes) are sent
+  in 16369-byte chunks: odd, so every second chunk boundary splits a UTF-16
+  unit. For LOB targets the driver drops the split unit (or stores half a
+  surrogate pair); `NVARCHAR` targets reassemble it. The loss counts match
+  exactly: one per odd boundary (8185 and 16370 characters: 1; 24555 and
+  32768: 2; 70,000: 4). On the UTF-8 path the chunks are 32739 bytes and
+  split multi-byte characters (22018). **Fix**: set `Connection.maxwrite`
+  high enough that pyodbc never uses data-at-execution; every value is then
+  bound in one buffer.
+- **A, root cause narrowed to the driver's wide-character statement path.**
+  `SQLExecDirectW` / `SQLPrepareW` in the Linux driver fail with HY001 for
+  any non-ASCII UTF-16 unit before anything reaches the server, independent
+  of `UNICODESQL`, `CCSID`, locale and QAQQINI. The narrow path works:
+  pyodbc `setencoding("utf-8", SQL_CHAR)` sends UTF-8 bytes through
+  `SQLExecDirect`/`SQLPrepare`; `UNICODESQL=1` makes the driver send the
+  statement to the server as Unicode (without it the statement is converted
+  to the job CCSID 273 and characters outside it silently become SUB); and
+  `CCSID=1208` fixes the driver's client codepage to UTF-8 (without it the
+  driver takes the codepage from the process locale, and a non-UTF-8 locale
+  silently corrupts statement text and string parameters). **Fix**: all
+  three together. Note that `setencoding` also changes how `str`
+  parameters are sent (UTF-8 `SQL_C_CHAR`), which the probe verified.
+- **B, no fix found on the client.** Identical for EBCDIC statement text
+  (W path), UTF-8 and Unicode statement text, declared temporary and regular
+  tables, `CREATE TABLE` and `ADD COLUMN`, and for job CCSID 273 and 37
+  (`probe_job_ccsid`, below). It is server-side handling of an escaped quote
+  in a column DEFAULT. The `UX'...'` constants stay.
+
+### Proposed next steps (not implemented yet)
+
+1. Driver fix for C: `maxwrite`, then remove the 8184-unit guard.
+2. Driver fix for A: `setencoding("utf-8", SQL_CHAR)` + `UNICODESQL=1` +
+   `CCSID=1208`, checked against reading (`setdecoding` left at pyodbc's
+   defaults unless a probe shows a need), metadata and `VARCHAR` columns in
+   CCSID 273.
+3. B: keep `UX'...'` (decided by the project owner).
+
+### Job CCSID and finding B (`nox -s probe_job_ccsid`)
+2026-10-17, approved by the project owner: one connection, QTEMP tables and
+the probe's own job only. The probe read the job CCSID first (273, default
+273; it refuses to change anything if that is not readable), ran the B
+checks, ran `CHGJOB CCSID(37)` (read back: 37, 37), ran the B checks again,
+and set the CCSID back (read back: 273, 273).
+
+| Column | Job CCSID 273 | Job CCSID 37 |
+|---|---|---|
+| `NVARCHAR(20) DEFAULT 'O''Brien'` | `O''Brien` | `O''Brien` |
+| `VARCHAR(20) DEFAULT 'O''Brien'` | `O'Brie ` | `O'Brie n` |
+| `CHAR(10) DEFAULT 'O''Brien'` | `O'Brie n  ` | `O'Brie n  ` |
+| `INSERT ... VALUES ('O''Brien')` (all three) | correct | correct |
+
+Same for a regular `QTEMP` table and `ADD COLUMN`. The job CCSID changes
+only how the VARCHAR value is garbled, not whether: B does not depend on
+the job CCSID either. (The driver keeps converting statement text to the
+CCSID it saw at connect, 273; the statements are ASCII only, and those
+characters have the same code points in 273 and 37.)
