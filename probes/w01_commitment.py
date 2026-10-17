@@ -28,7 +28,15 @@ import re
 import sys
 from typing import Any
 
-from _common import ProbeError, Settings, connect, print_query, run_query, write_result
+from _common import (
+    ProbeError,
+    Settings,
+    connect,
+    print_query,
+    run_query,
+    run_statement,
+    write_result,
+)
 
 TABLE = "DJPROBE"
 EMOJI = "\U0001f600"
@@ -42,29 +50,6 @@ UNICODE_CASES = {
 }
 
 _SYSTEM_NAME = re.compile(r"^[A-Z#@$][A-Z0-9#@$_]{0,9}$")
-
-
-def statement(conn, label: str, sql: str, params: tuple = ()) -> dict[str, Any]:
-    """Run one statement; record success or the server's error. Never raises."""
-    import pyodbc
-
-    result: dict[str, Any] = {"label": label, "sql": sql, "params": list(params)}
-    cursor = conn.cursor()
-    try:
-        cursor.execute(sql, params)
-        result.update(ok=True, rowcount=cursor.rowcount)
-    except pyodbc.Error as exc:
-        args = exc.args
-        result.update(
-            ok=False,
-            sqlstate=str(args[0]) if len(args) > 1 else "",
-            message=str(args[1] if len(args) > 1 else exc),
-        )
-    finally:
-        cursor.close()
-    status = "ok" if result["ok"] else f"error: {result['sqlstate']} {result['message']}"
-    print(f"\n> [{label}] {sql}\n  {status}")
-    return result
 
 
 def checks(conn, library: str) -> None:
@@ -103,7 +88,7 @@ def run(conn, library: str) -> dict[str, Any]:
     table = f"{library}.{TABLE}"
     steps: list[dict[str, Any]] = []
     unicode: dict[str, Any] = {}
-    create = statement(
+    create = run_statement(
         conn,
         "create",
         f"CREATE TABLE {table} (ID INTEGER NOT NULL, NV NVARCHAR(10), V8 VARCHAR(10) CCSID 1208)",
@@ -123,27 +108,27 @@ def run(conn, library: str) -> dict[str, Any]:
 
         conn.autocommit = True
         steps.append(
-            statement(conn, "*CS autocommit insert", f"INSERT INTO {table} (ID) VALUES (1)")
+            run_statement(conn, "*CS autocommit insert", f"INSERT INTO {table} (ID) VALUES (1)")
         )
         steps.append(
-            statement(conn, "*CS autocommit update", f"UPDATE {table} SET ID = 11 WHERE ID = 1")
+            run_statement(conn, "*CS autocommit update", f"UPDATE {table} SET ID = 11 WHERE ID = 1")
         )
 
         conn.autocommit = False
         steps.append(
-            statement(conn, "*CS transaction insert", f"INSERT INTO {table} (ID) VALUES (2)")
+            run_statement(conn, "*CS transaction insert", f"INSERT INTO {table} (ID) VALUES (2)")
         )
         conn.rollback()
         conn.autocommit = True
 
         steps.append(
-            statement(conn, "WITH NC insert", f"INSERT INTO {table} (ID) VALUES (3) WITH NC")
+            run_statement(conn, "WITH NC insert", f"INSERT INTO {table} (ID) VALUES (3) WITH NC")
         )
 
         for number, (label, text) in enumerate(UNICODE_CASES.items()):
             for offset, column in ((100, "NV"), (200, "V8")):
                 row_id = offset + number
-                result = statement(
+                result = run_statement(
                     conn,
                     f"unicode {column}: {label}",
                     f"INSERT INTO {table} (ID, {column}) VALUES (?, ?) WITH NC",
@@ -171,7 +156,7 @@ def run(conn, library: str) -> dict[str, Any]:
                 case["round_trip"] = stored == UNICODE_CASES[label] if case["inserted"] else None
     finally:
         conn.autocommit = True
-        drop = statement(conn, "drop", f"DROP TABLE {table}")
+        drop = run_statement(conn, "drop", f"DROP TABLE {table}")
         steps.append(drop)
         if not drop["ok"]:
             print(f"\nWARNING: {table} was NOT dropped; remove it manually.", file=sys.stderr)

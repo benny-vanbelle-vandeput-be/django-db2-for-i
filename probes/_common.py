@@ -233,6 +233,29 @@ def run_query(conn, label: str, sql: str, params: tuple = ()) -> dict[str, Any]:
     return result
 
 
+def run_statement(conn, label: str, sql: str, params: tuple = ()) -> dict[str, Any]:
+    """Run one (possibly changing) statement; record success or the server's error. Never raises."""
+    import pyodbc
+
+    result: dict[str, Any] = {"label": label, "sql": sql, "params": list(params)}
+    cursor = conn.cursor()
+    try:
+        cursor.execute(sql, params)
+        result.update(ok=True, rowcount=cursor.rowcount)
+    except pyodbc.Error as exc:
+        args = exc.args
+        result.update(
+            ok=False,
+            sqlstate=str(args[0]) if len(args) > 1 else "",
+            message=str(args[1] if len(args) > 1 else exc),
+        )
+    finally:
+        cursor.close()
+    status = "ok" if result["ok"] else f"error: {result['sqlstate']} {result['message']}"
+    print(f"\n> [{label}] {sql}\n  {status}")
+    return result
+
+
 # --- Output -----------------------------------------------------------------
 
 
