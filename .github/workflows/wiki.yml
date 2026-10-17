@@ -1,0 +1,62 @@
+# Mirror docs/user/ to the GitHub wiki. The wiki is generated: never edit it
+# directly, change docs/user/ instead (see CLAUDE.md, "Documentation").
+name: wiki
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/user/**"
+      - ".github/workflows/wiki.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      # The built-in GITHUB_TOKEN; contents: write is needed to push to the
+      # <repo>.wiki.git repository.
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Clone the wiki
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >
+          git clone --depth 1
+          "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git"
+          wiki
+
+      - name: Mirror docs/user/
+        run: |
+          rsync -a --delete --exclude .git docs/user/ wiki/
+          # Wiki links have no .md suffix: [x](Page.md#a) -> [x](Page#a).
+          find wiki -maxdepth 1 -name '*.md' -exec \
+            sed -E -i 's/\]\(([A-Za-z0-9_-]+)\.md(#[^)]*)?\)/](\1\2)/g' {} +
+          cat > wiki/_Footer.md <<EOF
+          Generated from [\`docs/user/\`](https://github.com/${GITHUB_REPOSITORY}/tree/${GITHUB_SHA}/docs/user)
+          at \`${GITHUB_SHA::7}\`. Do not edit the wiki: changes here are overwritten.
+          EOF
+
+      - name: Commit and push
+        working-directory: wiki
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Wiki is up to date."
+            exit 0
+          fi
+          git commit -q -m "Sync from ${GITHUB_REPOSITORY}@${GITHUB_SHA::7}"
+          git push origin HEAD
+          git log --oneline -1
