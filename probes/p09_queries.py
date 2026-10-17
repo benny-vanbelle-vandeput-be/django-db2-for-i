@@ -241,6 +241,35 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         (),
         [(2,), (1,), (None,)],
     ),
+    # Django emulates NULLS FIRST / LAST with "<expr> IS [NOT] NULL, <expr>".
+    (
+        "nulls",
+        "ORDER BY X IS NOT NULL, X (emulated NULLS FIRST)",
+        f"SELECT X FROM {VN} ORDER BY X IS NOT NULL, X",
+        (),
+        [(None,), (1,), (2,)],
+    ),
+    (
+        "nulls",
+        "same with SELECT DISTINCT",
+        f"SELECT DISTINCT X FROM {VN} ORDER BY X IS NOT NULL, X",
+        (),
+        [(None,), (1,), (2,)],
+    ),
+    (
+        "nulls",
+        "SELECT DISTINCT with the predicate also selected",
+        f"SELECT DISTINCT X, X IS NOT NULL FROM {VN} ORDER BY X IS NOT NULL, X",
+        (),
+        [(None, False), (1, True), (2, True)],
+    ),
+    (
+        "nulls",
+        "SELECT DISTINCT, CASE in ORDER BY",
+        f"SELECT DISTINCT X FROM {VN} ORDER BY CASE WHEN X IS NULL THEN 0 ELSE 1 END, X",
+        (),
+        [(None,), (1,), (2,)],
+    ),
     # --- regular expressions
     ("regex", "REGEXP_LIKE", f"SELECT 1 {D} WHERE REGEXP_LIKE('abc', 'a.c')", (), [(1,)]),
     (

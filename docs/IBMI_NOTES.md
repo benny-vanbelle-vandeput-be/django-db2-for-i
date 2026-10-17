@@ -604,6 +604,12 @@ in the select list it is rejected (SQL0104), also inside `CASE WHEN EXISTS
 
 **NULL ordering.** NULLs sort as the largest value (last ascending, first
 descending). `NULLS FIRST` / `NULLS LAST` are rejected (SQL0199).
+Django's emulation `ORDER BY X IS NOT NULL, X` works, **except with
+`SELECT DISTINCT`**: then every `ORDER BY` expression must also be in the
+select list; a predicate or a `CASE` that is not selected fails with
+SQL0214 ("ORDER BY expression is not valid"). Selecting the predicate as
+well (`SELECT DISTINCT X, X IS NOT NULL ... ORDER BY X IS NOT NULL, X`)
+works.
 
 **Regular expressions.** `REGEXP_LIKE(value, pattern)` works with a constant
 or a typed marker as pattern, with flag `'i'`, and with backreferences
