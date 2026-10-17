@@ -705,10 +705,9 @@ ADD COLUMN ... DEFAULT 'O''Brien'`. The same constant in `SELECT` and in
   parameters are sent (UTF-8 `SQL_C_CHAR`), which the probe verified.
 - **B, no fix found on the client.** Identical for EBCDIC statement text
   (W path), UTF-8 and Unicode statement text, declared temporary and regular
-  tables, `CREATE TABLE` and `ADD COLUMN`. It is server-side handling of an
-  escaped quote in a column DEFAULT. Not tried: another job CCSID
-  (`CHGJOB CCSID(37)`, which would change the probe's own job and is
-  proposed first). The `UX'...'` constants stay.
+  tables, `CREATE TABLE` and `ADD COLUMN`, and for job CCSID 273 and 37
+  (`probe_job_ccsid`, below). It is server-side handling of an escaped quote
+  in a column DEFAULT. The `UX'...'` constants stay.
 
 ### Proposed next steps (not implemented yet)
 
@@ -717,5 +716,24 @@ ADD COLUMN ... DEFAULT 'O''Brien'`. The same constant in `SELECT` and in
    `CCSID=1208`, checked against reading (`setdecoding` left at pyodbc's
    defaults unless a probe shows a need), metadata and `VARCHAR` columns in
    CCSID 273.
-3. B: keep `UX'...'`; optionally probe `CHGJOB CCSID(37)` in the probe's own
-   job.
+3. B: keep `UX'...'` (decided by the project owner).
+
+### Job CCSID and finding B (`nox -s probe_job_ccsid`)
+2026-10-17, approved by the project owner: one connection, QTEMP tables and
+the probe's own job only. The probe read the job CCSID first (273, default
+273; it refuses to change anything if that is not readable), ran the B
+checks, ran `CHGJOB CCSID(37)` (read back: 37, 37), ran the B checks again,
+and set the CCSID back (read back: 273, 273).
+
+| Column | Job CCSID 273 | Job CCSID 37 |
+|---|---|---|
+| `NVARCHAR(20) DEFAULT 'O''Brien'` | `O''Brien` | `O''Brien` |
+| `VARCHAR(20) DEFAULT 'O''Brien'` | `O'Brie ` | `O'Brie n` |
+| `CHAR(10) DEFAULT 'O''Brien'` | `O'Brie n  ` | `O'Brie n  ` |
+| `INSERT ... VALUES ('O''Brien')` (all three) | correct | correct |
+
+Same for a regular `QTEMP` table and `ADD COLUMN`. The job CCSID changes
+only how the VARCHAR value is garbled, not whether: B does not depend on
+the job CCSID either. (The driver keeps converting statement text to the
+CCSID it saw at connect, 273; the statements are ASCII only, and those
+characters have the same code points in 273 and 37.)
