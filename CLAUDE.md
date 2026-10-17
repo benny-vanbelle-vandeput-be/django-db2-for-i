@@ -187,6 +187,17 @@ Three tiers, selectable via pytest markers / nox sessions.
 - One entry point: `docker compose run --rm tests nox -s <session>`.
 - nox uses the `uv` backend to select Python versions.
 
+## Documentation
+- User documentation lives in `docs/user/` (installation, ODBC driver setup,
+  DATABASES/OPTIONS reference, IBM i requirements such as journaling and
+  authorities, known limitations, troubleshooting by SQLCODE).
+- Developer documentation stays in `docs/` (DECISIONS, IBMI_NOTES, TEST_STATUS,
+  DJANGO_VERSIONS).
+- Any change to user-visible behaviour, settings or limitations updates
+  `docs/user/` in the same commit.
+- The GitHub wiki is a generated mirror of `docs/user/`, synced by a GitHub
+  Action on pushes to main. Never edit the wiki directly.
+
 ## 8. Directory structure
 
 ```
