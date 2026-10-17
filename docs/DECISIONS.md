@@ -175,3 +175,24 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Why:** the minimum release 7.5 has BOOLEAN; the `SMALLINT` + `CHECK`
   fallback (needed only if 7.4 is ever added) is not implemented yet, and a
   silent wrong mapping would be worse than a clear error.
+
+## 2026-10-17: sql_flush uses TRUNCATE, DELETE for referenced tables
+- **Decision:** `sql_flush()` reads the foreign keys among the flushed tables
+  and their identity columns from `QSYS2.SYSREFCST` / `SYSCST` / `SYSCOLUMNS`.
+  Unreferenced tables: `TRUNCATE TABLE t [RESTART IDENTITY]`. Tables
+  referenced by a foreign key: `DELETE FROM t` (children first), and with
+  `reset_sequences` `ALTER TABLE t ALTER COLUMN c RESTART WITH <IDENTITY_START>`.
+- **Why:** Db2 for i refuses `TRUNCATE` on a referenced table even when the
+  child is empty (probe `probe_operations`); `TRUNCATE` is faster otherwise
+  and works inside a transaction.
+- **Alternatives:** `DELETE` for every table (slower, no catalog query);
+  dropping and re-adding constraints (DDL churn on a shared system).
+- **Limits:** cycles between referenced tables are broken in name order and
+  may fail; children outside the flushed set are not followed.
+
+## 2026-10-17: last_insert_id via IDENTITY_VAL_LOCAL()
+- **Decision:** `last_insert_id()` runs `SELECT IDENTITY_VAL_LOCAL() FROM
+  SYSIBM.SYSDUMMY1` and converts the `DECIMAL` result to `int`.
+- **Why:** returning columns are off until phase 5. Django only calls it after
+  a single-row `INSERT ... VALUES`, the only case where the value is the new
+  row's key (after a multi-row insert it is the last row's value).
