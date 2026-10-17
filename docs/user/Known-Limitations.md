@@ -75,6 +75,17 @@ to another library are therefore **not supported yet**; this is planned for
 phase 4 (schema editor completeness). (Verified for foreign key constraints;
 index names in another library have not been tested yet.)
 
+## Long texts may lose characters (TextField)
+
+**Known bug, not fixed yet.** Parameters sent as LOB values (`NCLOB`,
+`DBCLOB`, `CLOB`) arrive at the server **one character short from 8185
+characters on** (two from about 24,500), without an error. A `TextField` is an
+`NCLOB` column, so writing texts longer than 8184 characters very likely loses
+characters. Until this is fixed, do not store texts longer than 8184
+characters in a `TextField`. (Strings up to 16370 characters used as
+expression values are cast to `NVARCHAR` and arrive intact; longer ones are
+refused.)
+
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and
