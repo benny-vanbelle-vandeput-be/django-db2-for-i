@@ -5,11 +5,15 @@ Tests are marked with their tier based on their directory (tests/offline/ ->
 
 Offline tests must never open a database connection: for them,
 ``pyodbc.connect`` is replaced with a function that fails loudly.
+
+Every report is scrubbed of the password (tests/redaction.py).
 """
 
 from pathlib import Path
 
 import pytest
+
+pytest_plugins = ["tests.redaction", "pytester"]
 
 TESTS_DIR = Path(__file__).parent
 TIER_DIRS = {

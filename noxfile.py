@@ -60,6 +60,9 @@ def pub400(session: nox.Session) -> None:
         "-m",
         "pub400",
         "--ds=tests.django_settings.settings_pub400",
+        # Short tracebacks: no function arguments (defense in depth, together
+        # with the report redaction in tests/redaction.py).
+        "--tb=short",
         *session.posargs,
     )
 
