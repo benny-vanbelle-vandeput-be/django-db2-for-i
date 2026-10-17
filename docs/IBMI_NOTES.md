@@ -229,9 +229,10 @@ Checked 2026-10-17 in IBM's
 | `SSL` | 0 = password only, 1 = all traffic | 0 |
 
 - The `TRUEAUTOCOMMIT` description matches `probe_autocommit`.
-- The page says `SSL` is supported only on Windows. That is outdated for the
-  Linux driver: `probe -- connect` showed `SSL=1` connections on port 9471
-  (`as-database-s`).
+- The page says `SSL` is supported only on Windows. **That remark is outdated**:
+  with the Linux driver (`ibm-iaccess` 1.1.0.29), `SSL=1` connections use TLS
+  1.3 on port 9471 (`as-database-s`), verified by `probe -- reachability` and
+  `probe -- connect` (`QSYS2.NETSTAT_JOB_INFO` local port 9471).
 - Only `CMT=1` → *CS has been verified by a probe; the other `CMT` values are
   taken from this page.
 
@@ -250,5 +251,13 @@ user and those in the `default` and `other` libraries.
   new package and `QGPL/PYTHONANBI` unchanged. That run repeated already-seen
   statements, so it is weak evidence; the check is repeated after the first
   Django test run.
-- `QGPL/PYTHONANBI` still exists. Removing it (`DLTSQLPKG`) changes the system
-  and needs approval.
+- Removal, approved by the project owner on the condition that the package is
+  ours: on 2026-10-17 `QSYS2.OBJECT_STATISTICS` showed `OBJOWNER` and
+  `OBJDEFINER` = the PUB400 user and `OBJCREATED` 23:56:08 UTC, during the
+  first `probe -- session` run (ended 23:56:09; the change at 23:56:37 matches
+  the second run). `CALL QSYS2.QCMDEXC('DLTSQLPKG SQLPKG(QGPL/PYTHONANBI)')`
+  succeeded (not locked); the package no longer exists.
+- Note: `QGPL` is shared on PUB400 and package names derive from the
+  application name (`PYTHON...`), so other Python users may have packages
+  with similar names there. Never delete a package without checking
+  `OBJOWNER` and `OBJCREATED` first.
