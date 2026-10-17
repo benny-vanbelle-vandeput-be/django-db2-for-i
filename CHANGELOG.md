@@ -92,3 +92,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   statement text to the job CCSID and silently replaced characters outside
   it (`€` in CCSID 273, emoji). `SchemaEditor.quote_value()` writes strings
   as plain `'...'` constants (column defaults keep `UX'...'`).
+- A warning is logged at the first connection when the process locale is not
+  UTF-8: the IBM i Access ODBC driver then garbles non-ASCII characters in
+  result column names and error messages (data values are not affected).

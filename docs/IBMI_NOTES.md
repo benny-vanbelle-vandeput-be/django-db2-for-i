@@ -771,6 +771,22 @@ ADD COLUMN ... DEFAULT 'O''Brien'`. The same constant in `SELECT` and in
    defaults (the checks above need nothing else).
 3. B: keep `UX'...'` (decided by the project owner).
 
+### Non-UTF-8 process locale (`nox -s probe_locale`)
+2026-10-17, one connection per locale opened by the backend itself (Django
+settings `settings_pub400`, the real driver defaults), QTEMP only.
+
+| Check | Default locale (C.UTF-8) | `LC_ALL=C` (ASCII) |
+|---|---|---|
+| Data values: `N'é€😀'`, `'éÄß'` literals; parameters and literals into `VARCHAR(10)` (CCSID 273), `NVARCHAR`, `NCLOB`, read back | correct | **correct** |
+| Result column name `"ÄÖÜ"` | correct | `'Ã\x84Ã'` |
+| Error message for `QTEMP."ÄÖÜX"` | correct | garbage (what looks like uninitialized memory) |
+| ... with `setdecoding(SQL_WMETADATA, encoding="utf-8")` | `UnicodeDecodeError`; pyodbc fails to build the error (`SystemError`) | same |
+| ... with `setdecoding(SQL_WMETADATA, encoding="latin-1")` | garbled (`'Ä\x00Ö'`) | garbled |
+
+Not fixable on the client: the driver returns the text already broken. The
+pyodbc driver logs a warning at the first connection when the process
+locale's codeset is not UTF-8.
+
 ### Job CCSID and finding B (`nox -s probe_job_ccsid`)
 2026-10-17, approved by the project owner: one connection, QTEMP tables and
 the probe's own job only. The probe read the job CCSID first (273, default
