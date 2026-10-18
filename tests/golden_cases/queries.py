@@ -284,4 +284,11 @@ CASES: tuple[Case, ...] = (
         select(lambda: Book.objects.filter(available=~Value(False))),
         (AUTHOR, BOOK),
     ),
+    # NOT <BOOLEAN column> is TRUE for NULL on Db2 for i: CASE form in WHERE too.
+    Case(
+        "queries/filter_negated_boolean_column",
+        "query",
+        select(lambda: Book.objects.filter(~F("available"))),
+        (AUTHOR, BOOK),
+    ),
 )

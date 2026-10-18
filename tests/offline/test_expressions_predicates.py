@@ -68,3 +68,18 @@ def test_negated_boolean_value_as_an_operand_keeps_null() -> None:
         '"TESTAPP_BOOK"."AVAILABLE" = (CASE CAST(NULL AS BOOLEAN) WHEN TRUE THEN FALSE '
         "WHEN FALSE THEN TRUE END)"
     )
+
+
+def test_negated_boolean_column_is_a_case_value_everywhere() -> None:
+    """NOT <BOOLEAN value> is TRUE for NULL on Db2 for i; the CASE form keeps NULL."""
+    negated = 'CASE "TESTAPP_BOOK"."AVAILABLE" WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END'
+    assert where(Book.objects.filter(~F("available"))) == negated
+    sql, _params = (
+        Book.objects.annotate(x=~F("available"))
+        .values("x")
+        .query.get_compiler(connection=connection)
+        .as_sql()
+    )
+    assert sql.startswith(f'SELECT {negated} AS "X"')
+    # A negated predicate stays NOT <predicate>.
+    assert where(Author.objects.filter(~Exists(Book.objects.all()))).startswith("NOT EXISTS")

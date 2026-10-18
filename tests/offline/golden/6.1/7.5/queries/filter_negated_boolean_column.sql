@@ -1,0 +1,7 @@
+-- golden: queries/filter_negated_boolean_column
+-- django: 6.1
+-- profile: 7.5
+-- depends: ddl/create_author, ddl/create_book
+-- params: [[]]
+-- verified: IBM i 7.5 on PUB400, 2026-10-18
+SELECT "TESTAPP_BOOK"."ID", "TESTAPP_BOOK"."AUTHOR_ID", "TESTAPP_BOOK"."TITLE", "TESTAPP_BOOK"."PUBLISHED", "TESTAPP_BOOK"."READING_TIME", "TESTAPP_BOOK"."AVAILABLE", "TESTAPP_BOOK"."PAGES" FROM "TESTAPP_BOOK" WHERE CASE "TESTAPP_BOOK"."AVAILABLE" WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END;
