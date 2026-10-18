@@ -339,6 +339,39 @@ def test_logged_queries_show_parameters(live, empty) -> None:
     assert "= 'O''Brien'" in ctx.captured_queries[0]["sql"]
 
 
+def test_predicate_annotations_on_full_querysets(live, empty) -> None:
+    """The real-world pattern: a Q / lookup annotation selected with the model.
+
+    A select-list predicate with an untyped marker fails (SQL0418); the
+    compiler writes it as CASE WHEN ... THEN TRUE ELSE FALSE END.
+    """
+    author = Author.objects.create(name="a")
+    small = Book.objects.create(author=author, title="small", pages=50)
+    big = Book.objects.create(author=author, title="big", pages=500)
+    by_id = Book.objects.order_by("id")
+    for annotation in (Q(pages__lt=100), LessThan(F("pages"), 100)):
+        books = list(by_id.annotate(b=annotation))
+        assert books == [small, big]
+        assert [book.b for book in books] == [True, False]
+    assert [book.b for book in by_id.annotate(b=~Q(pages__lt=100))] == [False, True]
+    assert list(by_id.annotate(b=Q(pages__lt=100)).filter(b=True)) == [small]
+
+
+REASON_GROUP_BY_MARKERS = (
+    "GROUP BY an expression with parameter markers never matches the select list "
+    "(Db2 for i, Internal driver error 30101)"
+)
+
+
+@pytest.mark.xfail(strict=True, reason=REASON_GROUP_BY_MARKERS)
+def test_group_by_predicate_annotation_with_a_value(live, empty) -> None:
+    author = Author.objects.create(name="a")
+    Book.objects.create(author=author, title="small", pages=50)
+    Book.objects.create(author=author, title="big", pages=500)
+    grouped = Book.objects.annotate(b=Q(pages__lt=100)).values("b").annotate(n=Count("id"))
+    assert sorted((row["b"], row["n"]) for row in grouped) == [(False, 1), (True, 1)]
+
+
 def test_predicates_as_operands(live, empty) -> None:
     """A predicate compared with another conditional expression (expressions.py)."""
     author = Author.objects.create(name="a")
@@ -350,11 +383,8 @@ def test_predicates_as_operands(live, empty) -> None:
     lt100 = LessThan(F("pages"), 100)
     assert list(by_id.annotate(b=lt100).filter(b=LessThan(F("pages"), 1000))) == [small, odd]
     wrapped = ExpressionWrapper(Q(pages__lt=100), output_field=BooleanField())
-    # Not selected (values_list), as in Django's test_filter_wrapped_lookup_lhs:
-    # a Q annotation with a plain value in the select list has an untyped
-    # marker there (SQL0418, a separate limitation).
-    filtered = by_id.annotate(b=wrapped).filter(b=LessThan(F("pages"), 10))
-    assert list(filtered.values_list("id", flat=True)) == [big.id]
+    # The full queryset selects the annotation (a Q with a plain value).
+    assert list(by_id.annotate(b=wrapped).filter(b=LessThan(F("pages"), 10))) == [big]
     # A boolean column compared with a predicate.
     assert list(by_id.filter(available=Q(pages__lt=100))) == [small]
     assert list(

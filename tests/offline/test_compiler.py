@@ -139,3 +139,34 @@ def test_exists_subquery_never_selects_a_parameter_marker() -> None:
         subquery = sql.split("(SELECT ", 1)[1]
         assert subquery.startswith('(1) AS "A" FROM'), sql
         assert params == ()
+
+
+# --- Predicates as select columns -------------------------------------------------------
+
+WRAPPED = "CASE WHEN "
+
+
+def test_q_and_lookup_annotations_are_case_values() -> None:
+    from django.db.models.lookups import LessThan
+
+    for annotation in (Q(pages__lt=100), ~Q(pages__lt=100), LessThan(F("pages"), 100)):
+        _, sql = compiled(Book.objects.annotate(b=annotation).values("b"))
+        assert sql.startswith(f"SELECT {WRAPPED}") and sql.count(WRAPPED) == 1
+        assert ' THEN TRUE ELSE FALSE END AS "B" FROM' in sql
+
+
+def test_group_by_uses_the_same_case_value() -> None:
+    from django.db.models import Count
+
+    queryset = Book.objects.annotate(b=Q(pages__lt=100)).values("b").annotate(n=Count("id"))
+    _, sql = compiled(queryset)
+    select, group_by = sql.split(" FROM ")[0], sql.split(" GROUP BY ")[1]
+    assert group_by.startswith(WRAPPED)
+    assert select.split(" AS ")[0].removeprefix("SELECT ") == group_by
+
+
+def test_conditions_and_exists_are_not_wrapped() -> None:
+    _, sql = compiled(Book.objects.annotate(b=Q(pages__lt=100)).filter(b=True).values("id"))
+    assert WRAPPED not in sql
+    _, sql = compiled(Author.objects.annotate(has=books()).values("has"))
+    assert sql.startswith("SELECT ((SELECT (1)")
