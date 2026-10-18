@@ -647,7 +647,14 @@ and `FETCH FIRST`; BOOLEAN sorts FALSE before TRUE (used by `compiler.py`).
 
 **Regular expressions.** `REGEXP_LIKE(value, pattern)` works with a constant
 or a typed marker as pattern, with flag `'i'`, and with backreferences
-(`'^(ab)\1$'`).
+(`'^(ab)\1$'`). It is a predicate (IBM i 7.5 SQL reference: ICU regular
+expressions; flags `c`, `i`, `m`, `n`/`s`, `x`; pattern at most 32K; any
+NULL argument gives unknown). An untyped marker works as pattern, but takes
+the job CCSID (273): an emoji in it fails with 22018 (`CWBNL0107`); a typed
+marker `CAST(? AS NVARCHAR(16370))` works (used by `regex_lookup()`). An
+INTEGER source is converted implicitly (`REGEXP_LIKE(X, '^2$')` matches 2);
+NULL never matches, also not `'^$'`; the `i` flag folds non-ASCII letters
+(`ÜBER` matches `^über$`).
 
 A predicate also works in GROUP BY (`GROUP BY X < 2`), and `NOT (X < 2)`
 and `CASE WHEN X < 2 THEN TRUE ELSE FALSE END` work in the select list.
