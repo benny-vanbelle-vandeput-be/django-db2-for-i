@@ -239,4 +239,41 @@ CASES: tuple[Case, ...] = (
         (BOOK,),
     ),
     Case("queries/last_insert_id", "query", _last_insert_id),
+    # UNION: an ordered compound query is wrapped in SELECT * FROM LATERAL (...)
+    # (its ORDER BY accepts no expressions; LATERAL keeps outer references
+    # visible; compiler.py).
+    Case(
+        "queries/union",
+        "query",
+        select(lambda: Author.objects.filter(name="a").union(Author.objects.filter(name="b"))),
+        (AUTHOR,),
+    ),
+    Case(
+        "queries/union_order_by_nulls_first",
+        "query",
+        select(
+            lambda: (
+                Book.objects.filter(pages__lt=10)
+                .values("published")
+                .union(Book.objects.filter(pages__gt=100).values("published"))
+                .order_by(F("published").asc(nulls_first=True))
+            )
+        ),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/union_in_correlated_subquery",
+        "query",
+        select(
+            lambda: Author.objects.annotate(
+                title=Subquery(
+                    books_of_author()
+                    .values("title")
+                    .union(Book.objects.filter(pages__gt=OuterRef("id")).values("title"))
+                    .order_by("title")[:1]
+                )
+            ).values("title")
+        ),
+        (AUTHOR, BOOK),
+    ),
 )

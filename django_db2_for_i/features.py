@@ -83,7 +83,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_regex_backreferencing = True
     supports_date_lookup_using_string = False
     supports_order_by_nulls_modifier = False
-    supports_select_union = False
+    # UNION / UNION ALL (probe queries).
+    supports_select_union = True
+    # The ORDER BY of a compound query accepts only result columns, not
+    # expressions such as Django's NULL ordering emulation (SQL0214); an
+    # ordered compound query is wrapped: SELECT * FROM (<compound>) ORDER BY.
+    requires_compound_order_by_subquery = True
     supports_select_intersection = False
     supports_select_difference = False
     supports_parentheses_in_compound = False
