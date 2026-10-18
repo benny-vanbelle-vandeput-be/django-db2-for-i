@@ -697,3 +697,14 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   custom transform with the template `NULL` (`WHERE NULL IS NULL`, SQL0206)
   and is an expected failure (`REASON_UNTYPED_NULL`).
 
+
+## 2026-10-18: Avg of an integer: cast the argument to DOUBLE
+- **Decision (project owner approved):** when `Avg`'s output is a FloatField
+  (an integer argument) and its argument is not a FloatField, the argument is
+  cast to DOUBLE: `AVG(CAST(x AS DOUBLE))`. `Avg` over a DecimalField or
+  FloatField is unchanged.
+- **Why:** Db2 for i returns `AVG` of INTEGER as INTEGER (truncated; probe
+  `queries`), Django expects a float. `AVG` of DECIMAL(5, 2) is an exact
+  DECIMAL(31, 28), so a cast there would only lose precision.
+- **Alternatives:** casting the result (`DOUBLE(AVG(x))`, already truncated);
+  casting every argument to DOUBLE (loses DECIMAL precision).

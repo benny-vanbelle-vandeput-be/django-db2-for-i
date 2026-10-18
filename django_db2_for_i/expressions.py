@@ -43,6 +43,14 @@ written as ``CASE WHEN <predicate> THEN TRUE ELSE FALSE END``, a BOOLEAN
 value; Django's Oracle backend does the same in ``Lookup.as_oracle``.
 Boolean columns and values are never wrapped, and ``filter(<cond>=True)``
 (rendered by Django as just the condition) is unchanged.
+
+Aggregates
+----------
+``AVG`` of an INTEGER returns an INTEGER on Db2 for i (``AVG`` of 3, 1, 2 is
+2; probe ``queries``), while Django's ``Avg`` of an integer is a FloatField.
+When the output is a FloatField and the argument is not one already, the
+argument is cast to DOUBLE. ``Avg`` over a DecimalField stays DECIMAL, which
+keeps its precision.
 """
 
 from __future__ import annotations
@@ -50,8 +58,17 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django.db import NotSupportedError
-from django.db.models import BooleanField, CharField, DecimalField, IntegerField, TextField
+from django.db.models import (
+    Avg,
+    BooleanField,
+    CharField,
+    DecimalField,
+    FloatField,
+    IntegerField,
+    TextField,
+)
 from django.db.models.expressions import Exists, Expression, ExpressionWrapper, Value
+from django.db.models.functions import Cast
 from django.db.models.lookups import Lookup
 from django.db.models.sql.where import WhereNode
 
@@ -225,3 +242,20 @@ def lookup_as_db2_for_i(self, compiler, connection):
 
 
 Lookup.as_db2_for_i = lookup_as_db2_for_i
+
+
+# --- Aggregates ---------------------------------------------------------------------------
+
+
+def avg_as_db2_for_i(self, compiler, connection, **extra_context):
+    source, *rest = self.get_source_expressions()
+    if isinstance(self.output_field, FloatField) and not isinstance(
+        source.output_field, FloatField
+    ):
+        clone = self.copy()
+        clone.set_source_expressions([Cast(source, FloatField()), *rest])
+        return clone.as_sql(compiler, connection, **extra_context)
+    return self.as_sql(compiler, connection, **extra_context)
+
+
+Avg.as_db2_for_i = avg_as_db2_for_i

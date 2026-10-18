@@ -23,8 +23,8 @@ from collections.abc import Callable, Iterator
 from decimal import Decimal
 
 from django.core.management.color import no_style
-from django.db.models import Case as CaseExpr
 from django.db.models import (
+    Avg,
     CharField,
     Count,
     DecimalField,
@@ -38,6 +38,7 @@ from django.db.models import (
     Value,
     When,
 )
+from django.db.models import Case as CaseExpr
 from django.db.models.functions import Cast, Coalesce, Extract
 from django.db.models.lookups import LessThan
 from django.db.models.sql import DeleteQuery, InsertQuery, UpdateQuery
@@ -515,6 +516,26 @@ CASES: tuple[Case, ...] = (
         "query",
         _annotate(lambda: Cast("id", CharField())),
         (AUTHOR,),
+    ),
+    # Avg of an integer: the argument is cast to DOUBLE (AVG of INTEGER is an
+    # INTEGER on Db2 for i); Avg of a DecimalField or FloatField is unchanged.
+    Case(
+        "aggregates/avg_integer",
+        "query",
+        _select(lambda: Author.objects.annotate(x=Avg("book__pages")).values("x")),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "aggregates/avg_decimal",
+        "query",
+        _select(lambda: Defaults.objects.values("flag").annotate(x=Avg("amount")).values("x")),
+        (DEFAULTS,),
+    ),
+    Case(
+        "aggregates/avg_float",
+        "query",
+        _select(lambda: Defaults.objects.values("flag").annotate(x=Avg("ratio")).values("x")),
+        (DEFAULTS,),
     ),
     # DML with backend-specific values.
     Case("dml/insert_book", "dml", _insert_book, (BOOK,)),

@@ -16,6 +16,7 @@ from decimal import Decimal
 import pytest
 from django.db import connection, models
 from django.db.models import (
+    Avg,
     BooleanField,
     Case,
     Count,
@@ -29,6 +30,7 @@ from django.db.models import (
     Value,
     When,
 )
+from django.db.models.functions import Cast
 from django.db.models.lookups import GreaterThan, LessThan
 
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
@@ -517,3 +519,22 @@ def test_extract_values(live, empty) -> None:
     }
     assert Book.objects.filter(published__week_day=1, published__iso_week_day=7).count() == 1
     assert Book.objects.filter(reading_time__second=8).count() == 1
+
+
+def test_avg_keeps_fractions(live, empty) -> None:
+    """Avg of an integer is fractional (AVG of INTEGER is an INTEGER on Db2 for i);
+    Avg of a DecimalField stays an exact Decimal."""
+    author = Author.objects.create(name="a")
+    other = Author.objects.create(name="b")
+    for pages in (1, 2, 2):
+        Book.objects.create(author=author, title="t", pages=pages)
+    assert Book.objects.aggregate(avg=Avg("pages")) == {"avg": pytest.approx(5 / 3)}
+    by_author = Author.objects.annotate(avg=Avg("book__pages")).order_by("id")
+    assert [(a, a.avg) for a in by_author] == [(author, pytest.approx(5 / 3)), (other, None)]
+    assert Book.objects.aggregate(avg=Avg("pages", filter=Q(pages__gt=1)))["avg"] == 2.0
+    # AVG of DECIMAL(5, 2) is DECIMAL(31, 28) on Db2 for i: exact, no float rounding.
+    # (A cast, not the Defaults table: another test adds a NOT NULL column to it.)
+    as_decimal = Cast("pages", models.DecimalField(max_digits=5, decimal_places=2))
+    assert Book.objects.aggregate(avg=Avg(as_decimal))["avg"] == Decimal(
+        "1.6666666666666666666666666666"
+    )
