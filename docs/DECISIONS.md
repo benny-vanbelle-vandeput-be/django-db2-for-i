@@ -725,3 +725,24 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Alternatives:** the argument as it is (2000 character limit for
   CharFields); `ON OVERFLOW TRUNCATE` (silently cut results); `NULLIF`
   (turns a real empty string into NULL).
+
+## 2026-10-18: Changelog fragments; golden cases and pub400 tests split by area
+- **Decision (project owner asked for it):** pull requests no longer edit
+  `CHANGELOG.md`; each adds `changelog.d/<PR number or topic>.<type>.md`
+  (types added, enabled, changed, fixed, limitation), and the release PR
+  assembles them with `scripts/assemble_changelog.py release <version>`.
+  `tests/golden_cases.py` became the package `tests/golden_cases/` with one
+  module per golden group; the pub400 `test_schema.py` was split into
+  `test_schema.py`, `test_queries.py` and `test_aggregates.py`, which share
+  the `testapp_tables` fixture (conftest.py).
+- **Why:** almost every parallel pull request conflicted in the Unreleased
+  section of CHANGELOG.md and at the end of the same two test files, which
+  cost a rebase and a pub400 run per merge.
+- **Consequence:** the testapp tables are created once per pub400 module
+  (three times per tier run instead of once, about 20 s more), and each
+  module starts with fresh tables.
+- **Alternatives:** towncrier (an extra dependency and template for what a
+  100-line script does; the script also keeps the "Enabled features"
+  heading and the compare links of this CHANGELOG); one package-scoped
+  table fixture (the golden verification creates the same tables in
+  between).

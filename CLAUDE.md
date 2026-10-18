@@ -38,7 +38,7 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
 - When a feature flag is enabled, add an own pub400 test for the common real-world usage
   pattern of that feature (e.g. full querysets with model instances, not only `values()`);
   Django's own tests do not cover every pattern.
-- At the end of each phase: update `docs/TEST_STATUS.md`, `CHANGELOG.md`, commit,
+- At the end of each phase: update `docs/TEST_STATUS.md`, add changelog fragments, commit,
   and summarize what was done and what comes next.
 - All code, comments and docs in English.
 
@@ -121,7 +121,7 @@ Standard Django backend layout: `base.py`, `features.py`, `operations.py`, `sche
   with a short reason per entry. Build them per Django version where needed.
   **Shrinking these lists is the measure of progress.**
 - Each enabled feature comes with: the flag change, the implementation, the related Django
-  tests passing, offline tests, and an entry in `CHANGELOG.md`.
+  tests passing, offline tests, and a changelog fragment (`changelog.d/`, see CONTRIBUTING.md).
 
 ### Known IBM i specifics to handle deliberately
 - No `RETURNING`: use `SELECT ... FROM FINAL TABLE (INSERT ...)` for returning columns.

@@ -24,7 +24,7 @@ from tests.golden import (
     parse,
     read,
 )
-from tests.golden_cases import CASES, CASES_BY_NAME, build_case
+from tests.golden_cases import CASES, CASES_BY_NAME, GROUPS, build_case
 from tests.testapp.models import Author, Book, Defaults, Node, Tag
 
 PROFILES = sorted(capabilities.PROFILES)
@@ -98,6 +98,14 @@ def test_golden_header(path) -> None:
     )
     creates = {case.name for case in CASES if case.kind == "create"}
     assert set(golden.depends) <= creates, "a golden can only depend on create goldens"
+
+
+def test_cases_are_in_the_module_of_their_group() -> None:
+    """tests/golden_cases/<group>.py holds exactly the cases named <group>/...
+    (DROP TABLE goldens are ddl/ too)."""
+    for group, cases in GROUPS.items():
+        assert {case.name.split("/", 1)[0] for case in cases} == {group}
+    assert len(CASES_BY_NAME) == len(CASES), "duplicate case names"
 
 
 def test_dependencies_point_to_create_cases() -> None:

@@ -7,67 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- `StringAgg`, as `LISTAGG` of an NCLOB with a typed separator: results up
-  to 1M characters (longer fails with SQL0802), NULL over no values (the
-  ODBC driver would return an empty string). See
-  docs/user/Known-Limitations.md.
-- Offline and pub400 guards that no comparison is emitted with untyped
-  parameter markers on both sides (Db2 for i compares those wrongly,
-  silently).
-- `regex` and `iregex` lookups, as the `REGEXP_LIKE` predicate (ICU regular
-  expressions, the database's dialect as on other backends; see
-  docs/user/Known-Limitations.md). The pattern is sent as a typed
-  `NVARCHAR(16370)` marker.
-
-### Enabled features
-- `supports_boolean_expr_in_select_clause`: predicates in the select list
-  and GROUP BY are returned as BOOLEAN values.
-- `supports_regex_backreferencing`.
-- `supports_any_value`: the `AnyValue` aggregate (`ANY_VALUE`).
-- `supports_subqueries_in_group_by`: subquery annotations next to aggregates
-  and grouping by a subquery (not yet by one that filters with a value).
-
-### Fixed
-- `Avg` of an integer field returned a truncated integer (Db2 for i's
-  `AVG` of INTEGER is an INTEGER); the argument is now cast to DOUBLE when
-  the result is a FloatField. `Avg` of a DecimalField stays DECIMAL.
-- An aggregate whose `filter=` matches nothing (e.g. `Q(pk__in=[])`)
-  failed with SQL0171 (`COUNT(NULL)`); the NULL is now typed, as
-  `COUNT(CAST(NULL AS <argument type>))`.
-- A selected `Q` or lookup annotation with a plain value
-  (`annotate(b=Q(pages__lt=100))` on a full queryset) failed with SQL0418
-  since `supports_boolean_expr_in_select_clause` was enabled: a select-list
-  predicate with an untyped parameter marker is not valid. Such predicates
-  are written as `CASE WHEN <predicate> THEN TRUE ELSE FALSE END` (still
-  BOOLEAN). Grouping by such an annotation stays a known limitation.
-- A predicate compared with another conditional expression
-  (`filter(flag=Q(...))`, `annotate(b=LessThan(...)).filter(b=LessThan(...))`,
-  `filter(has=Exists(...))` on an Exists annotation) failed with SQL0104:
-  Db2 for i rejects a predicate as a comparison operand. Such operands are
-  written as `CASE WHEN <predicate> THEN TRUE ELSE FALSE END`; boolean
-  columns are not wrapped.
-- `Exists()` conditions failed in the IBM i host server ("Error in host
-  server data stream"): the subquery selected a parameter marker. It now
-  selects a literal `1`.
-- `Exists()` outside a WHERE condition (annotations, `Case(When(Exists()))`,
-  `order_by()`, grouping) failed with SQL0104: Db2 for i accepts `EXISTS`
-  only as a search condition. There it is rendered as
-  `((SELECT 1 ... FETCH FIRST 1 ROWS ONLY) IS NOT NULL)`, which also stops
-  at the first row; in WHERE it stays `EXISTS (...)`.
-- Logged SQL (`connection.queries`, `CaptureQueriesContext`, the
-  `django.db.backends` logger) shows the parameter values filled in
-  (`last_executed_query()`), instead of `QUERY = ... - PARAMS = ...`. The
-  text is for logging and debugging only; it is never executed.
-- `Cast(..., CharField())` without `max_length`, and ordering by a `Value`
-  with a `CharField` output (which Django wraps in such a cast), cast to
-  `NVARCHAR(16370)`; they produced `CAST(... AS None)` (SQL0204).
-- `SELECT DISTINCT` combined with `nulls_first` / `nulls_last` ordering
-  failed with SQL0214. Db2 for i has no `NULLS FIRST/LAST`, and Django's
-  emulation (`<expr> IS NOT NULL, <expr>`) must be in the select list for
-  DISTINCT queries. The backend's compiler (`compiler.py`, now used for all
-  queries) selects the predicate and the expression as hidden columns and
-  orders by their positions; the hidden columns never appear in results.
+Changes since the last release are in [changelog.d/](changelog.d/), one
+fragment per pull request; they are assembled here at release time.
 
 ## [0.1.0a2] - 2026-10-18
 
