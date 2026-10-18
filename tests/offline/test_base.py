@@ -251,7 +251,12 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
     assert set(cls.expected_failures) == {
         features.REASON_TIME_FRACTIONS,
         features.REASON_IDENTITY_RESTART_DEFERRED,
+        features.REASON_UNTYPED_NULL,
+        features.REASON_TYPED_PARAMETER_MARKERS,
     }
+    # Each entry is one test id, never a whole class.
+    for test_ids in cls.expected_failures.values():
+        assert all(test_id.count(".") >= 3 and ".test_" in test_id for test_id in test_ids)
     assert features.REASON_IDENTITY_RESTART_DEFERRED == (
         "identity restart deferred in TestCase (SQL0910)"
     )
