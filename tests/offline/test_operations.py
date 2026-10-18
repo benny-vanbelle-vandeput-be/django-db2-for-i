@@ -531,3 +531,30 @@ def test_truncation_follows_the_time_zone_rule(call) -> None:
     assert call(None) and call("UTC")
     with pytest.raises(NotSupportedError, match=r"'UTC'.*'Europe/Brussels'"):
         call("Europe/Brussels")
+
+
+# --- Operators -------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("connector", "sql"),
+    [
+        ("%%", "MOD(a, b)"),
+        ("^", "POWER(a, b)"),
+        ("&", "BITAND(a, b)"),
+        ("|", "BITOR(a, b)"),
+        ("#", "BITXOR(a, b)"),
+        ("<<", "(a * BIGINT(POWER(2, b)))"),
+        (">>", "BIGINT(FLOOR(CAST(a AS DECFLOAT(34)) / CAST(POWER(2, b) AS DECFLOAT(34))))"),
+        ("+", "a + b"),
+    ],
+)
+def test_combine_expression(connector, sql) -> None:
+    assert ops.combine_expression(connector, ["a", "b"]) == sql
+
+
+def test_bitwise_operators_cast_an_untyped_null() -> None:
+    assert ops.combine_expression("#", ["a", "NULL"]) == "BITXOR(a, CAST(NULL AS BIGINT))"
+    assert ops.combine_expression(">>", ["NULL", "b"]).startswith(
+        "BIGINT(FLOOR(CAST(CAST(NULL AS BIGINT) AS DECFLOAT(34))"
+    )

@@ -44,6 +44,35 @@ def lateral(expression: str) -> str:
     return f"CROSS JOIN LATERAL (SELECT {expression} AS G1 FROM SYSIBM.SYSDUMMY1) AS G"
 
 
+# x >> n candidates: Python's result rounds down (-5 >> 1 == -3).
+SHIFT_CASES = [
+    (x, n, x >> n)
+    for x, n in (
+        (-5, 1),
+        (5, 1),
+        (-4, 1),
+        (-1, 62),
+        (-9223372036854775807, 1),
+        (9223372036854775807, 62),
+        (-9223372036854775808, 63),
+    )
+]
+
+
+def decfloat_shift(x: int, n: int) -> str:
+    return (
+        f"BIGINT(FLOOR(CAST(CAST({x} AS BIGINT) AS DECFLOAT(34)) / "
+        f"CAST(POWER(2, {n}) AS DECFLOAT(34))))"
+    )
+
+
+def values_shift(x: int, n: int) -> str:
+    return (
+        "(SELECT V.X / V.P - CASE WHEN MOD(V.X, V.P) < 0 THEN 1 ELSE 0 END FROM "
+        f"(VALUES (CAST({x} AS BIGINT), BIGINT(POWER(2, {n})))) AS V (X, P))"
+    )
+
+
 # (area, label, sql, params, expected rows or None to only record)
 CHECKS: list[tuple[str, str, str, tuple, Any]] = [
     # --- compound queries
@@ -635,6 +664,98 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         [(1,)],
     ),
     # --- arithmetic and bit functions
+    # --- operators for combine_expression (expressions module)
+    ("arith", "POWER(INTEGER, INTEGER) type", f"SELECT POWER(2, 3) {D}", (), None),
+    ("arith", "POWER(BIGINT, INTEGER) type", f"SELECT POWER(CAST(2 AS BIGINT), 62) {D}", (), None),
+    ("arith", "MOD(-7, 3), MOD(7, -3)", f"SELECT MOD(-7, 3), MOD(7, -3) {D}", (), None),
+    ("arith", "MOD with NULL", f"SELECT MOD(CAST(NULL AS INTEGER), 3) {D}", (), [(None,)]),
+    (
+        "arith",
+        "BITAND/BITOR/BITXOR with NULL",
+        f"SELECT BITAND(CAST(NULL AS INTEGER), 3), BITOR(3, CAST(NULL AS INTEGER)), "
+        f"BITXOR(CAST(NULL AS INTEGER), 3) {D}",
+        (),
+        [(None, None, None)],
+    ),
+    ("arith", "BITXOR(-5, 3)", f"SELECT BITXOR(-5, 3) {D}", (), [(-8,)]),
+    ("arith", "-5 / 2 (truncates toward zero)", f"SELECT -5 / 2 {D}", (), [(-2,)]),
+    (
+        "arith",
+        "left shift: 3 * POWER(2, 2), -5 * POWER(2, 1)",
+        f"SELECT 3 * POWER(2, 2), -5 * POWER(2, 1) {D}",
+        (),
+        [(12, -10)],
+    ),
+    (
+        "arith",
+        "right shift: FLOOR(x / POWER(2, n)) on integers (wrong for negatives)",
+        f"SELECT FLOOR(-5 / POWER(2, 1)), FLOOR(5 / POWER(2, 1)) {D}",
+        (),
+        None,
+    ),
+    (
+        "arith",
+        "right shift: FLOOR(DECIMAL / POWER) (POWER makes it DOUBLE)",
+        f"SELECT FLOOR(CAST(-5 AS DECIMAL(31, 0)) / POWER(2, 1)), "
+        f"FLOOR(CAST(5 AS DECIMAL(31, 0)) / POWER(2, 1)), "
+        f"FLOOR(CAST(-4 AS DECIMAL(31, 0)) / POWER(2, 1)), "
+        f"FLOOR(CAST(-1 AS DECIMAL(31, 0)) / POWER(2, 3)) {D}",
+        (),
+        None,
+    ),
+    (
+        "arith",
+        "right shift: FLOOR(DECIMAL / POWER) of BIGINT extremes (DOUBLE: inexact)",
+        f"SELECT FLOOR(CAST(-9223372036854775807 AS DECIMAL(31, 0)) / POWER(2, 1)), "
+        f"FLOOR(CAST(9223372036854775807 AS DECIMAL(31, 0)) / POWER(2, 62)) {D}",
+        (),
+        None,
+    ),
+    (
+        "arith",
+        "right shift typed back: BIGINT(FLOOR(DECIMAL / POWER))",
+        f"SELECT BIGINT(FLOOR(CAST(-5 AS DECIMAL(31, 0)) / POWER(2, 1))) {D}",
+        (),
+        [(-3,)],
+    ),
+    (
+        "arith",
+        "shift with NULL",
+        f"SELECT CAST(NULL AS INTEGER) * POWER(2, 1), "
+        f"FLOOR(CAST(CAST(NULL AS INTEGER) AS DECIMAL(31, 0)) / POWER(2, 1)) {D}",
+        (),
+        [(None, None)],
+    ),
+    (
+        "arith",
+        "shift by a typed marker",
+        f"SELECT FLOOR(CAST(-5 AS DECIMAL(31, 0)) / POWER(2, CAST(? AS INTEGER))) {D}",
+        (1,),
+        None,
+    ),
+    *(
+        ("arith", f"right shift, {label}: {x} >> {n}", f"SELECT {shift(x, n)} {D}", (), [(want,)])
+        for label, shift in (("DECFLOAT", decfloat_shift), ("VALUES subquery", values_shift))
+        for x, n, want in SHIFT_CASES
+    ),
+    (
+        "arith",
+        "right shift, DECFLOAT: NULL and a typed marker",
+        "SELECT BIGINT(FLOOR(CAST(CAST(NULL AS INTEGER) AS DECFLOAT(34)) / CAST(POWER(2, 1) AS "
+        "DECFLOAT(34)))), BIGINT(FLOOR(CAST(CAST(-5 AS INTEGER) AS DECFLOAT(34)) / "
+        "CAST(POWER(2, CAST(? AS INTEGER)) AS DECFLOAT(34)))) " + D,
+        (1,),
+        [(None, -3)],
+    ),
+    (
+        "arith",
+        "left shift exact: x * BIGINT(POWER(2, n))",
+        "SELECT 3 * BIGINT(POWER(2, 2)), -5 * BIGINT(POWER(2, 1)), "
+        "CAST(1 AS BIGINT) * BIGINT(POWER(2, 62)), CAST(NULL AS INTEGER) * BIGINT(POWER(2, 1)) "
+        + D,
+        (),
+        [(12, -10, 4611686018427387904, None)],
+    ),
     ("arith", "integer division 7 / 2", f"SELECT 7 / 2 {D}", (), [(3,)]),
     ("arith", "-7 / 2 (truncation)", f"SELECT -7 / 2 {D}", (), [(-3,)]),
     (

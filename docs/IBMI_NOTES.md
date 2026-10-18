@@ -578,6 +578,21 @@ and `CAST(? AS TIME)` parameters, for 2005-07-28 (Thursday), 2021-01-01
   (`30.123456`); `EXTRACT(ISODOW FROM x)` is rejected (SQL0104).
 - The backend uses the scalar functions throughout.
 
+### Operators for combine_expression (`probe -- queries`, area arith)
+2026-10-19. Db2 for i has no `%`, `^`, `&`, `|`, `#`, `<<`, `>>` operators
+(SQL0104); `MOD`, `POWER`, `BITAND`, `BITOR`, `BITXOR` work and give NULL for a
+NULL argument (`MOD(-7, 3)` = -1, the sign of the dividend). **`POWER` always
+returns DOUBLE** (`POWER(2, 3)` = 8.0), so `FLOOR(<BIGINT> / POWER(2, n))`
+loses precision (2^63-1 >> 62 gave 2); powers of two themselves are exact,
+so `BIGINT(POWER(2, n))` is. Integer division truncates toward zero (-5 / 2 =
+-2), while Python's `>>` rounds down (-5 >> 1 = -3).
+`BIGINT(FLOOR(CAST(x AS DECFLOAT(34)) / CAST(POWER(2, n) AS DECFLOAT(34))))`
+gives Python's result for every case probed, including -1 >> 62 = -1 and the
+BIGINT extremes, NULL and a typed marker for n; a `VALUES` subquery with
+`MOD` correction works too but fails for n = 63. Left shift: `x *
+BIGINT(POWER(2, n))` is exact. An untyped NULL argument of BITXOR fails
+(SQL0171, Django's `F("x").bitxor(None)`).
+
 ### Truncating dates and times (`probe -- trunc`)
 2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
 compared with Django's truncation in Python.
