@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Cast(..., CharField())` without `max_length`, and ordering by a `Value`
   with a `CharField` output (which Django wraps in such a cast), cast to
   `NVARCHAR(16370)`; they produced `CAST(... AS None)` (SQL0204).
+- `SELECT DISTINCT` combined with `nulls_first` / `nulls_last` ordering
+  failed with SQL0214. Db2 for i has no `NULLS FIRST/LAST`, and Django's
+  emulation (`<expr> IS NOT NULL, <expr>`) must be in the select list for
+  DISTINCT queries. The backend's compiler (`compiler.py`, now used for all
+  queries) selects the predicate and the expression as hidden columns and
+  orders by their positions; the hidden columns never appear in results.
 
 ## [0.1.0a2] - 2026-10-18
 

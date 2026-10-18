@@ -24,7 +24,17 @@ from decimal import Decimal
 
 from django.core.management.color import no_style
 from django.db.models import Case as CaseExpr
-from django.db.models import CharField, DecimalField, IntegerField, Value, When
+from django.db.models import (
+    CharField,
+    DecimalField,
+    F,
+    IntegerField,
+    Max,
+    OuterRef,
+    Subquery,
+    Value,
+    When,
+)
 from django.db.models.functions import Cast, Coalesce, Extract
 from django.db.models.sql import DeleteQuery, InsertQuery, UpdateQuery
 
@@ -237,6 +247,40 @@ CASES: tuple[Case, ...] = (
         "query",
         _select(lambda: Author.objects.order_by(Value("1", output_field=CharField()), "-name")),
         (AUTHOR,),
+    ),
+    # SELECT DISTINCT with emulated NULL ordering: the predicate is selected
+    # as a hidden column (compiler.py; SQL0214 otherwise).
+    Case(
+        "queries/distinct_nulls_last",
+        "query",
+        _select(
+            lambda: (
+                Book.objects.order_by(F("published").desc(nulls_last=True))
+                .distinct()
+                .values_list("title", flat=True)
+            )
+        ),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/distinct_nulls_first_annotation",
+        "query",
+        _select(
+            lambda: (
+                Author.objects.annotate(
+                    last=Subquery(
+                        Book.objects.filter(author=OuterRef("pk"))
+                        .order_by()
+                        .values("author")
+                        .annotate(m=Max("published"))
+                        .values("m")
+                    )
+                )
+                .order_by(F("last").asc(nulls_first=True))
+                .distinct()
+            )
+        ),
+        (AUTHOR, BOOK),
     ),
     Case(
         "queries/slice_offset_fetch",

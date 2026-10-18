@@ -111,12 +111,14 @@ def test_dependencies_point_to_create_cases() -> None:
 QUOTED = re.compile(r'"((?:[^"]|"")+)"')
 QUOTED_PLACEHOLDER = "QUOTEDNAME"
 UNQUOTED_QUALIFIED = re.compile(r"\b([A-Za-z_#@$][\w#@$]*)\s*\.\s*[A-Za-z_\"]")
+# Table aliases Django generates for subqueries and joins (U0, T2, ...).
+DJANGO_ALIAS = re.compile(r"^[TU]\d+$")
 
 
 def allowed_identifiers() -> set[str]:
-    # Aliases (exists() and the annotation), the column the AddField golden
+    # Aliases (exists(), the annotations), the column the AddField golden
     # adds and the savepoint names of dml/savepoints.
-    names = {"A", "X", "NICKNAME", "S140234567890123_X1", "S140234567890123_X2"}
+    names = {"A", "X", "NICKNAME", "S140234567890123_X1", "S140234567890123_X2", "LAST", "M"}
     for model in (Author, Book, Defaults, Node, Tag):
         names.add(model._meta.db_table.upper())
         names.update(field.column.upper() for field in model._meta.local_fields)
@@ -130,7 +132,9 @@ def test_golden_contains_no_library_or_profile_names(path) -> None:
     allowed = allowed_identifiers()
     for sql, _params in golden.statements:
         for name in QUOTED.findall(sql):
-            assert name in allowed or name.startswith("TESTAPP_"), f"unexpected name {name!r}"
+            assert name in allowed or name.startswith("TESTAPP_") or DJANGO_ALIAS.match(name), (
+                f"unexpected name {name!r}"
+            )
         # Quoted names were checked above; a placeholder keeps "T"."C" from
         # turning the preceding keyword into a qualifier.
         for qualifier in UNQUOTED_QUALIFIED.findall(QUOTED.sub(QUOTED_PLACEHOLDER, sql)):

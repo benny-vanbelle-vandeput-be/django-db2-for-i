@@ -594,3 +594,25 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Not changed:** the existing `v0.1.0a1` tag (made before this workflow;
   its code reports `0.0.1.dev0`) is not moved or recreated.
 
+## 2026-10-18: DISTINCT with emulated NULL ordering: hidden columns, ORDER BY position
+- **Decision (project owner approved the approach):** the backend uses its own
+  compiler module (`compiler.py`; insert/update/delete/aggregate compilers
+  are Django's combined with it). For `SELECT DISTINCT` queries whose
+  ordering uses Django's NULL ordering emulation (`<expr> IS [NOT] NULL,
+  <expr>`), `SQLCompiler.get_extra_select()` selects the predicate (as an
+  `IsNull` lookup, so GROUP BY treats aggregates correctly) and the
+  expression as hidden columns, and `pre_sql_setup()` replaces that ORDER BY
+  entry with their positions (`ORDER BY 4 ASC, 3 DESC`).
+- **Why:** Db2 for i has no `NULLS FIRST/LAST` (SQL0199). With DISTINCT,
+  every ORDER BY expression must be in the select list (SQL0214), and an
+  expression containing parameter markers never matches a selected one,
+  even with identical text (typed or untyped markers); select-list
+  positions always match. Hidden columns are trimmed from results by Django
+  (`has_extra_select`); the predicate depends only on a selected
+  expression, so DISTINCT returns the same rows. Verified by Django's
+  `ordering` test and a pub400 test (duplicates, NULLs, a parameter in the
+  subquery; model instances, `values()`, `values_list()`).
+- **Alternatives:** repeating the expressions in ORDER BY (fails with
+  parameters); an expected failure (`REASON_DISTINCT_ORDER_BY`); ordering by
+  `CASE` (same SQL0214 under DISTINCT).
+
