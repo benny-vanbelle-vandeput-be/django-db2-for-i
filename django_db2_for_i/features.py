@@ -71,6 +71,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     delete_can_self_reference_subquery = False
     allow_sliced_subqueries_with_in = False
     supports_subqueries_in_group_by = False
+    # ANY_VALUE aggregate (probe queries).
+    supports_any_value = True
     ignores_unnecessary_order_by_in_subqueries = False
     # REGEXP_LIKE (ICU) supports backreferences (probe queries).
     supports_regex_backreferencing = True

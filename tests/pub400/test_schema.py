@@ -578,3 +578,24 @@ def test_string_agg(live, empty) -> None:
     assert Book.objects.filter(pages=0).aggregate(t=StringAgg("title", Value(","))) == {"t": None}
     Book.objects.create(author=nobody, title="", pages=0)
     assert Book.objects.filter(pages=0).aggregate(t=StringAgg("title", Value(","))) == {"t": ""}
+
+
+def test_any_value(live, empty) -> None:
+    """The real-world pattern: one value of a non-grouped column per group."""
+    from django.db.models import AnyValue
+
+    author = Author.objects.create(name="a")
+    other = Author.objects.create(name="b")
+    for title in ("t1", "t2"):
+        Book.objects.create(author=author, title=title, pages=10)
+    Book.objects.create(author=other, title="u", pages=500)
+    per_author = (
+        Book.objects.values("author")
+        .annotate(title=AnyValue("title"), n=Count("id"))
+        .order_by("author")
+    )
+    rows = [(row["author"], row["title"], row["n"]) for row in per_author]
+    assert rows[0][0] == author.pk and rows[0][1] in ("t1", "t2") and rows[0][2] == 2
+    assert rows[1] == (other.pk, "u", 1)
+    filtered = Author.objects.annotate(t=AnyValue("book__title", filter=Q(book__pages__gt=100)))
+    assert {a.name: a.t for a in filtered} == {"a": None, "b": "u"}
