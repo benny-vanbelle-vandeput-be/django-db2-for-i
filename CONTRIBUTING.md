@@ -40,8 +40,10 @@ parallel pull requests do not conflict:
 with `<type>` one of `added`, `enabled` (a feature flag switched on),
 `changed`, `fixed`, `limitation`, and one entry in Markdown (or several as
 `- ` items) as the content. When the number is not known yet, use a short
-kebab-case topic (`changelog.d/string-agg.added.md`); a topic gets no
-`(#<number>)` reference. Details in [changelog.d/README.md](changelog.d/README.md);
+kebab-case topic (`changelog.d/string-agg.added.md`), and right after opening
+the pull request rename it to `changelog.d/<number>.<type>.md` in a follow-up
+commit, so the entry gets its `(#<number>)` reference. Topic names stay only
+where that is not possible. Details in [changelog.d/README.md](changelog.d/README.md);
 `python scripts/assemble_changelog.py check` validates the fragments (the
 offline tier runs the same check) and `draft` shows the resulting section.
 
