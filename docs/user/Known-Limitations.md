@@ -57,6 +57,13 @@ BY expression that contains a parameter marker with the selected one, and
 does not allow `GROUP BY <position>`. Grouping by columns, and by
 expressions without values (e.g. `ExtractYear("published")`), works.
 
+## Custom SQL with a bare NULL
+
+Db2 for i does not accept an untyped `NULL` as an expression (`WHERE NULL IS
+NULL` fails with SQL0206). Custom expressions, transforms or `RawSQL` that
+produce a bare `NULL` must cast it, e.g. `CAST(NULL AS INTEGER)`. Django's
+own expressions do this already on this backend.
+
 ## Table and column names are uppercase
 
 Names are created in uppercase (`basic_article` becomes `BASIC_ARTICLE`).

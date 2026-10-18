@@ -679,3 +679,21 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   SQL of every lookup with a value); turning the flag off again (1/0
   integers that cannot be compared with BOOLEAN).
 
+## 2026-10-18: Never compare two untyped parameter markers
+- **Rule:** the backend never emits a comparison with untyped parameter
+  markers on both sides. Values in expressions are typed markers
+  (`CAST(? AS <type>)`, expressions.py), so `GreaterThan(2, 1)` becomes
+  `CAST(? AS INTEGER) > CAST(? AS INTEGER)`.
+- **Why:** Db2 for i accepts `WHERE ? > ?` with two untyped markers but
+  returns a wrong result, silently (no row for 2 > 1; probe `queries`). A
+  silent wrong result is worse than an error.
+- **Guards:** `tests/offline/test_typed_markers.py` scans every golden and a
+  set of compiled comparisons (direct values, two `Value`s, strings, a
+  `Value` against a `Q`, annotations) for `%s <op> %s` with two bare
+  markers; a pub400 test checks that `2 > 1` is true and `1 > 2` false.
+- **Consequence:** Django's `lookup.tests.LookupTests.test_lookup_direct_value_rhs_unwrapped`
+  asserts the SQL text `2 > 1` and is an expected failure
+  (`REASON_TYPED_PARAMETER_MARKERS`). `test_exact_none_transform` uses a
+  custom transform with the template `NULL` (`WHERE NULL IS NULL`, SQL0206)
+  and is an expected failure (`REASON_UNTYPED_NULL`).
+
