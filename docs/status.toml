@@ -86,7 +86,7 @@ status = "done"
 [[modules]]
 module = "expressions"
 status = "in progress"
-note = "first run recorded, fixes being merged"
+note = "operators, negated booleans, UUID values fixed; RawSQL limitation; the 21 remaining errors are durations (duration track next)"
 
 [[modules]]
 module = "queries"
