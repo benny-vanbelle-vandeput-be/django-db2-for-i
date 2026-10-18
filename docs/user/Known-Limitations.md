@@ -157,6 +157,27 @@ literals. Expressions such as `db_default=Now()` raise `NotSupportedError`,
 and so do time zone aware datetimes, because Db2 for i `TIMESTAMP` has no
 time zone. `db_default=None` means "no default".
 
+## Regular expressions use the ICU dialect
+
+As on every Django backend, `regex` and `iregex` use the database's regular
+expression dialect, not Python's `re`. Db2 for i evaluates them with the
+`REGEXP_LIKE` predicate, which uses ICU (International Components for
+Unicode) regular expressions; see IBM's "REGEXP_LIKE predicate" and
+"Regular expression control characters" in the Db2 for i SQL reference.
+
+- `iregex` adds the `i` flag (case-insensitive, also for non-ASCII
+  letters); no other flags are set: `.` does not match line terminators and
+  `^` / `$` match only at the start and end of the whole value.
+- Backreferences (`(ab)\1`), character classes, `\d`, `\w` and Unicode
+  characters in patterns work.
+- The pattern is sent as `NVARCHAR(16370)`, so patterns longer than 16370
+  characters fail.
+- `NULL` values never match (also not `^$`).
+- Non-string columns (e.g. an `IntegerField`) are converted to text by Db2
+  for i before matching.
+- The ICU option of IBM i must be installed (standard on IBM i 7.5);
+  without it the predicate fails with SQL0204.
+
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and

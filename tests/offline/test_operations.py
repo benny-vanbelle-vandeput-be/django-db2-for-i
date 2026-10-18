@@ -437,3 +437,14 @@ def test_cast_char_field_without_max_length() -> None:
     assert connection.ops.cast_char_field_without_max_length == "NVARCHAR(16370)"
     assert CharField().cast_db_type(connection) == "NVARCHAR(16370)"
     assert CharField(max_length=20).cast_db_type(connection) == "NVARCHAR(20)"
+
+
+@pytest.mark.parametrize(
+    ("lookup", "sql"),
+    [
+        ("regex", "REGEXP_LIKE(%s, CAST(%s AS NVARCHAR(16370)))"),
+        ("iregex", "REGEXP_LIKE(%s, CAST(%s AS NVARCHAR(16370)), 'i')"),
+    ],
+)
+def test_regex_lookup(lookup, sql) -> None:
+    assert connection.ops.regex_lookup(lookup) == sql

@@ -395,6 +395,25 @@ CASES: tuple[Case, ...] = (
         _select(lambda: Author.objects.filter(name__iexact="Ada")),
         (AUTHOR,),
     ),
+    # Regular expressions: REGEXP_LIKE with a typed pattern marker.
+    Case(
+        "queries/filter_regex",
+        "query",
+        _select(lambda: Author.objects.filter(name__regex=r"^A(d)a\1?$")),
+        (AUTHOR,),
+    ),
+    Case(
+        "queries/filter_iregex",
+        "query",
+        _select(lambda: Author.objects.filter(name__iregex="^ada")),
+        (AUTHOR,),
+    ),
+    Case(
+        "queries/filter_regex_integer",
+        "query",
+        _select(lambda: Book.objects.filter(pages__regex="^1[0-9]+$")),
+        (BOOK,),
+    ),
     Case("queries/last_insert_id", "query", _last_insert_id),
     # Value expressions: typed parameter markers (SQL0418 otherwise), one
     # golden per type rule (django_db2_for_i/expressions.py).

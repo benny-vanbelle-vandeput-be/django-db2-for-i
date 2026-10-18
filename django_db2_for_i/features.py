@@ -67,7 +67,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     allow_sliced_subqueries_with_in = False
     supports_subqueries_in_group_by = False
     ignores_unnecessary_order_by_in_subqueries = False
-    supports_regex_backreferencing = False
+    # REGEXP_LIKE (ICU) supports backreferences (probe queries).
+    supports_regex_backreferencing = True
     supports_date_lookup_using_string = False
     supports_order_by_nulls_modifier = False
     supports_select_union = False

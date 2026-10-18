@@ -95,6 +95,16 @@ class DatabaseOperations(BaseDatabaseOperations):
             return "UPPER(%s)"
         return "%s"
 
+    def regex_lookup(self, lookup_type: str) -> str:
+        """``regex`` / ``iregex`` as the REGEXP_LIKE predicate (ICU regular expressions).
+
+        The pattern is a typed marker: an untyped one takes the job CCSID, so
+        characters outside it fail with 22018 (probe ``queries``,
+        docs/IBMI_NOTES.md). Non-string columns are cast implicitly by Db2 for i.
+        """
+        flags = ", 'i'" if lookup_type == "iregex" else ""
+        return f"REGEXP_LIKE(%s, CAST(%s AS NVARCHAR({NVARCHAR_MAX})){flags})"
+
     # --- Inserts ------------------------------------------------------------------
 
     def last_insert_id(self, cursor, table_name: str, pk_name: str) -> int | None:
