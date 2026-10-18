@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Offline and pub400 guards that no comparison is emitted with untyped
+  parameter markers on both sides (Db2 for i compares those wrongly,
+  silently).
 - `regex` and `iregex` lookups, as the `REGEXP_LIKE` predicate (ICU regular
   expressions, the database's dialect as on other backends; see
   docs/user/Known-Limitations.md). The pattern is sent as a typed

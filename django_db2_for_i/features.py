@@ -14,6 +14,11 @@ from django.utils.functional import cached_property
 # found and counted (docs/DECISIONS.md).
 REASON_TIME_FRACTIONS = "Db2 for i TIME has no fractional seconds"
 REASON_IDENTITY_RESTART_DEFERRED = "identity restart deferred in TestCase (SQL0910)"
+REASON_UNTYPED_NULL = "Db2 for i rejects an untyped NULL as an expression (SQL0206)"
+REASON_TYPED_PARAMETER_MARKERS = (
+    "parameter markers are typed: untyped markers on both sides of a comparison "
+    "compare wrongly on Db2 for i"
+)
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -141,5 +146,14 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     expected_failures: dict[str, set[str]] = {
         REASON_TIME_FRACTIONS: set(),
         REASON_IDENTITY_RESTART_DEFERRED: set(),
+        # A custom transform with template "NULL" gives WHERE NULL IS NULL.
+        REASON_UNTYPED_NULL: {
+            "lookup.tests.LookupTests.test_exact_none_transform",
+        },
+        # Asserts the SQL text "2 > 1"; the backend casts both values
+        # (CAST(? AS INTEGER) > CAST(? AS INTEGER)), see docs/DECISIONS.md.
+        REASON_TYPED_PARAMETER_MARKERS: {
+            "lookup.tests.LookupTests.test_lookup_direct_value_rhs_unwrapped",
+        },
     }
     django_test_expected_failures: set[str] = set().union(*expected_failures.values())

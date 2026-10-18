@@ -634,7 +634,10 @@ for ORDER BY under DISTINCT; `GROUP BY 1` is not allowed either).
 
 **Untyped markers and NULL.** `WHERE ? > ?` with two untyped markers
 (parameters 2 and 1) is accepted but **returns no row** (wrong, silently);
-`WHERE CAST(? AS INTEGER) > ?` is correct. A bare `NULL` as an expression
+`WHERE CAST(? AS INTEGER) > ?` is correct. The backend therefore never
+emits a comparison with untyped markers on both sides (rule in
+docs/DECISIONS.md; guarded by `tests/offline/test_typed_markers.py` and a
+pub400 test). A bare `NULL` as an expression
 is rejected: `WHERE NULL IS NULL` fails with SQL0206 ("column or global
 variable NULL not found").
 
