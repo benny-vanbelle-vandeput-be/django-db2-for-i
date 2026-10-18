@@ -31,7 +31,8 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
   PUB400 system. The counts come from the last recorded run of each module,
   not from every commit.
 - **passed:** the test ran and succeeded.
-- **failed:** the test ran and did not succeed, and there is no known reason
+- **failed** = failures + errors + unexpected successes: the test ran and did
+  not succeed (or an expected failure passed), and there is no known reason
   yet. This should be 0 on `main`.
 - **skipped:** the test did not run, because it needs a feature the backend
   reports as unsupported (a feature flag that is off, for example something
