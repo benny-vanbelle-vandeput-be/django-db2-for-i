@@ -472,3 +472,62 @@ def test_last_executed_query_fills_in_parameters(sql, params, logged) -> None:
 def test_last_executed_query_falls_back_for_unexpected_sql() -> None:
     logged = connection.ops.last_executed_query(None, "WHERE A = %s AND B = %s", [1])
     assert logged.startswith("QUERY = ")
+
+
+# --- Truncating dates and times --------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("kind", "fmt"),
+    [
+        ("year", "YEAR"),
+        ("quarter", "Q"),
+        ("month", "MONTH"),
+        ("week", "IW"),
+        ("day", "DD"),
+        ("hour", "HH"),
+        ("minute", "MI"),
+        ("second", "SS"),
+    ],
+)
+def test_datetime_trunc_sql(kind, fmt) -> None:
+    assert ops.datetime_trunc_sql(kind, "col", ("p",), None) == (
+        f"TRUNC_TIMESTAMP(col, '{fmt}')",
+        ("p",),
+    )
+
+
+def test_date_and_time_trunc_only_their_kinds() -> None:
+    assert ops.date_trunc_sql("week", "col", ()) == ("DATE(TRUNC_TIMESTAMP(col, 'IW'))", ())
+    assert ops.time_trunc_sql("minute", "col", ()) == (
+        "TIME(TRUNC_TIMESTAMP(TIMESTAMP(DATE('0001-01-01'), TIME(col)), 'MI'))",
+        (),
+    )
+    with pytest.raises(ValueError, match="Invalid lookup type"):
+        ops.date_trunc_sql("hour", "col", ())
+    with pytest.raises(ValueError, match="Invalid lookup type"):
+        ops.time_trunc_sql("day", "col", ())
+    with pytest.raises(ValueError, match="Invalid lookup type"):
+        ops.datetime_trunc_sql("microsecond", "col", (), None)
+
+
+def test_datetime_casts() -> None:
+    assert ops.datetime_cast_date_sql("col", ("p",), None) == ("DATE(col)", ("p",))
+    assert ops.datetime_cast_time_sql("col", ("p",), "UTC") == ("TIME(col)", ("p",))
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda tz: ops.datetime_trunc_sql("day", "col", (), tz),
+        lambda tz: ops.date_trunc_sql("day", "col", (), tz),
+        lambda tz: ops.time_trunc_sql("hour", "col", (), tz),
+        lambda tz: ops.datetime_cast_date_sql("col", (), tz),
+        lambda tz: ops.datetime_cast_time_sql("col", (), tz),
+    ],
+)
+def test_truncation_follows_the_time_zone_rule(call) -> None:
+    """As datetime_extract_sql: no conversion for None or the connection's zone."""
+    assert call(None) and call("UTC")
+    with pytest.raises(NotSupportedError, match=r"'UTC'.*'Europe/Brussels'"):
+        call("Europe/Brussels")

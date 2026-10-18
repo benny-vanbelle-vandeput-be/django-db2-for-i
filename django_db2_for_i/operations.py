@@ -21,6 +21,13 @@ that takes ``tzname``: Db2 for i stores datetimes in the connection's time
 zone (``connection.timezone_name``); ``tzname`` None (``USE_TZ = False``) or
 equal to it needs no conversion, any other zone raises NotSupportedError.
 There is no fixed-offset conversion: it would be wrong across DST changes.
+
+Truncating (``Trunc*``, ``dates()``, ``datetimes()``) uses
+``TRUNC_TIMESTAMP(<timestamp>, '<format>')`` (probe ``trunc``): ``'IW'``
+starts the week on Monday as Django expects (``'WW'``, ``'W'`` and ``'DAY'``
+do not). A DATE is truncated as ``DATE(TRUNC_TIMESTAMP(...))``; a TIME, which
+TRUNC_TIMESTAMP does not accept, through a timestamp on 0001-01-01 (``TIME()``
+first: Django passes timestamps with a TimeField output to time_trunc_sql).
 """
 
 import logging
@@ -59,6 +66,20 @@ _TIME_PARTS = {
     "hour": "HOUR(%s)",
     "minute": "MINUTE(%s)",
     "second": "SECOND(%s)",  # whole seconds, as Django expects
+}
+
+# Django truncation kind -> TRUNC_TIMESTAMP format element (probe ``trunc``).
+_DATE_TRUNC_FORMATS = {
+    "year": "YEAR",
+    "quarter": "Q",
+    "month": "MONTH",
+    "week": "IW",  # the Monday of the ISO week
+    "day": "DD",
+}
+_TIME_TRUNC_FORMATS = {
+    "hour": "HH",
+    "minute": "MI",
+    "second": "SS",
 }
 
 
@@ -192,6 +213,40 @@ class DatabaseOperations(BaseDatabaseOperations):
         except KeyError:
             raise ValueError(f"Invalid lookup type: {lookup_type!r}") from None
         return template % sql, params
+
+    # --- Truncating dates and times ---------------------------------------------------
+
+    def date_trunc_sql(self, lookup_type, sql, params, tzname=None):
+        self._check_tzname(tzname)
+        fmt = self._trunc_format(_DATE_TRUNC_FORMATS, lookup_type)
+        return f"DATE(TRUNC_TIMESTAMP({sql}, '{fmt}'))", params
+
+    def datetime_trunc_sql(self, lookup_type, sql, params, tzname):
+        self._check_tzname(tzname)
+        fmt = self._trunc_format(_DATE_TRUNC_FORMATS | _TIME_TRUNC_FORMATS, lookup_type)
+        return f"TRUNC_TIMESTAMP({sql}, '{fmt}')", params
+
+    def time_trunc_sql(self, lookup_type, sql, params, tzname=None):
+        self._check_tzname(tzname)
+        fmt = self._trunc_format(_TIME_TRUNC_FORMATS, lookup_type)
+        # TIME(): Django also truncates timestamps with a TimeField output here.
+        time = f"TIMESTAMP(DATE('0001-01-01'), TIME({sql}))"
+        return f"TIME(TRUNC_TIMESTAMP({time}, '{fmt}'))", params
+
+    def datetime_cast_date_sql(self, sql, params, tzname):
+        self._check_tzname(tzname)
+        return f"DATE({sql})", params
+
+    def datetime_cast_time_sql(self, sql, params, tzname):
+        self._check_tzname(tzname)
+        return f"TIME({sql})", params
+
+    @staticmethod
+    def _trunc_format(formats, lookup_type) -> str:
+        try:
+            return formats[lookup_type]
+        except KeyError:
+            raise ValueError(f"Invalid lookup type: {lookup_type!r}") from None
 
     def _check_tzname(self, tzname) -> None:
         """No conversion when ``tzname`` is None or the connection's zone."""

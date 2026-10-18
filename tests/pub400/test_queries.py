@@ -274,3 +274,72 @@ def test_union(live, empty) -> None:
     first = Subquery(own.union(big).order_by("title")[:1])
     titles = Author.objects.annotate(first=first).order_by("id").values_list("first", flat=True)
     assert list(titles) == ["long", "long"]
+
+
+def test_truncation(live, empty) -> None:
+    """The real-world patterns: Trunc* annotations, dates() / datetimes(), and
+    counts per month; weeks start on Monday (Sunday 2023-01-01 is in the week of
+    Monday 2022-12-26)."""
+    from django.db.models.functions import (
+        Trunc,
+        TruncDate,
+        TruncMonth,
+        TruncTime,
+        TruncWeek,
+    )
+
+    author = Author.objects.create(name="a")
+    sunday = dt.datetime(2023, 1, 1, 13, 45, 30, 123456, tzinfo=dt.UTC)
+    for published in (sunday, dt.datetime(2023, 1, 20, 8, 0, tzinfo=dt.UTC)):
+        Book.objects.create(
+            author=author, title="t", published=published, reading_time=dt.time(6, 7, 8)
+        )
+    kinds = ("year", "quarter", "month", "week", "day", "hour", "minute", "second")
+    first = Book.objects.order_by("published").values(
+        **{kind: Trunc("published", kind) for kind in kinds}
+    )[0]
+    utc = dt.UTC
+    assert first == {
+        "year": dt.datetime(2023, 1, 1, tzinfo=utc),
+        "quarter": dt.datetime(2023, 1, 1, tzinfo=utc),
+        "month": dt.datetime(2023, 1, 1, tzinfo=utc),
+        "week": dt.datetime(2022, 12, 26, tzinfo=utc),
+        "day": dt.datetime(2023, 1, 1, tzinfo=utc),
+        "hour": dt.datetime(2023, 1, 1, 13, tzinfo=utc),
+        "minute": dt.datetime(2023, 1, 1, 13, 45, tzinfo=utc),
+        "second": dt.datetime(2023, 1, 1, 13, 45, 30, tzinfo=utc),
+    }
+    assert list(Book.objects.dates("published", "week")) == [
+        dt.date(2022, 12, 26),
+        dt.date(2023, 1, 16),
+    ]
+    assert list(Book.objects.datetimes("published", "month")) == [
+        dt.datetime(2023, 1, 1, tzinfo=utc)
+    ]
+    per_month = Book.objects.values(month=TruncMonth("published")).annotate(n=Count("id"))
+    assert list(per_month) == [{"month": dt.datetime(2023, 1, 1, tzinfo=utc), "n": 2}]
+    row = Book.objects.order_by("published").values(
+        d=TruncDate("published"),
+        t=TruncTime("published"),
+        w=TruncWeek("published"),
+        h=Trunc("reading_time", "hour"),
+    )[0]
+    assert row == {
+        "d": dt.date(2023, 1, 1),
+        "t": dt.time(13, 45, 30),  # TIME has no fractions on Db2 for i
+        "w": dt.datetime(2022, 12, 26, tzinfo=utc),
+        "h": dt.time(6, 0),
+    }
+    assert Book.objects.filter(published__date=dt.date(2023, 1, 1)).count() == 1
+
+
+def test_truncating_a_timestamp_to_a_time(live, empty) -> None:
+    """Trunc of a timestamp with a TimeField output goes through time_trunc_sql."""
+    from django.db.models import TimeField
+    from django.db.models.functions import TruncHour
+
+    author = Author.objects.create(name="a")
+    published = dt.datetime(2023, 1, 1, 13, 45, 30, tzinfo=dt.UTC)
+    Book.objects.create(author=author, title="t", published=published)
+    hour = TruncHour("published", output_field=TimeField())
+    assert Book.objects.values_list(hour, flat=True).get() == dt.time(13, 0)
