@@ -15,7 +15,21 @@ from decimal import Decimal
 
 import pytest
 from django.db import connection, models
-from django.db.models import Case, Count, Exists, F, Max, OuterRef, Q, Subquery, Value, When
+from django.db.models import (
+    BooleanField,
+    Case,
+    Count,
+    Exists,
+    ExpressionWrapper,
+    F,
+    Max,
+    OuterRef,
+    Q,
+    Subquery,
+    Value,
+    When,
+)
+from django.db.models.lookups import LessThan
 
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
 from tests.testapp.models import Author, Book, Defaults, Document, Node, Tag
@@ -323,6 +337,32 @@ def test_logged_queries_show_parameters(live, empty) -> None:
         assert list(Author.objects.filter(id__in=[None, author.id], name="O'Brien")) == [author]
     assert f"IN ({author.id})" in ctx.captured_queries[0]["sql"]
     assert "= 'O''Brien'" in ctx.captured_queries[0]["sql"]
+
+
+def test_predicates_as_operands(live, empty) -> None:
+    """A predicate compared with another conditional expression (expressions.py)."""
+    author = Author.objects.create(name="a")
+    small = Book.objects.create(author=author, title="small", pages=50, available=True)
+    big = Book.objects.create(author=author, title="big", pages=500, available=True)
+    odd = Book.objects.create(author=author, title="odd", pages=50, available=False)
+    by_id = Book.objects.order_by("id")
+    # (pages < 100) = (pages < 1000): small and odd (True = True), none False = False.
+    lt100 = LessThan(F("pages"), 100)
+    assert list(by_id.annotate(b=lt100).filter(b=LessThan(F("pages"), 1000))) == [small, odd]
+    wrapped = ExpressionWrapper(Q(pages__lt=100), output_field=BooleanField())
+    # Not selected (values_list), as in Django's test_filter_wrapped_lookup_lhs:
+    # a Q annotation with a plain value in the select list has an untyped
+    # marker there (SQL0418, a separate limitation).
+    filtered = by_id.annotate(b=wrapped).filter(b=LessThan(F("pages"), 10))
+    assert list(filtered.values_list("id", flat=True)) == [big.id]
+    # A boolean column compared with a predicate.
+    assert list(by_id.filter(available=Q(pages__lt=100))) == [small]
+    assert list(
+        by_id.filter(available=ExpressionWrapper(Q(pages__lt=100), output_field=BooleanField()))
+    ) == [small]
+    # Exists compared with Exists.
+    books = Exists(Book.objects.filter(author=OuterRef("pk")))
+    assert list(Author.objects.annotate(has=books).filter(has=books)) == [author]
 
 
 def test_pagination(live, empty) -> None:

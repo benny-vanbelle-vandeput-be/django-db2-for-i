@@ -623,7 +623,10 @@ tests): `WHERE (X < 3) = (X < 2)`, `WHERE X < 3 = X < 2`, `WHERE B = (X <
 ELSE 0 END = (X < 2)` all fail with SQL0104. `CASE WHEN <predicate> THEN
 TRUE ELSE FALSE END` is a BOOLEAN value and works on either side
 (`CASE ... = CASE ...`, `B = CASE ...`). In the select list a predicate
-works alone and in parentheses (`SELECT (X < 2)`).
+works alone and in parentheses (`SELECT (X < 2)`), **but not with an untyped
+parameter marker**: `SELECT X < ?` fails with SQL0418, while `SELECT X <
+CAST(? AS INTEGER)` and `SELECT CASE WHEN X < ? THEN TRUE ELSE FALSE END`
+(untyped) work.
 
 **Untyped markers and NULL.** `WHERE ? > ?` with two untyped markers
 (parameters 2 and 1) is accepted but **returns no row** (wrong, silently);

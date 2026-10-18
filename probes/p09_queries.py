@@ -335,6 +335,23 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         (),
         [(True,), (False,), (False,)],
     ),
+    # A predicate with an untyped marker in the select list (Django: a Q /
+    # lookup annotation with a plain value).
+    ("boolean", "select list: X < ? (untyped marker)", f"SELECT X < ? FROM {V3}", (2,), None),
+    (
+        "boolean",
+        "select list: CASE WHEN X < ? THEN TRUE ELSE FALSE END (untyped)",
+        f"SELECT CASE WHEN X < ? THEN TRUE ELSE FALSE END FROM {V3}",
+        (2,),
+        None,
+    ),
+    (
+        "boolean",
+        "select list: X < CAST(? AS INTEGER)",
+        f"SELECT X < CAST(? AS INTEGER) FROM {V3} ORDER BY X",
+        (2,),
+        [(True,), (False,), (False,)],
+    ),
     # Predicates used as values (Django: lookups as expressions, filter(x=Q(...)))
     (
         "boolean",

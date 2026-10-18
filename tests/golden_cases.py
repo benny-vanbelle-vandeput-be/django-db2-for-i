@@ -33,6 +33,7 @@ from django.db.models import (
     IntegerField,
     Max,
     OuterRef,
+    Q,
     Subquery,
     Value,
     When,
@@ -340,6 +341,34 @@ CASES: tuple[Case, ...] = (
                 .values("has")
                 .annotate(n=Count("id"))
                 .order_by("has")
+            )
+        ),
+        (AUTHOR, BOOK),
+    ),
+    # Predicates as comparison operands: CASE WHEN ... THEN TRUE ELSE FALSE END
+    # (expressions.py); boolean columns stay as they are.
+    Case(
+        "queries/filter_lookup_operands",
+        "query",
+        _select(
+            lambda: Book.objects.annotate(b=LessThan(F("pages"), 2000)).filter(
+                b=LessThan(F("pages"), 1900)
+            )
+        ),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/filter_boolean_column_equals_q",
+        "query",
+        _select(lambda: Book.objects.filter(available=Q(pages__lt=100))),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/filter_exists_equals_exists",
+        "query",
+        _select(
+            lambda: Author.objects.annotate(has=Exists(_books_of_author())).filter(
+                has=Exists(_books_of_author())
             )
         ),
         (AUTHOR, BOOK),

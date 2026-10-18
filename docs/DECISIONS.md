@@ -641,3 +641,20 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   where the optimizer handles it best); `CASE WHEN (SELECT COUNT(*) ...) > 0`
   (counts every row).
 
+## 2026-10-18: Predicates as comparison operands
+- **Decision (project owner approved C2):** `Lookup.as_db2_for_i`
+  (`expressions.py`) wraps an operand in `CASE WHEN <predicate> THEN TRUE
+  ELSE FALSE END` only when both operands of the lookup are conditional and
+  that operand renders as a predicate (a lookup, `Q` / WhereNode, `Exists`,
+  or an ExpressionWrapper / NegatedExpression around one). Boolean columns
+  and values stay as they are; `filter(<cond>=True)`, which Django renders
+  as just the condition, is unchanged, and so are all earlier goldens.
+- **Why:** Db2 for i rejects a predicate as a comparison operand (SQL0104,
+  probe `queries`); the CASE form is a BOOLEAN value and works on either
+  side. Django's Oracle backend does the same in `Lookup.as_oracle`, but
+  that also wraps boolean columns (for us every conditional expression is
+  valid in WHERE), which would change existing SQL.
+- **Alternatives:** wrapping every conditional operand (changes the SQL of
+  plain boolean column comparisons); comparing via `IS TRUE` forms (not
+  valid either).
+

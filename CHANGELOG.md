@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `supports_regex_backreferencing`.
 
 ### Fixed
+- A predicate compared with another conditional expression
+  (`filter(flag=Q(...))`, `annotate(b=LessThan(...)).filter(b=LessThan(...))`,
+  `filter(has=Exists(...))` on an Exists annotation) failed with SQL0104:
+  Db2 for i rejects a predicate as a comparison operand. Such operands are
+  written as `CASE WHEN <predicate> THEN TRUE ELSE FALSE END`; boolean
+  columns are not wrapped.
 - `Exists()` conditions failed in the IBM i host server ("Error in host
   server data stream"): the subquery selected a parameter marker. It now
   selects a literal `1`.
