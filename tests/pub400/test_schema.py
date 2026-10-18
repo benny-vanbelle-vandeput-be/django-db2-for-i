@@ -299,6 +299,17 @@ def test_exists_in_every_position(live, empty) -> None:
     assert Author.objects.filter(nested).count() == 2
 
 
+def test_logged_queries_show_parameters(live, empty) -> None:
+    """last_executed_query(): the logged SQL has the values (logging only)."""
+    from django.test.utils import CaptureQueriesContext
+
+    author = Author.objects.create(name="O'Brien")
+    with CaptureQueriesContext(live) as ctx:
+        assert list(Author.objects.filter(id__in=[None, author.id], name="O'Brien")) == [author]
+    assert f"IN ({author.id})" in ctx.captured_queries[0]["sql"]
+    assert "= 'O''Brien'" in ctx.captured_queries[0]["sql"]
+
+
 def test_pagination(live, empty) -> None:
     for name in "abcde":
         Author.objects.create(name=name)
