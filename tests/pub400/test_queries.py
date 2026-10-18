@@ -393,3 +393,17 @@ def test_negated_boolean_values(live, empty) -> None:
     assert list(flagged.exclude(available=F("unavailable"))) == [yes, no]
     unknown = ~Value(None, output_field=BooleanField())
     assert Book.objects.filter(available=unknown).count() == 0
+
+
+def test_uuid_values(live, empty) -> None:
+    """The real-world patterns: update a UUIDField with a Value, select a UUID Value."""
+    import uuid
+
+    from tests.testapp.models import Tag
+
+    code = uuid.UUID("12345678-1234-5678-1234-567812345678")
+    tag = Tag.objects.create(label="a")
+    Tag.objects.update(id=Value(code))
+    assert Tag.objects.get(label="a").pk == code
+    assert Tag.objects.values_list(Value(code), flat=True).get() == code
+    assert Tag.objects.filter(pk=Value(code)).exists() and tag.pk != code

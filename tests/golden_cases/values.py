@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import uuid
 from decimal import Decimal
 
 from django.db.models import Case as CaseExpr
@@ -63,4 +64,10 @@ CASES: tuple[Case, ...] = (
     Case("values/date", "query", annotate(lambda: Value(dt.date(2026, 10, 17))), (AUTHOR,)),
     Case("values/time", "query", annotate(lambda: Value(dt.time(1, 2, 3, 456789))), (AUTHOR,)),
     Case("values/datetime_aware", "query", annotate(lambda: Value(AWARE)), (AUTHOR,)),
+    Case(
+        "values/uuid",
+        "query",
+        annotate(lambda: Value(uuid.UUID("12345678-1234-5678-1234-567812345678"))),
+        (AUTHOR,),
+    ),
 )
