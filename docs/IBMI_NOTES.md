@@ -660,6 +660,25 @@ INTEGER) ... GROUP BY CASE WHEN X < CAST(? AS INTEGER) ...` gives "Internal
 driver error" (30101); without a marker it works (markers never match, as
 for ORDER BY under DISTINCT; `GROUP BY 1` is not allowed either).
 
+**GROUP BY: candidate fixes (2026-10-18).** A grouped expression is only
+matched when it is selected as a whole, also without markers: `SELECT X + X
++ 1 ... GROUP BY X + X` and `SELECT LEAST(MIN(X), X + X) ... GROUP BY X + X`
+fail with SQL0122 (a grouped *column* nested with an aggregate works).
+`GROUP BY` a select alias fails (SQL0206); an untyped marker in `MOD(X, ?)`
+fails with SQL0402; `COUNT(*)` over a grouped subquery with markers fails
+with 30125 ("Character data right truncation"). Inline literals instead of
+markers work when the expression is selected whole (integer, DECIMAL,
+DOUBLE, BOOLEAN), but not nested (SQL0122), and a literal in GROUP BY with a
+marker in the select list fails (SQL0122). A derived table that computes the
+value and groups by its column works in every shape, and so does a
+**LATERAL derived table** per row: `FROM ... CROSS JOIN LATERAL (SELECT
+<expr> AS G1 FROM SYSIBM.SYSDUMMY1) AS G ... GROUP BY G.G1` with markers,
+after a LEFT JOIN with aggregates of the joined table, nested
+(`LEAST(MIN(T.X), G.G1)`), with markers in HAVING and the select list,
+under `COUNT(*)`, with a correlated scalar subquery or a first-row EXISTS
+value as the expression, and with `G.G1` in WHERE. The backend uses the
+LATERAL form (compiler.py).
+
 **Untyped markers and NULL.** `WHERE ? > ?` with two untyped markers
 (parameters 2 and 1) is accepted but **returns no row** (wrong, silently);
 `WHERE CAST(? AS INTEGER) > ?` is correct. The backend therefore never

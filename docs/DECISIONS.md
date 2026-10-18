@@ -775,3 +775,31 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Alternatives:** leaving nulls_first / nulls_last unsupported in
   aggregates; changing the emulation for every ORDER BY (the query-level
   form works, and the DISTINCT handling in compiler.py relies on it).
+
+## 2026-10-18: GROUP BY expressions with values through a LATERAL grouping table
+- **Decision (project owner approved the derived-table option):** when a
+  grouped expression (from `values().annotate()`, or a selected
+  non-aggregate next to aggregates) has parameters or is nested in another
+  selected expression, the compiler computes it per row in `CROSS JOIN
+  LATERAL (SELECT <expr> AS "G1", ... FROM SYSIBM.SYSDUMMY1) AS
+  "DJDB2I_GROUPING"` and every use of the expression (select list, GROUP BY,
+  HAVING, ORDER BY, WHERE) becomes `"DJDB2I_GROUPING"."G<n>"`. Grouping by
+  columns, and by expressions without parameters that are only selected as
+  a whole, keeps its SQL.
+- **Why:** Db2 for i never matches a grouped expression with a parameter
+  marker (30101) or a grouped expression nested in a select expression
+  (SQL0122), and allows no GROUP BY alias or position (probe `queries`).
+  Grouping by a computed value is common in reports. The LATERAL table is
+  the derived-table option in its smallest form: the outer query keeps its
+  joins, WHERE, aggregates, HAVING and ORDER BY unchanged, and only the
+  grouped values move into the derived table, so no other column has to be
+  carried through it.
+- **Replaces:** the "Not fixed" note of the select-list predicate decision;
+  the pub400 xfail and Django's two `REASON_GROUP_BY_MARKERS` expected
+  failures (`test_group_by_subquery_annotation`,
+  `test_group_by_exists_annotation`), which pass now.
+- **Alternatives:** inline literals for numeric and boolean values (fail for
+  nested use even without markers; would put literals in the SQL); a full
+  derived table of the whole FROM/WHERE (every column used by aggregates,
+  HAVING and ORDER BY, including joined tables, would have to be selected
+  and renamed through it).
