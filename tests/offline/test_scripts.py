@@ -1,6 +1,7 @@
 """scripts/run_django_tests.py and scripts/update_test_status.py (no server needed)."""
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -164,3 +165,168 @@ def test_render_and_collect(tmp_path) -> None:
 
 def test_render_without_runs() -> None:
     assert "No Django test modules have been run yet." in status.render([])
+
+
+# --- Badges, README status and the TEST_STATUS header --------------------------------
+
+STATUS = {
+    "versions": {"django": "6.1 | 5.2 planned", "ibmi": "7.5", "test_system": "PUB400"},
+    "releases": [{"tag": "v0.1.0a2", "date": "2026-10-18", "summary": "Encoding fixes."}],
+    "phases": [{"phase": "2", "content": "Queries & pagination", "status": "in progress"}],
+    "modules": [
+        {"module": "basic", "status": "done"},
+        {"module": "transactions", "status": "in progress"},
+        {"module": "queries", "status": "planned", "note": "split into labels"},
+    ],
+    "tracks": [{"text": "Verify the column order (#23)."}],
+}
+
+README_TEXT = (
+    "# Title\n\n<!-- badges:start -->\nold badges\n<!-- badges:end -->\n\nBy hand.\n\n"
+    "<!-- status:start -->\nold status\n<!-- status:end -->\n\n## Install\n"
+)
+
+
+def results_ok_and_failed():
+    return [
+        status.parse_log(OK_LOG, "basic", "6.1"),
+        status.parse_log(FAILED_LOG, "transactions", "6.1"),
+    ]
+
+
+def test_totals_sum_the_newest_django_version() -> None:
+    old = status.parse_log(OK_LOG.replace("6.1 (", "5.2 ("), "basic", "5.2")
+    crashed = status.parse_log(CRASHED_LOG.replace("basic", "ordering"), "ordering", "6.1")
+    total = status.totals([old, crashed, *results_ok_and_failed()])
+    # basic: 55 passed, 3 skipped, 2 xfail; transactions: 67 passed, 4+1+1 failed, 5, 2.
+    assert total == status.Totals(passed=122, failed=6, skipped=8, expected_failures=4)
+    assert status.totals([]) == status.Totals()
+
+
+def test_badge_json_counts_and_colours(tmp_path) -> None:
+    written = status.write_badges(status.totals(results_ok_and_failed()), tmp_path)
+    assert sorted(p.name for p in written) == [
+        "failed.json",
+        "passed.json",
+        "skipped.json",
+        "xfail.json",
+    ]
+    data = {p.stem: json.loads(p.read_text()) for p in written}
+    assert all(d["schemaVersion"] == 1 for d in data.values())
+    assert all(d["label"] == "Django tests (PUB400)" for d in data.values())
+    assert (data["passed"]["message"], data["passed"]["color"]) == ("122 passed", "brightgreen")
+    assert (data["failed"]["message"], data["failed"]["color"]) == ("6 failed", "red")
+    assert (data["skipped"]["message"], data["skipped"]["color"]) == ("8 skipped", "lightgrey")
+    assert data["xfail"]["message"] == "4 expected failures"
+    assert data["xfail"]["color"] == "blue"
+
+
+def test_zero_failed_badge_is_green() -> None:
+    data = status.badge_data(status.totals([status.parse_log(OK_LOG, "basic", "6.1")]))
+    assert (data["failed"]["message"], data["failed"]["color"]) == ("0 failed", "brightgreen")
+
+
+def test_badge_lines() -> None:
+    text = "\n".join(status.badge_lines(STATUS, "docs/TEST_STATUS.md"))
+    assert "https://img.shields.io/badge/Django-6.1%20%7C%205.2%20planned-" in text
+    assert "https://img.shields.io/badge/license-BSD--3--Clause-blue)](LICENSE)" in text
+    assert "workflow/status/benny-vanbelle-vandeput-be/django-db2-for-i/offline.yml" in text
+    assert "include_prereleases" in text
+    for name in ("passed", "failed", "skipped", "xfail"):
+        assert (
+            "endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/"
+            f"django-db2-for-i/main/docs/badges/{name}.json)](docs/TEST_STATUS.md)"
+        ) in text
+    assert "](../LICENSE)" in "\n".join(status.badge_lines(STATUS, "#x", root="../"))
+
+
+def test_readme_rendering_between_markers() -> None:
+    results = results_ok_and_failed()
+    text = status.render_readme(README_TEXT, STATUS, results)
+    assert text.startswith("# Title\n\n<!-- badges:start -->\n[![Django]")
+    assert "old badges" not in text and "old status" not in text
+    assert "\n\nBy hand.\n\n" in text
+    assert text.endswith("<!-- status:end -->\n\n## Install\n")
+    assert "- **`v0.1.0a2`** (2026-10-18): Encoding fixes." in text
+    assert "| 2 | Queries & pagination | in progress |" in text
+    assert "| basic | 60 | OK (3 skipped, 2 expected failures) | done |" in text
+    assert (
+        "| transactions | 80 | FAILED (4 failures, 1 errors, 5 skipped, 2 expected failures,"
+        " 1 unexpected successes) | in progress |"
+    ) in text
+    assert "| queries |  | not run yet | planned (split into labels) |" in text
+    assert "- Verify the column order (#23)." in text
+    # Idempotent.
+    assert status.render_readme(text, STATUS, results) == text
+
+
+@pytest.mark.parametrize(
+    "readme",
+    [
+        README_TEXT.replace("<!-- status:end -->", ""),
+        README_TEXT.replace("<!-- badges:start -->", ""),
+        README_TEXT + "<!-- status:start -->\n",
+        "<!-- badges:end -->\n<!-- badges:start -->\n<!-- status:start -->\n<!-- status:end -->",
+    ],
+    ids=["missing-end", "missing-start", "duplicate", "wrong-order"],
+)
+def test_readme_rendering_refuses_bad_markers(readme) -> None:
+    with pytest.raises(status.MarkerError):
+        status.render_readme(readme, STATUS, [])
+
+
+def _redirect(monkeypatch, tmp_path, collected):
+    readme = tmp_path / "README.md"
+    monkeypatch.setattr(status, "ROOT", tmp_path)
+    monkeypatch.setattr(status, "README", readme)
+    monkeypatch.setattr(status, "OUTPUT", tmp_path / "TEST_STATUS.md")
+    monkeypatch.setattr(status, "BADGES_DIR", tmp_path / "badges")
+    monkeypatch.setattr(status, "load_status", lambda: STATUS)
+    monkeypatch.setattr(status, "collect", lambda: collected)
+    return readme
+
+
+def test_main_reports_missing_markers_and_writes_nothing(monkeypatch, tmp_path, capsys) -> None:
+    readme = _redirect(monkeypatch, tmp_path, [])
+    readme.write_text("# No markers\n")
+    assert status.main() == 1
+    assert "<!-- badges:start -->" in capsys.readouterr().err
+    assert not (tmp_path / "TEST_STATUS.md").exists()
+    assert not (tmp_path / "badges").exists()
+    assert readme.read_text() == "# No markers\n"
+
+
+def test_main_writes_everything(monkeypatch, tmp_path) -> None:
+    readme = _redirect(monkeypatch, tmp_path, results_ok_and_failed())
+    readme.write_text(README_TEXT)
+    assert status.main() == 0
+    assert json.loads((tmp_path / "badges" / "passed.json").read_text())["message"] == "122 passed"
+    assert "| basic | 60 |" in readme.read_text()
+    assert "- **IBM i:** 7.5 on PUB400" in (tmp_path / "TEST_STATUS.md").read_text()
+
+
+def test_test_status_header() -> None:
+    later = status.parse_log(
+        FAILED_LOG.replace("2026-10-17 18:00:00", "2026-10-18 09:30:00"), "transactions", "6.1"
+    )
+    text = status.render([status.parse_log(OK_LOG, "basic", "6.1"), later], STATUS)
+    assert text.startswith("# Test status\n\n[![Django]")
+    assert "docs/badges/failed.json)](#django-test-modules)" in text
+    assert "- **Runs:** 2026-10-17 18:00:00 UTC to 2026-10-18 09:30:00 UTC" in text
+    assert "- **Django:** 6.1 (1e01021 2026-10-12)" in text
+    assert "- **IBM i:** 7.5 on PUB400" in text
+    # Without status data (and without runs) the header still renders.
+    bare = status.render([])
+    assert "- **Runs:** none recorded" in bare
+    assert "- **IBM i:** unknown" in bare
+
+
+def test_committed_status_data_parses() -> None:
+    path = SCRIPTS.parent / "docs" / "status.toml"
+    if not path.exists():  # the wheel session tests a copy without docs/
+        pytest.skip("docs/status.toml is not part of this copy of the tests")
+    data = status.load_status(path)
+    allowed = {"done", "in progress", "planned"}
+    assert {p["status"] for p in data["phases"]} <= allowed
+    assert {m["status"] for m in data["modules"]} <= allowed
+    assert data["versions"]["ibmi"]

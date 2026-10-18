@@ -1,0 +1,106 @@
+# Project status data, rendered into README.md ("Project status") and the
+# header of docs/TEST_STATUS.md by scripts/update_test_status.py.
+#
+# Update this file at every module or phase transition, then regenerate:
+#     docker compose run --rm tests nox -s test_status
+#
+# status values: "done", "in progress", "planned".
+
+[versions]
+# Static badges and the TEST_STATUS.md header.
+django = "6.1 | 5.2 planned"
+python = "3.12 | 3.13 | 3.14"
+ibmi = "7.5"
+# The system the recorded Django test runs used.
+test_system = "PUB400"
+
+[[releases]]
+tag = "v0.1.0a2"
+date = "2026-10-18"
+summary = "Encoding fixes (UTF-8 statement text, long strings intact) and the signed-tag release workflow."
+
+[[releases]]
+tag = "v0.1.0a1"
+date = "2026-10-17"
+summary = "Phase 1: minimal backend (its code reports version 0.0.1.dev0)."
+
+[[phases]]
+phase = "0"
+content = "Skeleton & environment"
+status = "done"
+
+[[phases]]
+phase = "1"
+content = "Minimal backend"
+status = "done"
+
+[[phases]]
+phase = "2"
+content = "Queries & pagination (ordering, lookup, aggregation, expressions, queries)"
+status = "in progress"
+
+[[phases]]
+phase = "3"
+content = "Django 5.2 support"
+status = "planned"
+
+[[phases]]
+phase = "4"
+content = "Schema editor completeness"
+status = "planned"
+
+[[phases]]
+phase = "5"
+content = "Returning & bulk"
+status = "planned"
+
+[[phases]]
+phase = "6"
+content = "Advanced (window functions, JSONField, db functions, DB-level on_delete)"
+status = "planned"
+
+[[phases]]
+phase = "7"
+content = "PUB400 tier & release prep"
+status = "planned"
+
+[[phases]]
+phase = "Encoding track"
+content = "CCSID / UTF-8 investigation, findings A/B/C (released in 0.1.0a2)"
+status = "done"
+
+# Phase 2 modules: the number of tests and the result come from the logs in
+# test-results/ (the same data as docs/TEST_STATUS.md).
+[[modules]]
+module = "ordering"
+status = "done"
+
+[[modules]]
+module = "lookup"
+status = "done"
+
+[[modules]]
+module = "aggregation"
+status = "done"
+
+[[modules]]
+module = "expressions"
+status = "in progress"
+note = "first run recorded, fixes being merged"
+
+[[modules]]
+module = "queries"
+status = "planned"
+note = "split into labels Q1–Q5 because of its size"
+
+[[tracks]]
+text = "Verify the column order of created tables (phase 4, [#23](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/23))."
+
+[[tracks]]
+text = "`DROP COLUMN` on a table with rows is cancelled by CPA32B2 (`HY008`), which raises the question of table rebuilds in phase 4 (see [IBMI_NOTES](docs/IBMI_NOTES.md))."
+
+[[tracks]]
+text = "Durations track: `DurationField` storage, `timedelta` values, exact timestamp subtraction (approved; follows the `expressions` fixes, and removes the duration skips)."
+
+[[tracks]]
+text = "Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier."
