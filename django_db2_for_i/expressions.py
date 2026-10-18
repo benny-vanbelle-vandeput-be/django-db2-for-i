@@ -43,9 +43,9 @@ written as ``CASE WHEN <predicate> THEN TRUE ELSE FALSE END``, a BOOLEAN
 value; Django's Oracle backend does the same in ``Lookup.as_oracle``.
 Boolean columns and values are never wrapped, and ``filter(<cond>=True)``
 (rendered by Django as just the condition) is unchanged. ``NOT <BOOLEAN
-value>`` (``~Value(False)``, ``~F("flag")``) is a predicate too; as an operand
-it is written as ``CASE <value> WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END``,
-which keeps NULL as NULL.
+value>`` (``~Value(False)``, ``~F("flag")``) is written as ``CASE <value> WHEN
+TRUE THEN FALSE WHEN FALSE THEN TRUE END`` (``NegatedValue``), as an operand
+and everywhere else (compiler.py: Db2 for i's NOT is TRUE for a NULL value).
 
 Aggregates
 ----------

@@ -803,3 +803,16 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   derived table of the whole FROM/WHERE (every column used by aggregates,
   HAVING and ORDER BY, including joined tables, would have to be selected
   and renamed through it).
+
+## 2026-10-19: NOT of a BOOLEAN value as a CASE value everywhere
+- **Decision:** `~F("flag")`, `~Value(...)` and any NOT of a non-predicate
+  BOOLEAN expression are written as `CASE <value> WHEN TRUE THEN FALSE WHEN
+  FALSE THEN TRUE END` in every position (select list, WHERE, operands), not
+  only as a comparison operand (#48). Negated predicates are unchanged.
+- **Why:** Db2 for i's `NOT <BOOLEAN value>` is TRUE for NULL, also in WHERE
+  (probe `queries`), so `filter(~F("flag"))` on a nullable column returned the
+  NULL rows and a selected `~F("flag")` returned TRUE for NULL: silent wrong
+  results. Found by the pub400 test for a NULL column the owner asked for.
+- **Alternatives:** `NOT (<value> = TRUE)` (three-valued in WHERE, but a
+  predicate in the select list again, where a NULL result is needed);
+  `<value> = FALSE` (right in WHERE, but no NULL in the select list).

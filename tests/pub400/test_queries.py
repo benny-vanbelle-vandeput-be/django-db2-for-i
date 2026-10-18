@@ -407,3 +407,23 @@ def test_uuid_values(live, empty) -> None:
     assert Tag.objects.get(label="a").pk == code
     assert Tag.objects.values_list(Value(code), flat=True).get() == code
     assert Tag.objects.filter(pk=Value(code)).exists() and tag.pk != code
+
+
+def test_null_column_compared_with_a_negated_value(live, empty) -> None:
+    """A NULL column value (an author without books, LEFT OUTER JOIN) compared
+    with ~Value(False) matches nothing, and negating it stays NULL."""
+    author = Author.objects.create(name="with book")
+    Author.objects.create(name="without book")
+    Book.objects.create(author=author, title="t", available=True)
+    authors = Author.objects.annotate(available=F("book__available"))
+    assert list(authors.filter(available=~Value(False)).values_list("name", flat=True)) == [
+        "with book"
+    ]
+    assert authors.filter(available__isnull=True).count() == 1
+    # Db2 for i's NOT is TRUE for NULL; the backend's CASE form is not.
+    assert list(authors.filter(~F("book__available"))) == []
+    negated = authors.annotate(negated=~F("book__available")).order_by("name")
+    assert list(negated.values_list("name", "negated")) == [
+        ("with book", False),
+        ("without book", None),
+    ]

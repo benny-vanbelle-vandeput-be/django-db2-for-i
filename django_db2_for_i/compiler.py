@@ -78,6 +78,8 @@ from django.db.models.lookups import Exact, IsNull, Lookup
 from django.db.models.sql import compiler
 from django.db.models.sql.where import WhereNode
 
+from .expressions import NegatedValue, renders_as_predicate
+
 # Exists() as a value: the first-row subquery, NULL when there is no row.
 EXISTS_AS_VALUE = "((%(subquery)s) IS NOT NULL)"
 # Django's wrapper of an ordered compound query, and ours.
@@ -154,6 +156,9 @@ class SQLCompiler(compiler.SQLCompiler):
     def compile(self, node):
         if self._grouping_columns and _hashable(node) and node in self._grouping_columns:
             return self._grouping_columns[node], []
+        if isinstance(node, NegatedExpression) and not renders_as_predicate(node.expression):
+            # NOT <BOOLEAN value> is TRUE for NULL on Db2 for i (also in WHERE).
+            node = NegatedValue(node.expression)
         if isinstance(node, Exists):
             node = _exists_selecting_literal(node)
             if not self._in_condition:

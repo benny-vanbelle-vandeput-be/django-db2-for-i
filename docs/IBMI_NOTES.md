@@ -700,6 +700,16 @@ BOOLEAN))`) it fails with SQL0199, like every predicate operand. `CASE <value>
 WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END` works there, also with a
 marker, and gives NULL for NULL.
 
+**NOT of a NULL BOOLEAN value is TRUE (2026-10-19).** Db2 for i evaluates a
+BOOLEAN *value* used as a predicate two-valued, NULL as false: `SELECT NOT V`
+gives FALSE, TRUE, **TRUE** for TRUE, FALSE, NULL, and `WHERE NOT (V)` returns
+the NULL row too (SQL's three-valued logic gives UNKNOWN: no row). `WHERE V`
+returns only the TRUE row. Comparisons are three-valued as expected (`WHERE
+V = FALSE` and `WHERE NOT (V = TRUE)` return only the FALSE row). `CASE V WHEN
+TRUE THEN FALSE WHEN FALSE THEN TRUE END` gives FALSE, TRUE, NULL in the select
+list and only the FALSE row in WHERE. `(NOT V) IS NULL` is a syntax error
+(SQL0199).
+
 **Untyped markers and NULL.** `WHERE ? > ?` with two untyped markers
 (parameters 2 and 1) is accepted but **returns no row** (wrong, silently);
 `WHERE CAST(? AS INTEGER) > ?` is correct. The backend therefore never
