@@ -31,6 +31,18 @@ from the Python value. Type rules:
 
 Any other type (UUID, bytes, timedelta, JSON, ...) raises NotSupportedError;
 its rule comes with the field support in a later phase.
+
+Predicates as operands
+----------------------
+Db2 for i rejects a predicate as a comparison operand: ``(a < b) = (c < d)``,
+``bool_col = (x < y)`` and ``(pred) = TRUE`` fail with SQL0104 (probe
+``queries``). When a lookup compares two conditional expressions, each
+operand that renders as a predicate (a lookup, a ``Q`` / WhereNode,
+``Exists``, or an ExpressionWrapper / NegatedExpression around one) is
+written as ``CASE WHEN <predicate> THEN TRUE ELSE FALSE END``, a BOOLEAN
+value; Django's Oracle backend does the same in ``Lookup.as_oracle``.
+Boolean columns and values are never wrapped, and ``filter(<cond>=True)``
+(rendered by Django as just the condition) is unchanged.
 """
 
 from __future__ import annotations
@@ -38,8 +50,10 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django.db import NotSupportedError
-from django.db.models import CharField, DecimalField, IntegerField, TextField
-from django.db.models.expressions import Value
+from django.db.models import BooleanField, CharField, DecimalField, IntegerField, TextField
+from django.db.models.expressions import Exists, Expression, ExpressionWrapper, Value
+from django.db.models.lookups import Lookup
+from django.db.models.sql.where import WhereNode
 
 INTEGER_RANGE = (-(2**31), 2**31 - 1)
 BIGINT_RANGE = (-(2**63), 2**63 - 1)
@@ -164,3 +178,50 @@ def value_as_db2_for_i(self, compiler, connection, **extra_context):
 
 
 Value.as_db2_for_i = value_as_db2_for_i
+
+
+# --- Predicates as operands ---------------------------------------------------------------
+
+
+def renders_as_predicate(expression) -> bool:
+    """True if ``expression`` compiles to a predicate (not a BOOLEAN value)."""
+    if isinstance(expression, (Lookup, WhereNode, Exists)):
+        return True
+    # NegatedExpression is an ExpressionWrapper too.
+    if isinstance(expression, ExpressionWrapper):
+        return renders_as_predicate(expression.expression)
+    return False
+
+
+class PredicateValue(Expression):
+    """``CASE WHEN <predicate> THEN TRUE ELSE FALSE END``: a predicate as a BOOLEAN value."""
+
+    output_field = BooleanField()
+
+    def __init__(self, predicate):
+        super().__init__(output_field=BooleanField())
+        self.predicate = predicate
+
+    def get_source_expressions(self):
+        return [self.predicate]
+
+    def set_source_expressions(self, exprs):
+        (self.predicate,) = exprs
+
+    def as_sql(self, compiler, connection):
+        sql, params = compiler.compile(self.predicate)
+        return f"CASE WHEN {sql} THEN TRUE ELSE FALSE END", params
+
+
+def lookup_as_db2_for_i(self, compiler, connection):
+    if getattr(self.lhs, "conditional", False) and getattr(self.rhs, "conditional", False):
+        operands = [
+            PredicateValue(operand) if renders_as_predicate(operand) else operand
+            for operand in (self.lhs, self.rhs)
+        ]
+        if any(isinstance(operand, PredicateValue) for operand in operands):
+            return type(self)(*operands).as_sql(compiler, connection)
+    return self.as_sql(compiler, connection)
+
+
+Lookup.as_db2_for_i = lookup_as_db2_for_i

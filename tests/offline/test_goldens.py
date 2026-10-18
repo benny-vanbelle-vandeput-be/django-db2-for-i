@@ -128,6 +128,7 @@ def allowed_identifiers() -> set[str]:
         "M",
         "HAS",
         "N",
+        "B",
     }
     for model in (Author, Book, Defaults, Node, Tag):
         names.add(model._meta.db_table.upper())
