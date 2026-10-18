@@ -55,8 +55,8 @@ def offline(session: nox.Session, django: str) -> None:
 def wheel(session: nox.Session) -> None:
     """Build sdist + wheel into dist/ and run the offline tier against the installed wheel.
 
-    The tests run from a copy of tests/, scripts/, pyproject.toml and
-    CHANGELOG.md without the django_db2_for_i source tree, so the import
+    The tests run from a copy of tests/, scripts/, changelog.d/, pyproject.toml
+    and CHANGELOG.md without the django_db2_for_i source tree, so the import
     comes from the wheel (checked before pytest runs).
     """
     import glob
@@ -69,7 +69,7 @@ def wheel(session: nox.Session) -> None:
     session.install(*nox.project.dependency_groups(PYPROJECT, "test"))
     session.install(built, f"Django~={NEWEST_DJANGO}.0")
     with tempfile.TemporaryDirectory(prefix="wheel-test-") as tmp:
-        for name in ("tests", "scripts"):
+        for name in ("tests", "scripts", "changelog.d"):
             shutil.copytree(name, f"{tmp}/{name}", ignore=shutil.ignore_patterns("__pycache__"))
         for name in ("pyproject.toml", "CHANGELOG.md"):
             shutil.copy(name, tmp)

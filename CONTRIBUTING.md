@@ -30,12 +30,40 @@ other form), you agree that it is licensed under the same BSD 3-Clause License.
 All development and test runs happen in a container. See [README.md](README.md)
 for setup instructions.
 
+## Changelog
+
+Do not edit `CHANGELOG.md` in a pull request. Add a fragment instead, so
+parallel pull requests do not conflict:
+
+    changelog.d/<pull request number>.<type>.md
+
+with `<type>` one of `added`, `enabled` (a feature flag switched on),
+`changed`, `fixed`, `limitation`, and one entry in Markdown (or several as
+`- ` items) as the content. When the number is not known yet, use a short
+kebab-case topic (`changelog.d/string-agg.added.md`); a topic gets no
+`(#<number>)` reference. Details in [changelog.d/README.md](changelog.d/README.md);
+`python scripts/assemble_changelog.py check` validates the fragments (the
+offline tier runs the same check) and `draft` shows the resulting section.
+
+## pub400 tests
+
+Tests that write to the IBM i use the tests.testapp tables: a module asks for
+them with `pytestmark = pytest.mark.usefixtures("testapp_tables")`
+(`tests/pub400/conftest.py`), which creates the tables for that module and
+drops them again. Put a test in the module of its area (`test_schema.py`,
+`test_queries.py`, `test_aggregates.py`, ...).
+
 ## Golden files
 
 `tests/offline/golden/<django>/<profile>/<group>/<name>.sql` hold the SQL the
-backend generates for a fixed set of cases (`tests/golden_cases.py`), per
+backend generates for a fixed set of cases (`tests/golden_cases/`), per
 Django series and capability profile. The offline tier compares the generated
 SQL and params with them on every run.
+
+- **Where cases live:** one module per group, `tests/golden_cases/<group>.py`
+  (ddl, queries, values, expressions, aggregates, extract, dml, flush), with
+  the shared builders in `base.py`. A case named `<group>/<name>` goes into
+  its group's module; the offline tier checks this.
 
 - **Scope:** backend-specific SQL only (pagination, quoting, booleans,
   date/time parameters, LIKE escaping, identity handling, flush, DDL types).
@@ -90,9 +118,11 @@ Releases are alpha releases on GitHub only (no PyPI). **Contributors and
 Claude never create release tags; the maintainer creates and signs them.**
 
 1. **Release PR** (prepared like any other PR): set `__version__` in
-   `django_db2_for_i/__init__.py` (the single source of the version), move
-   the `Unreleased` entries of `CHANGELOG.md` into a `## [<version>] -
-   <date>` section and update the comparison links at the bottom. The
+   `django_db2_for_i/__init__.py` (the single source of the version) and run
+   `python scripts/assemble_changelog.py release <version>`: it writes the
+   fragments in `changelog.d/` into a `## [<version>] - <date>` section of
+   `CHANGELOG.md`, updates the comparison links at the bottom and deletes the
+   fragments. Review the section and commit it with the deletions. The
    offline tier checks that `__version__` has a CHANGELOG section.
 2. **The maintainer merges it** and tags the merge commit on `main` from
    their own release clone, signed with their OpenPGP (GPG) key:

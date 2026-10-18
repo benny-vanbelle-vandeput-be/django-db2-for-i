@@ -30,6 +30,7 @@ def load(name: str):
 
 changelog = load("changelog_section")
 verify_tag = load("verify_release_tag")
+assemble = load("assemble_changelog")
 
 CHANGELOG = """# Changelog
 
@@ -217,3 +218,82 @@ def test_main_reports_refusal(in_repo, monkeypatch, capsys) -> None:
     assert verify_tag.main(["v0.1.0a2", "--main-ref", "main"]) == 0
     assert verify_tag.main(["v0.1.0a2-light", "--main-ref", "main"]) == 1
     assert "REFUSED: tag v0.1.0a2-light is not annotated" in capsys.readouterr().err
+
+
+# --- Changelog fragments -------------------------------------------------------------
+
+
+def fragments(tmp_path, **files) -> list[Path]:
+    for name, text in files.items():
+        (tmp_path / name).write_text(text)
+    return assemble.fragment_paths(tmp_path)
+
+
+def test_the_fragments_in_the_repository_are_valid() -> None:
+    assert assemble.check(assemble.fragment_paths()) == []
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "38.feature.md",
+        "38.fixed.txt",
+        "PR38.fixed.md",
+        "38.fixed.2.md",
+        "_x.added.md",
+        "0.added.md",
+    ],
+)
+def test_check_refuses_bad_names(tmp_path, name) -> None:
+    (problem,) = assemble.check(fragments(tmp_path, **{name: "Something."}))
+    assert problem.startswith(f"{name}: not <pull request number or topic>.<type>.md")
+
+
+def test_check_refuses_empty_fragments_and_ignores_the_readme(tmp_path) -> None:
+    paths = fragments(tmp_path, **{"README.md": "about", "38.fixed.md": "\n"})
+    assert assemble.check(paths) == ["38.fixed.md: empty"]
+
+
+def test_render_groups_by_type_in_heading_order(tmp_path) -> None:
+    paths = fragments(
+        tmp_path,
+        **{
+            "40.fixed.md": "Second fix.\n",
+            "9.fixed.md": "First fix,\nwrapped.\n",
+            "release-tooling.added.md": "Tooling.\n",
+            "38.limitation.md": "- One.\n- Two.\n",
+            "39.enabled.md": "`supports_any_value`.\n",
+        },
+    )
+    assert assemble.render(paths) == (
+        "### Added\n- Tooling.\n\n"
+        "### Enabled features\n- `supports_any_value`. (#39)\n\n"
+        "### Fixed\n- First fix,\n  wrapped. (#9)\n- Second fix. (#40)\n\n"
+        "### Known limitations\n- One. (#38)\n- Two. (#38)"
+    )
+
+
+def test_render_needs_fragments(tmp_path) -> None:
+    with pytest.raises(assemble.FragmentError, match="no changelog fragments"):
+        assemble.render(fragments(tmp_path))
+
+
+def test_release_adds_the_section_and_compare_links() -> None:
+    text = assemble.release(CHANGELOG, "0.1.0a3", "2026-11-01", "### Added\n- New.")
+    assert changelog.section(text, "0.1.0a3") == "### Added\n- New."
+    assert changelog.section(text, "0.1.0a2") == "### Fixed\n- Something."
+    assert text.index("## [Unreleased]") < text.index("## [0.1.0a3]") < text.index("## [0.1.0a2]")
+    assert (
+        "[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a3...HEAD"
+        in text
+    )
+    assert (
+        "[0.1.0a3]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a2...v0.1.0a3"
+        in text
+    )
+    assert "[0.1.0a2]: https://example.invalid/compare/v0.1.0a1...v0.1.0a2" in text
+
+
+def test_release_refuses_an_existing_version() -> None:
+    with pytest.raises(assemble.FragmentError, match="already has a section"):
+        assemble.release(CHANGELOG, "0.1.0a2", "2026-11-01", "### Added\n- New.")
