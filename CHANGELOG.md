@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `supports_boolean_expr_in_select_clause`: predicates in the select list
   and GROUP BY are returned as BOOLEAN values.
 - `supports_regex_backreferencing`.
+- `supports_any_value`: the `AnyValue` aggregate (`ANY_VALUE`).
 
 ### Fixed
 - `Avg` of an integer field returned a truncated integer (Db2 for i's
