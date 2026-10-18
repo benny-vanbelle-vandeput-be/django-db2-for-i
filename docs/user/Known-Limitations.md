@@ -48,6 +48,25 @@ off. **Fix:** run with a UTF-8 locale, for example `LANG=C.UTF-8` with
 (`setdecoding(SQL_WMETADATA, ...)`) cannot repair it: the driver returns the
 text already broken.
 
+## Parameters in RawSQL must be cast
+
+A bare `%s` in `RawSQL()` (or `extra()`) becomes an untyped parameter marker.
+Db2 for i rejects untyped markers in the select list (SQL0418, "Use of
+parameter marker, NULL, or UNKNOWN not valid"), and two untyped markers
+compared with each other give wrong results. The backend types the values
+of Django's own expressions, but it does not rewrite your SQL. Cast the
+parameter in the SQL instead:
+
+```python
+# Fails with SQL0418:
+Company.objects.annotate(foo=RawSQL("%s", ["value"]))
+# Works:
+Company.objects.annotate(foo=RawSQL("CAST(%s AS NVARCHAR(20))", ["value"]))
+```
+
+Use the SQL type of the value: `NVARCHAR(n)` for strings, `INTEGER`,
+`DECIMAL(p, s)`, `DATE`, `TIMESTAMP(6)`, `BOOLEAN`, ...
+
 ## Custom SQL with a bare NULL
 
 Db2 for i does not accept an untyped `NULL` as an expression (`WHERE NULL IS
