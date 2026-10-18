@@ -17,13 +17,45 @@ selected) and orders by their positions: ``ORDER BY 4 ASC, 3 DESC``. Hidden
 columns are trimmed from the results by Django (``has_extra_select``). The
 predicate depends only on an expression that is selected too, so it never
 changes which rows are distinct.
+
+Exists() outside a search condition
+-----------------------------------
+Db2 for i accepts ``EXISTS (...)`` only directly as a search condition of
+WHERE / HAVING: not in the select list, GROUP BY or ORDER BY, and not inside
+``CASE WHEN`` (also not in a WHERE clause; probe ``queries``). There this
+compiler renders ``Exists()`` as ``((<subquery>) IS NOT NULL)``: Django's
+Exists subquery is ``SELECT 1 ... FETCH FIRST 1 ROWS ONLY``, so it stops at
+the first row like EXISTS. A ``WhereNode`` is a search condition when it is
+the query's WHERE / HAVING / QUALIFY, or a WhereNode directly inside one;
+``NOT`` and Django's ``Exact(<condition>, True)`` wrapper of
+``filter(<condition>)`` keep the context. Any other expression (a select column, ``When``, a
+lookup, ...) switches the context off for everything below it.
 """
 
 from __future__ import annotations
 
-from django.db.models.expressions import OrderBy, Ref
-from django.db.models.lookups import IsNull
+from django.db.models import IntegerField
+from django.db.models.expressions import Exists, NegatedExpression, OrderBy, RawSQL, Ref
+from django.db.models.lookups import Exact, IsNull
 from django.db.models.sql import compiler
+from django.db.models.sql.where import WhereNode
+
+# Exists() as a value: the first-row subquery, NULL when there is no row.
+EXISTS_AS_VALUE = "((%(subquery)s) IS NOT NULL)"
+
+
+def _exists_selecting_literal(node: Exists) -> Exists:
+    """A copy of ``node`` whose subquery selects ``1``, not a parameter marker.
+
+    Django's Exists subquery selects Value(1), which the backend renders as
+    ``CAST(? AS INTEGER)``; a parameter marker in the select list of an EXISTS
+    subquery fails in the IBM i host server ("Error in host server data
+    stream", 30187; probe ``queries``).
+    """
+    node = node.copy()  # also clones the query
+    if "a" in node.query.annotations:
+        node.query.annotations["a"] = RawSQL("1", (), output_field=IntegerField())
+    return node
 
 
 def _emulated_nulls_predicate(order_by, sql: str, inner_sql: str) -> bool | None:
@@ -37,7 +69,46 @@ def _emulated_nulls_predicate(order_by, sql: str, inner_sql: str) -> bool | None
     return None
 
 
+def _is_condition_wrapper(node) -> bool:
+    """Nodes that render a condition as a condition: ``NOT <condition>``, and
+    Django's filter(<condition>) form ``Exact(<condition>, True/False)``
+    (rendered as ``<condition>`` or ``NOT <condition>``)."""
+    if isinstance(node, NegatedExpression):
+        return True
+    return (
+        isinstance(node, Exact)
+        and isinstance(node.rhs, bool)
+        and getattr(node.lhs, "conditional", False)
+    )
+
+
 class SQLCompiler(compiler.SQLCompiler):
+    # True while compiling a search condition of WHERE / HAVING / QUALIFY.
+    _in_condition = False
+
+    def compile(self, node):
+        if isinstance(node, Exists):
+            node = _exists_selecting_literal(node)
+            if not self._in_condition:
+                return node.as_sql(self, self.connection, template=EXISTS_AS_VALUE)
+        outer = self._in_condition
+        self._in_condition = (outer and _is_condition_wrapper(node)) or (
+            isinstance(node, WhereNode) and (outer or self._is_query_condition(node))
+        )
+        try:
+            return super().compile(node)
+        finally:
+            self._in_condition = outer
+
+    def _is_query_condition(self, node) -> bool:
+        conditions = (
+            getattr(self, "where", None),
+            getattr(self, "having", None),
+            getattr(self, "qualify", None),
+            self.query.where,
+        )
+        return any(node is condition for condition in conditions)
+
     def pre_sql_setup(self, with_col_aliases=False):
         self._null_ordering_positions = {}
         extra_select, order_by, group_by = super().pre_sql_setup(with_col_aliases)

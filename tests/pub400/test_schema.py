@@ -15,7 +15,7 @@ from decimal import Decimal
 
 import pytest
 from django.db import connection, models
-from django.db.models import F, Max, OuterRef, Subquery
+from django.db.models import Case, Count, Exists, F, Max, OuterRef, Q, Subquery, Value, When
 
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
 from tests.testapp.models import Author, Book, Defaults, Document, Node, Tag
@@ -267,6 +267,36 @@ def test_distinct_with_emulated_null_ordering(live, empty) -> None:
         .values_list("name", "last")
     )
     assert list(with_param) == [("a2", two), ("a1", one), ("a3", None)]
+
+
+def test_exists_in_every_position(live, empty) -> None:
+    """Exists(): EXISTS in WHERE, a first-row subquery elsewhere (compiler.py)."""
+    a1, a2 = Author.objects.create(name="a1"), Author.objects.create(name="a2")
+    Book.objects.create(author=a1, title="t")
+    books = Exists(Book.objects.filter(author=OuterRef("pk")))
+    by_id = Author.objects.order_by("id")
+    assert list(by_id.filter(books)) == [a1]
+    assert list(by_id.filter(~books)) == [a2]
+    assert list(by_id.filter(Q(name="a2") | books)) == [a1, a2]
+    assert list(by_id.annotate(has=books).values_list("name", "has")) == [
+        ("a1", True),
+        ("a2", False),
+    ]
+    assert list(by_id.annotate(has=~books).values_list("has", flat=True)) == [False, True]
+    assert list(by_id.annotate(has=books).filter(has=False)) == [a2]
+    case = Case(When(books, then=Value(1)), default=Value(0))
+    assert list(by_id.annotate(x=case).values_list("x", flat=True)) == [1, 0]
+    assert list(by_id.annotate(x=case).filter(x=1)) == [a1]
+    assert list(Author.objects.order_by(books.desc(), "id")) == [a1, a2]
+    grouped = Author.objects.annotate(has=books).values("has").annotate(n=Count("id"))
+    assert sorted((row["has"], row["n"]) for row in grouped) == [(False, 1), (True, 1)]
+    # Nested Exists with OuterRef(OuterRef()) (Django's lookup tests).
+    nested = Exists(
+        Book.objects.annotate(
+            same=Exists(Author.objects.filter(name=OuterRef(OuterRef("name"))))
+        ).filter(same=True)
+    )
+    assert Author.objects.filter(nested).count() == 2
 
 
 def test_pagination(live, empty) -> None:

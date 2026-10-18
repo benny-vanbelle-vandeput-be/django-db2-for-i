@@ -1,10 +1,10 @@
 """compiler.py: hidden columns for SELECT DISTINCT with emulated NULL ordering."""
 
 from django.db import connection
-from django.db.models import F
+from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
 
 from django_db2_for_i import compiler
-from tests.testapp.models import Book
+from tests.testapp.models import Author, Book
 
 
 def compiled(queryset):
@@ -67,3 +67,61 @@ def test_parameters_stay_in_the_select_list() -> None:
     )
     _, sql = compiled(queryset)
     assert sql.endswith("ORDER BY 2 ASC, 3 ASC")
+
+
+# --- Exists(): EXISTS only as a search condition --------------------------------------
+
+
+def books():
+    return Exists(Book.objects.filter(author=OuterRef("pk")))
+
+
+FIRST_ROW = "FETCH FIRST 1 ROWS ONLY) IS NOT NULL)"
+
+
+def where_and_select(queryset):
+    """The outer query's select list and WHERE clause (subqueries have their own)."""
+    _, sql = compiled(queryset)
+    select, _, rest = sql.rpartition(' FROM "TESTAPP_AUTHOR"')
+    where = rest.removeprefix(" WHERE ")
+    return select, where
+
+
+def test_exists_in_where_stays_exists() -> None:
+    _, where = where_and_select(Author.objects.filter(books()))
+    assert where.startswith("EXISTS(") and FIRST_ROW not in where
+    _, where = where_and_select(Author.objects.filter(~books()))
+    assert where.startswith("NOT EXISTS(")
+    _, where = where_and_select(Author.objects.filter(Q(name="a") | books()))
+    assert " OR EXISTS(" in where
+
+
+def test_exists_in_the_select_list_is_a_first_row_subquery() -> None:
+    select, where = where_and_select(Author.objects.annotate(has=books()).filter(has=True))
+    assert FIRST_ROW in select and "EXISTS(" not in select
+    assert where.startswith("EXISTS(")  # the annotation, filtered as a condition
+    select, _ = where_and_select(Author.objects.annotate(has=~books()))
+    assert "NOT ((SELECT" in select and FIRST_ROW in select
+
+
+def test_exists_inside_case_when_is_a_first_row_subquery() -> None:
+    case = Case(When(books(), then=Value(1)), default=Value(0))
+    select, _ = where_and_select(Author.objects.annotate(x=case))
+    assert "CASE WHEN ((SELECT" in select
+    # Also in a WHERE clause: CASE WHEN EXISTS is rejected there too.
+    _, where = where_and_select(Author.objects.annotate(x=case).filter(x=1))
+    assert "CASE WHEN ((SELECT" in where and "EXISTS(" not in where
+
+
+def test_q_annotation_with_exists_is_a_first_row_subquery() -> None:
+    select, _ = where_and_select(Author.objects.annotate(x=Q(name="a") | books()))
+    assert FIRST_ROW in select and "EXISTS(" not in select
+
+
+def test_exists_in_order_by_and_group_by() -> None:
+    _, sql = compiled(Author.objects.order_by(books().desc()))
+    assert sql.split(" ORDER BY ")[1].startswith("((SELECT")
+    from django.db.models import Count
+
+    _, sql = compiled(Author.objects.annotate(has=books()).values("has").annotate(n=Count("id")))
+    assert sql.split(" GROUP BY ")[1].startswith("((SELECT")

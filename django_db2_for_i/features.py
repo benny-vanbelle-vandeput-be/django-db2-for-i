@@ -80,7 +80,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_default_in_bit_aggregations = False
     supports_cast_with_precision = False
     supports_default_in_lead_lag = False
-    supports_boolean_expr_in_select_clause = False
+    # Predicates are valid in the select list and GROUP BY on 7.5 (BOOLEAN);
+    # Exists() is rendered as a first-row subquery there (compiler.py).
+    supports_boolean_expr_in_select_clause = True
     supports_comparing_boolean_expr = False
     supports_tuple_lookups = False
     supports_tuple_comparison_against_subquery = False

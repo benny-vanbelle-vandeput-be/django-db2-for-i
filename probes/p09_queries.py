@@ -242,6 +242,54 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         (),
         [(1, True), (2, True), (3, False)],
     ),
+    (
+        "subquery",
+        "CASE WHEN EXISTS in WHERE",
+        f"SELECT X FROM {V3} WHERE CASE WHEN EXISTS (SELECT 1 {D} WHERE X > 1) "
+        "THEN TRUE ELSE FALSE END ORDER BY X",
+        (),
+        [(2,), (3,)],
+    ),
+    (
+        "subquery",
+        "EXISTS in ORDER BY",
+        f"SELECT X FROM {V3} ORDER BY EXISTS (SELECT 1 {D} WHERE X > 1), X",
+        (),
+        None,
+    ),
+    (
+        "subquery",
+        "first-row subquery IS NOT NULL in GROUP BY",
+        f"SELECT (SELECT 1 {D} WHERE X > 1 FETCH FIRST 1 ROW ONLY) IS NOT NULL, COUNT(*) "
+        f"FROM {V3} GROUP BY (SELECT 1 {D} WHERE X > 1 FETCH FIRST 1 ROW ONLY) IS NOT NULL "
+        "ORDER BY 2",
+        (),
+        [(False, 1), (True, 2)],
+    ),
+    (
+        "subquery",
+        "NOT (first-row subquery IS NOT NULL) in select list",
+        f"SELECT X, NOT ((SELECT 1 {D} WHERE X > 1 FETCH FIRST 1 ROW ONLY) IS NOT NULL) "
+        f"FROM {V3} ORDER BY X",
+        (),
+        [(1, True), (2, False), (3, False)],
+    ),
+    # A parameter marker in the select list of an EXISTS subquery (Django's
+    # Exists selects Value(1)) fails in the host server.
+    (
+        "subquery",
+        "EXISTS(SELECT CAST(? AS INTEGER) ...) in WHERE",
+        f"SELECT 1 {D} WHERE EXISTS (SELECT CAST(? AS INTEGER) AS A {D})",
+        (1,),
+        None,
+    ),
+    (
+        "subquery",
+        "EXISTS(SELECT 1 ... WHERE marker) in WHERE",
+        f"SELECT 1 {D} WHERE EXISTS (SELECT 1 FROM {V3} WHERE X = CAST(? AS INTEGER))",
+        (2,),
+        [(1,)],
+    ),
     # --- boolean expressions
     ("boolean", "predicate in select list", f"SELECT 1 = 1 {D}", (), [(True,)]),
     (
@@ -265,6 +313,27 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         "SELECT 1 FROM (VALUES FALSE) T (B) WHERE NOT B",
         (),
         [(1,)],
+    ),
+    (
+        "boolean",
+        "predicate in GROUP BY",
+        f"SELECT X < 2, COUNT(*) FROM {V3} GROUP BY X < 2 ORDER BY 2",
+        (),
+        [(True, 1), (False, 2)],
+    ),
+    (
+        "boolean",
+        "NOT predicate in select list",
+        f"SELECT NOT (X < 2) FROM {V3} ORDER BY X",
+        (),
+        [(False,), (True,), (True,)],
+    ),
+    (
+        "boolean",
+        "CASE WHEN predicate THEN TRUE ELSE FALSE END in select list",
+        f"SELECT CASE WHEN X < 2 THEN TRUE ELSE FALSE END FROM {V3} ORDER BY X",
+        (),
+        [(True,), (False,), (False,)],
     ),
     # Predicates used as values (Django: lookups as expressions, filter(x=Q(...)))
     (

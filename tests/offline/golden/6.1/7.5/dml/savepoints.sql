@@ -3,7 +3,7 @@
 -- profile: 7.5
 -- depends: ddl/create_author
 -- params: [[], [], [], [], [], []]
--- verified: IBM i 7.5 on PUB400, 2026-10-17
+-- verified: IBM i 7.5 on PUB400, 2026-10-18
 SAVEPOINT "S140234567890123_X1" ON ROLLBACK RETAIN CURSORS;
 INSERT INTO "TESTAPP_AUTHOR" ("NAME") VALUES ('savepoint');
 SAVEPOINT "S140234567890123_X2" ON ROLLBACK RETAIN CURSORS;

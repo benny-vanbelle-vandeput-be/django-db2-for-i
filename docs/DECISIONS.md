@@ -616,3 +616,28 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   parameters); an expected failure (`REASON_DISTINCT_ORDER_BY`); ordering by
   `CASE` (same SQL0214 under DISTINCT).
 
+## 2026-10-18: Exists() by context, predicates in the select list
+- **Decision (project owner approved C1):** `supports_boolean_expr_in_select_clause
+  = True`. `compiler.py` renders `Exists()` as `EXISTS (...)` only when it is
+  a search condition of the query's WHERE / HAVING / QUALIFY (directly, in
+  nested AND/OR, under `NOT`, or as Django's `Exact(<condition>, True)`
+  form of `filter(<condition>)`); everywhere else as `((<subquery>) IS NOT
+  NULL)`. The Exists subquery always selects a literal `1`.
+- **Why:** Db2 for i rejects `EXISTS` outside a search condition, also in
+  `CASE WHEN` inside WHERE, and in ORDER BY (SQL0104 / SQL0115); a
+  parameter marker in the select list of an EXISTS subquery fails in the
+  host server (30187). Django's Exists subquery is `SELECT 1 ... FETCH
+  FIRST 1 ROWS ONLY`, so the scalar form stops at the first row like EXISTS
+  (preferred by the project owner over `COUNT(*) > 0`); EXISTS stays where
+  it is valid, because the optimizer handles it best there. Predicates are
+  valid in the select list and GROUP BY on 7.5; with the flag off, Django
+  returned `CASE ... THEN 1 ELSE 0` integers, which cannot be compared with
+  BOOLEAN values.
+- **Context tracking:** `SQLCompiler.compile()` keeps a flag; a `WhereNode`
+  is a condition only if it is the query's WHERE / HAVING / QUALIFY (by
+  identity) or nested in one, so `Q` annotations and conditions inside
+  `When` or lookups get the scalar form.
+- **Alternatives:** the scalar form everywhere (simpler, but drops EXISTS
+  where the optimizer handles it best); `CASE WHEN (SELECT COUNT(*) ...) > 0`
+  (counts every row).
+

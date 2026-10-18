@@ -26,7 +26,9 @@ from django.core.management.color import no_style
 from django.db.models import Case as CaseExpr
 from django.db.models import (
     CharField,
+    Count,
     DecimalField,
+    Exists,
     F,
     IntegerField,
     Max,
@@ -36,6 +38,7 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Cast, Coalesce, Extract
+from django.db.models.lookups import LessThan
 from django.db.models.sql import DeleteQuery, InsertQuery, UpdateQuery
 
 from django_db2_for_i import capabilities
@@ -137,6 +140,10 @@ def _exists(make_queryset):
         return [(sql, params)]
 
     return build
+
+
+def _books_of_author():
+    return Book.objects.filter(author=OuterRef("pk"))
 
 
 def _annotate(make_expression):
@@ -282,6 +289,61 @@ CASES: tuple[Case, ...] = (
         ),
         (AUTHOR, BOOK),
     ),
+    # Exists(): EXISTS only as a search condition of WHERE; elsewhere the
+    # first-row subquery IS NOT NULL (compiler.py).
+    Case(
+        "queries/filter_exists",
+        "query",
+        _select(lambda: Author.objects.filter(Exists(_books_of_author()))),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/filter_not_exists",
+        "query",
+        _select(lambda: Author.objects.filter(~Exists(_books_of_author()))),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/annotate_exists",
+        "query",
+        _select(lambda: Author.objects.annotate(has=Exists(_books_of_author())).values("has")),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/annotate_not_exists",
+        "query",
+        _select(lambda: Author.objects.annotate(has=~Exists(_books_of_author())).values("has")),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/case_when_exists",
+        "query",
+        _select(
+            lambda: Author.objects.annotate(
+                x=CaseExpr(When(Exists(_books_of_author()), then=Value(1)), default=Value(0))
+            ).values("x")
+        ),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/order_by_exists",
+        "query",
+        _select(lambda: Author.objects.order_by(Exists(_books_of_author()).desc(), "id")),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/group_by_exists",
+        "query",
+        _select(
+            lambda: (
+                Author.objects.annotate(has=Exists(_books_of_author()))
+                .values("has")
+                .annotate(n=Count("id"))
+                .order_by("has")
+            )
+        ),
+        (AUTHOR, BOOK),
+    ),
     Case(
         "queries/slice_offset_fetch",
         "query",
@@ -393,6 +455,13 @@ CASES: tuple[Case, ...] = (
         (AUTHOR,),
     ),
     Case("expressions/arithmetic", "query", _annotate(lambda: Value(1) + Value(2)), (AUTHOR,)),
+    # A predicate in the select list stays a BOOLEAN predicate.
+    Case(
+        "expressions/annotate_lookup",
+        "query",
+        _annotate(lambda: LessThan(F("id"), 2)),
+        (AUTHOR,),
+    ),
     Case(
         "expressions/cast_char_without_max_length",
         "query",
