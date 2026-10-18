@@ -30,13 +30,31 @@ the query's WHERE / HAVING / QUALIFY, or a WhereNode directly inside one;
 ``NOT`` and Django's ``Exact(<condition>, True)`` wrapper of
 ``filter(<condition>)`` keep the context. Any other expression (a select column, ``When``, a
 lookup, ...) switches the context off for everything below it.
+
+Predicates as select columns
+----------------------------
+``supports_boolean_expr_in_select_clause`` is on (BOOLEAN results), but a
+select-list predicate with an untyped parameter marker fails with SQL0418
+(``SELECT X < ?``; probe ``queries``), e.g. ``annotate(b=Q(pages__lt=100))``.
+A lookup or ``Q`` compiled directly by the compiler (a select column, a
+GROUP BY item, an UPDATE value) is therefore written as ``CASE WHEN
+<predicate> THEN TRUE ELSE FALSE END``, still a BOOLEAN value. Nested
+predicates and search conditions are not wrapped; ``Exists()`` needs no
+wrapper (its first-row form has no untyped marker).
 """
 
 from __future__ import annotations
 
 from django.db.models import IntegerField
-from django.db.models.expressions import Exists, NegatedExpression, OrderBy, RawSQL, Ref
-from django.db.models.lookups import Exact, IsNull
+from django.db.models.expressions import (
+    Exists,
+    ExpressionWrapper,
+    NegatedExpression,
+    OrderBy,
+    RawSQL,
+    Ref,
+)
+from django.db.models.lookups import Exact, IsNull, Lookup
 from django.db.models.sql import compiler
 from django.db.models.sql.where import WhereNode
 
@@ -82,9 +100,21 @@ def _is_condition_wrapper(node) -> bool:
     )
 
 
+def _is_value_predicate(node) -> bool:
+    """A lookup or Q (or a wrapper around one): a predicate that may hold untyped markers."""
+    if isinstance(node, (Lookup, WhereNode)):
+        return True
+    # NegatedExpression is an ExpressionWrapper too.
+    if isinstance(node, ExpressionWrapper):
+        return _is_value_predicate(node.expression)
+    return False
+
+
 class SQLCompiler(compiler.SQLCompiler):
     # True while compiling a search condition of WHERE / HAVING / QUALIFY.
     _in_condition = False
+    # Nesting depth of compile(): 0 for what the compiler compiles directly.
+    _depth = 0
 
     def compile(self, node):
         if isinstance(node, Exists):
@@ -95,10 +125,16 @@ class SQLCompiler(compiler.SQLCompiler):
         self._in_condition = (outer and _is_condition_wrapper(node)) or (
             isinstance(node, WhereNode) and (outer or self._is_query_condition(node))
         )
+        as_value = self._depth == 0 and not self._in_condition and _is_value_predicate(node)
+        self._depth += 1
         try:
-            return super().compile(node)
+            sql, params = super().compile(node)
         finally:
             self._in_condition = outer
+            self._depth -= 1
+        if as_value:
+            return f"CASE WHEN {sql} THEN TRUE ELSE FALSE END", params
+        return sql, params
 
     def _is_query_condition(self, node) -> bool:
         conditions = (

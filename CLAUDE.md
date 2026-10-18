@@ -35,6 +35,9 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
 - Record non-obvious design decisions in `docs/DECISIONS.md` (date, decision, why, alternatives).
 - Before opening a PR that touches backend code (`django_db2_for_i/`), run the **full**
   pub400 tier (`nox -s pub400`), not a subset, and report the result in the PR.
+- When a feature flag is enabled, add an own pub400 test for the common real-world usage
+  pattern of that feature (e.g. full querysets with model instances, not only `values()`);
+  Django's own tests do not cover every pattern.
 - At the end of each phase: update `docs/TEST_STATUS.md`, `CHANGELOG.md`, commit,
   and summarize what was done and what comes next.
 - All code, comments and docs in English.

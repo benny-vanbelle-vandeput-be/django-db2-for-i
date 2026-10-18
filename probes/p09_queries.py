@@ -352,6 +352,22 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         (2,),
         [(True,), (False,), (False,)],
     ),
+    (
+        "boolean",
+        "GROUP BY an expression with a marker (also selected)",
+        f"SELECT CASE WHEN X < CAST(? AS INTEGER) THEN TRUE ELSE FALSE END, COUNT(*) FROM {V3} "
+        "GROUP BY CASE WHEN X < CAST(? AS INTEGER) THEN TRUE ELSE FALSE END",
+        (2, 2),
+        None,
+    ),
+    (
+        "boolean",
+        "GROUP BY the same expression without a marker",
+        f"SELECT CASE WHEN X < 2 THEN TRUE ELSE FALSE END, COUNT(*) FROM {V3} "
+        "GROUP BY CASE WHEN X < 2 THEN TRUE ELSE FALSE END ORDER BY 2",
+        (),
+        [(True, 1), (False, 2)],
+    ),
     # Predicates used as values (Django: lookups as expressions, filter(x=Q(...)))
     (
         "boolean",

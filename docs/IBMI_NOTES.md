@@ -626,7 +626,11 @@ TRUE ELSE FALSE END` is a BOOLEAN value and works on either side
 works alone and in parentheses (`SELECT (X < 2)`), **but not with an untyped
 parameter marker**: `SELECT X < ?` fails with SQL0418, while `SELECT X <
 CAST(? AS INTEGER)` and `SELECT CASE WHEN X < ? THEN TRUE ELSE FALSE END`
-(untyped) work.
+(untyped) work. **GROUP BY an expression with a parameter marker** fails
+even when the same text is selected: `SELECT CASE WHEN X < CAST(? AS
+INTEGER) ... GROUP BY CASE WHEN X < CAST(? AS INTEGER) ...` gives "Internal
+driver error" (30101); without a marker it works (markers never match, as
+for ORDER BY under DISTINCT; `GROUP BY 1` is not allowed either).
 
 **Untyped markers and NULL.** `WHERE ? > ?` with two untyped markers
 (parameters 2 and 1) is accepted but **returns no row** (wrong, silently);
