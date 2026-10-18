@@ -36,6 +36,14 @@ PKG = "QSYS2.SYSPACKAGESTMTSTAT WHERE PACKAGE_SCHEMA = 'NOSUCHLIB'"
 CORRELATED_UNION = "SELECT T.X AS Y FROM SYSIBM.SYSDUMMY1 UNION SELECT 9 AS Y FROM SYSIBM.SYSDUMMY1"
 _SQLCODE = re.compile(r"\((-\d+)\)")
 
+J = "(VALUES (1, 'a'), (2, 'b'), (3, 'b')) J (K, NAME)"
+
+
+def lateral(expression: str) -> str:
+    """The backend's LATERAL grouping table with one column G1 (compiler.py)."""
+    return f"CROSS JOIN LATERAL (SELECT {expression} AS G1 FROM SYSIBM.SYSDUMMY1) AS G"
+
+
 # (area, label, sql, params, expected rows or None to only record)
 CHECKS: list[tuple[str, str, str, tuple, Any]] = [
     # --- compound queries
@@ -825,7 +833,8 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
     (
         "groupby",
         "baseline: marker in select and GROUP BY",
-        f"SELECT MOD(X, CAST(? AS INTEGER)), COUNT(*) FROM {V3} GROUP BY MOD(X, CAST(? AS INTEGER))",
+        f"SELECT MOD(X, CAST(? AS INTEGER)), COUNT(*) FROM {V3} "
+        "GROUP BY MOD(X, CAST(? AS INTEGER))",
         (2, 2),
         None,
     ),
@@ -869,7 +878,8 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
     (
         "groupby",
         "inline: literal in GROUP BY, marker in select",
-        f"SELECT MOD(X, CAST(? AS INTEGER)), COUNT(*) FROM {V3} GROUP BY MOD(X, CAST(2 AS INTEGER))",
+        f"SELECT MOD(X, CAST(? AS INTEGER)), COUNT(*) FROM {V3} "
+        "GROUP BY MOD(X, CAST(2 AS INTEGER))",
         (2,),
         None,
     ),
@@ -976,6 +986,77 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         (2,),
         [(2,)],
     ),
+    # --- GROUP BY through a LATERAL derived table (the backend's form)
+    (
+        "groupby",
+        "lateral: marker, GROUP BY the column",
+        f"SELECT G.G1, COUNT(*) FROM {V3} {lateral('MOD(T.X, CAST(? AS INTEGER))')} "
+        "GROUP BY G.G1 ORDER BY G.G1",
+        (2,),
+        [(0, 1), (1, 2)],
+    ),
+    (
+        "groupby",
+        "lateral: after a LEFT JOIN, aggregate of the joined table",
+        f"SELECT G.G1, MAX(J.NAME) FROM {V3} LEFT OUTER JOIN {J} ON J.K = T.X "
+        f"{lateral('MOD(T.X, CAST(? AS INTEGER))')} GROUP BY G.G1 ORDER BY G.G1",
+        (2,),
+        [(0, "b"), (1, "b")],
+    ),
+    (
+        "groupby",
+        "lateral: nested in a select expression with an aggregate",
+        f"SELECT LEAST(MIN(T.X), G.G1) FROM {V3} "
+        f"{lateral('GREATEST(T.X, CAST(? AS INTEGER))')} GROUP BY G.G1 ORDER BY 1",
+        (2,),
+        [(1,), (3,)],
+    ),
+    (
+        "groupby",
+        "lateral: predicate CASE with markers, HAVING and ORDER BY markers",
+        f"SELECT G.G1, COUNT(*) + CAST(? AS INTEGER) FROM {V3} "
+        f"{lateral('CASE WHEN T.X < CAST(? AS INTEGER) THEN TRUE ELSE FALSE END')} "
+        "GROUP BY G.G1 HAVING COUNT(*) > CAST(? AS INTEGER) ORDER BY G.G1",
+        (10, 2, 0),
+        [(False, 12), (True, 11)],
+    ),
+    (
+        "groupby",
+        "lateral: COUNT(*) over the grouped query",
+        f"SELECT COUNT(*) FROM (SELECT G.G1, COUNT(*) AS C FROM {V3} "
+        f"{lateral('MOD(T.X, CAST(? AS INTEGER))')} GROUP BY G.G1) S",
+        (2,),
+        [(2,)],
+    ),
+    (
+        "groupby",
+        "lateral: correlated scalar subquery with a marker",
+        f"SELECT G.G1, COUNT(*) FROM {V3} "
+        + lateral(f"(SELECT COUNT(*) FROM {J} WHERE J.K <= T.X AND J.NAME = CAST(? AS VARCHAR(1)))")
+        + " GROUP BY G.G1 ORDER BY G.G1",
+        ("b",),
+        [(0, 1), (1, 1), (2, 1)],
+    ),
+    (
+        "groupby",
+        "lateral: first-row EXISTS value",
+        f"SELECT G.G1, COUNT(*) FROM {V3} "
+        + lateral(
+            f"((SELECT 1 FROM {J} WHERE J.K = T.X AND J.NAME = CAST(? AS VARCHAR(1)) "
+            "FETCH FIRST 1 ROWS ONLY) IS NOT NULL)"
+        )
+        + " GROUP BY G.G1 ORDER BY G.G1",
+        ("b",),
+        [(False, 1), (True, 2)],
+    ),
+    (
+        "groupby",
+        "lateral: column in WHERE",
+        f"SELECT G.G1, COUNT(*) FROM {V3} {lateral('MOD(T.X, CAST(? AS INTEGER))')} "
+        "WHERE G.G1 = CAST(? AS INTEGER) GROUP BY G.G1",
+        (2, 1),
+        [(1, 2)],
+    ),
     # --- aggregates (aggregation module)
     ("aggregate", "COUNT(NULL)", f"SELECT COUNT(NULL) FROM {V3}", (), None),
     (
@@ -988,7 +1069,7 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
     (
         "aggregate",
         "AVG(DOUBLE(X)) of INTEGER",
-        f"SELECT AVG(CAST(X AS DOUBLE)) FROM (VALUES 1, 2) T (X)",
+        "SELECT AVG(CAST(X AS DOUBLE)) FROM (VALUES 1, 2) T (X)",
         (),
         [(1.5,)],
     ),
