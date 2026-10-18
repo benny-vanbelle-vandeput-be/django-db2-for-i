@@ -130,3 +130,25 @@ def test_subqueries_in_group_by(live, empty) -> None:
     count = Subquery(books.annotate(c=Count("pk")).values("c"))
     breakdown = Author.objects.values(books=count).annotate(n=Count("id"))
     assert {(row["books"], row["n"]) for row in breakdown} == {(None, 1), (1, 1), (2, 1)}
+
+
+def test_string_agg_order_by(live, empty) -> None:
+    """The real-world pattern: an ordered list per group, also with NULL ordering
+    and a filter."""
+    from django.db.models import StringAgg
+
+    old = dt.datetime(2020, 1, 1, tzinfo=dt.UTC)
+    new = dt.datetime(2025, 1, 1, tzinfo=dt.UTC)
+    author = Author.objects.create(name="a")
+    for title, pages, published in (("b", 30, old), ("a", 10, None), ("c", 20, new)):
+        Book.objects.create(author=author, title=title, pages=pages, published=published)
+
+    def titles(**options):
+        annotation = StringAgg("book__title", Value(","), **options)
+        return Author.objects.annotate(t=annotation).get().t
+
+    assert titles(order_by="book__title") == "a,b,c"
+    assert titles(order_by="-book__pages") == "b,c,a"
+    assert titles(order_by=F("book__published").desc(nulls_last=True)) == "c,b,a"
+    assert titles(order_by=F("book__published").asc(nulls_first=True)) == "a,b,c"
+    assert titles(order_by="book__title", filter=Q(book__pages__gt=10)) == "b,c"

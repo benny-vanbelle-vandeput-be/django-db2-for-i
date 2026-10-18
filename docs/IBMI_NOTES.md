@@ -733,6 +733,12 @@ common table expression).
   ("Argument 02 of function LISTAGG not valid") once the NCLOB argument is
   8K or longer; a typed marker `CAST(? AS NVARCHAR(32))` works with every
   NCLOB length up to NCLOB(1M).
+- **WITHIN GROUP ordering:** an expression with a typed marker, an NVARCHAR
+  sort key with an NCLOB argument, DISTINCT, and the full StringAgg form
+  (filter CASE, typed separator, NULL-safe CASE) work. A predicate is not
+  valid there: Django's NULL ordering emulation `<expr> IS NULL, <expr>`
+  fails with SQL0199 ("Keyword IS not expected"); a sort key `CASE WHEN
+  <expr> IS NULL THEN 0 ELSE 1 END` works. (Added 2026-10-18.)
 - `DISTINCT`, `WITHIN GROUP (ORDER BY ... DESC)`, a `CASE` argument (Django's
   filter emulation) and non-ASCII values (as parameters) work; NULL values are
   skipped; an NCLOB argument works with DISTINCT and WITHIN GROUP.

@@ -154,6 +154,45 @@ CHECKS: list[tuple[str, str, tuple]] = [
         (),
     ),
     (
+        "WITHIN GROUP: NULL ordering emulation",
+        f"{rows(4)}SELECT LISTAGG(VARCHAR(N), ',') WITHIN GROUP (ORDER BY CASE WHEN N = 2 "
+        "THEN NULL ELSE N END IS NULL, CASE WHEN N = 2 THEN NULL ELSE N END DESC) FROM R",
+        (),
+    ),
+    (
+        "WITHIN GROUP: NULL ordering as a CASE sort key",
+        f"{rows(4)}SELECT LISTAGG(VARCHAR(N), ',') WITHIN GROUP (ORDER BY CASE WHEN "
+        "(CASE WHEN N = 2 THEN NULL ELSE N END) IS NULL THEN CAST(? AS INTEGER) ELSE "
+        "CAST(? AS INTEGER) END ASC, CASE WHEN N = 2 THEN NULL ELSE N END DESC) FROM R",
+        (0, 1),
+    ),
+    (
+        "WITHIN GROUP: expression with a typed marker",
+        f"{rows(4)}SELECT LISTAGG(VARCHAR(N), ',') WITHIN GROUP "
+        "(ORDER BY MOD(N, CAST(? AS INTEGER)), N) FROM R",
+        (2,),
+    ),
+    (
+        "WITHIN GROUP, NCLOB argument, typed separator, filter CASE, NULL-safe CASE",
+        f"{rows(4)}SELECT CASE WHEN COUNT(CASE WHEN N > CAST(? AS INTEGER) THEN N END) = 0 "
+        "THEN NULL ELSE LISTAGG(CASE WHEN N > CAST(? AS INTEGER) THEN "
+        "CAST(VARCHAR(N) AS NCLOB(1K)) END, CAST(? AS NVARCHAR(32))) WITHIN GROUP "
+        "(ORDER BY N DESC) END FROM R",
+        (1, 1, ";"),
+    ),
+    (
+        "WITHIN GROUP: ORDER BY an NVARCHAR column, NCLOB argument",
+        f"{rows(3)}SELECT LISTAGG(CAST(VARCHAR(N) AS NCLOB(1K)), ',') WITHIN GROUP "
+        "(ORDER BY CAST(VARCHAR(4 - N) AS NVARCHAR(10))) FROM R",
+        (),
+    ),
+    (
+        "WITHIN GROUP with DISTINCT",
+        f"{rows(4)}SELECT LISTAGG(DISTINCT VARCHAR(MOD(N, 2)), ',') WITHIN GROUP "
+        "(ORDER BY VARCHAR(MOD(N, 2)) DESC) FROM R",
+        (),
+    ),
+    (
         "ON OVERFLOW TRUNCATE",
         f"{rows(3)}SELECT LISTAGG(VARCHAR(N), ',' ON OVERFLOW TRUNCATE) FROM R",
         (),
