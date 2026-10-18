@@ -253,6 +253,7 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
         features.REASON_IDENTITY_RESTART_DEFERRED,
         features.REASON_UNTYPED_NULL,
         features.REASON_TYPED_PARAMETER_MARKERS,
+        features.REASON_GROUP_BY_MARKERS,
     }
     # Each entry is one test id, never a whole class.
     for test_ids in cls.expected_failures.values():

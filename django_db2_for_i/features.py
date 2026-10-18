@@ -19,6 +19,10 @@ REASON_TYPED_PARAMETER_MARKERS = (
     "parameter markers are typed: untyped markers on both sides of a comparison "
     "compare wrongly on Db2 for i"
 )
+REASON_GROUP_BY_MARKERS = (
+    "GROUP BY an expression with parameter markers never matches the select list "
+    "(Db2 for i, Internal driver error 30101)"
+)
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -70,7 +74,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     update_can_self_select = False
     delete_can_self_reference_subquery = False
     allow_sliced_subqueries_with_in = False
-    supports_subqueries_in_group_by = False
+    # A scalar subquery in GROUP BY works (probe queries).
+    supports_subqueries_in_group_by = True
     # ANY_VALUE aggregate (probe queries).
     supports_any_value = True
     ignores_unnecessary_order_by_in_subqueries = False
@@ -156,6 +161,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         # (CAST(? AS INTEGER) > CAST(? AS INTEGER)), see docs/DECISIONS.md.
         REASON_TYPED_PARAMETER_MARKERS: {
             "lookup.tests.LookupTests.test_lookup_direct_value_rhs_unwrapped",
+        },
+        # Group by a selected subquery that filters with a value (pages__gt=400);
+        # docs/user/Known-Limitations.md.
+        REASON_GROUP_BY_MARKERS: {
+            "aggregation.tests.AggregateTestCase.test_group_by_subquery_annotation",
+            "aggregation.tests.AggregateTestCase.test_group_by_exists_annotation",
         },
     }
     django_test_expected_failures: set[str] = set().union(*expected_failures.values())

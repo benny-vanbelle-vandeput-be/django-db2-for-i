@@ -34,6 +34,7 @@ from django.db.models.functions import Cast
 from django.db.models.lookups import GreaterThan, LessThan
 
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
+from django_db2_for_i.features import REASON_GROUP_BY_MARKERS
 from tests.testapp.models import Author, Book, Defaults, Document, Node, Tag
 
 MODELS = (Author, Book, Node, Tag, Defaults, Document)
@@ -359,12 +360,6 @@ def test_predicate_annotations_on_full_querysets(live, empty) -> None:
     assert list(by_id.annotate(b=Q(pages__lt=100)).filter(b=True)) == [small]
 
 
-REASON_GROUP_BY_MARKERS = (
-    "GROUP BY an expression with parameter markers never matches the select list "
-    "(Db2 for i, Internal driver error 30101)"
-)
-
-
 @pytest.mark.xfail(strict=True, reason=REASON_GROUP_BY_MARKERS)
 def test_group_by_predicate_annotation_with_a_value(live, empty) -> None:
     author = Author.objects.create(name="a")
@@ -599,3 +594,27 @@ def test_any_value(live, empty) -> None:
     assert rows[1] == (other.pk, "u", 1)
     filtered = Author.objects.annotate(t=AnyValue("book__title", filter=Q(book__pages__gt=100)))
     assert {a.name: a.t for a in filtered} == {"a": None, "b": "u"}
+
+
+def test_subqueries_in_group_by(live, empty) -> None:
+    """The real-world patterns: an aggregate next to a subquery annotation (the
+    subquery is grouped), and grouping by a subquery value."""
+    old = dt.datetime(2020, 1, 1, tzinfo=dt.UTC)
+    new = dt.datetime(2025, 1, 1, tzinfo=dt.UTC)
+    author = Author.objects.create(name="a")
+    other = Author.objects.create(name="b")
+    Author.objects.create(name="c")
+    for title, published in (("old", old), ("new", new)):
+        Book.objects.create(author=author, title=title, pages=10, published=published)
+    Book.objects.create(author=other, title="only", pages=20, published=old)
+    latest = Book.objects.filter(author=OuterRef("pk")).order_by("-published").values("title")
+    authors = Author.objects.annotate(latest=Subquery(latest[:1]), n=Count("book"))
+    assert {(a.name, a.latest, a.n) for a in authors} == {
+        ("a", "new", 2),
+        ("b", "only", 1),
+        ("c", None, 0),
+    }
+    books = Book.objects.filter(author=OuterRef("pk")).values("author")
+    count = Subquery(books.annotate(c=Count("pk")).values("c"))
+    breakdown = Author.objects.values(books=count).annotate(n=Count("id"))
+    assert {(row["books"], row["n"]) for row in breakdown} == {(None, 1), (1, 1), (2, 1)}
