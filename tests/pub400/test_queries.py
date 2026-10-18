@@ -376,3 +376,20 @@ def test_operators(live, empty) -> None:
     ).get()
     assert signed == {"right": -5 >> 1, "right_far": -1 >> 62, "left": -10, "xor": -5 ^ 3}
     assert Book.objects.filter(pages=13).filter(pages__lt=pages.bitleftshift(1)).count() == 1
+
+
+def test_negated_boolean_values(live, empty) -> None:
+    """The real-world pattern: a negated flag compared with a boolean column
+    (a predicate is no comparison operand); NULL stays NULL."""
+    from django.db.models import BooleanField
+
+    author = Author.objects.create(name="a")
+    yes = Book.objects.create(author=author, title="yes", available=True)
+    no = Book.objects.create(author=author, title="no", available=False)
+    assert list(Book.objects.filter(available=~Value(False))) == [yes]
+    flagged = Book.objects.annotate(unavailable=~F("available")).order_by("id")
+    assert [b.unavailable for b in flagged] == [False, True]
+    assert list(flagged.filter(available=F("unavailable"))) == []
+    assert list(flagged.exclude(available=F("unavailable"))) == [yes, no]
+    unknown = ~Value(None, output_field=BooleanField())
+    assert Book.objects.filter(available=unknown).count() == 0
