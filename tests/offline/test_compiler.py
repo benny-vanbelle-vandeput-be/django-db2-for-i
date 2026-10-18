@@ -125,3 +125,17 @@ def test_exists_in_order_by_and_group_by() -> None:
 
     _, sql = compiled(Author.objects.annotate(has=books()).values("has").annotate(n=Count("id")))
     assert sql.split(" GROUP BY ")[1].startswith("((SELECT")
+
+
+def test_exists_subquery_never_selects_a_parameter_marker() -> None:
+    """A marker in an EXISTS subquery's select list fails in the IBM i host server."""
+    for queryset in (
+        Author.objects.filter(books()),
+        Author.objects.exclude(~books()),
+        Author.objects.annotate(has=books()),
+    ):
+        sql_compiler = queryset.query.get_compiler(connection=connection)
+        sql, params = sql_compiler.as_sql()
+        subquery = sql.split("(SELECT ", 1)[1]
+        assert subquery.startswith('(1) AS "A" FROM'), sql
+        assert params == ()
