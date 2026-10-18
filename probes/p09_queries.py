@@ -32,6 +32,8 @@ LOB = (
 # A stored DBCLOB column; the filter keeps the result empty (the statement
 # still compiles, which is what the LOB checks need).
 PKG = "QSYS2.SYSPACKAGESTMTSTAT WHERE PACKAGE_SCHEMA = 'NOSUCHLIB'"
+# A UNION that refers to the outer query's T.X (correlated).
+CORRELATED_UNION = "SELECT T.X AS Y FROM SYSIBM.SYSDUMMY1 UNION SELECT 9 AS Y FROM SYSIBM.SYSDUMMY1"
 _SQLCODE = re.compile(r"\((-\d+)\)")
 
 # (area, label, sql, params, expected rows or None to only record)
@@ -54,6 +56,66 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         f"SELECT X FROM {V3} EXCEPT ALL SELECT 2 {D} ORDER BY 1",
         (),
         [(1,), (3,)],
+    ),
+    (
+        "compound",
+        "ORDER BY an expression of a result column",
+        f"SELECT X FROM {VN} UNION SELECT 3 {D} ORDER BY X IS NOT NULL, X",
+        (),
+        None,
+    ),
+    (
+        "compound",
+        "wrapped: SELECT * FROM (<union>) ORDER BY expression",
+        f"SELECT * FROM (SELECT X FROM {VN} UNION SELECT 3 {D}) ORDER BY X IS NOT NULL, X",
+        (),
+        [(None,), (1,), (2,), (3,)],
+    ),
+    (
+        "compound",
+        "wrapped with markers, ORDER BY + FETCH FIRST",
+        f"SELECT * FROM (SELECT X FROM {VN} WHERE X > CAST(? AS INTEGER) UNION "
+        f"SELECT CAST(? AS INTEGER) {D}) ORDER BY X DESC FETCH FIRST 2 ROWS ONLY",
+        (0, 9),
+        [(9,), (2,)],
+    ),
+    (
+        "compound",
+        "wrapped, correlated to the outer query",
+        f"SELECT X, (SELECT * FROM ({CORRELATED_UNION}) ORDER BY Y FETCH FIRST 1 ROWS ONLY) "
+        f"FROM {V3} ORDER BY X",
+        (),
+        None,
+    ),
+    (
+        "compound",
+        "wrapped with LATERAL, correlated to the outer query",
+        f"SELECT X, (SELECT * FROM LATERAL ({CORRELATED_UNION}) ORDER BY Y "
+        f"FETCH FIRST 1 ROWS ONLY) FROM {V3} ORDER BY X",
+        (),
+        [(1, 1), (2, 2), (3, 3)],
+    ),
+    (
+        "compound",
+        "wrapped with TABLE, correlated to the outer query",
+        f"SELECT X, (SELECT * FROM TABLE ({CORRELATED_UNION}) ORDER BY Y "
+        f"FETCH FIRST 1 ROWS ONLY) FROM {V3} ORDER BY X",
+        (),
+        [(1, 1), (2, 2), (3, 3)],
+    ),
+    (
+        "compound",
+        "wrapped with LATERAL, not correlated",
+        f"SELECT * FROM LATERAL (SELECT X FROM {VN} UNION SELECT 3 {D}) ORDER BY X IS NOT NULL, X",
+        (),
+        [(None,), (1,), (2,), (3,)],
+    ),
+    (
+        "compound",
+        "not wrapped, correlated, ORDER BY column",
+        f"SELECT X, ({CORRELATED_UNION} ORDER BY Y FETCH FIRST 1 ROWS ONLY) FROM {V3} ORDER BY X",
+        (),
+        [(1, 1), (2, 2), (3, 3)],
     ),
     (
         "compound",
