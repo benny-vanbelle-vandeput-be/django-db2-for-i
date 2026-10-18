@@ -77,6 +77,11 @@ an untyped string constant as separator fails with LOB arguments longer than
 driver returns it as an empty string when it is fetched (probe ``listagg``).
 ``CASE WHEN COUNT(<expr>) = 0 THEN NULL ELSE LISTAGG(...) END`` is fetched as
 NULL, and keeps a real empty string (one empty value) as it is.
+
+``StringAgg(..., order_by=...)`` becomes ``LISTAGG(...) WITHIN GROUP (ORDER BY
+...)``. Django's NULL ordering emulation (``<expr> IS NULL, <expr>``) is not
+valid there (SQL0199), so ``nulls_first`` / ``nulls_last`` items are ordered by
+``CASE WHEN <expr> IS NULL THEN 0 ELSE 1 END`` first (probe ``listagg``).
 """
 
 from __future__ import annotations
@@ -94,10 +99,18 @@ from django.db.models import (
     IntegerField,
     StringAgg,
     TextField,
+    When,
 )
-from django.db.models.expressions import Case, Exists, Expression, ExpressionWrapper, Value
+from django.db.models.expressions import (
+    Case,
+    Exists,
+    Expression,
+    ExpressionWrapper,
+    OrderBy,
+    Value,
+)
 from django.db.models.functions import Cast
-from django.db.models.lookups import Lookup
+from django.db.models.lookups import IsNull, Lookup
 from django.db.models.sql.where import WhereNode
 
 INTEGER_RANGE = (-(2**31), 2**31 - 1)
@@ -300,12 +313,37 @@ def avg_as_db2_for_i(self, compiler, connection, **extra_context):
 Avg.as_db2_for_i = avg_as_db2_for_i
 
 
+# LISTAGG's ordering, as Oracle writes it (Django's StringAgg.as_oracle).
+WITHIN_GROUP_TEMPLATE = (
+    "%(function)s(%(distinct)s%(expressions)s) WITHIN GROUP (%(order_by)s)%(filter)s"
+)
+
+
+def _null_ranked(order_by):
+    """``order_by`` with each nulls_first / nulls_last item ordered by a NULL rank
+    first (``CASE WHEN <expr> IS NULL ...``) instead of Django's emulation."""
+    items = []
+    for item in order_by.get_source_expressions():
+        if isinstance(item, OrderBy) and (item.nulls_first or item.nulls_last):
+            null, other = (0, 1) if item.nulls_first else (1, 0)
+            rank = Case(When(IsNull(item.expression, True), then=Value(null)), default=Value(other))
+            items += [OrderBy(rank), OrderBy(item.expression, descending=item.descending)]
+        else:
+            items.append(item)
+    clone = order_by.copy()
+    clone.set_source_expressions(items)
+    return clone
+
+
 def string_agg_as_db2_for_i(self, compiler, connection, **extra_context):
     clone = self.copy()
     source, delimiter, aggregate_filter, order_by = clone.get_source_expressions()
     expression = source
     if not isinstance(source.output_field, TextField):
         expression = Cast(source, TextField())
+    if order_by is not None:
+        order_by = _null_ranked(order_by)
+        extra_context.setdefault("template", WITHIN_GROUP_TEMPLATE)
     clone.set_source_expressions([expression, delimiter, aggregate_filter, order_by])
     sql, params = clone.as_sql(compiler, connection, function="LISTAGG", **extra_context)
     condition = aggregate_filter.condition if aggregate_filter is not None else None

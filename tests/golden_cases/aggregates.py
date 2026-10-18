@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.db.models import (
     Avg,
     Count,
+    F,
     Q,
     StringAgg,
     Value,
@@ -50,6 +51,22 @@ CASES: tuple[Case, ...] = (
         select(
             lambda: Author.objects.annotate(
                 x=StringAgg("book__title", Value(", "), filter=Q(book__pages__gt=10))
+            ).values("x")
+        ),
+        (AUTHOR, BOOK),
+    ),
+    # StringAgg(order_by=...): LISTAGG(...) WITHIN GROUP (ORDER BY ...); a
+    # nulls_last item is ordered by a CASE NULL rank first (no IS NULL there).
+    Case(
+        "aggregates/string_agg_order_by",
+        "query",
+        select(
+            lambda: Author.objects.annotate(
+                x=StringAgg(
+                    "book__title",
+                    Value(", "),
+                    order_by=(F("book__published").desc(nulls_last=True), "book__title"),
+                )
             ).values("x")
         ),
         (AUTHOR, BOOK),

@@ -78,6 +78,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_subqueries_in_group_by = True
     # ANY_VALUE aggregate (probe queries).
     supports_any_value = True
+    # StringAgg(order_by=...) as LISTAGG(...) WITHIN GROUP (ORDER BY ...) (probe listagg).
+    supports_aggregate_order_by_clause = True
     ignores_unnecessary_order_by_in_subqueries = False
     # REGEXP_LIKE (ICU) supports backreferences (probe queries).
     supports_regex_backreferencing = True
