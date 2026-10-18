@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Avg` of an integer field returned a truncated integer (Db2 for i's
   `AVG` of INTEGER is an INTEGER); the argument is now cast to DOUBLE when
   the result is a FloatField. `Avg` of a DecimalField stays DECIMAL.
+- An aggregate whose `filter=` matches nothing (e.g. `Q(pk__in=[])`)
+  failed with SQL0171 (`COUNT(NULL)`); the NULL is now typed, as
+  `COUNT(CAST(NULL AS <argument type>))`.
 - A selected `Q` or lookup annotation with a plain value
   (`annotate(b=Q(pages__lt=100))` on a full queryset) failed with SQL0418
   since `supports_boolean_expr_in_select_clause` was enabled: a select-list
