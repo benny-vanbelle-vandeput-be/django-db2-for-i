@@ -708,3 +708,20 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   DECIMAL(31, 28), so a cast there would only lose precision.
 - **Alternatives:** casting the result (`DOUBLE(AVG(x))`, already truncated);
   casting every argument to DOUBLE (loses DECIMAL precision).
+
+## 2026-10-18: StringAgg as LISTAGG of an NCLOB, NULL through CASE
+- **Decision:** `StringAgg` is written as `CASE WHEN COUNT(<expr>) = 0 THEN
+  NULL ELSE LISTAGG(CAST(<expr> AS NCLOB), CAST(? AS NVARCHAR(32))) END`
+  (no cast when the argument is an NCLOB already). The separator is the
+  typed marker of its `Value`.
+- **Why:** `LISTAGG` of an NVARCHAR (our CharField) is limited to 2000
+  characters and of a VARCHAR to 4000 bytes; a longer result fails (SQL0802,
+  probe `listagg`). With an NCLOB argument the limit is 1M characters, and
+  `StringAgg` is a TextField (NCLOB on this backend) anyway. An untyped
+  separator constant fails with NCLOB arguments of 8K and longer. The CASE
+  is needed because the ODBC driver returns a NULL `LISTAGG` result (no
+  values) as an empty string; it keeps a real empty string, unlike
+  `NULLIF(LISTAGG(...), '')`.
+- **Alternatives:** the argument as it is (2000 character limit for
+  CharFields); `ON OVERFLOW TRUNCATE` (silently cut results); `NULLIF`
+  (turns a real empty string into NULL).

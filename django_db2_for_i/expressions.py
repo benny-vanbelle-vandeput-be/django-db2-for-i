@@ -60,6 +60,23 @@ END``), Django compiles just the default, a plain ``NULL`` when the default
 is ``None``. Db2 for i rejects an untyped NULL as an argument (``COUNT(NULL)``
 fails with SQL0171; probe ``queries``), so it is cast to the Case's type:
 ``COUNT(CAST(NULL AS INTEGER))``.
+
+StringAgg
+---------
+Db2 for i has no ``STRING_AGG``; its ``LISTAGG`` aggregates strings (probe
+``listagg``). The result type follows the argument: VARCHAR(4000) for a
+VARCHAR, 2000 characters for an NVARCHAR (our CharField), a 1M character LOB
+for a LOB. A longer result fails with SQL0802 (no truncation). ``StringAgg``
+is a TextField, so the argument is cast to NCLOB (unless it is one already):
+``LISTAGG(CAST(<expr> AS NCLOB), CAST(? AS NVARCHAR(32)))``, which allows
+results up to 1M characters. The separator is a typed marker (a ``Value``);
+an untyped string constant as separator fails with LOB arguments longer than
+4K (SQL0171).
+
+``LISTAGG`` over no values is NULL in Db2 for i, but the IBM i Access ODBC
+driver returns it as an empty string when it is fetched (probe ``listagg``).
+``CASE WHEN COUNT(<expr>) = 0 THEN NULL ELSE LISTAGG(...) END`` is fetched as
+NULL, and keeps a real empty string (one empty value) as it is.
 """
 
 from __future__ import annotations
@@ -71,9 +88,11 @@ from django.db.models import (
     Avg,
     BooleanField,
     CharField,
+    Count,
     DecimalField,
     FloatField,
     IntegerField,
+    StringAgg,
     TextField,
 )
 from django.db.models.expressions import Case, Exists, Expression, ExpressionWrapper, Value
@@ -279,3 +298,19 @@ def avg_as_db2_for_i(self, compiler, connection, **extra_context):
 
 
 Avg.as_db2_for_i = avg_as_db2_for_i
+
+
+def string_agg_as_db2_for_i(self, compiler, connection, **extra_context):
+    clone = self.copy()
+    source, delimiter, aggregate_filter, order_by = clone.get_source_expressions()
+    expression = source
+    if not isinstance(source.output_field, TextField):
+        expression = Cast(source, TextField())
+    clone.set_source_expressions([expression, delimiter, aggregate_filter, order_by])
+    sql, params = clone.as_sql(compiler, connection, function="LISTAGG", **extra_context)
+    condition = aggregate_filter.condition if aggregate_filter is not None else None
+    count_sql, count_params = compiler.compile(Count(source, filter=condition))
+    return f"CASE WHEN {count_sql} = 0 THEN NULL ELSE {sql} END", (*count_params, *params)
+
+
+StringAgg.as_db2_for_i = string_agg_as_db2_for_i

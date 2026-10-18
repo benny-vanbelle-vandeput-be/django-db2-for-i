@@ -553,3 +553,28 @@ def test_aggregate_filter_matching_nothing(live, empty) -> None:
     assert Book.objects.aggregate(s=Sum("pages", filter=nothing, default=0)) == {"s": 0}
     pages = Case(When(nothing, then=F("pages")))
     assert list(Book.objects.annotate(p=pages).values_list("p", flat=True)) == [None]
+
+
+def test_string_agg(live, empty) -> None:
+    """StringAgg as LISTAGG: per group, filtered, with a default, beyond NVARCHAR's
+    2000 character LISTAGG limit, and non-ASCII values and separators."""
+    from django.db.models import StringAgg
+
+    author = Author.objects.create(name="a")
+    nobody = Author.objects.create(name="b")
+    for title in ["één", "two"] + ["x" * 199] * 11:
+        Book.objects.create(author=author, title=title, pages=len(title))
+    by_author = Author.objects.order_by("id")
+    titles = by_author.annotate(t=StringAgg("book__title", Value(" · "), default=Value("-")))
+    assert [(a, len(a.t)) for a in titles] == [(author, 3 + 3 + 11 * 199 + 12 * 3), (nobody, 1)]
+    assert sorted(titles[0].t.split(" · ")) == ["two"] + ["x" * 199] * 11 + ["één"]
+    assert titles[1].t == "-"
+    short = Book.objects.aggregate(t=StringAgg("title", Value("'"), filter=Q(pages__lt=10)))
+    assert sorted(short["t"].split("'")) == ["two", "één"]
+    long = Book.objects.aggregate(t=StringAgg("title", Value(","), filter=Q(pages__gt=10)))
+    assert long == {"t": ",".join(["x" * 199] * 11)}  # 2199 characters
+    # LISTAGG over no values is fetched as "" by the ODBC driver; the backend keeps NULL,
+    # and a real empty string stays one.
+    assert Book.objects.filter(pages=0).aggregate(t=StringAgg("title", Value(","))) == {"t": None}
+    Book.objects.create(author=nobody, title="", pages=0)
+    assert Book.objects.filter(pages=0).aggregate(t=StringAgg("title", Value(","))) == {"t": ""}

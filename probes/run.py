@@ -2,7 +2,7 @@
 
 Usage (inside the "tests" container):
     nox -s probe -- [reachability|connect|sysinfo|libraries|packages|features|
-                     string_limits|extract|queries|all] ...
+                     string_limits|extract|queries|listagg|all] ...
     nox -s probe -- session
 
 Probes run sequentially and share at most one ODBC connection per run.
@@ -25,6 +25,7 @@ import p06_features
 import p07_string_limits
 import p08_extract
 import p09_queries
+import p10_listagg
 from _common import ProbeError, Settings, connect, write_result
 
 PROBES = {
@@ -38,6 +39,7 @@ PROBES = {
     "string_limits": p07_string_limits,
     "extract": p08_extract,
     "queries": p09_queries,
+    "listagg": p10_listagg,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 

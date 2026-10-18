@@ -34,6 +34,7 @@ from django.db.models import (
     Max,
     OuterRef,
     Q,
+    StringAgg,
     Subquery,
     Value,
     When,
@@ -544,6 +545,18 @@ CASES: tuple[Case, ...] = (
         "query",
         _select(
             lambda: Author.objects.annotate(x=Count("book", filter=Q(book__in=[]))).values("x")
+        ),
+        (AUTHOR, BOOK),
+    ),
+    # StringAgg as LISTAGG of an NCLOB (results up to 1M characters), with a
+    # typed separator; a filter wraps the argument in CASE.
+    Case(
+        "aggregates/string_agg",
+        "query",
+        _select(
+            lambda: Author.objects.annotate(
+                x=StringAgg("book__title", Value(", "), filter=Q(book__pages__gt=10))
+            ).values("x")
         ),
         (AUTHOR, BOOK),
     ),

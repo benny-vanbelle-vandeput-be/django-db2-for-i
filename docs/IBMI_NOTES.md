@@ -706,6 +706,36 @@ MICROSECONDS` works; a DATE compared with a string constant works.
 **Parameter markers.** 8192 typed markers in one statement are accepted;
 10000 fail with SQL0101 ("statement too long or complex", at prepare).
 
+### LISTAGG, for StringAgg (`probe -- listagg`)
+
+Run 2026-10-18 on PUB400 (IBM i 7.5), read-only (VALUES and a recursive
+common table expression).
+
+- **Result type follows the argument:** VARCHAR(4000) for a VARCHAR, 2000
+  characters for an NVARCHAR, a LOB of 1M (1048576) characters for an NCLOB
+  or CLOB argument (also NCLOB(1K)).
+- **Too long a result is an error, not truncation:** SQL0802 ("Data conversion
+  or data mapping error"), at fetch or execution: from 4003 characters for
+  VARCHAR/NVARCHAR arguments, and from about 1048576 characters with an NCLOB
+  argument (1000999 characters work, 1049047 fail). `ON OVERFLOW TRUNCATE`
+  is accepted and truncates instead, ending in `...(<omitted count>)`;
+  `ON OVERFLOW ERROR` is accepted too.
+- **Separator:** an untyped string constant (`','`) fails with SQL0171
+  ("Argument 02 of function LISTAGG not valid") once the NCLOB argument is
+  8K or longer; a typed marker `CAST(? AS NVARCHAR(32))` works with every
+  NCLOB length up to NCLOB(1M).
+- `DISTINCT`, `WITHIN GROUP (ORDER BY ... DESC)`, a `CASE` argument (Django's
+  filter emulation) and non-ASCII values (as parameters) work; NULL values are
+  skipped; an NCLOB argument works with DISTINCT and WITHIN GROUP.
+- **NULL over no values is fetched as an empty string.** `LISTAGG` over no
+  rows is NULL in Db2 (`IS NULL` is true, `COALESCE` takes the default,
+  `LENGTH` is NULL), but the IBM i Access ODBC driver returns `''` when it is
+  fetched as the only column (also with a second non-NULL column, but not
+  with a second NULL column). With only NULL values the result is fetched as
+  NULL. `CASE WHEN COUNT(<arg>) = 0 THEN NULL ELSE LISTAGG(...) END` and
+  `NULLIF(LISTAGG(...), '')` are fetched as NULL; one empty string value
+  gives a non-NULL `''`, so the CASE form keeps it while NULLIF would not.
+
 ### Journal setup in the `other` library (`nox -s setup_journal -- --library other --execute`)
 Approved by the project owner and run 2026-10-17 against `<USER>B` (the
 `other` library). The dry run first confirmed: owned by our user, no journal
