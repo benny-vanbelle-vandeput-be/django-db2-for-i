@@ -59,4 +59,4 @@ version's runs; failed = failures + errors + unexpected successes.
 
 ## Golden files
 
-97 goldens, 0 unverified.
+105 goldens, 0 unverified.
