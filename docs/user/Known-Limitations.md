@@ -54,8 +54,10 @@ Grouping by an annotation whose SQL contains a parameter, e.g.
 `Book.objects.annotate(b=Q(pages__lt=100)).values("b").annotate(n=Count("id"))`,
 fails with "Internal driver error" (30101): Db2 for i never matches a GROUP
 BY expression that contains a parameter marker with the selected one, and
-does not allow `GROUP BY <position>`. Grouping by columns, and by
-expressions without values (e.g. `ExtractYear("published")`), works.
+does not allow `GROUP BY <position>`. The same applies to grouping by a
+subquery or `Exists()` that filters with a value. Grouping by columns, and by
+expressions and subqueries without values (e.g. `ExtractYear("published")`),
+works.
 
 ## Custom SQL with a bare NULL
 

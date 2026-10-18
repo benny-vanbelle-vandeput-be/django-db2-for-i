@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and GROUP BY are returned as BOOLEAN values.
 - `supports_regex_backreferencing`.
 - `supports_any_value`: the `AnyValue` aggregate (`ANY_VALUE`).
+- `supports_subqueries_in_group_by`: subquery annotations next to aggregates
+  and grouping by a subquery (not yet by one that filters with a value).
 
 ### Fixed
 - `Avg` of an integer field returned a truncated integer (Db2 for i's
