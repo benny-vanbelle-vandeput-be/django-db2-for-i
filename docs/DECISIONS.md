@@ -658,3 +658,24 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   plain boolean column comparisons); comparing via `IS TRUE` forms (not
   valid either).
 
+## 2026-10-18: Predicates as select columns: CASE WHEN ... THEN TRUE ELSE FALSE END
+- **Decision (project owner approved):** a lookup or `Q` (or a wrapper
+  around one) compiled directly by the compiler (a select column, a GROUP BY
+  item, an UPDATE value) is written as `CASE WHEN <predicate> THEN TRUE ELSE
+  FALSE END`. Nested predicates, search conditions and `Exists()` are not
+  wrapped. `supports_boolean_expr_in_select_clause` stays on.
+- **Why:** a regression from enabling the flag (C1): `SELECT X < ?` with an
+  untyped marker fails with SQL0418, which broke selected `Q` / lookup
+  annotations with plain values (found by an own pub400 test; Django's
+  tests select such annotations only through `values_list()` on other
+  columns). The CASE form accepts untyped markers and still returns
+  BOOLEAN, which was the reason for C1. Two goldens change to the CASE form
+  (`expressions/annotate_lookup`, `queries/filter_lookup_operands`, which
+  selects its annotation).
+- **Not fixed:** GROUP BY an expression with parameter markers (30101,
+  markers never match); documented in Known Limitations, with a strict
+  expected failure in the pub400 tier.
+- **Alternatives:** casting the markers of select-list lookups (changes the
+  SQL of every lookup with a value); turning the flag off again (1/0
+  integers that cannot be compared with BOOLEAN).
+

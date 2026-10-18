@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `supports_regex_backreferencing`.
 
 ### Fixed
+- A selected `Q` or lookup annotation with a plain value
+  (`annotate(b=Q(pages__lt=100))` on a full queryset) failed with SQL0418
+  since `supports_boolean_expr_in_select_clause` was enabled: a select-list
+  predicate with an untyped parameter marker is not valid. Such predicates
+  are written as `CASE WHEN <predicate> THEN TRUE ELSE FALSE END` (still
+  BOOLEAN). Grouping by such an annotation stays a known limitation.
 - A predicate compared with another conditional expression
   (`filter(flag=Q(...))`, `annotate(b=LessThan(...)).filter(b=LessThan(...))`,
   `filter(has=Exists(...))` on an Exists annotation) failed with SQL0104:
