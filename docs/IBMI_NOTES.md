@@ -694,6 +694,12 @@ under `COUNT(*)`, with a correlated scalar subquery or a first-row EXISTS
 value as the expression, and with `G.G1` in WHERE. The backend uses the
 LATERAL form (compiler.py).
 
+**NOT of a BOOLEAN value (2026-10-19).** `SELECT NOT CAST(? AS BOOLEAN)` works
+in the select list, but as a comparison operand (`B = (NOT CAST(? AS
+BOOLEAN))`) it fails with SQL0199, like every predicate operand. `CASE <value>
+WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END` works there, also with a
+marker, and gives NULL for NULL.
+
 **Untyped markers and NULL.** `WHERE ? > ?` with two untyped markers
 (parameters 2 and 1) is accepted but **returns no row** (wrong, silently);
 `WHERE CAST(? AS INTEGER) > ?` is correct. The backend therefore never
