@@ -117,6 +117,36 @@ class DatabaseOperations(BaseDatabaseOperations):
         name = truncate_name(name, self.max_name_length()).upper()
         return '"{}"'.format(name.replace('"', '""'))
 
+    # --- Operators -----------------------------------------------------------------
+
+    def combine_expression(self, connector, sub_expressions):
+        """Db2 for i has no %, ^, &, |, #, << or >> operators (probe ``queries``).
+
+        Shifts use exact powers of two (``BIGINT(POWER(2, n))``; POWER returns a
+        DOUBLE, exact for powers of two only). ``>>`` rounds down like Python
+        (-5 >> 1 = -3), which integer division (toward zero) would not; the
+        division runs in DECFLOAT(34), exact for every BIGINT.
+        """
+        if len(sub_expressions) != 2:
+            return super().combine_expression(connector, sub_expressions)
+        lhs, rhs = sub_expressions
+        if connector in ("&", "|", "#", "<<", ">>"):
+            # F("x").bitxor(None): Db2 for i rejects an untyped NULL argument (SQL0171).
+            lhs, rhs = (
+                "CAST(NULL AS BIGINT)" if operand == "NULL" else operand for operand in (lhs, rhs)
+            )
+        functions = {"%%": "MOD", "^": "POWER", "&": "BITAND", "|": "BITOR", "#": "BITXOR"}
+        if connector in functions:
+            return f"{functions[connector]}({lhs}, {rhs})"
+        if connector == "<<":
+            return f"({lhs} * BIGINT(POWER(2, {rhs})))"
+        if connector == ">>":
+            return (
+                f"BIGINT(FLOOR(CAST({lhs} AS DECFLOAT(34)) / "
+                f"CAST(POWER(2, {rhs}) AS DECFLOAT(34))))"
+            )
+        return super().combine_expression(connector, sub_expressions)
+
     # --- Lookups -------------------------------------------------------------------
 
     _CASE_INSENSITIVE_LOOKUPS = frozenset({"iexact", "icontains", "istartswith", "iendswith"})

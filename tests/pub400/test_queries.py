@@ -341,3 +341,38 @@ def test_truncating_a_timestamp_to_a_time(live, empty) -> None:
     Book.objects.create(author=author, title="t", published=published)
     hour = TruncHour("published", output_field=TimeField())
     assert Book.objects.values_list(hour, flat=True).get() == dt.time(13, 0)
+
+
+def test_operators(live, empty) -> None:
+    """%, **, bitwise operators and shifts, also of negative numbers: -5 >> 1 rounds
+    down to -3 as in Python (integer division would give -2)."""
+    author = Author.objects.create(name="a")
+    Book.objects.create(author=author, title="t", pages=13)
+    pages = F("pages")
+    values = Book.objects.values(
+        mod=pages % 5,
+        power=pages**2,
+        bitand=pages.bitand(6),
+        bitor=pages.bitor(6),
+        bitxor=pages.bitxor(6),
+        left=pages.bitleftshift(2),
+        right=pages.bitrightshift(2),
+    ).get()
+    assert values == {
+        "mod": 3,
+        "power": 169,
+        "bitand": 4,
+        "bitor": 15,
+        "bitxor": 11,
+        "left": 52,
+        "right": 3,
+    }
+    negative = Value(-5)
+    signed = Author.objects.values(
+        right=negative.bitrightshift(1),
+        right_far=Value(-1).bitrightshift(62),
+        left=negative.bitleftshift(1),
+        xor=negative.bitxor(3),
+    ).get()
+    assert signed == {"right": -5 >> 1, "right_far": -1 >> 62, "left": -10, "xor": -5 ^ 3}
+    assert Book.objects.filter(pages=13).filter(pages__lt=pages.bitleftshift(1)).count() == 1
