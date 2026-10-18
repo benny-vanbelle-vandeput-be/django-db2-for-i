@@ -762,3 +762,16 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   flag is global, and the compiler would have to re-render Django's
   ordering); ordering by positions of hidden columns (a UNION selects no
   extra columns); leaving NULL ordering on unions unsupported.
+
+## 2026-10-18: StringAgg ordering: WITHIN GROUP, NULL rank as a CASE sort key
+- **Decision:** `supports_aggregate_order_by_clause` is on.
+  `StringAgg(order_by=...)` is written as `LISTAGG(...) WITHIN GROUP (ORDER
+  BY ...)` (Oracle's form). An item with `nulls_first` / `nulls_last` is
+  ordered by `CASE WHEN <expr> IS NULL THEN 0 ELSE 1 END` (1 / 0 for
+  nulls_last) first, then by the expression.
+- **Why:** Django's NULL ordering emulation puts a predicate in the ORDER BY,
+  which Db2 for i accepts in a query's ORDER BY but not inside WITHIN GROUP
+  (SQL0199, probe `listagg`).
+- **Alternatives:** leaving nulls_first / nulls_last unsupported in
+  aggregates; changing the emulation for every ORDER BY (the query-level
+  form works, and the DISTINCT handling in compiler.py relies on it).
