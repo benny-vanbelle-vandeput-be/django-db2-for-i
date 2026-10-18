@@ -29,7 +29,7 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.lookups import LessThan
+from django.db.models.lookups import GreaterThan, LessThan
 
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
 from tests.testapp.models import Author, Book, Defaults, Document, Node, Tag
@@ -393,6 +393,14 @@ def test_predicates_as_operands(live, empty) -> None:
     # Exists compared with Exists.
     books = Exists(Book.objects.filter(author=OuterRef("pk")))
     assert list(Author.objects.annotate(has=books).filter(has=books)) == [author]
+
+
+def test_comparisons_of_two_values_are_correct(live, empty) -> None:
+    """Untyped markers on both sides compare wrongly on Db2 for i; values are typed."""
+    Author.objects.create(name="a")
+    assert Author.objects.filter(GreaterThan(2, 1)).exists() is True
+    assert Author.objects.filter(GreaterThan(1, 2)).exists() is False
+    assert Author.objects.filter(LessThan(Value("a"), Value("b"))).exists() is True
 
 
 def test_pagination(live, empty) -> None:
