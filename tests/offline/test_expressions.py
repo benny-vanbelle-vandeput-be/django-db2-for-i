@@ -94,17 +94,20 @@ def test_buckets_end_at_the_maximum() -> None:
 @pytest.mark.parametrize(
     ("expression", "type_name"),
     [
-        (Value(uuid.uuid4()), "UUID"),
         (Value(b"\x00\x01"), "bytes"),
         (Value(dt.timedelta(days=1)), "timedelta"),
         (Value({"a": 1}, output_field=JSONField()), "dict"),
-        (Value(None, output_field=UUIDField()), "NoneType"),
     ],
-    ids=["uuid", "bytes", "timedelta", "json", "null uuid"],
+    ids=["bytes", "timedelta", "json"],
 )
 def test_types_without_a_rule_are_refused(expression, type_name: str) -> None:
     with pytest.raises(NotSupportedError, match=f"Value of type {type_name}"):
         cast_of(expression)
+
+
+def test_uuid_values_are_char_32() -> None:
+    assert cast_of(Value(uuid.UUID(int=1))) == "CAST(%s AS CHAR(32))"
+    assert cast_of(Value(None, output_field=UUIDField())) == "CAST(NULL AS CHAR(32))"
 
 
 def test_value_without_any_type_is_refused() -> None:

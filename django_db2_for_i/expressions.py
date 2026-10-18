@@ -26,10 +26,10 @@ from the Python value. Type rules:
 - Decimal without ``max_digits``: ``DECIMAL(p, s)`` from the value's digits;
 - ``None`` with a known output_field: ``CAST(NULL AS <type>)``; without one:
   plain ``NULL``, there is no type to cast to;
-- booleans, other integer fields, floats, dates, times, datetimes: the
-  field's cast type (BOOLEAN, ..., DOUBLE, DATE, TIME, TIMESTAMP(6)).
+- booleans, other integer fields, floats, dates, times, datetimes, UUIDs: the
+  field's cast type (BOOLEAN, ..., DOUBLE, DATE, TIME, TIMESTAMP(6), CHAR(32)).
 
-Any other type (UUID, bytes, timedelta, JSON, ...) raises NotSupportedError;
+Any other type (bytes, timedelta, JSON, ...) raises NotSupportedError;
 its rule comes with the field support in a later phase.
 
 Predicates as operands
@@ -143,6 +143,7 @@ SUPPORTED_TYPES = frozenset(
         "DateField",
         "DateTimeField",
         "TimeField",
+        "UUIDField",
     }
 )
 
