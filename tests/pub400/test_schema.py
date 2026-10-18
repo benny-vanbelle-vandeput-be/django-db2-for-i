@@ -538,3 +538,18 @@ def test_avg_keeps_fractions(live, empty) -> None:
     assert Book.objects.aggregate(avg=Avg(as_decimal))["avg"] == Decimal(
         "1.6666666666666666666666666666"
     )
+
+
+def test_aggregate_filter_matching_nothing(live, empty) -> None:
+    """filter=Q(...__in=[]) collapses Django's CASE to NULL (typed: SQL0171 otherwise)."""
+    from django.db.models import Sum
+
+    author = Author.objects.create(name="a")
+    Book.objects.create(author=author, title="t", pages=10)
+    nothing = Q(pk__in=[])
+    authors = Author.objects.annotate(n=Count("book", filter=Q(book__in=[])))
+    assert [(a, a.n) for a in authors] == [(author, 0)]
+    assert Book.objects.aggregate(m=Max("pages", filter=nothing)) == {"m": None}
+    assert Book.objects.aggregate(s=Sum("pages", filter=nothing, default=0)) == {"s": 0}
+    pages = Case(When(nothing, then=F("pages")))
+    assert list(Book.objects.annotate(p=pages).values_list("p", flat=True)) == [None]

@@ -51,6 +51,15 @@ Aggregates
 When the output is a FloatField and the argument is not one already, the
 argument is cast to DOUBLE. ``Avg`` over a DecimalField stays DECIMAL, which
 keeps its precision.
+
+Case collapsed to an untyped NULL
+---------------------------------
+When every ``When`` of a ``Case`` matches nothing (``filter=Q(pk__in=[])`` on
+an aggregate, which Django emulates as ``CASE WHEN <filter> THEN <arg>
+END``), Django compiles just the default, a plain ``NULL`` when the default
+is ``None``. Db2 for i rejects an untyped NULL as an argument (``COUNT(NULL)``
+fails with SQL0171; probe ``queries``), so it is cast to the Case's type:
+``COUNT(CAST(NULL AS INTEGER))``.
 """
 
 from __future__ import annotations
@@ -67,7 +76,7 @@ from django.db.models import (
     IntegerField,
     TextField,
 )
-from django.db.models.expressions import Exists, Expression, ExpressionWrapper, Value
+from django.db.models.expressions import Case, Exists, Expression, ExpressionWrapper, Value
 from django.db.models.functions import Cast
 from django.db.models.lookups import Lookup
 from django.db.models.sql.where import WhereNode
@@ -196,6 +205,17 @@ def value_as_db2_for_i(self, compiler, connection, **extra_context):
 
 Value.as_db2_for_i = value_as_db2_for_i
 
+
+def case_as_db2_for_i(self, compiler, connection, **extra_context):
+    sql, params = self.as_sql(compiler, connection, **extra_context)
+    output_field = self._output_field_or_none
+    if sql == "NULL" and not params and output_field is not None:
+        cast_type = value_cast_type(None, output_field, connection, explicit=True)
+        return f"CAST(NULL AS {cast_type})", params
+    return sql, params
+
+
+Case.as_db2_for_i = case_as_db2_for_i
 
 # --- Predicates as operands ---------------------------------------------------------------
 

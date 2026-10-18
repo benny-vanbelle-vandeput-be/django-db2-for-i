@@ -695,7 +695,8 @@ expected restriction on LOBs in these clauses does not apply on 7.5.)
 work; `AVG` of INTEGER returns INTEGER (`AVG(3, 1, 2)` = 2). `BIT_AND` does
 not exist (SQL0204). `FILTER (WHERE ...)` is rejected (SQL0104). An
 aggregate over no rows gives NULL (`COUNT` 0); `COALESCE(SUM(...), CAST(?
-AS INTEGER))` works.
+AS INTEGER))` works. `COUNT(NULL)` (untyped) fails with SQL0171;
+`COUNT(CAST(NULL AS INTEGER))` gives 0.
 
 **Temporal.** `TIMESTAMP - TIMESTAMP` gives a DECIMAL duration
 (`1013000.000001` = 1 day 1 h 30 min 0.000001 s as `yyyymmddhhmmss.ffffff`);

@@ -537,6 +537,16 @@ CASES: tuple[Case, ...] = (
         _select(lambda: Defaults.objects.values("flag").annotate(x=Avg("ratio")).values("x")),
         (DEFAULTS,),
     ),
+    # An aggregate filter that matches nothing collapses Django's CASE to a
+    # plain NULL, which Db2 for i rejects as an argument: typed NULL.
+    Case(
+        "aggregates/count_empty_filter",
+        "query",
+        _select(
+            lambda: Author.objects.annotate(x=Count("book", filter=Q(book__in=[]))).values("x")
+        ),
+        (AUTHOR, BOOK),
+    ),
     # DML with backend-specific values.
     Case("dml/insert_book", "dml", _insert_book, (BOOK,)),
     Case("dml/update_boolean", "dml", _update_boolean, (BOOK,)),
