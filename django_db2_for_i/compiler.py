@@ -60,6 +60,9 @@ from django.db.models.sql.where import WhereNode
 
 # Exists() as a value: the first-row subquery, NULL when there is no row.
 EXISTS_AS_VALUE = "((%(subquery)s) IS NOT NULL)"
+# Django's wrapper of an ordered compound query, and ours.
+COMPOUND_WRAPPER = "SELECT * FROM ( "
+LATERAL_COMPOUND_WRAPPER = "SELECT * FROM LATERAL ( "
 
 
 def _exists_selecting_literal(node: Exists) -> Exists:
@@ -134,6 +137,12 @@ class SQLCompiler(compiler.SQLCompiler):
             self._depth -= 1
         if as_value:
             return f"CASE WHEN {sql} THEN TRUE ELSE FALSE END", params
+        return sql, params
+
+    def as_sql(self, with_limits=True, with_col_aliases=False):
+        sql, params = super().as_sql(with_limits, with_col_aliases)
+        if self.query.combinator and sql.startswith(COMPOUND_WRAPPER):
+            sql = LATERAL_COMPOUND_WRAPPER + sql.removeprefix(COMPOUND_WRAPPER)
         return sql, params
 
     def _is_query_condition(self, node) -> bool:

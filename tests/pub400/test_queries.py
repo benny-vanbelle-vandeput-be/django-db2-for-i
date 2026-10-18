@@ -248,3 +248,29 @@ def test_extract_values(live, empty) -> None:
     }
     assert Book.objects.filter(published__week_day=1, published__iso_week_day=7).count() == 1
     assert Book.objects.filter(reading_time__second=8).count() == 1
+
+
+def test_union(live, empty) -> None:
+    """The real-world patterns: two filters combined as model instances, ordered
+    (also with NULL ordering), counted and sliced, and inside a correlated subquery."""
+    old = dt.datetime(2020, 1, 1, tzinfo=dt.UTC)
+    author = Author.objects.create(name="a")
+    other = Author.objects.create(name="b")
+    short = Book.objects.create(author=author, title="short", pages=5, published=old)
+    long = Book.objects.create(author=other, title="long", pages=500)
+    Book.objects.create(author=other, title="medium", pages=50, published=old)
+    combined = Book.objects.filter(pages__lt=10).union(Book.objects.filter(pages__gt=100))
+    assert list(combined.order_by("-pages")) == [long, short]
+    assert combined.count() == 2
+    assert list(combined.order_by("title")[:1]) == [long]
+    nulls_first = combined.order_by(F("published").asc(nulls_first=True))
+    assert list(nulls_first.values_list("title", flat=True)) == ["long", "short"]
+    nulls_last = combined.order_by(F("published").desc(nulls_last=True))
+    assert list(nulls_last.values_list("title", flat=True)) == ["short", "long"]
+    everything = combined.union(Book.objects.filter(title="medium"), all=True)
+    assert sorted(everything.values_list("pages", flat=True)) == [5, 50, 500]
+    own = Book.objects.filter(author=OuterRef("pk")).values("title")
+    big = Book.objects.filter(pages__gt=OuterRef("id") * 200).values("title")
+    first = Subquery(own.union(big).order_by("title")[:1])
+    titles = Author.objects.annotate(first=first).order_by("id").values_list("first", flat=True)
+    assert list(titles) == ["long", "long"]

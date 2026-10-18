@@ -588,6 +588,15 @@ rejected (SQL0104, "valid tokens: DISTINCT"). Parenthesised parts are
 accepted, also with `ORDER BY` + `FETCH FIRST` or `OFFSET` inside a part;
 `ORDER BY` by column name or position and `FETCH FIRST` after the compound
 work; a `UNION` inside `IN (...)` works.
+An **expression** in the ORDER BY of a compound query is rejected, also
+when it uses only result columns (`... UNION ... ORDER BY X IS NOT NULL, X`:
+SQL0214). Wrapped as `SELECT * FROM (<compound>) ORDER BY X IS NOT NULL, X`
+it works, also with markers and `FETCH FIRST`, and a correlation name is not
+needed. Inside a correlated scalar subquery the wrapped form cannot see the
+outer table (SQL5001 "Column qualifier or table *N undefined"; via ODBC with
+Django's quoting SQL0204 "<table> in QSYS type *LIB not found"); with
+`SELECT * FROM LATERAL (<compound>)` (or `TABLE (...)`) it can, and LATERAL
+also works uncorrelated. (Added 2026-10-18 for `supports_select_union`.)
 
 **Subqueries.** `IN (subquery ... FETCH FIRST n ROWS ONLY)` and with
 `OFFSET` work; a scalar subquery in `GROUP BY` works; a correlated scalar

@@ -119,8 +119,9 @@ def test_dependencies_point_to_create_cases() -> None:
 QUOTED = re.compile(r'"((?:[^"]|"")+)"')
 QUOTED_PLACEHOLDER = "QUOTEDNAME"
 UNQUOTED_QUALIFIED = re.compile(r"\b([A-Za-z_#@$][\w#@$]*)\s*\.\s*[A-Za-z_\"]")
-# Table aliases Django generates for subqueries and joins (U0, T2, ...).
-DJANGO_ALIAS = re.compile(r"^[TU]\d+$")
+# Aliases Django generates: tables in subqueries and joins (U0, T2, ...), and the
+# columns of a compound query (COL1, ...).
+DJANGO_ALIAS = re.compile(r"^(?:[TU]\d+|COL\d+)$")
 
 
 def allowed_identifiers() -> set[str]:

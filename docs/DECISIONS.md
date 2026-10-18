@@ -746,3 +746,19 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   heading and the compare links of this CHANGELOG); one package-scoped
   table fixture (the golden verification creates the same tables in
   between).
+
+## 2026-10-18: Ordered UNION queries wrapped in SELECT * FROM LATERAL (...)
+- **Decision:** `supports_select_union` and
+  `requires_compound_order_by_subquery` are on; the compiler writes Django's
+  wrapper of an ordered compound query as `SELECT * FROM LATERAL
+  (<compound>) ORDER BY ...` instead of `SELECT * FROM (<compound>)`.
+- **Why:** the ORDER BY of a compound query accepts no expressions (SQL0214),
+  and Django's NULL ordering emulation is one; wrapped, any ORDER BY works.
+  A plain nested table expression inside a correlated subquery cannot see
+  the outer table (SQL5001 / SQL0204, Django's
+  `test_union_in_subquery_related_outerref`); `LATERAL` can, and works
+  uncorrelated as well (probe `queries`).
+- **Alternatives:** wrapping only when the ORDER BY has expressions (the
+  flag is global, and the compiler would have to re-render Django's
+  ordering); ordering by positions of hidden columns (a UNION selects no
+  extra columns); leaving NULL ordering on unions unsupported.
