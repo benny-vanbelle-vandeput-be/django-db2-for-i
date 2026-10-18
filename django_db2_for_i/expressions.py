@@ -42,7 +42,10 @@ operand that renders as a predicate (a lookup, a ``Q`` / WhereNode,
 written as ``CASE WHEN <predicate> THEN TRUE ELSE FALSE END``, a BOOLEAN
 value; Django's Oracle backend does the same in ``Lookup.as_oracle``.
 Boolean columns and values are never wrapped, and ``filter(<cond>=True)``
-(rendered by Django as just the condition) is unchanged.
+(rendered by Django as just the condition) is unchanged. ``NOT <BOOLEAN
+value>`` (``~Value(False)``, ``~F("flag")``) is a predicate too; as an operand
+it is written as ``CASE <value> WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END``,
+which keeps NULL as NULL.
 
 Aggregates
 ----------
@@ -106,6 +109,7 @@ from django.db.models.expressions import (
     Exists,
     Expression,
     ExpressionWrapper,
+    NegatedExpression,
     OrderBy,
     Value,
 )
@@ -282,13 +286,36 @@ class PredicateValue(Expression):
         return f"CASE WHEN {sql} THEN TRUE ELSE FALSE END", params
 
 
+class NegatedValue(Expression):
+    """``NOT <BOOLEAN value>`` as a BOOLEAN value: NULL stays NULL."""
+
+    output_field = BooleanField()
+
+    def __init__(self, value):
+        super().__init__(output_field=BooleanField())
+        self.value = value
+
+    def get_source_expressions(self):
+        return [self.value]
+
+    def set_source_expressions(self, exprs):
+        (self.value,) = exprs
+
+    def as_sql(self, compiler, connection):
+        sql, params = compiler.compile(self.value)
+        return f"CASE {sql} WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END", params
+
+
+def _as_operand(operand):
+    if isinstance(operand, NegatedExpression) and not renders_as_predicate(operand.expression):
+        return NegatedValue(operand.expression)
+    return PredicateValue(operand) if renders_as_predicate(operand) else operand
+
+
 def lookup_as_db2_for_i(self, compiler, connection):
     if getattr(self.lhs, "conditional", False) and getattr(self.rhs, "conditional", False):
-        operands = [
-            PredicateValue(operand) if renders_as_predicate(operand) else operand
-            for operand in (self.lhs, self.rhs)
-        ]
-        if any(isinstance(operand, PredicateValue) for operand in operands):
+        operands = [_as_operand(operand) for operand in (self.lhs, self.rhs)]
+        if any(isinstance(operand, (PredicateValue, NegatedValue)) for operand in operands):
             return type(self)(*operands).as_sql(compiler, connection)
     return self.as_sql(compiler, connection)
 

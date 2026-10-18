@@ -60,3 +60,11 @@ def test_predicate_value_sql() -> None:
     sql, params = PredicateValue(Value(True)).as_sql(compiler, connection)
     assert sql == "CASE WHEN CAST(%s AS BOOLEAN) THEN TRUE ELSE FALSE END"
     assert params == [True] or params == (True,)
+
+
+def test_negated_boolean_value_as_an_operand_keeps_null() -> None:
+    queryset = Book.objects.filter(available=~Value(None, output_field=BooleanField()))
+    assert where(queryset) == (
+        '"TESTAPP_BOOK"."AVAILABLE" = (CASE CAST(NULL AS BOOLEAN) WHEN TRUE THEN FALSE '
+        "WHEN FALSE THEN TRUE END)"
+    )

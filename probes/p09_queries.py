@@ -390,6 +390,38 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         [(1,)],
     ),
     # --- boolean expressions
+    # --- NOT of a BOOLEAN value (Django's ~Value(False), ~F("flag") outside WHERE)
+    (
+        "boolean",
+        "select list: NOT <BOOLEAN marker>",
+        f"SELECT NOT CAST(? AS BOOLEAN) {D}",
+        (False,),
+        None,
+    ),
+    (
+        "boolean",
+        "comparison: B = (NOT <BOOLEAN marker>)",
+        f"SELECT 1 {D} WHERE CAST(TRUE AS BOOLEAN) = (NOT CAST(? AS BOOLEAN))",
+        (False,),
+        None,
+    ),
+    (
+        "boolean",
+        "select list: CASE V WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END",
+        "SELECT CASE V WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END FROM (VALUES "
+        "CAST(TRUE AS BOOLEAN), CAST(FALSE AS BOOLEAN), CAST(NULL AS BOOLEAN)) B (V)",
+        (),
+        [(False,), (True,), (None,)],
+    ),
+    (
+        "boolean",
+        "CASE form with a marker, in a comparison and the select list",
+        f"SELECT CASE CAST(? AS BOOLEAN) WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END {D} "
+        "WHERE CAST(TRUE AS BOOLEAN) = "
+        "CASE CAST(? AS BOOLEAN) WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END",
+        (False, False),
+        [(True,)],
+    ),
     ("boolean", "predicate in select list", f"SELECT 1 = 1 {D}", (), [(True,)]),
     (
         "boolean",

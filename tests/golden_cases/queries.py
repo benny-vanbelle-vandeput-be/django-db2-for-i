@@ -276,4 +276,12 @@ CASES: tuple[Case, ...] = (
         ),
         (AUTHOR, BOOK),
     ),
+    # NOT <BOOLEAN value> as a comparison operand: CASE <value> WHEN TRUE THEN
+    # FALSE WHEN FALSE THEN TRUE END (a predicate is no operand; NULL stays NULL).
+    Case(
+        "queries/filter_boolean_column_equals_negated_value",
+        "query",
+        select(lambda: Book.objects.filter(available=~Value(False))),
+        (AUTHOR, BOOK),
+    ),
 )
