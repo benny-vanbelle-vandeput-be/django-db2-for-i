@@ -29,3 +29,6 @@ htmlcov/
 .DS_Store
 .idea/
 .vscode/
+
+# Git worktrees of Claude Code subagents (never part of the repository)
+.claude/worktrees/
