@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Enabled features
+- `supports_boolean_expr_in_select_clause`: predicates in the select list
+  and GROUP BY are returned as BOOLEAN values.
+
+### Fixed
+- `Exists()` conditions failed in the IBM i host server ("Error in host
+  server data stream"): the subquery selected a parameter marker. It now
+  selects a literal `1`.
+- `Exists()` outside a WHERE condition (annotations, `Case(When(Exists()))`,
+  `order_by()`, grouping) failed with SQL0104: Db2 for i accepts `EXISTS`
+  only as a search condition. There it is rendered as
+  `((SELECT 1 ... FETCH FIRST 1 ROWS ONLY) IS NOT NULL)`, which also stops
+  at the first row; in WHERE it stays `EXISTS (...)`.
+
 ### Fixed
 - `Cast(..., CharField())` without `max_length`, and ordering by a `Value`
   with a `CharField` output (which Django wraps in such a cast), cast to

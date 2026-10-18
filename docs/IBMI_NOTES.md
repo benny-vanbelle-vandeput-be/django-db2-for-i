@@ -602,6 +602,17 @@ FIRST 1 ROW ONLY) IS NOT NULL` works as a select-list predicate (BOOLEAN),
 also correlated, with a parameter marker inside, and in `WHERE` / `ORDER
 BY`; `CASE WHEN <that> THEN TRUE ELSE FALSE END` works too. `(SELECT
 COUNT(*) ...) > 0` gives the same results but counts every matching row.
+**`EXISTS` is accepted only directly as a search condition**: `CASE WHEN
+EXISTS (...)` fails also inside a WHERE clause (SQL0104), and `ORDER BY
+EXISTS (...)` fails (SQL0115); the first-row form works in GROUP BY, ORDER
+BY and under `NOT`. **A parameter marker in the select list of an `EXISTS`
+subquery fails in the host server**: `WHERE EXISTS (SELECT CAST(? AS
+INTEGER) AS A ...)` gives "Error in host server data stream" (30187, at
+prepare), typed or untyped, with or without `FETCH FIRST`, correlated or
+not (on the backend's connection; nested inside a first-row subquery:
+"Internal driver error" 30101). Markers in the subquery's WHERE work, and a
+marker in the select list of an `IN (SELECT ...)` subquery works. Django's
+`Exists` selects `Value(1)`, so `compiler.py` selects a literal `1`.
 
 **Boolean expressions** (7.5 BOOLEAN): predicates in the select list
 (`1 = 1`, `X > 1`) return `True`/`False`; a boolean column alone and
@@ -637,6 +648,13 @@ and `FETCH FIRST`; BOOLEAN sorts FALSE before TRUE (used by `compiler.py`).
 **Regular expressions.** `REGEXP_LIKE(value, pattern)` works with a constant
 or a typed marker as pattern, with flag `'i'`, and with backreferences
 (`'^(ab)\1$'`).
+
+A predicate also works in GROUP BY (`GROUP BY X < 2`), and `NOT (X < 2)`
+and `CASE WHEN X < 2 THEN TRUE ELSE FALSE END` work in the select list.
+
+**LIKE on a TIMESTAMP column** is rejected (SQL0414, "Operand not valid in
+LIKE predicate"; Django's `lookup` test `test_lookup_date_as_str`):
+`supports_date_lookup_using_string` stays off (as on MySQL).
 
 **Arithmetic.** Integer division truncates toward zero (`7 / 2` = 3,
 `-7 / 2` = -3, also for typed markers); `MOD(-7, 3)` = -1; `POWER` returns
