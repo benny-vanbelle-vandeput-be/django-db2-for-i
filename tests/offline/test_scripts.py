@@ -330,3 +330,17 @@ def test_committed_status_data_parses() -> None:
     assert {p["status"] for p in data["phases"]} <= allowed
     assert {m["status"] for m in data["modules"]} <= allowed
     assert data["versions"]["ibmi"]
+
+
+FAILED_DEFINITION = "**failed** = failures + errors + unexpected successes"
+
+
+def test_test_status_defines_failed_explicitly() -> None:
+    assert FAILED_DEFINITION in status.render([])
+
+
+def test_readme_defines_failed_explicitly() -> None:
+    readme = Path(__file__).resolve().parents[2] / "README.md"
+    if not readme.exists():  # the wheel session copies no README.md
+        pytest.skip("README.md not available")
+    assert FAILED_DEFINITION in readme.read_text(encoding="utf-8")
