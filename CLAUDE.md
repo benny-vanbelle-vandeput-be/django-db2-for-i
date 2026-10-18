@@ -40,6 +40,10 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
   Django's own tests do not cover every pattern.
 - At the end of each phase: update `docs/TEST_STATUS.md`, add changelog fragments, commit,
   and summarize what was done and what comes next.
+- At every module or phase transition (a module or phase starts or is done, a release,
+  an open track added or closed): update `docs/status.toml` and regenerate
+  `docs/TEST_STATUS.md`, `docs/badges/*.json` and README's status section with
+  `nox -s test_status`. Never edit the generated parts of README.md by hand.
 - All code, comments and docs in English.
 
 ## 3. Supported versions
