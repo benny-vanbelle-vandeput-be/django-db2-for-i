@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `StringAgg`, as `LISTAGG` of an NCLOB with a typed separator: results up
+  to 1M characters (longer fails with SQL0802), NULL over no values (the
+  ODBC driver would return an empty string). See
+  docs/user/Known-Limitations.md.
 - Offline and pub400 guards that no comparison is emitted with untyped
   parameter markers on both sides (Db2 for i compares those wrongly,
   silently).

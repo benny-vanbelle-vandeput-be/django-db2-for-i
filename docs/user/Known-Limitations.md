@@ -194,6 +194,13 @@ Unicode) regular expressions; see IBM's "REGEXP_LIKE predicate" and
 - The ICU option of IBM i must be installed (standard on IBM i 7.5);
   without it the predicate fails with SQL0204.
 
+## StringAgg results are limited to 1M characters
+
+`StringAgg` uses Db2 for i's `LISTAGG`. The result holds up to 1M
+(1048576) characters; a longer result fails with SQL0802 ("Data conversion
+or data mapping error") instead of being truncated. `StringAgg(...,
+distinct=True)` is not supported yet (Django raises NotSupportedError).
+
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and
