@@ -36,6 +36,14 @@ PKG = "QSYS2.SYSPACKAGESTMTSTAT WHERE PACKAGE_SCHEMA = 'NOSUCHLIB'"
 CORRELATED_UNION = "SELECT T.X AS Y FROM SYSIBM.SYSDUMMY1 UNION SELECT 9 AS Y FROM SYSIBM.SYSDUMMY1"
 _SQLCODE = re.compile(r"\((-\d+)\)")
 
+J = "(VALUES (1, 'a'), (2, 'b'), (3, 'b')) J (K, NAME)"
+
+
+def lateral(expression: str) -> str:
+    """The backend's LATERAL grouping table with one column G1 (compiler.py)."""
+    return f"CROSS JOIN LATERAL (SELECT {expression} AS G1 FROM SYSIBM.SYSDUMMY1) AS G"
+
+
 # (area, label, sql, params, expected rows or None to only record)
 CHECKS: list[tuple[str, str, str, tuple, Any]] = [
     # --- compound queries
@@ -820,6 +828,292 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         f"SELECT COALESCE(SUM(X), CAST(? AS INTEGER)) FROM {V3} WHERE X > 9",
         (0,),
         [(0,)],
+    ),
+    # --- GROUP BY an expression with a parameter marker: candidate fixes
+    (
+        "groupby",
+        "baseline: marker in select and GROUP BY",
+        f"SELECT MOD(X, CAST(? AS INTEGER)), COUNT(*) FROM {V3} "
+        "GROUP BY MOD(X, CAST(? AS INTEGER))",
+        (2, 2),
+        None,
+    ),
+    (
+        "groupby",
+        "baseline: untyped marker in select and GROUP BY",
+        f"SELECT MOD(X, ?), COUNT(*) FROM {V3} GROUP BY MOD(X, ?)",
+        (2, 2),
+        None,
+    ),
+    (
+        "groupby",
+        "baseline: COUNT(*) over a grouped subquery with markers",
+        f"SELECT COUNT(*) FROM (SELECT MOD(X, CAST(? AS INTEGER)) AS M, COUNT(*) AS C "
+        f"FROM {V3} GROUP BY MOD(X, CAST(? AS INTEGER))) S",
+        (2, 2),
+        None,
+    ),
+    (
+        "groupby",
+        "GROUP BY select alias",
+        f"SELECT MOD(X, CAST(? AS INTEGER)) AS M, COUNT(*) FROM {V3} GROUP BY M",
+        (2,),
+        None,
+    ),
+    (
+        "groupby",
+        "inline: integer literal",
+        f"SELECT MOD(X, 2), COUNT(*) FROM {V3} GROUP BY MOD(X, 2) ORDER BY 1",
+        (),
+        [(0, 1), (1, 2)],
+    ),
+    (
+        "groupby",
+        "inline: typed integer literal",
+        f"SELECT MOD(X, CAST(2 AS INTEGER)), COUNT(*) FROM {V3} "
+        f"GROUP BY MOD(X, CAST(2 AS INTEGER)) ORDER BY 1",
+        (),
+        [(0, 1), (1, 2)],
+    ),
+    (
+        "groupby",
+        "inline: literal in GROUP BY, marker in select",
+        f"SELECT MOD(X, CAST(? AS INTEGER)), COUNT(*) FROM {V3} "
+        "GROUP BY MOD(X, CAST(2 AS INTEGER))",
+        (2,),
+        None,
+    ),
+    (
+        "groupby",
+        "inline: boolean predicate with literals",
+        f"SELECT CASE WHEN X < CAST(2 AS INTEGER) THEN TRUE ELSE FALSE END, COUNT(*) FROM {V3} "
+        f"GROUP BY CASE WHEN X < CAST(2 AS INTEGER) THEN TRUE ELSE FALSE END ORDER BY 2",
+        (),
+        [(True, 1), (False, 2)],
+    ),
+    (
+        "groupby",
+        "inline: CASE with BOOLEAN and DOUBLE literals",
+        f"SELECT CASE WHEN X > CAST(1.5E0 AS DOUBLE) THEN CAST(TRUE AS BOOLEAN) "
+        f"ELSE CAST(FALSE AS BOOLEAN) END, COUNT(*) FROM {V3} "
+        f"GROUP BY CASE WHEN X > CAST(1.5E0 AS DOUBLE) THEN CAST(TRUE AS BOOLEAN) "
+        f"ELSE CAST(FALSE AS BOOLEAN) END ORDER BY 2",
+        (),
+        [(False, 1), (True, 2)],
+    ),
+    (
+        "groupby",
+        "inline: DECIMAL literal",
+        f"SELECT X * CAST(1.5 AS DECIMAL(2, 1)), COUNT(*) FROM {V3} "
+        f"GROUP BY X * CAST(1.5 AS DECIMAL(2, 1)) ORDER BY 1",
+        (),
+        None,
+    ),
+    (
+        "groupby",
+        "inline: nested aggregate over grouped expression",
+        f"SELECT LEAST(MIN(X), GREATEST(X, CAST(2 AS INTEGER))) FROM {V3} "
+        f"GROUP BY GREATEST(X, CAST(2 AS INTEGER)) ORDER BY 1",
+        (),
+        [(1,), (3,)],
+    ),
+    (
+        "groupby",
+        "grouped expression nested in a select expression (no literal)",
+        f"SELECT X + X + 1, COUNT(*) FROM {V3} GROUP BY X + X ORDER BY 1",
+        (),
+        None,
+    ),
+    (
+        "groupby",
+        "grouped expression nested with an aggregate (no literal)",
+        f"SELECT LEAST(MIN(X), X + X) FROM {V3} GROUP BY X + X ORDER BY 1",
+        (),
+        None,
+    ),
+    (
+        "groupby",
+        "grouped column nested with an aggregate",
+        f"SELECT LEAST(MIN(X), X) FROM {V3} GROUP BY X ORDER BY 1",
+        (),
+        None,
+    ),
+    (
+        "groupby",
+        "inline: COUNT(*) over a grouped subquery",
+        f"SELECT COUNT(*) FROM (SELECT MOD(X, CAST(2 AS INTEGER)) AS M, COUNT(*) AS C "
+        f"FROM {V3} GROUP BY MOD(X, CAST(2 AS INTEGER))) S",
+        (),
+        [(2,)],
+    ),
+    (
+        "groupby",
+        "derived table: marker inside, GROUP BY the column",
+        f"SELECT M, COUNT(*) FROM (SELECT X, MOD(X, CAST(? AS INTEGER)) AS M FROM {V3}) T "
+        f"GROUP BY M ORDER BY M",
+        (2,),
+        [(0, 1), (1, 2)],
+    ),
+    (
+        "groupby",
+        "derived table: boolean predicate with markers",
+        f"SELECT B, COUNT(*) FROM (SELECT X, CASE WHEN X < CAST(? AS INTEGER) THEN TRUE "
+        f"ELSE FALSE END AS B FROM {V3}) T GROUP BY B ORDER BY 2",
+        (2,),
+        [(True, 1), (False, 2)],
+    ),
+    (
+        "groupby",
+        "derived table: nested aggregate",
+        f"SELECT LEAST(MIN(X), G) FROM (SELECT X, GREATEST(X, CAST(? AS INTEGER)) AS G "
+        f"FROM {V3}) T GROUP BY G ORDER BY 1",
+        (2,),
+        [(1,), (3,)],
+    ),
+    (
+        "groupby",
+        "derived table: marker in outer select and HAVING",
+        f"SELECT M, COUNT(*) + CAST(? AS INTEGER) FROM (SELECT X, MOD(X, CAST(? AS INTEGER)) "
+        f"AS M FROM {V3}) T GROUP BY M HAVING COUNT(*) > CAST(? AS INTEGER) ORDER BY M",
+        (10, 2, 1),
+        [(1, 12)],
+    ),
+    (
+        "groupby",
+        "derived table: COUNT(*) over it",
+        f"SELECT COUNT(*) FROM (SELECT M, COUNT(*) AS C FROM (SELECT X, MOD(X, CAST(? AS "
+        f"INTEGER)) AS M FROM {V3}) T GROUP BY M) S",
+        (2,),
+        [(2,)],
+    ),
+    # --- GROUP BY through a LATERAL derived table (the backend's form)
+    (
+        "groupby",
+        "lateral: marker, GROUP BY the column",
+        f"SELECT G.G1, COUNT(*) FROM {V3} {lateral('MOD(T.X, CAST(? AS INTEGER))')} "
+        "GROUP BY G.G1 ORDER BY G.G1",
+        (2,),
+        [(0, 1), (1, 2)],
+    ),
+    (
+        "groupby",
+        "lateral: after a LEFT JOIN, aggregate of the joined table",
+        f"SELECT G.G1, MAX(J.NAME) FROM {V3} LEFT OUTER JOIN {J} ON J.K = T.X "
+        f"{lateral('MOD(T.X, CAST(? AS INTEGER))')} GROUP BY G.G1 ORDER BY G.G1",
+        (2,),
+        [(0, "b"), (1, "b")],
+    ),
+    (
+        "groupby",
+        "lateral: nested in a select expression with an aggregate",
+        f"SELECT LEAST(MIN(T.X), G.G1) FROM {V3} "
+        f"{lateral('GREATEST(T.X, CAST(? AS INTEGER))')} GROUP BY G.G1 ORDER BY 1",
+        (2,),
+        [(1,), (3,)],
+    ),
+    (
+        "groupby",
+        "lateral: predicate CASE with markers, HAVING and ORDER BY markers",
+        f"SELECT G.G1, COUNT(*) + CAST(? AS INTEGER) FROM {V3} "
+        f"{lateral('CASE WHEN T.X < CAST(? AS INTEGER) THEN TRUE ELSE FALSE END')} "
+        "GROUP BY G.G1 HAVING COUNT(*) > CAST(? AS INTEGER) ORDER BY G.G1",
+        (10, 2, 0),
+        [(False, 12), (True, 11)],
+    ),
+    (
+        "groupby",
+        "lateral: COUNT(*) over the grouped query",
+        f"SELECT COUNT(*) FROM (SELECT G.G1, COUNT(*) AS C FROM {V3} "
+        f"{lateral('MOD(T.X, CAST(? AS INTEGER))')} GROUP BY G.G1) S",
+        (2,),
+        [(2,)],
+    ),
+    (
+        "groupby",
+        "lateral: correlated scalar subquery with a marker",
+        f"SELECT G.G1, COUNT(*) FROM {V3} "
+        + lateral(f"(SELECT COUNT(*) FROM {J} WHERE J.K <= T.X AND J.NAME = CAST(? AS VARCHAR(1)))")
+        + " GROUP BY G.G1 ORDER BY G.G1",
+        ("b",),
+        [(0, 1), (1, 1), (2, 1)],
+    ),
+    (
+        "groupby",
+        "lateral: first-row EXISTS value",
+        f"SELECT G.G1, COUNT(*) FROM {V3} "
+        + lateral(
+            f"((SELECT 1 FROM {J} WHERE J.K = T.X AND J.NAME = CAST(? AS VARCHAR(1)) "
+            "FETCH FIRST 1 ROWS ONLY) IS NOT NULL)"
+        )
+        + " GROUP BY G.G1 ORDER BY G.G1",
+        ("b",),
+        [(False, 1), (True, 2)],
+    ),
+    (
+        "groupby",
+        "lateral: column in WHERE",
+        f"SELECT G.G1, COUNT(*) FROM {V3} {lateral('MOD(T.X, CAST(? AS INTEGER))')} "
+        "WHERE G.G1 = CAST(? AS INTEGER) GROUP BY G.G1",
+        (2, 1),
+        [(1, 2)],
+    ),
+    # --- aggregates (aggregation module)
+    ("aggregate", "COUNT(NULL)", f"SELECT COUNT(NULL) FROM {V3}", (), None),
+    (
+        "aggregate",
+        "COUNT(CAST(NULL AS INTEGER))",
+        f"SELECT COUNT(CAST(NULL AS INTEGER)) FROM {V3}",
+        (),
+        [(0,)],
+    ),
+    (
+        "aggregate",
+        "AVG(DOUBLE(X)) of INTEGER",
+        "SELECT AVG(CAST(X AS DOUBLE)) FROM (VALUES 1, 2) T (X)",
+        (),
+        [(1.5,)],
+    ),
+    (
+        "aggregate",
+        "LISTAGG with a typed marker delimiter",
+        f"SELECT LISTAGG(CHAR(X), CAST(? AS VARCHAR(10))) FROM {V3}",
+        (",",),
+        None,
+    ),
+    (
+        "aggregate",
+        "LISTAGG without WITHIN GROUP, CASE argument",
+        f"SELECT LISTAGG(CASE WHEN X > 1 THEN CHAR(X) END, ',') FROM {V3}",
+        (),
+        None,
+    ),
+    (
+        "aggregate",
+        "LISTAGG of NVARCHAR (type)",
+        f"SELECT LISTAGG(CAST(CHAR(X) AS NVARCHAR(10)), ',') FROM {V3}",
+        (),
+        None,
+    ),
+    (
+        "temporal",
+        "DATE_TRUNC('MONTH', TIMESTAMP)",
+        f"SELECT DATE_TRUNC('MONTH', TIMESTAMP('2026-10-18-12.34.56')) {D}",
+        (),
+        None,
+    ),
+    (
+        "temporal",
+        "TRUNC_TIMESTAMP(TIMESTAMP, 'MONTH')",
+        f"SELECT TRUNC_TIMESTAMP(TIMESTAMP('2026-10-18-12.34.56'), 'MONTH') {D}",
+        (),
+        None,
+    ),
+    (
+        "temporal",
+        "TRUNC(DATE, 'MONTH')",
+        f"SELECT TRUNC(DATE('2026-10-18'), 'MONTH') {D}",
+        (),
+        None,
     ),
     # --- temporal
     (

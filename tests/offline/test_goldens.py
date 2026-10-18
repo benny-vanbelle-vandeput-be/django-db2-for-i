@@ -138,6 +138,9 @@ def allowed_identifiers() -> set[str]:
         "HAS",
         "N",
         "B",
+        # The backend's LATERAL grouping table and its columns (compiler.py).
+        "DJDB2I_GROUPING",
+        "G1",
     }
     for model in (Author, Book, Defaults, Node, Tag):
         names.add(model._meta.db_table.upper())

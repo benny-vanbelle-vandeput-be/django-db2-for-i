@@ -155,14 +155,18 @@ def test_q_and_lookup_annotations_are_case_values() -> None:
         assert ' THEN TRUE ELSE FALSE END AS "B" FROM' in sql
 
 
-def test_group_by_uses_the_same_case_value() -> None:
+def test_group_by_a_predicate_with_a_value_uses_the_lateral_column() -> None:
     from django.db.models import Count
 
     queryset = Book.objects.annotate(b=Q(pages__lt=100)).values("b").annotate(n=Count("id"))
-    _, sql = compiled(queryset)
-    select, group_by = sql.split(" FROM ")[0], sql.split(" GROUP BY ")[1]
-    assert group_by.startswith(WRAPPED)
-    assert select.split(" AS ")[0].removeprefix("SELECT ") == group_by
+    sql, params = queryset.query.get_compiler(connection=connection).as_sql()
+    assert sql.startswith('SELECT "DJDB2I_GROUPING"."G1" AS "B", ')
+    assert sql.endswith(' GROUP BY "DJDB2I_GROUPING"."G1"')
+    assert (
+        f'CROSS JOIN LATERAL (SELECT {WRAPPED}"TESTAPP_BOOK"."PAGES" < %s THEN TRUE ELSE FALSE '
+        'END AS "G1" FROM SYSIBM.SYSDUMMY1) AS "DJDB2I_GROUPING"'
+    ) in sql
+    assert params == (100,)
 
 
 def test_conditions_and_exists_are_not_wrapped() -> None:

@@ -6,13 +6,18 @@ from django.db.models import (
     Avg,
     Count,
     F,
+    Min,
     Q,
     StringAgg,
+    Sum,
     Value,
+    When,
 )
+from django.db.models import Case as CaseExpr
+from django.db.models.functions import Greatest, Least
 
 from tests.golden_cases.base import AUTHOR, BOOK, DEFAULTS, Case, select
-from tests.testapp.models import Author, Defaults
+from tests.testapp.models import Author, Book, Defaults
 
 CASES: tuple[Case, ...] = (
     # Avg of an integer: the argument is cast to DOUBLE (AVG of INTEGER is an
@@ -68,6 +73,40 @@ CASES: tuple[Case, ...] = (
                     order_by=(F("book__published").desc(nulls_last=True), "book__title"),
                 )
             ).values("x")
+        ),
+        (AUTHOR, BOOK),
+    ),
+    # GROUP BY an expression with a parameter, or nested in a select
+    # expression: computed in a LATERAL grouping table (compiler.py).
+    Case(
+        "aggregates/group_by_predicate_with_a_value",
+        "query",
+        select(
+            lambda: Book.objects.annotate(b=Q(pages__lt=100)).values("b").annotate(n=Count("id"))
+        ),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "aggregates/group_by_nested_expression",
+        "query",
+        select(
+            lambda: (
+                Book.objects.annotate(m=Greatest("pages", Value(600)))
+                .values("m")
+                .annotate(n=Min("pages"), x=Least("n", "m"))
+                .values("x")
+            )
+        ),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "aggregates/group_by_model_with_a_case_value",
+        "query",
+        select(
+            lambda: Author.objects.annotate(
+                n=Sum("book__pages"),
+                b=CaseExpr(When(book__pages__gt=100, then=Value(True)), default=Value(False)),
+            )
         ),
         (AUTHOR, BOOK),
     ),

@@ -25,7 +25,6 @@ from django.db.models import (
 )
 from django.db.models.lookups import GreaterThan, LessThan
 
-from django_db2_for_i.features import REASON_GROUP_BY_MARKERS
 from tests.testapp.models import Author, Book
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")
@@ -167,7 +166,6 @@ def test_predicate_annotations_on_full_querysets(live, empty) -> None:
     assert list(by_id.annotate(b=Q(pages__lt=100)).filter(b=True)) == [small]
 
 
-@pytest.mark.xfail(strict=True, reason=REASON_GROUP_BY_MARKERS)
 def test_group_by_predicate_annotation_with_a_value(live, empty) -> None:
     author = Author.objects.create(name="a")
     Book.objects.create(author=author, title="small", pages=50)

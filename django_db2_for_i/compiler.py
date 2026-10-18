@@ -41,12 +41,32 @@ GROUP BY item, an UPDATE value) is therefore written as ``CASE WHEN
 <predicate> THEN TRUE ELSE FALSE END``, still a BOOLEAN value. Nested
 predicates and search conditions are not wrapped; ``Exists()`` needs no
 wrapper (its first-row form has no untyped marker).
+
+GROUP BY an expression with parameters, or nested in a select expression
+----------------------------------------------------------------------
+Db2 for i matches a grouped expression only when it is selected as a whole
+and has no parameter marker: ``SELECT MOD(X, ?) ... GROUP BY MOD(X, ?)``
+fails (30101, markers never match), and so does ``SELECT X + X + 1 ... GROUP
+BY X + X`` (SQL0122) or ``LEAST(MIN(X), <grouped>)``; ``GROUP BY`` an alias or
+a position is not allowed (probe ``queries``). For such grouped expressions
+this compiler computes them per row in a LATERAL derived table and groups by
+its columns::
+
+    SELECT G.G1, COUNT(*) FROM <tables and joins>
+    CROSS JOIN LATERAL (SELECT MOD(X, ?) AS G1 FROM SYSIBM.SYSDUMMY1) AS G
+    WHERE ... GROUP BY G.G1
+
+Everything else (joins, WHERE, aggregates, HAVING, ORDER BY) stays as it
+is; wherever the grouped expression is compiled it becomes ``G.G1``.
+Grouping by columns, and by expressions without parameters that are only
+selected as a whole, keeps its SQL.
 """
 
 from __future__ import annotations
 
 from django.db.models import IntegerField
 from django.db.models.expressions import (
+    Col,
     Exists,
     ExpressionWrapper,
     NegatedExpression,
@@ -63,6 +83,8 @@ EXISTS_AS_VALUE = "((%(subquery)s) IS NOT NULL)"
 # Django's wrapper of an ordered compound query, and ours.
 COMPOUND_WRAPPER = "SELECT * FROM ( "
 LATERAL_COMPOUND_WRAPPER = "SELECT * FROM LATERAL ( "
+# The LATERAL derived table of grouped expressions, and its columns G1, G2, ...
+GROUPING_TABLE = "DJDB2I_GROUPING"
 
 
 def _exists_selecting_literal(node: Exists) -> Exists:
@@ -113,13 +135,25 @@ def _is_value_predicate(node) -> bool:
     return False
 
 
+def _hashable(node) -> bool:
+    try:
+        hash(node)
+    except TypeError:
+        return False
+    return True
+
+
 class SQLCompiler(compiler.SQLCompiler):
     # True while compiling a search condition of WHERE / HAVING / QUALIFY.
     _in_condition = False
     # Nesting depth of compile(): 0 for what the compiler compiles directly.
     _depth = 0
+    # Grouped expression -> its column in the LATERAL grouping table.
+    _grouping_columns: dict = {}
 
     def compile(self, node):
+        if self._grouping_columns and _hashable(node) and node in self._grouping_columns:
+            return self._grouping_columns[node], []
         if isinstance(node, Exists):
             node = _exists_selecting_literal(node)
             if not self._in_condition:
@@ -156,10 +190,70 @@ class SQLCompiler(compiler.SQLCompiler):
 
     def pre_sql_setup(self, with_col_aliases=False):
         self._null_ordering_positions = {}
+        self._grouping_columns = {}
+        self._grouping_columns = self._laterally_grouped()
         extra_select, order_by, group_by = super().pre_sql_setup(with_col_aliases)
         if self._null_ordering_positions:
             order_by = [self._by_position(item) for item in order_by]
         return extra_select, order_by, group_by
+
+    def _laterally_grouped(self) -> dict:
+        """The grouped expressions to compute in the LATERAL grouping table."""
+        if self.query.group_by is None:
+            return {}
+        annotations = list(self.query.annotation_select.values())
+        # Django groups by query.group_by (values().annotate()) and by every
+        # selected non-aggregate annotation (get_group_by()).
+        candidates = list(self.query.group_by) if isinstance(self.query.group_by, tuple) else []
+        for annotation in annotations:
+            if not annotation.contains_aggregate:
+                candidates.extend(annotation.get_group_by_cols())
+        grouped = []
+        for expr in candidates:
+            if not hasattr(expr, "as_sql"):
+                expr = self.query.resolve_ref(expr)
+            source = expr.source if isinstance(expr, Ref) else expr
+            if not isinstance(source, Col) and _hashable(source) and source not in grouped:
+                grouped.append(source)
+        lateral = [
+            source
+            for source in grouped
+            if not source.contains_aggregate
+            and (self.compile(source)[1] or self._nested(source, annotations))
+        ]
+        table = self.connection.ops.quote_name(GROUPING_TABLE)
+        return {
+            source: f"{table}.{self.connection.ops.quote_name(f'G{number}')}"
+            for number, source in enumerate(lateral, start=1)
+        }
+
+    @staticmethod
+    def _nested(source, annotations) -> bool:
+        """True if ``source`` is part of another selected expression."""
+        for annotation in annotations:
+            if annotation is source or annotation == source:
+                continue
+            if any(node is not annotation and node == source for node in annotation.flatten()):
+                return True
+        return False
+
+    def get_from_clause(self):
+        result, params = super().get_from_clause()
+        if self._grouping_columns:
+            columns, saved = [], self._grouping_columns
+            self._grouping_columns = {}  # compile the expressions themselves
+            try:
+                for source, column in saved.items():
+                    sql, source_params = self.compile(source)
+                    columns.append(f"{sql} AS {column.rsplit('.', 1)[1]}")
+                    params.extend(source_params)
+            finally:
+                self._grouping_columns = saved
+            table = self.connection.ops.quote_name(GROUPING_TABLE)
+            result.append(
+                f"CROSS JOIN LATERAL (SELECT {', '.join(columns)} FROM SYSIBM.SYSDUMMY1) AS {table}"
+            )
+        return result, params
 
     def _by_position(self, item):
         expr, (_sql, _params, is_ref) = item

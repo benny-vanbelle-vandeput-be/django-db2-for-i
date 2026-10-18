@@ -48,17 +48,6 @@ off. **Fix:** run with a UTF-8 locale, for example `LANG=C.UTF-8` with
 (`setdecoding(SQL_WMETADATA, ...)`) cannot repair it: the driver returns the
 text already broken.
 
-## Grouping by an expression that contains a value
-
-Grouping by an annotation whose SQL contains a parameter, e.g.
-`Book.objects.annotate(b=Q(pages__lt=100)).values("b").annotate(n=Count("id"))`,
-fails with "Internal driver error" (30101): Db2 for i never matches a GROUP
-BY expression that contains a parameter marker with the selected one, and
-does not allow `GROUP BY <position>`. The same applies to grouping by a
-subquery or `Exists()` that filters with a value. Grouping by columns, and by
-expressions and subqueries without values (e.g. `ExtractYear("published")`),
-works.
-
 ## Custom SQL with a bare NULL
 
 Db2 for i does not accept an untyped `NULL` as an expression (`WHERE NULL IS

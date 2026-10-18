@@ -152,3 +152,59 @@ def test_string_agg_order_by(live, empty) -> None:
     assert titles(order_by=F("book__published").desc(nulls_last=True)) == "c,b,a"
     assert titles(order_by=F("book__published").asc(nulls_first=True)) == "a,b,c"
     assert titles(order_by="book__title", filter=Q(book__pages__gt=10)) == "b,c"
+
+
+def test_group_by_expressions_with_values(live, empty) -> None:
+    """The real-world report patterns behind the LATERAL grouping table: grouping
+    by an annotation with a value, across a join, with HAVING, ORDER BY, a
+    nested use and .count(); a grouped subquery with a value; model instances
+    with a computed flag."""
+    from django.db.models import Exists, Min, Sum
+    from django.db.models.functions import Greatest, Least, Mod
+
+    author = Author.objects.create(name="a")
+    other = Author.objects.create(name="b")
+    for title, pages in (("s1", 50), ("s2", 70), ("l1", 500)):
+        Book.objects.create(author=author, title=title, pages=pages)
+    Book.objects.create(author=other, title="l2", pages=900)
+
+    by_size = Book.objects.annotate(small=Q(pages__lt=100)).values("small")
+    counts = by_size.annotate(n=Count("id"), total=Sum("pages")).order_by("-total")
+    assert list(counts) == [
+        {"small": False, "n": 2, "total": 1400},
+        {"small": True, "n": 2, "total": 120},
+    ]
+    assert by_size.annotate(n=Count("id")).count() == 2
+    assert list(by_size.annotate(n=Count("id")).filter(n__gt=1, small=True)) == [
+        {"small": True, "n": 2}
+    ]
+    # Across a join: authors grouped by the size of their books.
+    per_author = (
+        Author.objects.values(small=Q(book__pages__lt=100))
+        .annotate(authors=Count("id", distinct=True))
+        .order_by("small")
+    )
+    assert [(row["small"], row["authors"]) for row in per_author] == [(False, 2), (True, 1)]
+    # A value inside the grouped expression, also nested in a select expression.
+    buckets = Book.objects.values(bucket=Mod("pages", 100)).annotate(n=Count("id"))
+    assert sorted((row["bucket"], row["n"]) for row in buckets) == [(0, 2), (50, 1), (70, 1)]
+    nested = (
+        Book.objects.annotate(at_least=Greatest("pages", Value(600)))
+        .values("at_least")
+        .annotate(low=Min("pages"), least=Least("low", "at_least"))
+        .values_list("least", flat=True)
+    )
+    assert sorted(nested) == [50, 900]
+    # A grouped subquery and Exists() that filter with a value.
+    long_books = Book.objects.filter(author=OuterRef("pk"), pages__gt=400)
+    has_long = Author.objects.values_list(Exists(long_books)).annotate(n=Count("*"))
+    assert dict(has_long) == {True: 2}
+    count = Subquery(long_books.values("author").annotate(c=Count("pk")).values("c"))
+    assert dict(Author.objects.values_list(count).annotate(n=Count("*"))) == {1: 2}
+    # Model instances with a computed flag next to an aggregate.
+    flag = Case(When(book__pages__gt=600, then=Value(True)), default=Value(False))
+    rows = Author.objects.annotate(total=Sum("book__pages"), big=flag).order_by("name", "big")
+    assert [(a.name, a.big, a.total) for a in rows] == [
+        ("a", False, 620),
+        ("b", True, 900),
+    ]
