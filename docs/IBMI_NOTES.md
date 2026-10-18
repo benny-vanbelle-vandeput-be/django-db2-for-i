@@ -578,6 +578,25 @@ and `CAST(? AS TIME)` parameters, for 2005-07-28 (Thursday), 2021-01-01
   (`30.123456`); `EXTRACT(ISODOW FROM x)` is rejected (SQL0104).
 - The backend uses the scalar functions throughout.
 
+### Truncating dates and times (`probe -- trunc`)
+2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
+compared with Django's truncation in Python.
+
+- `TRUNC_TIMESTAMP(<timestamp>, '<format>')` matches Django for `'YEAR'` /
+  `'YYYY'`, `'Q'`, `'MONTH'` / `'MM'`, `'DD'` / `'DDD'` / `'J'`, `'HH'` /
+  `'HH24'`, `'MI'` and `'SS'` (microseconds dropped). **Week: only `'IW'`**
+  starts on Monday (the ISO week, Django's convention: Sunday 2023-01-01 ->
+  2022-12-26); `'WW'` and `'W'` count from the first day of the year / month
+  and `'DAY'` / `'D'` start on Sunday.
+- A DATE argument works and returns a TIMESTAMP; `DATE(TRUNC_TIMESTAMP(...))`
+  gives the DATE. A TIME argument is rejected (SQL0171);
+  `TIME(TRUNC_TIMESTAMP(TIMESTAMP(DATE('0001-01-01'), TIME(<x>)), ...))`
+  works for a TIME and for a TIMESTAMP `<x>` (Django sends timestamps with a
+  TimeField output to time_trunc_sql).
+- An untyped marker as the argument is rejected (SQL0171); a NULL gives NULL.
+  `DATE(<timestamp>)` and `TIME(<timestamp>)` give the date / time (TIME
+  without fractions).
+
 ### SQL features for phase 2 (`probe -- queries`)
 2026-10-18, read-only (`SYSIBM.SYSDUMMY1`, `VALUES`, derived tables, two
 catalog views), one connection.

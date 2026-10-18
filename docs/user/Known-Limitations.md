@@ -88,7 +88,8 @@ zone (UTC unless the database's `TIME_ZONE` is set) and made aware again when
 read. With `USE_TZ = False`, aware datetimes raise `ValueError`.
 
 **Date functions need the database's time zone.** Lookups and functions
-that work in a time zone (`__year`, `__week_day`, `__hour`, `Extract()`, ...)
+that work in a time zone (`__year`, `__week_day`, `__hour`, `__date`, `Extract()`,
+`Trunc()`, `TruncDate()`, `dates()`, `datetimes()`, ...)
 run in the zone the database stores datetimes in. With `USE_TZ = True`, the
 current time zone (Django's `TIME_ZONE`, `timezone.activate()`, or a
 `tzinfo` argument) must equal the database's `TIME_ZONE` (UTC if not set);
