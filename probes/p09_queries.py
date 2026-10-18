@@ -73,6 +73,13 @@ def values_shift(x: int, n: int) -> str:
     )
 
 
+# Keyed BOOLEAN values TRUE, FALSE, NULL (NOT of a NULL BOOLEAN value).
+VB = (
+    "(VALUES (1, CAST(TRUE AS BOOLEAN)), (2, CAST(FALSE AS BOOLEAN)), "
+    "(3, CAST(NULL AS BOOLEAN))) B (K, V)"
+)
+
+
 # (area, label, sql, params, expected rows or None to only record)
 CHECKS: list[tuple[str, str, str, tuple, Any]] = [
     # --- compound queries
@@ -397,6 +404,78 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         f"SELECT NOT CAST(? AS BOOLEAN) {D}",
         (False,),
         None,
+    ),
+    (
+        "boolean",
+        "select list: NOT V for TRUE, FALSE, NULL",
+        "SELECT NOT V FROM (VALUES CAST(TRUE AS BOOLEAN), CAST(FALSE AS BOOLEAN), "
+        "CAST(NULL AS BOOLEAN)) B (V)",
+        (),
+        None,
+    ),
+    (
+        "boolean",
+        "select list: (NOT V) IS NULL for NULL",
+        "SELECT (NOT V) IS NULL FROM (VALUES CAST(NULL AS BOOLEAN)) B (V)",
+        (),
+        None,
+    ),
+    (
+        "boolean",
+        "WHERE NOT V for NULL (no row expected)",
+        "SELECT 1 FROM (VALUES CAST(NULL AS BOOLEAN)) B (V) WHERE NOT V",
+        (),
+        [],
+    ),
+    (
+        "boolean",
+        "WHERE V (rows 1 expected)",
+        "SELECT K FROM " + VB + " WHERE V",
+        (),
+        [(1,)],
+    ),
+    (
+        "boolean",
+        "WHERE NOT (V) (only row 2 is correct)",
+        "SELECT K FROM " + VB + " WHERE NOT (V) ORDER BY K",
+        (),
+        None,
+    ),
+    (
+        "boolean",
+        "WHERE CASE V WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END",
+        "SELECT K FROM " + VB + " WHERE CASE V WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END",
+        (),
+        [(2,)],
+    ),
+    (
+        "boolean",
+        "WHERE NOT of a CASE value (double negation)",
+        "SELECT K FROM " + VB + " WHERE CASE CASE V WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE "
+        "END WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END",
+        (),
+        [(1,)],
+    ),
+    (
+        "boolean",
+        "WHERE V = FALSE (only row 2)",
+        "SELECT K FROM " + VB + " WHERE V = FALSE",
+        (),
+        [(2,)],
+    ),
+    (
+        "boolean",
+        "WHERE NOT (V = TRUE) (row 2 only: NULL = TRUE is unknown)",
+        "SELECT K FROM " + VB + " WHERE NOT (V = TRUE) ORDER BY K",
+        (),
+        [(2,)],
+    ),
+    (
+        "boolean",
+        "select list: CASE form for TRUE, FALSE, NULL",
+        "SELECT CASE V WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END FROM " + VB + " ORDER BY K",
+        (),
+        [(False,), (True,), (None,)],
     ),
     (
         "boolean",
