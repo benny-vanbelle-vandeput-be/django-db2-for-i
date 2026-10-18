@@ -269,6 +269,21 @@ def test_distinct_with_emulated_null_ordering(live, empty) -> None:
     assert list(with_param) == [("a2", two), ("a1", one), ("a3", None)]
 
 
+def test_exists_filter_regression(live, empty) -> None:
+    """Plain filter(Exists()) and exclude(~Exists()) return the right rows.
+
+    Regression: the Exists subquery selected a parameter marker, which fails
+    in the IBM i host server ("Error in host server data stream", 30187), so
+    every Exists() condition raised an error (fixed in compiler.py).
+    """
+    with_book, without_book = Author.objects.create(name="a1"), Author.objects.create(name="a2")
+    Book.objects.create(author=with_book, title="t")
+    books = Exists(Book.objects.filter(author=OuterRef("pk")))
+    assert list(Author.objects.filter(books)) == [with_book]
+    assert list(Author.objects.exclude(~books)) == [with_book]
+    assert list(Author.objects.exclude(books)) == [without_book]
+
+
 def test_exists_in_every_position(live, empty) -> None:
     """Exists(): EXISTS in WHERE, a first-row subquery elsewhere (compiler.py)."""
     a1, a2 = Author.objects.create(name="a1"), Author.objects.create(name="a2")
