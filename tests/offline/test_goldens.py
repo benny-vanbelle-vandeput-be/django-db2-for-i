@@ -118,7 +118,17 @@ DJANGO_ALIAS = re.compile(r"^[TU]\d+$")
 def allowed_identifiers() -> set[str]:
     # Aliases (exists(), the annotations), the column the AddField golden
     # adds and the savepoint names of dml/savepoints.
-    names = {"A", "X", "NICKNAME", "S140234567890123_X1", "S140234567890123_X2", "LAST", "M"}
+    names = {
+        "A",
+        "X",
+        "NICKNAME",
+        "S140234567890123_X1",
+        "S140234567890123_X2",
+        "LAST",
+        "M",
+        "HAS",
+        "N",
+    }
     for model in (Author, Book, Defaults, Node, Tag):
         names.add(model._meta.db_table.upper())
         names.update(field.column.upper() for field in model._meta.local_fields)

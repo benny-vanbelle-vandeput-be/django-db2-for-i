@@ -3,5 +3,5 @@
 -- profile: 7.5
 -- depends: -
 -- params: [[]]
--- verified: IBM i 7.5 on PUB400, 2026-10-17
+-- verified: IBM i 7.5 on PUB400, 2026-10-18
 SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1;
