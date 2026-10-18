@@ -606,6 +606,19 @@ COUNT(*) ...) > 0` gives the same results but counts every matching row.
 **Boolean expressions** (7.5 BOOLEAN): predicates in the select list
 (`1 = 1`, `X > 1`) return `True`/`False`; a boolean column alone and
 `NOT column` work in `WHERE`; `CAST(? AS BOOLEAN)` works.
+**A predicate is not accepted as an operand** (found by Django's `lookup`
+tests): `WHERE (X < 3) = (X < 2)`, `WHERE X < 3 = X < 2`, `WHERE B = (X <
+3)` (B a BOOLEAN column), `WHERE (X < 2) = TRUE` and `CASE WHEN ... THEN 1
+ELSE 0 END = (X < 2)` all fail with SQL0104. `CASE WHEN <predicate> THEN
+TRUE ELSE FALSE END` is a BOOLEAN value and works on either side
+(`CASE ... = CASE ...`, `B = CASE ...`). In the select list a predicate
+works alone and in parentheses (`SELECT (X < 2)`).
+
+**Untyped markers and NULL.** `WHERE ? > ?` with two untyped markers
+(parameters 2 and 1) is accepted but **returns no row** (wrong, silently);
+`WHERE CAST(? AS INTEGER) > ?` is correct. A bare `NULL` as an expression
+is rejected: `WHERE NULL IS NULL` fails with SQL0206 ("column or global
+variable NULL not found").
 
 **NULL ordering.** NULLs sort as the largest value (last ascending, first
 descending). `NULLS FIRST` / `NULLS LAST` are rejected (SQL0199).

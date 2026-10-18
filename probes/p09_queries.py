@@ -266,6 +266,75 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         (),
         [(1,)],
     ),
+    # Predicates used as values (Django: lookups as expressions, filter(x=Q(...)))
+    (
+        "boolean",
+        "WHERE (pred) = (pred)",
+        f"SELECT X FROM {V3} WHERE (X < 3) = (X < 2) ORDER BY X",
+        (),
+        [(1,), (3,)],
+    ),
+    (
+        "boolean",
+        "WHERE pred = pred (no parentheses)",
+        f"SELECT X FROM {V3} WHERE X < 3 = X < 2",
+        (),
+        None,
+    ),
+    (
+        "boolean",
+        "WHERE boolean column = (pred)",
+        "SELECT X FROM (VALUES (1, TRUE), (5, TRUE)) T (X, B) WHERE B = (X < 3)",
+        (),
+        [(1,)],
+    ),
+    (
+        "boolean",
+        "WHERE (pred) = TRUE",
+        f"SELECT X FROM {V3} WHERE (X < 2) = TRUE",
+        (),
+        [(1,)],
+    ),
+    (
+        "boolean",
+        "WHERE CASE WHEN pred THEN TRUE ELSE FALSE END = CASE ...",
+        f"SELECT X FROM {V3} WHERE CASE WHEN X < 3 THEN TRUE ELSE FALSE END = "
+        "CASE WHEN X < 2 THEN TRUE ELSE FALSE END ORDER BY X",
+        (),
+        [(1,), (3,)],
+    ),
+    (
+        "boolean",
+        "WHERE boolean column = CASE WHEN pred THEN TRUE ELSE FALSE END",
+        "SELECT X FROM (VALUES (1, TRUE), (5, TRUE)) T (X, B) "
+        "WHERE B = CASE WHEN X < 3 THEN TRUE ELSE FALSE END",
+        (),
+        [(1,)],
+    ),
+    (
+        "boolean",
+        "select list: (pred) in parentheses",
+        f"SELECT (X < 2) FROM {V3} ORDER BY X",
+        (),
+        [(True,), (False,), (False,)],
+    ),
+    (
+        "boolean",
+        "select list: CASE WHEN pred THEN 1 ELSE 0 END = (pred)",
+        f"SELECT X FROM {V3} WHERE CASE WHEN X < 3 THEN 1 ELSE 0 END = (X < 2)",
+        (),
+        None,
+    ),
+    # Untyped markers / NULL as operands
+    ("boolean", "WHERE ? > ? (untyped markers)", f"SELECT 1 {D} WHERE ? > ?", (2, 1), None),
+    (
+        "boolean",
+        "WHERE CAST(? AS INTEGER) > ?",
+        f"SELECT 1 {D} WHERE CAST(? AS INTEGER) > ?",
+        (2, 1),
+        [(1,)],
+    ),
+    ("boolean", "WHERE NULL IS NULL (untyped NULL)", f"SELECT 1 {D} WHERE NULL IS NULL", (), None),
     # --- NULL ordering
     ("nulls", "ORDER BY ASC (NULL position)", f"SELECT X FROM {VN} ORDER BY X", (), None),
     ("nulls", "ORDER BY DESC (NULL position)", f"SELECT X FROM {VN} ORDER BY X DESC", (), None),
