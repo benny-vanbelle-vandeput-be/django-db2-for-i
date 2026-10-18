@@ -244,6 +244,16 @@ def test_identifier_converter() -> None:
     assert make_wrapper().introspection.identifier_converter("BASIC_ARTICLE") == "basic_article"
 
 
+def test_skips_are_grouped_by_fixed_reasons() -> None:
+    from django_db2_for_i import features
+
+    cls = features.DatabaseFeatures
+    assert set(cls.django_test_skips) == {features.REASON_DURATIONS_DEFERRED}
+    # Each entry is one test id, never a whole class.
+    for test_ids in cls.django_test_skips.values():
+        assert all(test_id.count(".") >= 3 and ".test_" in test_id for test_id in test_ids)
+
+
 def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
     from django_db2_for_i import features
 

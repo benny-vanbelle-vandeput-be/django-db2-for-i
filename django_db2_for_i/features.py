@@ -21,6 +21,12 @@ REASON_TYPED_PARAMETER_MARKERS = (
 )
 
 
+REASON_DURATIONS_DEFERRED = (
+    "DurationField storage and timestamp subtraction are not implemented yet "
+    "(deferred to a separate track)"
+)
+
+
 class DatabaseFeatures(BaseDatabaseFeatures):
     minimum_database_version = (7, 5)
 
@@ -152,7 +158,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # Known failures of Django's own test suite, grouped by one fixed reason
     # string each (see the REASON_* constants). Filled from real runs (phase 1,
     # step 9).
-    django_test_skips: dict[str, set[str]] = {}
+    django_test_skips: dict[str, set[str]] = {
+        REASON_DURATIONS_DEFERRED: {
+            "aggregation.tests.AggregateTestCase.test_aggregation_default_using_duration_from_database",
+            "aggregation.tests.AggregateTestCase.test_aggregation_default_using_duration_from_python",
+        },
+    }
     expected_failures: dict[str, set[str]] = {
         REASON_TIME_FRACTIONS: set(),
         REASON_IDENTITY_RESTART_DEFERRED: set(),
