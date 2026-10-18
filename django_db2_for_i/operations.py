@@ -36,6 +36,7 @@ from django.db.backends.utils import truncate_name
 from django.utils import timezone
 
 from .expressions import NVARCHAR_MAX
+from .schema import default_literal
 
 logger = logging.getLogger("django_db2_for_i")
 
@@ -59,6 +60,18 @@ _TIME_PARTS = {
     "minute": "MINUTE(%s)",
     "second": "SECOND(%s)",  # whole seconds, as Django expects
 }
+
+
+def _logged_literal(value) -> str:
+    """An SQL-looking rendering of a parameter for last_executed_query() only."""
+    if value is None:
+        return "NULL"
+    if isinstance(value, str):
+        return "'" + value.replace("'", "''") + "'"
+    try:
+        return default_literal(value)
+    except NotSupportedError:
+        return repr(value)
 
 
 class DatabaseOperations(BaseDatabaseOperations):
@@ -104,6 +117,26 @@ class DatabaseOperations(BaseDatabaseOperations):
         """
         flags = ", 'i'" if lookup_type == "iregex" else ""
         return f"REGEXP_LIKE(%s, CAST(%s AS NVARCHAR({NVARCHAR_MAX})){flags})"
+
+    # --- Logging ------------------------------------------------------------------
+
+    def last_executed_query(self, cursor, sql: str, params) -> str:
+        """The SQL with its parameters filled in, for logging and debugging only.
+
+        The backend always sends parameters separately; this text is never
+        executed. Strings become '...' constants (quotes doubled), None NULL,
+        other values the literal of their column DEFAULT rule; a value without
+        such a rule is shown with repr(). Falls back to Django's
+        "QUERY = ... - PARAMS = ..." form if the SQL cannot be filled in.
+        """
+        if params is None:
+            return sql  # sent as is: a % in it is a literal %
+        if not isinstance(params, (list, tuple)):
+            return super().last_executed_query(cursor, sql, params)
+        try:
+            return sql % tuple(_logged_literal(value) for value in params)
+        except (TypeError, ValueError):
+            return super().last_executed_query(cursor, sql, params)
 
     # --- Inserts ------------------------------------------------------------------
 

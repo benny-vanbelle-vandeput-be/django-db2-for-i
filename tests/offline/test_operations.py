@@ -448,3 +448,27 @@ def test_cast_char_field_without_max_length() -> None:
 )
 def test_regex_lookup(lookup, sql) -> None:
     assert connection.ops.regex_lookup(lookup) == sql
+
+
+@pytest.mark.parametrize(
+    ("sql", "params", "logged"),
+    [
+        ("SELECT A FROM T WHERE ID IN (%s, %s)", [1, 2], "SELECT A FROM T WHERE ID IN (1, 2)"),
+        ("WHERE N = %s AND X IS %s", ["O'Brien", None], "WHERE N = 'O''Brien' AND X IS NULL"),
+        ("WHERE B = %s AND D = %s", [True, Decimal("1.50")], "WHERE B = TRUE AND D = 1.50"),
+        ("WHERE T = %s", [dt.date(2026, 10, 18)], "WHERE T = '2026-10-18'"),
+        ("WHERE N LIKE '%%a' AND M = %s", ["b"], "WHERE N LIKE '%a' AND M = 'b'"),
+        ("SELECT '100%' FROM T", None, "SELECT '100%' FROM T"),  # sent as is
+        # Django passes prepared values (a UUID as hex text); anything without
+        # a literal rule is shown with repr().
+        ("WHERE U = %s", [uuid.UUID(int=1).hex], "WHERE U = '00000000000000000000000000000001'"),
+        ("WHERE D = %s", [dt.timedelta(seconds=1)], "WHERE D = datetime.timedelta(seconds=1)"),
+    ],
+)
+def test_last_executed_query_fills_in_parameters(sql, params, logged) -> None:
+    assert connection.ops.last_executed_query(None, sql, params) == logged
+
+
+def test_last_executed_query_falls_back_for_unexpected_sql() -> None:
+    logged = connection.ops.last_executed_query(None, "WHERE A = %s AND B = %s", [1])
+    assert logged.startswith("QUERY = ")

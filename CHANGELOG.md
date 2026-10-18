@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only as a search condition. There it is rendered as
   `((SELECT 1 ... FETCH FIRST 1 ROWS ONLY) IS NOT NULL)`, which also stops
   at the first row; in WHERE it stays `EXISTS (...)`.
+- Logged SQL (`connection.queries`, `CaptureQueriesContext`, the
+  `django.db.backends` logger) shows the parameter values filled in
+  (`last_executed_query()`), instead of `QUERY = ... - PARAMS = ...`. The
+  text is for logging and debugging only; it is never executed.
 - `Cast(..., CharField())` without `max_length`, and ordering by a `Value`
   with a `CharField` output (which Django wraps in such a cast), cast to
   `NVARCHAR(16370)`; they produced `CAST(... AS None)` (SQL0204).
