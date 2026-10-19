@@ -85,8 +85,7 @@ status = "done"
 
 [[modules]]
 module = "expressions"
-status = "in progress"
-note = "operators, negated booleans, UUID values fixed; RawSQL limitation; the 21 remaining errors are durations (duration track next)"
+status = "done"
 
 [[modules]]
 module = "queries"
@@ -98,9 +97,6 @@ text = "Verify the column order of created tables (phase 4, [#23](https://github
 
 [[tracks]]
 text = "`DROP COLUMN` on a table with rows is cancelled by CPA32B2 (`HY008`), which raises the question of table rebuilds in phase 4 (see [IBMI_NOTES](docs/IBMI_NOTES.md))."
-
-[[tracks]]
-text = "Durations track: `DurationField` storage, `timedelta` values, exact timestamp subtraction (approved; follows the `expressions` fixes, and removes the duration skips)."
 
 [[tracks]]
 text = "Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier."
