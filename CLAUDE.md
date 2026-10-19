@@ -78,6 +78,11 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
   libraries, and record the result in `docs/IBMI_NOTES.md`.
 - **Probes are read-only by default.** Anything that changes the IBM i (e.g. creating a
   journal receiver and `QSQJRN` journal) is proposed first and only run after approval.
+  - **Exception: QTEMP.** Probes may create and change objects in `QTEMP` without
+    approval: QTEMP is job-scoped, private to the probe's own connection, and
+    everything in it vanishes when the job ends.
+  - Nothing outside QTEMP (a library, a table in a user library, a journal, a
+    system value, a reply list entry) may be created or changed without approval.
 - PUB400 limits connections per IP: one connection per run, `--parallel=1`, no retry storms.
 - No uptime guarantee: test runs must fail fast and clearly when the system is unreachable.
 - Allowed on PUB400: single, small Django test modules (e.g. `basic`, `transactions`) and the
@@ -225,6 +230,16 @@ Three tiers, selectable via pytest markers / nox sessions.
   signed with the machine account's SSH signing key (all set in the
   repository's local git config). Never commit with a personal email address.
 - Before every push: `nox -s lint offline` passes locally.
+- Every backend PR (touching `django_db2_for_i/`) gets the label `needs-full-tier` when it
+  is opened. Remove it only after the full pub400 tier on the PR's **latest** commit has
+  passed and the result is posted on the PR (the SHA it ran on, the counts). Any later
+  push (a rebase, a fix, a changelog fragment rename) puts the label back until a fresh
+  run on the new latest commit is posted. The maintainer does not merge PRs that still
+  carry the label.
+  - **Exception:** a commit that only contains the golden verification stamps written by
+    the full-tier run (`--record-verification`) on the previous commit needs no new run.
+    The PR comment then states the SHA the tier ran on and that the latest commit only
+    adds those stamps.
 - Before review, and whenever a PR branch is behind `main`, Claude rebases it
   onto `main` and pushes it itself (`git push --force-with-lease`, PR branches
   only), so every PR is up to date and its commits stay signed. The maintainer
