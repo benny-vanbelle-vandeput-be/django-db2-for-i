@@ -48,9 +48,10 @@ off. **Fix:** run with a UTF-8 locale, for example `LANG=C.UTF-8` with
 (`setdecoding(SQL_WMETADATA, ...)`) cannot repair it: the driver returns the
 text already broken.
 
-## Parameters in RawSQL must be cast
+## Parameters in RawSQL and extra() must be cast
 
-A bare `%s` in `RawSQL()` (or `extra()`) becomes an untyped parameter marker.
+A bare `%s` in `RawSQL()` or in `extra(select=..., select_params=...)` (and
+`extra(where=..., params=...)`) becomes an untyped parameter marker.
 Db2 for i rejects untyped markers in the select list (SQL0418, "Use of
 parameter marker, NULL, or UNKNOWN not valid"), and two untyped markers
 compared with each other give wrong results. The backend types the values
@@ -62,6 +63,15 @@ parameter in the SQL instead:
 Company.objects.annotate(foo=RawSQL("%s", ["value"]))
 # Works:
 Company.objects.annotate(foo=RawSQL("CAST(%s AS NVARCHAR(20))", ["value"]))
+```
+
+The same applies to `extra()`:
+
+```python
+# Fails with SQL0418:
+Item.objects.extra(select={"foo": "%s"}, select_params=(1,))
+# Works:
+Item.objects.extra(select={"foo": "CAST(%s AS INTEGER)"}, select_params=(1,))
 ```
 
 Use the SQL type of the value: `NVARCHAR(n)` for strings, `INTEGER`,

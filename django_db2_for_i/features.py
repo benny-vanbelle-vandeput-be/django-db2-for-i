@@ -22,7 +22,7 @@ REASON_TYPED_PARAMETER_MARKERS = (
 
 
 REASON_UNTYPED_RAW_SQL_PARAMETER = (
-    "a bare %s in RawSQL is an untyped parameter marker, which Db2 for i rejects in the "
+    "a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the "
     "select list (SQL0418); cast it in the SQL"
 )
 
@@ -179,6 +179,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         # RawSQL("%s", ["value"]): user SQL the backend does not rewrite.
         REASON_UNTYPED_RAW_SQL_PARAMETER: {
             "expressions.tests.BasicExpressionsTests.test_annotate_values_filter",
+            # extra(select={"foo": "%s"}, select_params=(1,)).
+            "queries.tests.Queries1Tests.test_tickets_1878_2939",
+            # RawSQL("%s", ...) annotation.
+            "queries.test_query.TestQueryNoModel.test_rawsql_annotation",
         },
     }
     django_test_expected_failures: set[str] = set().union(*expected_failures.values())
