@@ -3,6 +3,7 @@
 Usage (inside the "tests" container):
     nox -s probe -- [reachability|connect|sysinfo|libraries|packages|features|
                      string_limits|extract|queries|listagg|trunc|durations|all] ...
+    nox -s probe -- fetch_errors   (own connection attributes, runs alone) ...
     nox -s probe -- session
 
 Probes run sequentially and share at most one ODBC connection per run.
@@ -13,6 +14,7 @@ Results are printed and stored as JSON under test-results/probes/.
 
 from __future__ import annotations
 
+import contextlib
 import sys
 
 import p00_reachability
@@ -28,6 +30,7 @@ import p09_queries
 import p10_listagg
 import p11_trunc
 import p12_durations
+import p13_fetch_errors
 from _common import ProbeError, Settings, connect, write_result
 
 PROBES = {
@@ -44,6 +47,7 @@ PROBES = {
     "listagg": p10_listagg,
     "trunc": p11_trunc,
     "durations": p12_durations,
+    "fetch_errors": p13_fetch_errors,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
@@ -86,7 +90,9 @@ def main(argv: list[str]) -> int:
         return exc.exit_code
     finally:
         if conn is not None:
-            conn.close()
+            # A probe may have closed it already (one connection at a time).
+            with contextlib.suppress(Exception):
+                conn.close()
     return 0
 
 
