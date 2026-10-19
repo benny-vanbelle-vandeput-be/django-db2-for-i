@@ -827,3 +827,17 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Alternatives:** `NOT (<value> = TRUE)` (three-valued in WHERE, but a
   predicate in the select list again, where a NULL result is needed);
   `<value> = FALSE` (right in WHERE, but no NULL in the select list).
+
+## 2026-10-19: Temporal subtraction in exact microseconds
+- **Decision:** `supports_temporal_subtraction` is on. `subtract_temporals`
+  returns BIGINT microseconds: `BIGINT(DAYS(a) - DAYS(b)) * 86400000000 +
+  BIGINT(MIDNIGHT_SECONDS(a) - MIDNIGHT_SECONDS(b)) * 1000000 +
+  (MICROSECOND(a) - MICROSECOND(b))` for datetimes, the DAYS part for dates
+  and the MIDNIGHT_SECONDS part for times. Enabled only after a full
+  `expressions` run showed 0 failed (project owner's condition).
+- **Why:** `a - b` on Db2 for i gives a DECIMAL "duration" (yyyymmddhhmmss),
+  and `TIMESTAMPDIFF` over it assumes 30-day months and 365-day years (NULL or
+  wrong beyond a few days, probe `durations`). The DAYS / MIDNIGHT_SECONDS /
+  MICROSECOND form is exact from year 1 to 9999.
+- **Alternatives:** `TIMESTAMPDIFF(1, CHAR(a - b))` (approximate);
+  `JULIAN_DAY`-based arithmetic (same idea, no advantage).

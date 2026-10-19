@@ -239,7 +239,6 @@ fractional seconds (see "TimeField has no fractional seconds").
 
 The backend is in early development; these are switched off for now and
 enabled one at a time: foreign key constraints in the database, bulk insert,
-returning columns, check constraints, JSONField, subtracting dates, times and
-datetimes (`F("end") - F("start")`), window functions, `select_for_update`, set operations
+returning columns, check constraints, JSONField, window functions, `select_for_update`, set operations
 (`intersection`, `difference`; `union` is supported), `inspectdb`, and creating test schemas (tests
 run in an existing library, see [Configuration](Configuration.md#test-database-test)).
