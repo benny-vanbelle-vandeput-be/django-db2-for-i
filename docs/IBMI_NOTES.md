@@ -596,7 +596,10 @@ BIGINT(POWER(2, n))` is exact. An untyped NULL argument of BITXOR fails
 
 ### Durations (`probe -- durations`)
 2026-10-19, read-only (SYSDUMMY1), results compared with Python's own
-arithmetic. A DurationField is stored as BIGINT microseconds.
+arithmetic. System: PUB400, IBM i 7.5; TR level and Db2 PTF Group level not
+readable there (`QSYS2.GROUP_PTF_INFO` and `QSYS2.PTF_INFO`: SQL0443, see
+"OS release, TR level ..."), so the two NULL limits below may differ on other
+levels. A DurationField is stored as BIGINT microseconds.
 
 - **`<timestamp> + n MICROSECONDS` stops at 15 digits:** n = 999,999,999,999,999
   (about 31.7 years) works, n = 10^15 and larger give **NULL**, silently (not
@@ -613,7 +616,8 @@ arithmetic. A DurationField is stored as BIGINT microseconds.
   rejected (SQL0187). `TIMESTAMP(<date>)` drops the microseconds of the result
   (precision 0); `CAST(<date> AS TIMESTAMP(6))` and `TIMESTAMP(<date>,
   TIME('00:00:00'))` keep them. `TIME(TIMESTAMP(DATE('2000-01-01'), <time>) +
-  ...)` adds to a time and wraps at 24 hours.
+  ...)` adds to a time and wraps at 24 hours. This matches PostgreSQL
+  (`time '23:30' + interval '25 hours'` is 00:30).
 - **Duration times or divided by a number:** `BIGINT(<bigint> * <DOUBLE /
   DECIMAL / INTEGER>)` gives the truncated microseconds.
 - **Exact subtraction in microseconds:** `BIGINT(DAYS(a) - DAYS(b)) *

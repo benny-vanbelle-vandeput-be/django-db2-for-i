@@ -215,12 +215,25 @@ distinct=True)` is not supported yet (Django raises NotSupportedError).
 ## Durations
 
 A `DurationField` is stored as a BIGINT of microseconds, as on MySQL and
-SQLite. The largest value is 2^63 - 1 microseconds (106,751,991 days);
-Python's `timedelta.max` does not fit. Adding a duration to a date, time or
-datetime gives NULL, not an error, when the result falls outside the
-timestamp range (years 1 to 9999). `TimeField + DurationField` wraps at 24
-hours and has no fractional seconds (see "TimeField has no fractional
-seconds").
+SQLite. The largest value is 2^63 - 1 microseconds (106,751,991 days 4:00:54);
+Python's `timedelta.max` (999,999,999 days) does not fit. A `timedelta`
+outside that range is refused with a `ValueError` before anything is sent,
+in saves, filters and `Value()`.
+
+**Results outside years 1 to 9999 become NULL, silently.** Adding a duration
+to a date, time or datetime gives NULL instead of an error when the result
+falls outside the timestamp range. In an update this **writes NULL**:
+
+```python
+# A deadline near 9999-12-31 plus 30 days: DEADLINE becomes NULL, no error.
+Task.objects.update(deadline=F("deadline") + timedelta(days=30))
+```
+
+Validate ranges in the application before such updates (for example, filter
+out rows whose result would pass year 9999, or check the duration first).
+
+`TimeField + DurationField` wraps at 24 hours, as on PostgreSQL, and has no
+fractional seconds (see "TimeField has no fractional seconds").
 
 ## Features not available yet
 
