@@ -83,6 +83,55 @@ def test_runtests_command_is_serial_and_noninteractive() -> None:
         "basic",
     ]
     assert "--keepdb" not in runner.runtests_command("basic", keepdb=False, verbosity=2)
+    assert "--debug-sql" not in runner.runtests_command("basic", keepdb=False, verbosity=2)
+
+
+def test_debug_sql_is_passed_to_runtests() -> None:
+    command = runner.runtests_command("basic.tests.T.test_x", False, 2, debug_sql=True)
+    assert command[-2:] == ["--debug-sql", "basic.tests.T.test_x"]
+
+
+def test_debug_sql_output_is_scrubbed_and_recorded(monkeypatch, tmp_path, capsys) -> None:
+    """The SQL lines --debug-sql adds go through the scrubber like all output, and
+    the header records the option."""
+    import io
+
+    secret = "S3cret!pw"
+
+    class FakeProcess:
+        stdout = io.StringIO(
+            "FAIL: test_x\n"
+            f"(0.001) SELECT 1 FROM T WHERE X = '{secret}'; args=('{secret}',)\n"
+            "FAILED (failures=1)\n"
+        )
+
+        def __init__(self, command, **kwargs):
+            assert "--debug-sql" in command
+
+        def wait(self):
+            return 1
+
+    monkeypatch.setattr(runner, "ROOT", tmp_path)
+    monkeypatch.setattr(runner, "git_commit", lambda path: "abc1234 2026-10-19")
+    monkeypatch.setattr(runner.subprocess, "Popen", FakeProcess)
+    scrub = runner.make_scrubber([secret])
+    assert runner.run_label("6.1", "basic.tests.T.test_x", False, 2, scrub, debug_sql=True) == 1
+    log = (tmp_path / "test-results/6.1/labels/basic.tests.T.test_x.log").read_text()
+    assert "# debug-sql: yes" in log
+    assert "SELECT 1 FROM T WHERE X = '***'" in log
+    assert secret not in log
+    assert secret not in capsys.readouterr().out
+
+
+def test_debug_sql_option_is_accepted() -> None:
+    import subprocess as sp
+
+    script = Path(__file__).resolve().parents[2] / "scripts" / "runtests.sh"
+    text = script.read_text()
+    assert "--clean|--debug-sql) ;;" in text
+    result = sp.run(["sh", str(script), "6.1", "--debug-sql"], capture_output=True, text=True)
+    assert result.returncode == 2
+    assert "name the test modules" in result.stderr
 
 
 def test_scrubber_removes_the_password() -> None:
