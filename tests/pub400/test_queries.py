@@ -274,6 +274,56 @@ def test_union(live, empty) -> None:
     assert list(titles) == ["long", "long"]
 
 
+def test_ordered_and_sliced_parts_of_compound_queries(live, empty) -> None:
+    """The real-world patterns of supports_slicing_ordering_in_compound: the two
+    newest short books plus the two newest long books, as model instances, ordered,
+    counted and as values; a nested compound query; and a union of sliced parts in
+    filter(pk__in=...) and exclude(pk__in=...). NULL dates sort as the largest."""
+    author = Author.objects.create(name="a")
+    books = {}
+    for title, pages, year in (
+        ("s2019", 10, 2019),
+        ("s2021", 20, 2021),
+        ("s2023", 30, 2023),
+        ("snull", 40, None),
+        ("l2020", 300, 2020),
+        ("l2022", 400, 2022),
+        ("l2024", 500, 2024),
+    ):
+        published = dt.datetime(year, 1, 1, tzinfo=dt.UTC) if year else None
+        books[title] = Book.objects.create(
+            author=author, title=title, pages=pages, published=published
+        )
+    short = Book.objects.filter(pages__lt=100)
+    long = Book.objects.filter(pages__gte=100)
+    newest = short.order_by(F("published").desc(nulls_last=True))[:2].union(
+        long.order_by("-published")[:2]
+    )
+    assert sorted(b.title for b in newest) == ["l2022", "l2024", "s2021", "s2023"]
+    assert [b.title for b in newest.order_by("pages")] == ["s2021", "s2023", "l2022", "l2024"]
+    assert newest.count() == 4
+    assert list(newest.order_by("-pages").values_list("title", flat=True)[:1]) == ["l2024"]
+    # DESC without nulls_last: the NULL date comes first.
+    with_null = short.order_by("-published")[:1].union(long.order_by("published")[1:2])
+    assert sorted(with_null.values_list("title", flat=True)) == ["l2022", "snull"]
+    nested = (
+        short.order_by("pages")[:1]
+        .union(long.order_by("pages")[:1])
+        .intersection(Book.objects.filter(title__endswith="0"))
+    )
+    assert sorted(nested.values_list("title", flat=True)) == ["l2020"]
+    oldest = (
+        short.order_by("published")
+        .values("pk")[:1]
+        .union(long.order_by("published").values("pk")[:1])
+    )
+    assert sorted(Book.objects.filter(pk__in=oldest).values_list("title", flat=True)) == [
+        "l2020",
+        "s2019",
+    ]
+    assert Book.objects.exclude(pk__in=oldest).count() == len(books) - 2
+
+
 def test_truncation(live, empty) -> None:
     """The real-world patterns: Trunc* annotations, dates() / datetimes(), and
     counts per month; weeks start on Monday (Sunday 2023-01-01 is in the week of

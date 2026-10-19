@@ -462,4 +462,44 @@ CASES: tuple[Case, ...] = (
         select(lambda: Contact.objects.exclude(account__in=Account.objects.filter(number__gt=1))),
         (ACCOUNT, CONTACT),
     ),
+    # supports_slicing_ordering_in_compound / supports_parentheses_in_compound:
+    # parts in parentheses with their own ORDER BY and FETCH FIRST, nested
+    # compound queries, and sliced parts in a subquery.
+    Case(
+        "queries/union_of_sliced_parts",
+        "query",
+        select(
+            lambda: (
+                Book.objects.filter(pages__lt=100)
+                .order_by("-published")[:2]
+                .union(Book.objects.filter(pages__gte=100).order_by(F("published").asc())[1:3])
+                .order_by("-pages")
+            )
+        ),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/nested_compound",
+        "query",
+        select(
+            lambda: (
+                Author.objects.filter(name="a")
+                .union(Author.objects.filter(name="b"))
+                .intersection(Author.objects.filter(name__startswith="a"))
+            )
+        ),
+        (AUTHOR,),
+    ),
+    Case(
+        "queries/filter_in_union_of_sliced_parts",
+        "query",
+        select(
+            lambda: Author.objects.filter(
+                pk__in=Author.objects.order_by("name")
+                .values("pk")[:1]
+                .union(Author.objects.order_by("-name").values("pk")[:1])
+            )
+        ),
+        (AUTHOR,),
+    ),
 )
