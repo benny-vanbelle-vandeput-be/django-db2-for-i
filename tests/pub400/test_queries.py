@@ -473,3 +473,16 @@ def test_intersection_and_difference(live, empty) -> None:
         "abz",
         "axz",
     ]
+
+
+def test_delete_with_a_subquery_on_its_own_table(live, empty) -> None:
+    """Django deletes through pk IN (SELECT * FROM (...) subquery): a search condition."""
+    author = Author.objects.create(name="a")
+    for pages in (10, 50, 200, 300):
+        Book.objects.create(author=author, title=str(pages), pages=pages)
+    long_books = Book.objects.filter(pages__gt=100).values("pk")
+    assert Book.objects.filter(pk__in=long_books).update(title="long") == 2
+    Book.objects.filter(pk__in=long_books).delete()
+    assert sorted(Book.objects.values_list("title", flat=True)) == ["10", "50"]
+    Book.objects.exclude(pk__in=Book.objects.filter(pages__lt=20).values("pk")).delete()
+    assert list(Book.objects.values_list("title", flat=True)) == ["10"]

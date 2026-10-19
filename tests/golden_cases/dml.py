@@ -38,6 +38,14 @@ def _delete_filtered(connection):
     return [(sql, params)]
 
 
+def _delete_self_reference(connection):
+    """A subquery on the deleted table: Django filters pk IN (SELECT * FROM (...) subquery)."""
+    long_books = Book.objects.filter(pages__gt=100).values("pk")
+    query = Book.objects.filter(pk__in=long_books).query.chain(DeleteQuery)
+    sql, params = query.get_compiler(connection.alias).as_sql()
+    return [(sql, params)]
+
+
 def _savepoints(connection):
     """Django's nested atomic(): create, rollback to + release (error), release."""
     ops = connection.ops
@@ -58,6 +66,8 @@ CASES: tuple[Case, ...] = (
     Case("dml/insert_book", "dml", _insert_book, (BOOK,)),
     Case("dml/update_boolean", "dml", _update_boolean, (BOOK,)),
     Case("dml/delete_filtered", "dml", _delete_filtered, (AUTHOR,)),
+    # The outer query's WHERE is a search condition too (no CASE WHEN around the IN).
+    Case("dml/delete_self_reference", "dml", _delete_self_reference, (AUTHOR, BOOK)),
     # Savepoints, as nested atomic() blocks use them (in the rolled-back transaction).
     Case("dml/savepoints", "dml", _savepoints, (AUTHOR,)),
 )
