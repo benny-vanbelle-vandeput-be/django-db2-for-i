@@ -410,4 +410,15 @@ CASES: tuple[Case, ...] = (
         ),
         (ACCOUNT, CONTACT),
     ),
+    # allow_sliced_subqueries_with_in: IN (... FETCH FIRST n ROWS ONLY).
+    Case(
+        "queries/filter_in_sliced_subquery",
+        "query",
+        select(
+            lambda: Author.objects.filter(
+                pk__in=Book.objects.order_by("-published").values("author")[1:3]
+            )
+        ),
+        (AUTHOR, BOOK),
+    ),
 )

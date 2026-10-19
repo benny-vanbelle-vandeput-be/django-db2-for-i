@@ -25,6 +25,12 @@ SUBQUERIES = {
     "no NULL": "SELECT V FROM (VALUES 2) Q (V)",
     "only NULL": "SELECT V FROM (VALUES CAST(NULL AS INTEGER)) Q (V)",
     "empty": "SELECT V FROM (VALUES 1) Q (V) WHERE V = 0",
+    "sliced (ORDER BY, FETCH FIRST)": (
+        "SELECT V FROM (VALUES 3, 2, 1) Q (V) ORDER BY V DESC FETCH FIRST 2 ROWS ONLY"
+    ),
+    "sliced with OFFSET": (
+        "SELECT V FROM (VALUES 3, 2, 1) Q (V) ORDER BY V OFFSET 1 ROWS FETCH FIRST 1 ROWS ONLY"
+    ),
 }
 _SQLCODE = re.compile(r"\((-?\d+)\)")
 

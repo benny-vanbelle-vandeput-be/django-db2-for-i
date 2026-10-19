@@ -80,6 +80,10 @@ VB = (
 )
 
 
+# A sliced subquery (IN (subquery) inside CASE WHEN checks).
+SLICED = "(SELECT X FROM (VALUES 1, 2) S (X) ORDER BY X FETCH FIRST 1 ROWS ONLY)"
+
+
 # (area, label, sql, params, expected rows or None to only record)
 CHECKS: list[tuple[str, str, str, tuple, Any]] = [
     # --- compound queries
@@ -1060,6 +1064,39 @@ CHECKS: list[tuple[str, str, str, tuple, Any]] = [
         f"SELECT COALESCE(SUM(X), CAST(? AS INTEGER)) FROM {V3} WHERE X > 9",
         (0,),
         [(0,)],
+    ),
+    # --- IN (subquery) inside CASE WHEN (Django's XOR emulation): rewrites
+    (
+        "subquery",
+        "CASE WHEN X IN (sliced subquery) (WHERE)",
+        f"SELECT X FROM {V3} WHERE CAST(? AS INTEGER) = CASE WHEN X IN {SLICED} THEN 1 ELSE 0 END",
+        (1,),
+        None,
+    ),
+    (
+        "subquery",
+        "CASE WHEN X = ANY (sliced subquery)",
+        f"SELECT X FROM {V3} WHERE CAST(? AS INTEGER) = "
+        f"CASE WHEN X = ANY {SLICED} THEN 1 ELSE 0 END",
+        (1,),
+        None,
+    ),
+    (
+        "subquery",
+        "CASE WHEN first-row (SELECT 1 FROM (subquery) WHERE V = X) IS NOT NULL",
+        f"SELECT X FROM {V3} WHERE CAST(? AS INTEGER) = CASE WHEN (SELECT 1 FROM {SLICED} AS S (V) "
+        "WHERE S.V = T.X FETCH FIRST 1 ROWS ONLY) IS NOT NULL THEN 1 ELSE 0 END ORDER BY X",
+        (1,),
+        [(1,)],
+    ),
+    (
+        "subquery",
+        "first-row form, select list, with NULL in the subquery",
+        "SELECT X, CASE WHEN (SELECT 1 FROM (VALUES CAST(NULL AS INTEGER), 2) AS S (V) "
+        "WHERE S.V = T.X FETCH FIRST 1 ROWS ONLY) IS NOT NULL THEN 1 ELSE 0 END "
+        f"FROM {V3} ORDER BY X",
+        (),
+        [(1, 0), (2, 1), (3, 0)],
     ),
     # --- GROUP BY an expression with a parameter marker: candidate fixes
     (

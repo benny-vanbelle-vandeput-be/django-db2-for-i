@@ -725,6 +725,13 @@ including `NULL NOT IN (empty)` (TRUE) and `1 NOT IN (2, NULL)` (UNKNOWN):
 The backend now uses the equivalent general form for any number of columns
 (see "Tuple IN (subquery)" below).
 
+Sliced subqueries (`allow_sliced_subqueries_with_in`, 2026-10-19): `x IN
+(SELECT ... ORDER BY ... FETCH FIRST n ROWS ONLY)`, also with `OFFSET`, works
+in WHERE; inside CASE WHEN it gives SQL0115 like any IN (subquery). The
+rewrite over `LATERAL (<sliced subquery>)` gives exactly the rows of plain IN
+/ NOT IN for both forms, positive, negated and inside CASE WHEN (probe
+`in_subquery`).
+
 ### Tuple IN (subquery) (`probe -- tuple_in`)
 2026-10-19, read-only (VALUES only), PUB400 (IBM i 7.5). Row-value
 `(a, b) IN (subquery)` and `NOT IN` work in WHERE. For IN (subquery) outside
