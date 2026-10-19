@@ -22,6 +22,7 @@ The capture on PUB400 is **not** part of this proposal. It is a follow-up that
 the main session runs (see "Follow-up").
 
 **Why now:** the 6.1 corpus must exist before the phase 3 compat changes (see the phase 3 plan,
+[phase-3.md](../phases/phase-3.md) from
 [#86](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/86),
 decision 6). The compat changes touch
 `expressions.py`, `operations.py` and the test lists. A corpus captured
