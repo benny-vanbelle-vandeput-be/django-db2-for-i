@@ -312,4 +312,26 @@ CASES: tuple[Case, ...] = (
         select(lambda: Author.objects.filter(name__in=["fits", "y" * 120])),
         (AUTHOR,),
     ),
+    # IN (subquery) inside CASE WHEN (XOR, selected Q) is rejected by Db2 for i:
+    # a three-valued BOOLEAN of first-row subqueries, compared with TRUE.
+    Case(
+        "queries/xor_in_subquery",
+        "query",
+        select(
+            lambda: Book.objects.filter(
+                Q(author__in=Author.objects.filter(name="a").values("id")) ^ Q(pages=10)
+            )
+        ),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "queries/annotate_in_subquery",
+        "query",
+        select(
+            lambda: Book.objects.annotate(
+                b=Q(author__in=Author.objects.filter(name="a").values("id"))
+            ).values("b")
+        ),
+        (AUTHOR, BOOK),
+    ),
 )

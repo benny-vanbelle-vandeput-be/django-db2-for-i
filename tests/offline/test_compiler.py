@@ -174,3 +174,19 @@ def test_conditions_and_exists_are_not_wrapped() -> None:
     assert WRAPPED not in sql
     _, sql = compiled(Author.objects.annotate(has=books()).values("has"))
     assert sql.startswith("SELECT ((SELECT (1)")
+
+
+def test_in_subquery_stays_plain_in_a_search_condition() -> None:
+    queryset = Book.objects.filter(author__in=Author.objects.values("id"))
+    _, sql = compiled(queryset)
+    assert ' IN (SELECT "U0"."ID" AS "ID" FROM "TESTAPP_AUTHOR" "U0")' in sql
+    assert "DJDB2I_IN" not in sql
+
+
+def test_in_subquery_as_a_value_is_three_valued() -> None:
+    queryset = Book.objects.annotate(b=Q(author__in=Author.objects.values("id"))).values("b")
+    sql, _params = queryset.query.get_compiler(connection=connection).as_sql()
+    rows = 'LATERAL (SELECT "U0"."ID" AS "ID" FROM "TESTAPP_AUTHOR" "U0") AS "DJDB2I_IN" (V)'
+    assert sql.count(rows) == 3  # a match, any row, a NULL row
+    assert 'WHEN "TESTAPP_BOOK"."AUTHOR_ID" IS NULL THEN NULL' in sql
+    assert "ELSE FALSE END) = TRUE" in sql

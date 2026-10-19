@@ -73,3 +73,46 @@ def test_expressions_compare_long_values(live, empty) -> None:
     start = Author.objects.annotate(start=Substr("name", 1, 3))
     assert names(start.filter(start="Abc")) == ["Abcdef"]
     assert names(start.filter(start="Abcdef")) == []  # longer than SUBSTR(..., 1, 3)
+
+
+def test_in_subquery_outside_a_search_condition(live, empty) -> None:
+    """IN (subquery) as a selected value and in XOR (CASE WHEN on Db2 for i, where
+    IN (subquery) is rejected) gives exactly the rows of the same condition in a
+    WHERE clause (plain IN): with a NULL in x and NULLs in the subquery, positive
+    and negated; the positive form also equals raw SQL IN."""
+    from django.db.models import Q
+
+    from tests.testapp.models import Link
+
+    a1, a2, a3 = (Author.objects.create(name=n) for n in ("a1", "a2", "a3"))
+    links = [Link.objects.create(author=a) for a in (a1, a2, a3, None)]  # x NULL in the last
+    by_name = {
+        "match and NULL": Link.objects.filter(pk__in=[links[0].pk, links[3].pk]),
+        "no NULL": Link.objects.filter(pk=links[1].pk),
+        "only NULL": Link.objects.filter(pk=links[3].pk),
+        "empty": Link.objects.filter(pk=-1),
+    }
+    table, column = '"TESTAPP_LINK"', '"AUTHOR_ID"'
+    for name, rows in by_name.items():
+        ids = ", ".join(str(pk) for pk in rows.values_list("pk", flat=True)) or "-1"
+        with live.cursor() as cursor:
+            plain = {}
+            for op in ("IN", "NOT IN"):
+                cursor.execute(
+                    f"SELECT ID FROM {table} WHERE {column} {op} "
+                    f"(SELECT {column} FROM {table} WHERE ID IN ({ids}))"
+                )
+                plain[op] = {row[0] for row in cursor.fetchall()}
+        subquery = rows.values("author")
+        selected = Link.objects.annotate(
+            yes=Q(author__in=subquery), no=~Q(author__in=subquery)
+        ).values_list("pk", "yes", "no")
+        assert {pk for pk, yes, _ in selected if yes} == plain["IN"], name
+        # ~Q on a nullable column is Django's NOT (x IN (...) AND x IS NOT NULL), not
+        # SQL's NOT IN: compare with the same ~Q in WHERE (plain IN there).
+        negated = set(Link.objects.filter(~Q(author__in=subquery)).values_list("pk", flat=True))
+        assert {pk for pk, _, no in selected if no} == negated, name
+        assert negated >= plain["NOT IN"], name
+        xor = Link.objects.filter(Q(author__in=subquery) ^ Q(pk=links[1].pk))
+        expected = plain["IN"] ^ {links[1].pk}
+        assert set(xor.values_list("pk", flat=True)) == expected, name
