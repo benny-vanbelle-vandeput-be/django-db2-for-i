@@ -3,7 +3,7 @@
 Usage (inside the "tests" container):
     nox -s probe -- [reachability|connect|sysinfo|libraries|packages|features|
                      string_limits|extract|queries|listagg|trunc|durations|in_subquery|
-                     tuple_in|tuple_lookups|compound_parts|all] ...
+                     tuple_in|tuple_lookups|compound_parts|selected_predicates|all] ...
     nox -s probe -- fetch_errors | mapping_errors | long_string_params
                                        (own connection attributes, run alone)
     nox -s probe -- session
@@ -39,6 +39,7 @@ import p16_in_subquery
 import p17_tuple_in
 import p18_tuple_lookups
 import p19_compound_parts
+import p20_selected_predicates
 from _common import ProbeError, Settings, connect, write_result
 
 PROBES = {
@@ -62,6 +63,7 @@ PROBES = {
     "tuple_in": p17_tuple_in,
     "tuple_lookups": p18_tuple_lookups,
     "compound_parts": p19_compound_parts,
+    "selected_predicates": p20_selected_predicates,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
