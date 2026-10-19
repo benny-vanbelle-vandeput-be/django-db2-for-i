@@ -73,4 +73,4 @@ version's runs.
 
 ## Golden files
 
-117 goldens, 3 unverified.
+117 goldens, 0 unverified.
