@@ -3,7 +3,8 @@
 Usage (inside the "tests" container):
     nox -s probe -- [reachability|connect|sysinfo|libraries|packages|features|
                      string_limits|extract|queries|listagg|trunc|durations|all] ...
-    nox -s probe -- fetch_errors | mapping_errors   (own connection attributes, run alone)
+    nox -s probe -- fetch_errors | mapping_errors | long_string_params
+                                       (own connection attributes, run alone)
     nox -s probe -- session
 
 Probes run sequentially and share at most one ODBC connection per run.
@@ -32,6 +33,7 @@ import p11_trunc
 import p12_durations
 import p13_fetch_errors
 import p14_mapping_errors
+import p15_long_string_params
 from _common import ProbeError, Settings, connect, write_result
 
 PROBES = {
@@ -50,6 +52,7 @@ PROBES = {
     "durations": p12_durations,
     "fetch_errors": p13_fetch_errors,
     "mapping_errors": p14_mapping_errors,
+    "long_string_params": p15_long_string_params,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 

@@ -222,6 +222,14 @@ filter (`WHERE`), the same conversion raises SQL0802 ("Data conversion or
 data mapping error"). Validate or clean such data before casting, or check
 for unexpected `None` values.
 
+## Comparison values longer than 16370 characters
+
+A filter value longer than its column (for example a search term longer than
+a `CharField`'s `max_length`) works and simply matches nothing; it is never
+truncated. Values longer than 16370 UTF-16 code units (an emoji counts as
+two) cannot be compared and raise `NotSupportedError`; no column can hold a
+value that long except a `TextField`, whose lookups are not affected.
+
 ## Durations
 
 A `DurationField` is stored as a BIGINT of microseconds, as on MySQL and

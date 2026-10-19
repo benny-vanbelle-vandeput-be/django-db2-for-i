@@ -181,3 +181,66 @@ def test_duration_arithmetic_repeats_the_duration_parameters() -> None:
         "- MOD((CAST(%s AS BIGINT)), 86400000000) MICROSECONDS)"
     ) in sql
     assert params == (5, 5)
+
+
+# --- String values longer than the column -----------------------------------------------
+
+
+def where_of(queryset) -> tuple[str, tuple]:
+    sql, params = queryset.query.get_compiler("default").as_sql()
+    return sql.split(" WHERE ", 1)[1], params
+
+
+def test_values_that_fit_keep_untyped_markers() -> None:
+    from tests.testapp.models import Author
+
+    assert where_of(Author.objects.filter(name="x" * 100)) == (
+        '"TESTAPP_AUTHOR"."NAME" = %s',
+        ("x" * 100,),
+    )
+
+
+def test_a_value_longer_than_the_column_is_typed() -> None:
+    from tests.testapp.models import Author
+
+    for queryset, op in (
+        (Author.objects.filter(name="x" * 101), "="),
+        (Author.objects.filter(name__gt="x" * 101), ">"),
+        (Author.objects.filter(name__lte="x" * 101), "<="),
+    ):
+        assert where_of(queryset)[0] == f'"TESTAPP_AUTHOR"."NAME" {op} CAST(%s AS NVARCHAR(256))'
+
+
+def test_only_too_long_in_values_are_typed() -> None:
+    from tests.testapp.models import Author
+
+    sql, params = where_of(Author.objects.exclude(name__in=["fits", "y" * 120, "also"]))
+    assert sql == 'NOT ("TESTAPP_AUTHOR"."NAME" IN (%s, CAST(%s AS NVARCHAR(256)), %s))'
+    assert params == ("fits", "y" * 120, "also")
+
+
+def test_length_is_measured_in_utf16_units() -> None:
+    """An emoji is one character for len() but two UTF-16 units in NVARCHAR."""
+    from tests.testapp.models import Tag
+
+    fits = "e" * 49 + "é"  # 50 units in a SlugField(max_length=50)
+    too_long = "e" * 49 + "\U0001f600"  # 50 by len(), 51 units
+    assert len(too_long) == 50
+    assert where_of(Tag.objects.filter(label=fits))[0] == '"TESTAPP_TAG"."LABEL" = %s'
+    assert "CAST(%s AS NVARCHAR(256))" in where_of(Tag.objects.filter(label=too_long))[0]
+
+
+def test_an_expression_on_the_left_has_no_known_size() -> None:
+    from django.db.models.functions import Lower
+
+    from tests.testapp.models import Author
+
+    queryset = Author.objects.annotate(low=Lower("name")).filter(low="abc")
+    assert where_of(queryset)[0] == 'LOWER("TESTAPP_AUTHOR"."NAME") = CAST(%s AS NVARCHAR(32))'
+
+
+def test_values_longer_than_the_largest_bucket_are_refused() -> None:
+    from tests.testapp.models import Author
+
+    with pytest.raises(NotSupportedError, match="never truncated"):
+        where_of(Author.objects.filter(name="x" * 16371))

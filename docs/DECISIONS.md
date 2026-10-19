@@ -866,3 +866,21 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   the connection closes: depends on one error code and holds a server
   statement open); closing cursors on fetch errors (the trigger is the close
   itself, so this would cause the problem).
+
+## 2026-10-19: Typed markers only for string values longer than the column
+- **Decision (project owner chose option 1):** in `exact`, `in`, `gt`, `gte`,
+  `lt` and `lte` lookups (also negated by `exclude`), a string value longer
+  than the column (UTF-16 code units for NVARCHAR, bytes for VARCHAR) gets a
+  typed marker `CAST(? AS NVARCHAR(<bucket>))`; in an IN list only the
+  too-long elements. With an expression on the left (`Lower`, `Substr`, ...)
+  the size is unknown and every string value is typed. Values that fit keep
+  their untyped markers and SQL. Longer than 16370 units: NotSupportedError,
+  never truncated.
+- **Why:** the driver sizes an untyped marker by the column or expression and
+  refuses longer input with CWB0111 (probe `long_string_params`), so a filter
+  with a long search term raised an error instead of matching nothing.
+- **Alternatives:** always typed markers for string comparisons (every
+  CharField filter's SQL and goldens change, one statement per bucket);
+  deciding in Python that a longer value cannot match (wrong for `<` / `>`,
+  and Db2 pads with blanks when comparing, so Python could disagree with the
+  database).

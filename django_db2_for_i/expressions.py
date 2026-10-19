@@ -101,6 +101,8 @@ valid there (SQL0199), so ``nulls_first`` / ``nulls_last`` items are ordered by
 
 from __future__ import annotations
 
+import copy
+import re
 from decimal import Decimal
 
 from django.core.exceptions import FieldError
@@ -119,6 +121,7 @@ from django.db.models import (
 )
 from django.db.models.expressions import (
     Case,
+    Col,
     Combinable,
     DurationExpression,
     Exists,
@@ -129,7 +132,16 @@ from django.db.models.expressions import (
     Value,
 )
 from django.db.models.functions import Cast
-from django.db.models.lookups import IsNull, Lookup
+from django.db.models.lookups import (
+    Exact,
+    GreaterThan,
+    GreaterThanOrEqual,
+    In,
+    IsNull,
+    LessThan,
+    LessThanOrEqual,
+    Lookup,
+)
 from django.db.models.sql.where import WhereNode
 
 INTEGER_RANGE = (-(2**31), 2**31 - 1)
@@ -329,7 +341,92 @@ def _as_operand(operand):
     return PredicateValue(operand) if renders_as_predicate(operand) else operand
 
 
+# --- String values longer than the column -------------------------------------------------
+
+# Comparisons whose untyped marker the driver describes with the size of the
+# other side: a longer value fails on the client with CWB0111 ("Input data is
+# too big to fit into field"), it is never truncated (probe long_string_params).
+# LIKE and UPPER(...) = UPPER(?) are not affected.
+SIZED_COMPARISONS = (Exact, In, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual)
+_STRING_COLUMN = re.compile(
+    r"^(?P<kind>NVARCHAR|NCHAR|VARGRAPHIC|GRAPHIC|VARCHAR|CHAR)\((?P<size>\d+)\)", re.IGNORECASE
+)
+
+
+def _column_capacity(lhs, connection) -> tuple[int, str] | None:
+    """(size, unit) of a column's string type; None when the size is not known.
+
+    Only a plain column has a known size: the driver sizes an expression's
+    marker by the expression's result (``SUBSTR(NAME, 1, 3)`` is 3, whatever
+    the field says), so an expression counts as unknown.
+    """
+    if not isinstance(lhs, Col):
+        return None
+    match = _STRING_COLUMN.match(lhs.output_field.db_type(connection) or "")
+    if not match:
+        return None
+    kind = match["kind"].upper()
+    unit = "bytes" if kind in ("VARCHAR", "CHAR") else "utf-16"  # VARCHAR: CCSID 1208
+    return int(match["size"]), unit
+
+
+def _length(value: str, unit: str) -> int:
+    return len(value.encode("utf-8")) if unit == "bytes" else utf16_length(value)
+
+
+def with_typed_long_strings(lookup, connection):
+    """A copy of ``lookup`` that types its too-long string values, or None.
+
+    A value is too long when it exceeds the column in the column's unit (UTF-16
+    code units for NVARCHAR, so an emoji counts twice; bytes for VARCHAR), or
+    when the left-hand side is not a plain column (size unknown). Only the
+    markers of those values become ``CAST(? AS NVARCHAR(<bucket>))``; values
+    that fit, also the other elements of an IN list, keep their untyped markers
+    and SQL. (Value objects in an IN list would make Django type every element.)
+    """
+    if not isinstance(lookup, SIZED_COMPARISONS) or not lookup.rhs_is_direct_value():
+        return None
+    values = list(lookup.rhs) if isinstance(lookup, In) else [lookup.rhs]
+    capacity = _column_capacity(lookup.lhs, connection)
+
+    def too_long(value) -> bool:
+        if not isinstance(value, str):
+            return False
+        return capacity is None or _length(value, capacity[1]) > capacity[0]
+
+    if not any(too_long(value) for value in values):
+        return None
+    for value in values:
+        if too_long(value) and utf16_length(value) > NVARCHAR_MAX:
+            raise NotSupportedError(
+                f"Db2 for i backend: a comparison value of {utf16_length(value)} UTF-16 units "
+                f"is longer than the largest supported comparison value ({NVARCHAR_MAX}); "
+                "it is never truncated (docs/user/Known-Limitations.md, 'Comparison values "
+                "longer than 16370 characters')."
+            )
+    process_rhs = lookup.process_rhs
+
+    def typed_process_rhs(compiler, connection):
+        sql, params = process_rhs(compiler, connection)
+        params = list(params)
+        parts = sql.split("%s")
+        if len(parts) - 1 != len(params):  # not one marker per value: leave it
+            return sql, params
+        typed = parts[0]
+        for param, rest in zip(params, parts[1:], strict=True):
+            marker = f"CAST(%s AS {string_type(utf16_length(param))})" if too_long(param) else "%s"
+            typed += marker + rest
+        return typed, params
+
+    clone = copy.copy(lookup)
+    clone.process_rhs = typed_process_rhs
+    return clone
+
+
 def lookup_as_db2_for_i(self, compiler, connection):
+    typed = with_typed_long_strings(self, connection)
+    if typed is not None:
+        return typed.as_sql(compiler, connection)
     if getattr(self.lhs, "conditional", False) and getattr(self.rhs, "conditional", False):
         operands = [_as_operand(operand) for operand in (self.lhs, self.rhs)]
         if any(isinstance(operand, (PredicateValue, NegatedValue)) for operand in operands):
