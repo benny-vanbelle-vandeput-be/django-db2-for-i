@@ -1,10 +1,17 @@
 # Offline tier + lint for every pull request and every push to main.
 # Uses the "offline" image target only: no IBM software, no credentials.
+# CI never connects to PUB400 or any IBM i (CLAUDE.md).
+#
+# One job per Python x Django combination, in parallel. The combinations come
+# from the noxfile (`nox --list --json -s offline`), so adding a Django or
+# Python version to DJANGO_PYTHONS in noxfile.py adds its CI job; there is no
+# second list here. The aggregating job `offline` is the required status check
+# of the main ruleset: its name must not change.
 name: offline
 
 on:
   # Pushes to PR branches are covered by pull_request; running on every
-  # branch push as well would run the job twice per PR update.
+  # branch push as well would run the jobs twice per PR update.
   push:
     branches: [main]
   pull_request:
@@ -16,10 +23,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  IMAGE: django-db2-for-i-offline:ci
+
 jobs:
-  offline:
+  # Builds the image once (and fills the GitHub Actions cache the other jobs
+  # read from) and lists the offline sessions of the noxfile.
+  sessions:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    outputs:
+      matrix: ${{ steps.list.outputs.matrix }}
     steps:
       - uses: actions/checkout@v5
 
@@ -31,15 +45,48 @@ jobs:
           context: .
           file: docker/Dockerfile
           target: offline
-          tags: django-db2-for-i-offline:ci
+          tags: ${{ env.IMAGE }}
           load: true
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: List offline sessions
+        id: list
+        run: |
+          docker run --rm -v "$PWD:/workspace" -w /workspace "$IMAGE" \
+            nox --list --json -s offline > sessions.json
+          matrix=$(jq -c '[.[] | {session, python, django: .call_spec.django}]' sessions.json)
+          if [ "$(jq length <<<"$matrix")" -eq 0 ]; then
+            echo "no offline sessions found" >&2
+            exit 1
+          fi
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          jq -r '.[] | "- " + .session' <<<"$matrix"
+
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    needs: sessions
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build offline image (from cache)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: offline
+          tags: ${{ env.IMAGE }}
+          load: true
+          push: false
+          cache-from: type=gha
+
       # Run as the runner's uid so the container can write .nox and tool
       # caches into the checked-out workspace.
-      - name: nox -s lint offline
+      - name: nox -s lint
         run: >
           docker run --rm
           --user "$(id -u):$(id -g)"
@@ -48,5 +95,61 @@ jobs:
           -e UV_CACHE_DIR=/tmp/uv-cache
           -v "$PWD:/workspace"
           -w /workspace
-          django-db2-for-i-offline:ci
-          nox -s lint offline
+          "$IMAGE"
+          nox -s lint
+
+  tier:
+    name: "tier (Python ${{ matrix.python }}, Django ${{ matrix.django }})"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    needs: sessions
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.sessions.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build offline image (from cache)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: offline
+          tags: ${{ env.IMAGE }}
+          load: true
+          push: false
+          cache-from: type=gha
+
+      - name: nox -s "${{ matrix.session }}"
+        env:
+          SESSION: ${{ matrix.session }}
+        run: >
+          docker run --rm
+          --user "$(id -u):$(id -g)"
+          -e CI
+          -e HOME=/tmp/home
+          -e UV_CACHE_DIR=/tmp/uv-cache
+          -v "$PWD:/workspace"
+          -w /workspace
+          "$IMAGE"
+          nox -s "$SESSION"
+
+  # The required status check: green only when the session list, lint and
+  # every matrix job succeeded (a skipped or cancelled job counts as failed).
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: [sessions, lint, tier]
+    if: always()
+    steps:
+      - name: All offline jobs succeeded
+        env:
+          SESSIONS: ${{ needs.sessions.result }}
+          LINT: ${{ needs.lint.result }}
+          TIER: ${{ needs.tier.result }}
+        run: |
+          echo "sessions: $SESSIONS, lint: $LINT, tier: $TIER"
+          [ "$SESSIONS" = success ] && [ "$LINT" = success ] && [ "$TIER" = success ]

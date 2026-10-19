@@ -1021,3 +1021,18 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   form); evaluating the predicate once in a LATERAL derived table (more SQL
   for every selected predicate).
 
+## 2026-10-19: Offline CI as one parallel job per Python x Django combination
+- **Decision (project owner):** CI never connects to PUB400 or any IBM i; it
+  runs only lint and the offline tier. `.github/workflows/offline.yml` runs one
+  job per Python x Django combination in parallel. The combinations come from
+  the noxfile (`nox --list --json -s offline`), so `DJANGO_PYTHONS` in
+  `noxfile.py` stays the only list. An aggregating job named `offline` needs
+  the session list, lint and every matrix job, and is the required status
+  check of the main ruleset (unchanged name, so the ruleset needs no change).
+- **Why:** phase 3 adds Django 6.0 and 5.2, which triples the offline
+  sessions; parallel jobs keep the wall time close to one session's, and each
+  combination reports on its own.
+- **Alternatives:** one job running `nox -s lint offline` (sequential, as
+  before); a hard-coded matrix in the workflow (a second list to keep in sync
+  with the noxfile); requiring every matrix job in the ruleset (the ruleset
+  would change with every added version).
