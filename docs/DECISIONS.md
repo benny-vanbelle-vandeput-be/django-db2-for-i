@@ -841,3 +841,28 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   MICROSECOND form is exact from year 1 to 9999.
 - **Alternatives:** `TIMESTAMPDIFF(1, CHAR(a - b))` (approximate);
   `JULIAN_DAY`-based arithmetic (same idea, no advantage).
+
+## 2026-10-19: Unusable connections: detect and let Django reconnect
+- **Decision (project owner chose option 1):** the driver marks the
+  connection unusable (`Connection.usable = False`) when a parameterized
+  statement fails with SQL0443 at execute, and re-raises that original
+  error so the real cause shows; any SQL0519 also marks it unusable and is
+  replaced by an error saying a new connection is needed.
+  `DatabaseWrapper.is_usable()` then returns False and Django replaces the
+  connection at the next request or test. The driver never reconnects by
+  itself and never inside `atomic()` (the error propagates); the pub400
+  teardowns close an unusable connection once before cleaning up.
+- **Why:** on IBM i (driver 07.01.029) that failure leaves the server
+  statement in use; after closing the cursor every statement fails with
+  SQL0519 until a new connection (probe `fetch_errors`, IBMI_NOTES.md).
+  Found when the golden verification left test tables on PUB400.
+- **Audit:** the backend's own SQL on services: `QCMDEXC('CHGJOB ...')`,
+  `JOB_INFO(...)` and `JOBLOG_INFO('*')` (inquiry.py) already use validated
+  literals, no parameters; `QSYS2.JOURNAL_INFO` in creation.py had a
+  parameter and now uses the validated library name as a literal. The
+  catalog views (`SYSTABLES`, `SYSCOLUMNS`, `SYSSCHEMAS`, `SYSCST`,
+  `SYSREFCST`) are not services and keep their parameters.
+- **Alternatives:** quarantine (never close the failed cursor, keep it until
+  the connection closes: depends on one error code and holds a server
+  statement open); closing cursors on fetch errors (the trigger is the close
+  itself, so this would cause the problem).
