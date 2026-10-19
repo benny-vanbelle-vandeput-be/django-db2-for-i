@@ -162,3 +162,48 @@ def test_tuple_in_subquery(live, empty) -> None:
         assert negated >= plain["NOT IN"], name
         xor = Contact.objects.filter(Q(account__in=accounts) ^ Q(pk=contacts[2].pk))
         assert set(xor.values_list("pk", flat=True)) == plain["IN"] ^ {contacts[2].pk}, name
+
+
+def test_tuple_in_subquery_in_a_case_context_uses_the_rewrite(live, empty) -> None:
+    """A ForeignObject __in=<subquery> in XOR, as a selected value and as a When
+    condition: Db2 for i rejects IN (subquery) inside CASE WHEN (SQL0115), so the
+    search-condition context of WHERE must not leak into these CASE contexts.
+    Every statement uses the rewrite and holds no plain IN (subquery)."""
+    from django.db import connection
+    from django.db.models import Case, Q, Value, When
+    from django.test.utils import CaptureQueriesContext
+
+    from tests.testapp.models import Account, Contact
+
+    for company, number in (("a", 1), ("b", 2)):
+        Account.objects.create(company=company, number=number)
+    for company, number in (("a", 1), ("a", None), ("b", 2), ("c", 9)):
+        Contact.objects.create(company=company, account_number=number)
+    accounts = Account.objects.filter(number=1)
+    in_accounts = Q(account__in=accounts)
+    querysets = {
+        "xor": Contact.objects.filter(in_accounts ^ Q(company="c")).values_list(
+            "company", "account_number"
+        ),
+        "selected": Contact.objects.annotate(b=in_accounts).values_list(
+            "company", "account_number", "b"
+        ),
+        "when": Contact.objects.annotate(
+            x=Case(When(in_accounts, then=Value(1)), default=Value(0))
+        ).values_list("company", "account_number", "x"),
+    }
+    expected = {
+        "xor": {("a", 1), ("c", 9)},
+        # ("a", NULL) IN (("a", 1)) is UNKNOWN: no When match. As a selected value
+        # the select-column wrapper (CASE WHEN ... ELSE FALSE) makes it False, not
+        # None; issue #75.
+        "selected": {("a", 1, True), ("a", None, False), ("b", 2, False), ("c", 9, False)},
+        "when": {("a", 1, 1), ("a", None, 0), ("b", 2, 0), ("c", 9, 0)},
+    }
+    for name, queryset in querysets.items():
+        with CaptureQueriesContext(connection) as captured:
+            rows = set(queryset)
+        sql = captured.captured_queries[-1]["sql"]
+        assert rows == expected[name], name
+        assert "DJDB2I_IN" in sql, name
+        assert " IN (SELECT" not in sql, name

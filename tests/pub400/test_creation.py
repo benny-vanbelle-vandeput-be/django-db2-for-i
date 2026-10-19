@@ -6,25 +6,22 @@ default library is both NAME and TEST['NAME'] on PUB400.
 """
 
 import pytest
+from django.apps import apps
 from django.db import connection
 
 from django_db2_for_i.creation import MARKER_TABLE, TestDatabaseRefused
 from tests.testapp.models import Author
 
-MODEL_TABLES = {
-    "TESTAPP_ACCOUNT",
-    "TESTAPP_AUTHOR",
-    "TESTAPP_BOOK",
-    "TESTAPP_CODE",
-    "TESTAPP_CONTACT",
-    "TESTAPP_DEFAULTS",
-    "TESTAPP_DOCUMENT",
-    "TESTAPP_LINK",
-    "TESTAPP_NODE",
-    "TESTAPP_PROFILE",
-    "TESTAPP_SCHEDULE",
-    "TESTAPP_TAG",
-}
+
+def model_tables() -> set[str]:
+    """The tables migrate creates for the testapp models (derived, so new models
+    need no change here)."""
+    models = apps.get_app_config("testapp").get_models(include_auto_created=True)
+    return {
+        model._meta.db_table.upper()
+        for model in models
+        if model._meta.managed and not model._meta.proxy
+    }
 
 
 def library() -> str:
@@ -63,7 +60,7 @@ def test_create_and_destroy(caplog) -> None:
     assert "TEST['NAME'] equals NAME" in caplog.text
     # testapp has no migrations (run_syncdb), so migrate creates no
     # django_migrations table: exactly the model tables and the marker.
-    assert tables() == MODEL_TABLES | {MARKER_TABLE}
+    assert tables() == model_tables() | {MARKER_TABLE}
     with connection.cursor() as cursor:
         cursor.execute(f'SELECT RUN_ID, TABLE_NAME FROM "{library()}"."{MARKER_TABLE}"')
         rows = cursor.fetchall()

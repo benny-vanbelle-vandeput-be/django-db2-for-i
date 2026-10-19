@@ -225,3 +225,18 @@ def test_a_lookup_as_an_operand_is_not_a_search_condition() -> None:
     )
     _, sql = compiled(queryset)
     assert "DJDB2I_IN" in sql
+
+
+def test_tuple_in_subquery_in_case_contexts_uses_the_rewrite() -> None:
+    """The search-condition context of WHERE never reaches XOR, a selected value
+    or a When condition: no plain IN (subquery) there (SQL0115 on Db2 for i)."""
+    in_accounts = Q(account__in=Account.objects.filter(number__gt=1))
+    querysets = (
+        Contact.objects.filter(in_accounts ^ Q(company="c")),
+        Contact.objects.annotate(b=in_accounts).values("b"),
+        Contact.objects.annotate(x=Case(When(in_accounts, then=Value(1)), default=Value(0))),
+    )
+    for queryset in querysets:
+        _, sql = compiled(queryset)
+        assert 'AS "DJDB2I_IN" (V1, V2)' in sql
+        assert " IN (SELECT" not in sql
