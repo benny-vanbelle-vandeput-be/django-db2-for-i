@@ -813,6 +813,17 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   (probe `queries`), so `filter(~F("flag"))` on a nullable column returned the
   NULL rows and a selected `~F("flag")` returned TRUE for NULL: silent wrong
   results. Found by the pub400 test for a NULL column the owner asked for.
+- **Cost:** `WHERE CASE <column> WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END`
+  cannot use an index on the negated column, where `WHERE NOT <column>` could
+  (with wrong results for NULL). Queries that need the index can filter with
+  `flag=False` (`<column> = FALSE`, three-valued and indexable) instead of
+  `~F("flag")`.
+- **Revisit:** if IBM fixes NOT for NULL BOOLEAN values in a PTF (the TR and
+  PTF Group levels of PUB400 cannot be read, IBMI_NOTES.md), the CASE form can
+  become a capability-dependent choice.
+- **Tests:** `tests/pub400/test_queries.py::test_null_column_compared_with_a_negated_value`
+  covers `filter(~F("flag"))`, `exclude(flag=True)` and a selected `~F("flag")`
+  with TRUE, FALSE and NULL rows.
 - **Alternatives:** `NOT (<value> = TRUE)` (three-valued in WHERE, but a
   predicate in the select list again, where a NULL result is needed);
   `<value> = FALSE` (right in WHERE, but no NULL in the select list).

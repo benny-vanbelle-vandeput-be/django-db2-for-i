@@ -58,7 +58,8 @@ follow PUB400's naming pattern `<USER>1`, `<USER>2`, `<USER>B`.
 - OS release: **IBM i 7.5** (`SYSIBMADM.ENV_SYS_INFO`: `OS_VERSION` 7, `OS_RELEASE` 5).
 - TR level and Db2 PTF Group level: **unavailable**. `QSYS2.GROUP_PTF_INFO`
   fails with `SQL0443 - NOT AUTHORIZED TO COMMAND WRKPTFGRP` for a normal
-  PUB400 user. Consequence for `capabilities.py`: features that depend on TR or
+  PUB400 user, and `QSYS2.PTF_INFO` with `SQL0443 - NOT AUTHORIZED TO USE
+  QSYS/DSPPTF *CMD` (checked again 2026-10-19). Consequence for `capabilities.py`: features that depend on TR or
   PTF level must be detected with targeted feature probes or configured via
   `OPTIONS`, not by reading PTF groups.
 - System values (`QSYS2.SYSTEM_VALUE_INFO`): `QCCSID` = **273** (EBCDIC
@@ -700,15 +701,33 @@ BOOLEAN))`) it fails with SQL0199, like every predicate operand. `CASE <value>
 WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END` works there, also with a
 marker, and gives NULL for NULL.
 
-**NOT of a NULL BOOLEAN value is TRUE (2026-10-19).** Db2 for i evaluates a
-BOOLEAN *value* used as a predicate two-valued, NULL as false: `SELECT NOT V`
-gives FALSE, TRUE, **TRUE** for TRUE, FALSE, NULL, and `WHERE NOT (V)` returns
-the NULL row too (SQL's three-valued logic gives UNKNOWN: no row). `WHERE V`
-returns only the TRUE row. Comparisons are three-valued as expected (`WHERE
-V = FALSE` and `WHERE NOT (V = TRUE)` return only the FALSE row). `CASE V WHEN
-TRUE THEN FALSE WHEN FALSE THEN TRUE END` gives FALSE, TRUE, NULL in the select
-list and only the FALSE row in WHERE. `(NOT V) IS NULL` is a syntax error
-(SQL0199).
+**NOT of a NULL BOOLEAN value is TRUE (probe finding, 2026-10-19).** Db2 for
+i evaluates a BOOLEAN *value* used as a predicate two-valued, NULL as false.
+Probe `queries` (`nox -s probe -- queries`, area boolean), with
+`VB = (VALUES (1, CAST(TRUE AS BOOLEAN)), (2, CAST(FALSE AS BOOLEAN)),
+(3, CAST(NULL AS BOOLEAN))) B (K, V)`:
+
+| SQL | Result on PUB400 | SQL standard (three-valued) |
+|---|---|---|
+| `SELECT NOT V FROM (VALUES CAST(TRUE AS BOOLEAN), CAST(FALSE AS BOOLEAN), CAST(NULL AS BOOLEAN)) B (V)` | FALSE, TRUE, **TRUE** | FALSE, TRUE, NULL |
+| `SELECT 1 FROM (VALUES CAST(NULL AS BOOLEAN)) B (V) WHERE NOT V` | **1 row** | no row |
+| `SELECT K FROM VB WHERE NOT (V) ORDER BY K` | 2, **3** | 2 |
+| `SELECT K FROM VB WHERE V` | 1 | 1 |
+| `SELECT K FROM VB WHERE V = FALSE` | 2 | 2 |
+| `SELECT K FROM VB WHERE NOT (V = TRUE) ORDER BY K` | 2 | 2 |
+| `SELECT CASE V WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END FROM VB ORDER BY K` | FALSE, TRUE, NULL | FALSE, TRUE, NULL |
+| `SELECT K FROM VB WHERE CASE V WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END` | 2 | 2 |
+| `SELECT (NOT V) IS NULL FROM (VALUES CAST(NULL AS BOOLEAN)) B (V)` | SQL0199 | |
+
+Comparisons (`V = FALSE`, `NOT (V = TRUE)`) are three-valued as expected;
+only NOT applied directly to a BOOLEAN value is affected. System: PUB400,
+IBM i 7.5 (`SYSIBMADM.ENV_SYS_INFO`); the **TR level and Db2 PTF Group level
+cannot be read** there by a normal user (`QSYS2.GROUP_PTF_INFO`: SQL0443 "not
+authorized to command WRKPTFGRP"; `QSYS2.PTF_INFO`: SQL0443 "not authorized to
+use QSYS/DSPPTF"; probe `sysinfo`). This may be an IBM defect fixed by a
+later PTF: rerun `nox -s probe -- queries` (area boolean) on a system with
+known levels before relying on it; the backend's CASE form is correct either
+way (DECISIONS.md, 2026-10-19).
 
 **Untyped markers and NULL.** `WHERE ? > ?` with two untyped markers
 (parameters 2 and 1) is accepted but **returns no row** (wrong, silently);
