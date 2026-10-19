@@ -70,6 +70,12 @@ def querysets(using: str) -> dict[str, QuerySet]:
         "Case annotation .exclude(known=True)": names(known.exclude(known=True)),
         "filter(flag=~Value(True))": names(switches.filter(flag=~Value(True))),
         "selected ~F(flag)": switches.annotate(neg=~F("flag")).values_list("name", "neg"),
+        "selected Q(flag=True)": switches.annotate(b=Q(flag=True)).values_list("name", "b"),
+        "selected Q(flag=False)": switches.annotate(b=Q(flag=False)).values_list("name", "b"),
+        "selected ~Q(flag=True)": switches.annotate(b=~Q(flag=True)).values_list("name", "b"),
+        "selected Q(flag=True) | Q(name=f)": switches.annotate(
+            b=Q(flag=True) | Q(name="f")
+        ).values_list("name", "b"),
     }
 
 
@@ -81,7 +87,8 @@ def rows(queryset: QuerySet) -> list:
 # PostgreSQL) evaluated by SQLite's three-valued logic
 # (tests/offline/test_boolean_reference.py checks it). The NULL row: no
 # positive filter matches it; exclude(flag=True) keeps it because Django adds
-# "AND flag IS NOT NULL" for a nullable column; a selected ~F("flag") is None.
+# "AND flag IS NOT NULL" for a nullable column (also inside a selected ~Q); a
+# selected ~F("flag") or Q(flag=...) is None.
 EXPECTED: dict[str, list] = {
     "filter(flag=True)": ["t"],
     "filter(flag=False)": ["f"],
@@ -107,4 +114,8 @@ EXPECTED: dict[str, list] = {
     "Case annotation .exclude(known=True)": ["f"],
     "filter(flag=~Value(True))": ["f"],
     "selected ~F(flag)": [("f", True), ("n", None), ("t", False)],
+    "selected Q(flag=True)": [("f", False), ("n", None), ("t", True)],
+    "selected Q(flag=False)": [("f", True), ("n", None), ("t", False)],
+    "selected ~Q(flag=True)": [("f", True), ("n", True), ("t", False)],
+    "selected Q(flag=True) | Q(name=f)": [("f", True), ("n", None), ("t", True)],
 }

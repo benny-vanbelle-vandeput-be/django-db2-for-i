@@ -994,3 +994,30 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   keeping the CASE form in WHERE and fixing only Exact's shortcut (not
   index-friendly, two forms for the same condition).
 
+## 2026-10-19: Selected predicates are three-valued (issue #75)
+- **Decision (project owner chose the form):** a lookup or `Q` compiled
+  directly by the compiler (a select column, a GROUP BY item, an UPDATE
+  value) is written as `CASE WHEN p THEN TRUE WHEN NOT (p) THEN FALSE END`, NULL
+  when `p` is UNKNOWN, instead of `... ELSE FALSE END` (2026-10-18,
+  "Predicates as select columns"). `Q(x__in=<subquery>)` selected as it is
+  uses the IN rewrite's three-valued BOOLEAN directly, so its subqueries run
+  once, not twice.
+- **Why:** Db2 for i 7.5 has a real BOOLEAN; a selected UNKNOWN predicate
+  should be `None` as on PostgreSQL, not `False` (an Oracle-like 1/0
+  emulation). `NOT (p)` is three-valued for every real predicate, and since
+  the TRUE / FALSE comparison for boolean values (entry above) every
+  condition is one (probe `selected_predicates`: exact for 11 kinds of
+  predicate, with subqueries evaluated twice). Django's own tests never
+  select an UNKNOWN predicate; the references (SQLite with Django's
+  native-boolean SQL, tests/boolean_condition_scenarios.py and
+  tests/tuple_lookup_scenarios.py) now match in every context, 24/24 for
+  tuple lookups.
+- **Cost:** the predicate and its parameters appear twice. Comparison operands
+  (`PredicateValue`, `Exact(Q(...), Q(...))`) keep `ELSE FALSE`; changing them
+  is a separate decision.
+- **Alternatives:** comparing the predicate with TRUE (`(p) = TRUE`, rejected
+  by Db2 for i with SQL0104, probe `queries`); `p IS TRUE` / `IS UNKNOWN` (not
+  probed; would need its own probe and gives no advantage over the chosen
+  form); evaluating the predicate once in a LATERAL derived table (more SQL
+  for every selected predicate).
+

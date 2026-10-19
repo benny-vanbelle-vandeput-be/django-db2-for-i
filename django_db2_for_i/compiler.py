@@ -38,9 +38,14 @@ select-list predicate with an untyped parameter marker fails with SQL0418
 (``SELECT X < ?``; probe ``queries``), e.g. ``annotate(b=Q(pages__lt=100))``.
 A lookup or ``Q`` compiled directly by the compiler (a select column, a
 GROUP BY item, an UPDATE value) is therefore written as ``CASE WHEN
-<predicate> THEN TRUE ELSE FALSE END``, still a BOOLEAN value. Nested
-predicates and search conditions are not wrapped; ``Exists()`` needs no
-wrapper (its first-row form has no untyped marker).
+<predicate> THEN TRUE WHEN NOT (<predicate>) THEN FALSE END``, still a BOOLEAN
+value, and NULL when the predicate is UNKNOWN (as on PostgreSQL; issue #75).
+The predicate's parameters are sent twice. ``NOT (<predicate>)`` is
+three-valued because a BOOLEAN value used as a condition is always a
+comparison (``flag = TRUE``, expressions.py); probe ``selected_predicates``
+checked the form for every kind of predicate, with subqueries evaluated
+twice. Nested predicates and search conditions are not wrapped; ``Exists()``
+needs no wrapper (its first-row form has no untyped marker).
 
 GROUP BY an expression with parameters, or nested in a select expression
 ----------------------------------------------------------------------
@@ -141,6 +146,20 @@ def _is_value_predicate(node) -> bool:
     return False
 
 
+def _is_in_subquery(node) -> bool:
+    return isinstance(node, In) and isinstance(node.rhs, Query)
+
+
+def _single_in_subquery(node) -> bool:
+    """``Q(x__in=<subquery>)``: a WhereNode holding just that lookup."""
+    return (
+        isinstance(node, WhereNode)
+        and not node.negated
+        and len(node.children) == 1
+        and _is_in_subquery(node.children[0])
+    )
+
+
 def _hashable(node) -> bool:
     try:
         hash(node)
@@ -169,7 +188,9 @@ class SQLCompiler(compiler.SQLCompiler):
             and self._condition_lookup is not None
             and node.lhs is self._condition_lookup.lhs
         )
-        if isinstance(node, In) and isinstance(node.rhs, Query) and not in_condition:
+        if _is_in_subquery(node) and not in_condition:
+            if self._depth == 0:  # selected as it is: the three-valued BOOLEAN itself
+                return self._in_subquery_case(node)
             return self._in_subquery_as_value(node)
         if isinstance(node, NegatedExpression) and not renders_as_predicate(node.expression):
             # NOT <BOOLEAN value> is TRUE for NULL on Db2 for i (also in WHERE).
@@ -184,6 +205,11 @@ class SQLCompiler(compiler.SQLCompiler):
         )
         self._condition_lookup = node if in_condition and isinstance(node, Lookup) else None
         as_value = self._depth == 0 and not self._in_condition and _is_value_predicate(node)
+        if as_value and _single_in_subquery(node):
+            # Q(x__in=<subquery>) as a value: the rewrite's BOOLEAN is the value
+            # (its subqueries once, not twice through CASE WHEN p ... NOT (p)).
+            self._in_condition, self._condition_lookup = outer, outer_lookup
+            return self._in_subquery_case(node.children[0])
         self._depth += 1
         try:
             sql, params = super().compile(node)
@@ -191,12 +217,20 @@ class SQLCompiler(compiler.SQLCompiler):
             self._in_condition, self._condition_lookup = outer, outer_lookup
             self._depth -= 1
         if as_value:
-            return f"CASE WHEN {sql} THEN TRUE ELSE FALSE END", params
+            # NULL when the predicate is UNKNOWN (no ELSE); NOT of a predicate is
+            # three-valued (boolean values are comparisons by now, expressions.py).
+            return f"CASE WHEN {sql} THEN TRUE WHEN NOT ({sql}) THEN FALSE END", [*params, *params]
         return sql, params
 
     def _in_subquery_as_value(self, lookup: In):
         """``x IN (subquery)`` outside a search condition, where Db2 for i rejects
-        it (inside CASE WHEN: SQL0115; probes ``in_subquery``, ``tuple_in``).
+        it (inside CASE WHEN: SQL0115; probes ``in_subquery``, ``tuple_in``): the
+        three-valued BOOLEAN of ``_in_subquery_case`` compared with TRUE."""
+        sql, params = self._in_subquery_case(lookup)
+        return f"{sql} = TRUE", params
+
+    def _in_subquery_case(self, lookup: In):
+        """The three-valued BOOLEAN of ``x IN (subquery)``.
 
         TRUE if a row matches on every column; else NULL if a row has no
         column that is definitely unequal (equal, or NULL on either side);
@@ -221,7 +255,7 @@ class SQLCompiler(compiler.SQLCompiler):
         unknown = f"(SELECT 1 FROM {rows} WHERE {' AND '.join(maybe)} FETCH FIRST 1 ROWS ONLY)"
         sql = (
             f"(CASE WHEN {match} IS NOT NULL THEN TRUE "
-            f"WHEN {unknown} IS NOT NULL THEN NULL ELSE FALSE END) = TRUE"
+            f"WHEN {unknown} IS NOT NULL THEN NULL ELSE FALSE END)"
         )
         return sql, (*subquery_params, *equal_params, *subquery_params, *maybe_params)
 
