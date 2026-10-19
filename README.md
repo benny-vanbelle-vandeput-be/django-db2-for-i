@@ -7,6 +7,8 @@
 [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue)](LICENSE)
 [![offline CI](https://img.shields.io/github/actions/workflow/status/benny-vanbelle-vandeput-be/django-db2-for-i/offline.yml?branch=main&label=offline%20CI)](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/actions/workflows/offline.yml)
 [![release](https://img.shields.io/github/v/release/benny-vanbelle-vandeput-be/django-db2-for-i?include_prereleases&label=release)](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases)
+
+[![Django modules](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/modules.json)](docs/TEST_STATUS.md)
 [![passed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/passed.json)](docs/TEST_STATUS.md)
 [![failed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/failed.json)](docs/TEST_STATUS.md)
 [![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/skipped.json)](docs/TEST_STATUS.md)
@@ -26,10 +28,23 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 ## What the test badges mean
 
-- **Django tests (PUB400):** Django's own test suite (the modules listed in
-  [TEST_STATUS](docs/TEST_STATUS.md)) run against Db2 for i 7.5 on the shared
-  PUB400 system. The counts come from the last recorded run of each module,
-  not from every commit.
+- **What the test badges count:** Django's own test modules (Django's
+  `runtests.py`, the modules listed in [TEST_STATUS](docs/TEST_STATUS.md)),
+  run against Db2 for i 7.5 on the shared PUB400 system, for one Python ×
+  Django combination per row of badges. The label names it, for example
+  `Django 6.1 · Python 3.14 on PUB400`; the Python part is left out while not
+  every counted log records the same Python version. The counts come from the
+  last recorded run of each module, not from every commit.
+- **Not in these badges:** the full version matrix (every supported Python ×
+  Django combination) runs only on a dedicated IBM i, not on the shared
+  system. The backend's own pub400 tier (`tests/pub400/`) is separate and not
+  counted.
+- **offline CI:** the backend's offline tier on every commit, for every
+  Python × Django combination, with no IBM i.
+- **Django modules** `<run>/<total>`: how many of the Django version's test
+  modules have a recorded run (a module run as several labels counts once),
+  out of all test modules in that version's test suite (as `runtests.py`
+  finds them, without the GIS tests).
 - **passed:** the test ran and succeeded.
 - **failed** = failures + errors + unexpected successes: the test ran and did
   not succeed (or an expected failure passed), and there is no known reason
@@ -42,8 +57,6 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
   Db2 for i limitation, each with a documented reason (see
   [Known limitations](docs/user/Known-Limitations.md)). If one starts
   passing, it is reported as an unexpected success (counted as failed).
-- **offline CI:** the backend's own offline tests, on every commit, with no
-  IBM i.
 
 Details per module: [docs/TEST_STATUS.md](docs/TEST_STATUS.md).
 
@@ -79,7 +92,7 @@ Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS
 | lookup | 148 | OK (5 skipped, 2 expected failures) | done |
 | aggregation | 168 | OK (16 skipped) | done |
 | expressions | 213 | OK (5 skipped, 2 expected failures) | done |
-| queries |  | not run yet | planned (split into labels Q1–Q5 because of its size) |
+| queries | 506 | PARTIAL (different commits a7ca5f8 2026-10-19, unknown) | in progress (split into labels Q1–Q5 because of its size) |
 
 ### Open tracks and notes
 

@@ -10,12 +10,30 @@ golden-file status.
 
 It also writes:
 
-- docs/badges/{passed,failed,skipped,xfail}.json: shields.io endpoint files
-  with the totals of the newest Django version's runs;
+- docs/badges/{modules,passed,failed,skipped,xfail}.json: shields.io endpoint
+  files for the newest Django version that has runs. Their label names the
+  combination, e.g. ``Django 6.1 · Python 3.14 on PUB400``: the system is
+  ``versions.test_system`` from docs/status.toml, and the Python part is shown
+  only when every counted log of that Django version records the same Python
+  series (logs written before the runner recorded it have none).
+- docs/badges/<django-version>/*.json: the same files per Django version, only
+  while logs of more than one Django version exist (from phase 3 on). README.md
+  and TEST_STATUS.md then show one badge row per version, newest first, and
+  directories of versions without logs are removed. With a single version
+  there are no per-version directories and the top-level URLs stay as they
+  are. Without any logs no badge file is touched.
 - README.md: the badges and the "Project status" section, between the
   ``<!-- badges:start -->`` / ``<!-- status:start -->`` marker comments and
   their ``:end`` counterparts, from docs/status.toml (releases, phases, open
   tracks) and the same module results. The rest of README.md is untouched.
+
+The modules badge reads ``<run>/<total>``: ``run`` is the number of distinct
+Django test modules of that version whose log has a test summary (a module run
+as several labels counts once); ``total`` is the number of test modules in the
+vendored checkout vendor/django-<version>/tests/ (rule: count_test_modules).
+Without the checkout (CI, the wheel session) the total of the existing badge
+file is kept when that file is for the same Django version; otherwise the
+badge shows only ``<run> run``.
 """
 
 from __future__ import annotations
@@ -23,6 +41,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import re
+import shutil
 import sys
 import tomllib
 from pathlib import Path
@@ -33,14 +52,21 @@ OUTPUT = ROOT / "docs" / "TEST_STATUS.md"
 BADGES_DIR = ROOT / "docs" / "badges"
 STATUS_DATA = ROOT / "docs" / "status.toml"
 README = ROOT / "README.md"
+VENDOR = ROOT / "vendor"
 
 REPO = "benny-vanbelle-vandeput-be/django-db2-for-i"
 RAW_MAIN = f"https://raw.githubusercontent.com/{REPO}/main"
-TEST_LABEL = "Django tests (PUB400)"
+
+# Directories under Django's tests/ that runtests.py never runs as test modules:
+# SUBDIRS_TO_SKIP[""] in runtests.py, plus gis_tests, which it skips when the
+# database has no GIS support (this backend has none, gis_enabled is False).
+NOT_TEST_MODULES = frozenset({"import_error_package", "test_runner_apps", "gis_tests"})
 
 _RAN = re.compile(r"^Ran (\d+) tests? in ([\d.]+)s", re.MULTILINE)
 _RESULT = re.compile(r"^(OK|FAILED)(?: \((.*)\))?\s*$", re.MULTILINE)
 _HEADER = re.compile(r"^# (\w+): (.*)$", re.MULTILINE)
+_VERSION_DIR = re.compile(r"^\d+\.\d+$")
+_MODULES_MESSAGE = re.compile(r"^\d+/(\d+)$")
 COUNT_KEYS = {
     "failures": "failures",
     "errors": "errors",
@@ -70,6 +96,7 @@ class ModuleResult:
         ""  # the "# backend:" header: commit the run was made on, e.g. "a7ca5f8 2026-10-19"
     )
     partial: str = ""  # why a module summed from label logs is incomplete (empty: complete)
+    python: str = ""  # the "# python:" header, e.g. "3.14.0" (empty: not recorded)
 
     @property
     def passed(self) -> int | None:
@@ -95,6 +122,7 @@ def parse_log(text: str, module: str, django: str) -> ModuleResult:
         keepdb=header.get("keepdb", ""),
         exit_code=header.get("exit", ""),
         backend=header.get("backend", ""),
+        python=header.get("python", ""),
     )
     ran = _RAN.findall(text)
     outcomes = _RESULT.findall(text)
@@ -149,6 +177,7 @@ def collect_label_groups(status: dict, results_dir: Path = RESULTS) -> list[Modu
 def _sum_labels(module: str, django: str, labels: list[str], found: dict) -> ModuleResult:
     runs = list(found.values())
     commits = sorted({r.backend or "unknown" for r in runs})
+    pythons = {r.python for r in runs}
     total = ModuleResult(
         module=module,
         django=django,
@@ -156,6 +185,8 @@ def _sum_labels(module: str, django: str, labels: list[str], found: dict) -> Mod
         started=min((r.started for r in runs if r.started), default=""),
         backend=", ".join(commits),
         ran=sum(r.ran or 0 for r in runs),
+        # Set only when every label log records the same version.
+        python=pythons.pop() if len(pythons) == 1 else "",
     )
     for key in COUNT_KEYS.values():
         setattr(total, key, sum(getattr(r, key) for r in runs))
@@ -216,12 +247,77 @@ def _version_key(version: str) -> tuple[int, ...]:
     return tuple(int(part) for part in re.findall(r"\d+", version.split(" ")[0]))
 
 
+def django_versions(results: list[ModuleResult]) -> list[str]:
+    """The Django versions that have runs, newest first."""
+    return sorted({r.django for r in results}, key=_version_key, reverse=True)
+
+
+def version_results(results: list[ModuleResult], version: str) -> list[ModuleResult]:
+    return [r for r in results if r.django == version]
+
+
 def newest_results(results: list[ModuleResult]) -> list[ModuleResult]:
-    """The results of the newest Django version that has runs (the badges count these)."""
-    if not results:
-        return []
-    newest = max((r.django for r in results), key=_version_key)
-    return [r for r in results if r.django == newest]
+    """The results of the newest Django version that has runs."""
+    versions = django_versions(results)
+    return version_results(results, versions[0]) if versions else []
+
+
+def counted(results: list[ModuleResult]) -> list[ModuleResult]:
+    """The runs the badges count: those whose log has a test summary."""
+    return [r for r in results if r.passed is not None]
+
+
+def python_series(results: list[ModuleResult]) -> str | None:
+    """``3.14`` when every counted run records Python 3.14.x; None when a run
+    records no version, the runs disagree, or there are none (never guessed)."""
+    versions = [r.python for r in counted(results)]
+    if not versions or not all(versions):
+        return None
+    series = {".".join(version.split(".")[:2]) for version in versions}
+    return series.pop() if len(series) == 1 else None
+
+
+def combination_label(results: list[ModuleResult], version: str, system: str) -> str:
+    """The test badge label, e.g. ``Django 6.1 · Python 3.14 on PUB400``."""
+    python = python_series(version_results(results, version))
+    return f"Django {version}" + (f" · Python {python}" if python else "") + f" on {system}"
+
+
+def count_test_modules(tests_dir: Path) -> int | None:
+    """The number of test modules in a Django checkout's ``tests/`` directory.
+
+    Mirrors get_test_modules() in Django's runtests.py for a database without
+    GIS: every directory directly under tests/ whose name has no dot and which
+    contains an ``__init__.py``, except NOT_TEST_MODULES. None when the
+    checkout is absent.
+    """
+    if not (tests_dir / "runtests.py").is_file():
+        return None
+    return sum(
+        1
+        for entry in tests_dir.iterdir()
+        if "." not in entry.name
+        and entry.name not in NOT_TEST_MODULES
+        and entry.is_dir()
+        and (entry / "__init__.py").exists()
+    )
+
+
+def modules_run(results: list[ModuleResult]) -> int:
+    """Distinct test modules with a recorded run (a module run as labels counts once)."""
+    return len({r.module.split(".")[0] for r in counted(results)})
+
+
+def previous_total(path: Path, label: str) -> int | None:
+    """The ``<total>`` of an existing modules badge with the same label, else None."""
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict) or data.get("label") != label:
+        return None
+    match = _MODULES_MESSAGE.match(str(data.get("message", "")))
+    return int(match.group(1)) if match else None
 
 
 @dataclasses.dataclass
@@ -232,11 +328,11 @@ class Totals:
     expected_failures: int = 0
 
 
-def totals(results: list[ModuleResult]) -> Totals:
+def totals(results: list[ModuleResult], version: str | None = None) -> Totals:
+    """Totals of one Django version's runs (default: the newest version)."""
+    selected = newest_results(results) if version is None else version_results(results, version)
     total = Totals()
-    for r in newest_results(results):
-        if r.passed is None:
-            continue
+    for r in counted(selected):
         total.passed += r.passed
         total.failed += r.failures + r.errors + r.unexpected_successes
         total.skipped += r.skipped
@@ -244,28 +340,70 @@ def totals(results: list[ModuleResult]) -> Totals:
     return total
 
 
-def badge_data(total: Totals) -> dict[str, dict]:
-    """shields.io endpoint JSON (schemaVersion 1) per badge file name."""
+def _endpoint(label: str, message: str, color: str) -> dict:
+    """shields.io endpoint JSON (schemaVersion 1)."""
+    return {"schemaVersion": 1, "label": label, "message": message, "color": color}
 
-    def badge(message: str, color: str) -> dict:
-        return {"schemaVersion": 1, "label": TEST_LABEL, "message": message, "color": color}
 
+def badge_data(total: Totals, label: str) -> dict[str, dict]:
+    """The test-count badges per badge file name."""
     return {
-        "passed": badge(f"{total.passed} passed", "brightgreen"),
-        "failed": badge(f"{total.failed} failed", "red" if total.failed else "brightgreen"),
-        "skipped": badge(f"{total.skipped} skipped", "lightgrey"),
-        "xfail": badge(f"{total.expected_failures} expected failures", "blue"),
+        "passed": _endpoint(label, f"{total.passed} passed", "brightgreen"),
+        "failed": _endpoint(
+            label, f"{total.failed} failed", "red" if total.failed else "brightgreen"
+        ),
+        "skipped": _endpoint(label, f"{total.skipped} skipped", "lightgrey"),
+        "xfail": _endpoint(label, f"{total.expected_failures} expected failures", "blue"),
     }
 
 
-def write_badges(total: Totals, directory: Path | None = None) -> list[Path]:
+def modules_label(version: str) -> str:
+    # The version in the label also tells previous_total() which version a file is for.
+    return f"Django {version} modules"
+
+
+def modules_badge(run: int, total: int | None, version: str) -> dict:
+    message = f"{run}/{total}" if total is not None else f"{run} run"
+    return _endpoint(modules_label(version), message, "informational")
+
+
+def write_badges(
+    results: list[ModuleResult],
+    status: dict | None = None,
+    directory: Path | None = None,
+    vendor: Path | None = None,
+) -> list[Path]:
+    """Write the badge files (see the module docstring for the layout)."""
     directory = BADGES_DIR if directory is None else directory
-    directory.mkdir(parents=True, exist_ok=True)
+    vendor = VENDOR if vendor is None else vendor
+    system = (status or {}).get("versions", {}).get("test_system", "unknown system")
+    versions = django_versions(results)
+    if not versions:
+        return []
+    per_version = len(versions) > 1
+    targets = [(versions[0], directory)]
+    if per_version:
+        targets += [(version, directory / version) for version in versions]
     written = []
-    for name, data in badge_data(total).items():
-        path = directory / f"{name}.json"
-        path.write_text(json.dumps(data, indent=2) + "\n")
-        written.append(path)
+    for version, target in targets:
+        selected = version_results(results, version)
+        total = count_test_modules(vendor / f"django-{version}" / "tests")
+        if total is None:
+            total = previous_total(target / "modules.json", modules_label(version))
+        files = {
+            "modules": modules_badge(modules_run(selected), total, version),
+            **badge_data(totals(results, version), combination_label(results, version, system)),
+        }
+        target.mkdir(parents=True, exist_ok=True)
+        for name, data in files.items():
+            path = target / f"{name}.json"
+            path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+            written.append(path)
+    if directory.is_dir():
+        for stale in directory.iterdir():
+            is_version_dir = stale.is_dir() and _VERSION_DIR.match(stale.name)
+            if is_version_dir and (not per_version or stale.name not in versions):
+                shutil.rmtree(stale)
     return written
 
 
@@ -276,6 +414,7 @@ def _shield_text(text: str) -> str:
 
 
 TEST_BADGES = [
+    ("modules", "Django modules"),
     ("passed", "passed"),
     ("failed", "failed"),
     ("skipped", "skipped"),
@@ -283,17 +422,26 @@ TEST_BADGES = [
 ]
 
 
-def badge_lines(status: dict, test_link: str, root: str = "") -> list[str]:
+def badge_lines(
+    status: dict, test_link: str, root: str = "", versions: list[str] | None = None
+) -> list[str]:
     """Markdown for all badges.
 
     ``test_link`` is where the test badges link to; ``root`` is the path from
     the rendered file to the repository root (for the LICENSE link).
+    ``versions`` are the Django versions with runs, newest first: with more
+    than one, each gets its own row of test badges from its own directory.
     """
-    versions = status.get("versions", {})
+    status_versions = status.get("versions", {})
     static = [
-        ("Django", versions.get("django", "6.1"), "0C4B33", "https://www.djangoproject.com/"),
-        ("Python", versions.get("python", "3.12 | 3.13 | 3.14"), "3776AB", None),
-        ("IBM i", versions.get("ibmi", "7.5"), "054ADA", None),
+        (
+            "Django",
+            status_versions.get("django", "6.1"),
+            "0C4B33",
+            "https://www.djangoproject.com/",
+        ),
+        ("Python", status_versions.get("python", "3.12 | 3.13 | 3.14"), "3776AB", None),
+        ("IBM i", status_versions.get("ibmi", "7.5"), "054ADA", None),
         ("license", "BSD-3-Clause", "blue", f"{root}LICENSE"),
     ]
     lines = []
@@ -307,11 +455,15 @@ def badge_lines(status: dict, test_link: str, root: str = "") -> list[str]:
         f"[![release](https://img.shields.io/github/v/release/{REPO}?include_prereleases"
         f"&label=release)](https://github.com/{REPO}/releases)",
     ]
-    for name, alt in TEST_BADGES:
-        lines.append(
-            f"[![{alt}](https://img.shields.io/endpoint?url={RAW_MAIN}/docs/badges/{name}.json)]"
-            f"({test_link})"
-        )
+    versions = list(versions or [])
+    rows = [f"{version}/" for version in versions] if len(versions) > 1 else [""]
+    for row in rows:
+        lines.append("")  # each row of test badges is its own paragraph
+        for name, alt in TEST_BADGES:
+            lines.append(
+                f"[![{alt}](https://img.shields.io/endpoint?url={RAW_MAIN}/docs/badges/"
+                f"{row}{name}.json)]({test_link})"
+            )
     return lines
 
 
@@ -388,7 +540,8 @@ def replace_between(text: str, name: str, content: list[str]) -> str:
 
 
 def render_readme(text: str, status: dict, results: list[ModuleResult]) -> str:
-    text = replace_between(text, "badges", badge_lines(status, "docs/TEST_STATUS.md"))
+    badges = badge_lines(status, "docs/TEST_STATUS.md", versions=django_versions(results))
+    text = replace_between(text, "badges", badges)
     return replace_between(text, "status", status_lines(status, results))
 
 
@@ -399,6 +552,10 @@ def run_header(results: list[ModuleResult], status: dict | None) -> list[str]:
     system = versions.get("test_system", "unknown system")
     builds = sorted({r.django_build or r.django for r in results}, key=_version_key)
     commits = sorted({r.backend for r in results if r.backend})
+    pythons = sorted({r.python for r in results if r.python}, key=_version_key)
+    python = ", ".join(pythons) or "not recorded"
+    if pythons and any(not r.python for r in results):
+        python += " (not recorded in every log)"
     started = sorted(r.started for r in results if r.started)
     if not started:
         runs = "none recorded"
@@ -409,6 +566,7 @@ def run_header(results: list[ModuleResult], status: dict | None) -> list[str]:
     return [
         f"- **Runs:** {runs}",
         f"- **Django:** {', '.join(builds) or 'none'}",
+        f"- **Python:** {python}",
         f"- **Backend commits:** {', '.join(commits) or 'not recorded'} (per module in the table)",
         f"- **IBM i:** {ibmi} on {system}",
     ]
@@ -416,6 +574,21 @@ def run_header(results: list[ModuleResult], status: dict | None) -> list[str]:
 
 # What the test badges mean; README.md has the same definitions (hand-written).
 BADGE_DEFINITIONS = [
+    "- **What the test badges count:** Django's own test modules (Django's `runtests.py`,",
+    "  the modules in the table below), run against Db2 for i on the shared PUB400",
+    "  system, for one Python × Django combination per row of badges. The label names",
+    "  it, for example `Django 6.1 · Python 3.14 on PUB400`; the Python part is left out",
+    "  while not every counted log records the same Python version. The counts come",
+    "  from the last recorded run of each module, not from every commit.",
+    "- **Not in these badges:** the full version matrix (every supported Python × Django",
+    "  combination) runs only on a dedicated IBM i, not on the shared system. The",
+    "  backend's own pub400 tier (`tests/pub400/`) is separate and not counted.",
+    "- **offline CI:** the backend's offline tier on every commit, for every Python ×",
+    "  Django combination, with no IBM i.",
+    "- **Django modules** `<run>/<total>`: how many of the Django version's test modules",
+    "  have a recorded run (a module run as several labels counts once), out of all",
+    "  test modules in that version's test suite (as `runtests.py` finds them, without",
+    "  the GIS tests).",
     "- **passed:** the test ran and succeeded.",
     "- **failed** = failures + errors + unexpected successes: the test ran and did not",
     "  succeed (or an expected failure passed), with no known reason yet. This should be 0",
@@ -435,11 +608,13 @@ def render(results: list[ModuleResult], status: dict | None = None) -> str:
     lines = [
         "# Test status",
         "",
-        *badge_lines(status or {}, "#django-test-modules", root="../"),
+        *badge_lines(
+            status or {}, "#django-test-modules", root="../", versions=django_versions(results)
+        ),
         "",
         "Generated by `scripts/update_test_status.py` (`nox -s test_status`) from the logs in",
-        "`test-results/`. Do not edit by hand. The test badges count the newest Django",
-        "version's runs.",
+        "`test-results/`. Do not edit by hand. Each row of test badges is one Django",
+        "version's runs (one row while only one version has runs).",
         "",
         *BADGE_DEFINITIONS,
         "",
@@ -477,7 +652,10 @@ def main() -> int:
         print(f"error: {error}; nothing written", file=sys.stderr)
         return 1
     OUTPUT.write_text(render(results, status))
-    written = [OUTPUT, *write_badges(totals(results))]
+    badges = write_badges(results, status)
+    if not badges:
+        print("no Django test logs: badge files left unchanged")
+    written = [OUTPUT, *badges]
     README.write_text(readme)
     written.append(README)
     for path in written:
