@@ -330,6 +330,11 @@ def test_params_repr_hides_password() -> None:
 # --- Cursor wrapper --------------------------------------------------------------
 
 
+def wrap(raw, connection=None):
+    """A driver cursor around ``raw`` (on a connection whose raw object is unused)."""
+    return pyodbc_driver.Cursor(raw, (), connection or pyodbc_driver.Connection(object(), ()))
+
+
 class FakeRawCursor:
     def __init__(self, error: Exception | None = None):
         self.calls: list[tuple] = []
@@ -343,21 +348,84 @@ class FakeRawCursor:
 
 def test_cursor_execute_without_params_sends_sql_only() -> None:
     raw = FakeRawCursor()
-    pyodbc_driver.Cursor(raw, ()).execute("SELECT 1 FROM SYSIBM.SYSDUMMY1")
+    wrap(raw).execute("SELECT 1 FROM SYSIBM.SYSDUMMY1")
     assert raw.calls == [("SELECT 1 FROM SYSIBM.SYSDUMMY1",)]
 
 
 def test_cursor_execute_with_params() -> None:
     raw = FakeRawCursor()
-    pyodbc_driver.Cursor(raw, ()).execute("VALUES ?", [1])
+    wrap(raw).execute("VALUES ?", [1])
     assert raw.calls == [("VALUES ?", [1])]
 
 
 def test_cursor_execute_translates_errors() -> None:
     raw = FakeRawCursor(pyodbc.IntegrityError("23000", DUPLICATE_KEY))
     with pytest.raises(base.IntegrityError) as info:
-        pyodbc_driver.Cursor(raw, ()).execute("INSERT INTO T VALUES (1)")
+        wrap(raw).execute("INSERT INTO T VALUES (1)")
     assert info.value.__context__ is None
+
+
+# --- Statements that leave the connection unusable ---------------------------------
+
+NOT_AUTHORIZED = (
+    "[IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0443 - NOT AUTHORIZED TO COMMAND "
+    "WRKPTFGRP. (-443) (SQLExecDirectW)"
+)
+IN_USE = (
+    "[IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0519 - Prepared statement STMT0002 "
+    "in use. (-519) (SQLPrepare)"
+)
+
+
+def test_sql0443_with_parameters_marks_the_connection_unusable() -> None:
+    connection = pyodbc_driver.Connection(object(), ())
+    raw = FakeRawCursor(pyodbc.Error("HY000", NOT_AUTHORIZED))
+    with pytest.raises(base.Error) as info:
+        wrap(raw, connection).execute("SELECT 1 FROM QSYS2.GROUP_PTF_INFO WHERE X LIKE ?", ["%"])
+    assert info.value.sqlcode == -443  # the real cause is re-raised as it is
+    assert connection.usable is False
+
+
+def test_sql0443_without_parameters_keeps_the_connection_usable() -> None:
+    connection = pyodbc_driver.Connection(object(), ())
+    raw = FakeRawCursor(pyodbc.Error("HY000", NOT_AUTHORIZED))
+    with pytest.raises(base.Error):
+        wrap(raw, connection).execute("SELECT 1 FROM QSYS2.GROUP_PTF_INFO")
+    assert connection.usable is True
+
+
+def test_other_errors_keep_the_connection_usable() -> None:
+    connection = pyodbc_driver.Connection(object(), ())
+    raw = FakeRawCursor(pyodbc.IntegrityError("23000", DUPLICATE_KEY))
+    with pytest.raises(base.IntegrityError):
+        wrap(raw, connection).execute("INSERT INTO T VALUES (?)", [1])
+    assert connection.usable is True
+
+
+@pytest.mark.parametrize("parameterized", [False, True])
+def test_sql0519_marks_the_connection_unusable_with_a_clear_error(parameterized) -> None:
+    connection = pyodbc_driver.Connection(object(), ())
+    raw = FakeRawCursor(pyodbc.Error("HY000", IN_USE))
+    with pytest.raises(base.OperationalError, match="needs to be closed") as info:
+        wrap(raw, connection).execute("VALUES ?", [1]) if parameterized else wrap(
+            raw, connection
+        ).execute("VALUES 1")
+    assert info.value.sqlcode == -519
+    # Replaced from None: the sanitized SQL0519 error is not chained as the cause.
+    assert info.value.__cause__ is None and info.value.__suppress_context__
+    assert connection.usable is False
+
+
+def test_sql0519_during_fetch_marks_the_connection_unusable() -> None:
+    connection = pyodbc_driver.Connection(object(), ())
+
+    class FailingFetch:
+        def fetchmany(self, size):
+            raise pyodbc.Error("HY000", IN_USE)
+
+    with pytest.raises(base.OperationalError):
+        wrap(FailingFetch(), connection).fetchmany(100)  # iterator() fetches in chunks
+    assert connection.usable is False
 
 
 class FakeRow(list):
@@ -376,7 +444,7 @@ class FakeFetchCursor:
 
 
 def test_cursor_fetch_returns_tuples() -> None:
-    cursor = pyodbc_driver.Cursor(FakeFetchCursor(), ())
+    cursor = wrap(FakeFetchCursor())
     assert type(cursor.fetchone()) is tuple
     assert cursor.fetchone() == (1, "a")
     assert cursor.fetchmany(2) == [(0,), (1,)]
@@ -386,7 +454,7 @@ def test_cursor_fetch_returns_tuples() -> None:
 def test_cursor_fetchone_end_of_data() -> None:
     raw = FakeFetchCursor()
     raw.fetchone = lambda: None
-    assert pyodbc_driver.Cursor(raw, ()).fetchone() is None
+    assert wrap(raw).fetchone() is None
 
 
 # --- Secrets never appear in tracebacks ------------------------------------------
@@ -424,7 +492,9 @@ def test_connect_traceback_frames_carry_no_password(monkeypatch: pytest.MonkeyPa
 def test_cursor_traceback_frames_carry_no_password() -> None:
     raw = FakeRawCursor(pyodbc.IntegrityError("23000", DUPLICATE_KEY))
     with pytest.raises(base.IntegrityError) as info:
-        pyodbc_driver.Cursor(raw, params().secrets).execute("INSERT INTO T VALUES (1)")
+        pyodbc_driver.Cursor(raw, params().secrets, pyodbc_driver.Connection(object(), ())).execute(
+            "INSERT INTO T VALUES (1)"
+        )
     assert not [value for value in frame_values(info.value) if PASSWORD in value]
 
 
@@ -458,7 +528,7 @@ LIMIT = pyodbc_driver.MAX_STRING_PARAM_UNITS
 )
 def test_values_up_to_the_limit_are_sent(value) -> None:
     raw = RecordingRawCursor()
-    pyodbc_driver.Cursor(raw, ()).execute("VALUES ?", [value])
+    wrap(raw).execute("VALUES ?", [value])
     assert raw.calls == [("execute", "VALUES ?", [value])]
 
 
@@ -470,7 +540,7 @@ def test_values_up_to_the_limit_are_sent(value) -> None:
 def test_longer_strings_are_refused_before_sending(value) -> None:
     raw = RecordingRawCursor()
     with pytest.raises(base.NotSupportedError, match="longer than 1M characters are refused"):
-        pyodbc_driver.Cursor(raw, ()).execute("VALUES ?, ?", [1, value])
+        wrap(raw).execute("VALUES ?, ?", [1, value])
     assert raw.calls == []
 
 
@@ -479,13 +549,13 @@ def test_executemany_checks_every_row() -> None:
     rows = [["short"], ["x" * (LIMIT + 1)]]
     message = f"String parameter 1 has {LIMIT + 1} UTF-16 units"
     with pytest.raises(base.NotSupportedError, match=message):
-        pyodbc_driver.Cursor(raw, ()).executemany("VALUES ?", rows)
+        wrap(raw).executemany("VALUES ?", rows)
     assert raw.calls == []
 
 
 def test_sql_without_params_is_not_checked() -> None:
     raw = RecordingRawCursor()
-    pyodbc_driver.Cursor(raw, ()).execute("VALUES '" + "x" * (LIMIT + 10) + "'")
+    wrap(raw).execute("VALUES '" + "x" * (LIMIT + 10) + "'")
     assert len(raw.calls) == 1
 
 
@@ -497,4 +567,4 @@ def test_guard_reaches_django_as_not_supported_error() -> None:
         pytest.raises(django.db.NotSupportedError, match="longer than 1M characters are refused"),
         connection.wrap_database_errors,
     ):
-        pyodbc_driver.Cursor(RecordingRawCursor(), ()).execute("VALUES ?", ["x" * (LIMIT + 1)])
+        wrap(RecordingRawCursor()).execute("VALUES ?", ["x" * (LIMIT + 1)])

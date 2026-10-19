@@ -629,6 +629,37 @@ levels. A DurationField is stored as BIGINT microseconds.
   **`TIMESTAMPDIFF(1, CHAR(a - b))`** is NULL or wrong for anything beyond a
   few days (only the same-day case was right); the backend never uses it.
 
+### Statements that leave the connection unusable (`nox -s probe -- fetch_errors`)
+2026-10-19, read-only, PUB400 (IBM i 7.5; TR and Db2 PTF Group levels not
+readable), IBM i Access ODBC Driver **07.01.029** (`SQL_DRIVER_VER`), pyodbc
+5.3.0, the backend's connection attributes (pooling off, `CMT=1`). Each
+scenario on a fresh connection, opened one at a time.
+
+**Correction:** an earlier assumption (PR #58) was that a statement failing
+*during fetch* leaves the connection unusable. It does not:
+
+| Failing statement | Fails at | Next statements after closing the failed cursor |
+|---|---|---|
+| `SELECT MAX(PTF_GROUP_LEVEL) FROM QSYS2.GROUP_PTF_INFO` (no parameter) | fetch, SQL0443 | ok |
+| `... FROM NOSUCHLIB.NOSUCHTABLE WHERE X = ?` | prepare, SQL0204 | ok |
+| `... WHERE 1 = CAST(? AS INTEGER) / 0` | execute, SQL0802 | ok |
+| `... FROM QSYS2.GROUP_PTF_INFO WHERE PTF_GROUP_DESCRIPTION LIKE ?` | **execute, SQL0443** | **SQL0519** "Prepared statement STMT0002 in use", every statement, plain or prepared |
+
+**The real trigger:** a **parameterized** statement on a **service** (a QSYS2
+table function or view that calls system APIs or commands, here the PTF
+group service a normal user is not authorized to) that fails with SQL0443 at
+execute. While the failed cursor is open, other statements still work; as
+soon as it is **closed**, the driver reuses its statement name (STMT0002)
+while the server still has it in use, and every later statement fails with
+SQL0519, in autocommit and inside a transaction, also after a rollback.
+Rollback, `cancel()` or reusing the failed cursor before closing it do not
+help; only a new connection clears it. The backend marks the connection
+unusable at the trigger and on any SQL0519 (DECISIONS.md, 2026-10-19).
+
+**Errors in the select list give NULL:** `SELECT CAST('abc' AS INTEGER)` and a
+division by zero in the select list return NULL without an error (see the
+separate note on data mapping errors); in WHERE the same errors raise SQL0802.
+
 ### Truncating dates and times (`probe -- trunc`)
 2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
 compared with Django's truncation in Python.
