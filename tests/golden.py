@@ -31,7 +31,16 @@ from typing import Any
 
 GOLDEN_ROOT = Path(__file__).parent / "offline" / "golden"
 UNVERIFIED = "unverified"
-VERIFIED_PATTERN = re.compile(r"^IBM i \d+\.\d+ on PUB400, \d{4}-\d{2}-\d{2}$")
+# "<level>, <date>": the level is the system and Django version the golden was
+# verified with; older stamps have no TR / PTF Group / Django part.
+VERIFIED_PATTERN = re.compile(
+    r"^(?P<level>IBM i \d+\.\d+ on PUB400"
+    r"(?: \(TR [^,()]+, Db2 PTF Group [^()]+\), Django [\w.]+)?)"
+    r", (?P<date>\d{4}-\d{2}-\d{2})$"
+)
+# The latest verification run (date, level, counts): one file, so a run on the
+# same level does not touch every golden.
+LAST_VERIFICATION = GOLDEN_ROOT / "last-verification.txt"
 HEADER_KEYS = ("golden", "django", "profile", "depends", "params", "verified")
 
 
@@ -163,3 +172,40 @@ def merge(stored: Golden | None, generated: Golden) -> Golden:
     if stored is not None and stored.content_equals(generated):
         return dataclasses.replace(generated, verified=stored.verified)
     return dataclasses.replace(generated, verified=UNVERIFIED)
+
+
+# --- Verification stamps ---------------------------------------------------------------
+
+
+def verification_level(release: str, tr: str, ptf_group: str, django_version: str) -> str:
+    return (
+        f"IBM i {release} on PUB400 (TR {tr}, Db2 PTF Group {ptf_group}), Django {django_version}"
+    )
+
+
+def new_stamp(current: str, level: str, today: str) -> str | None:
+    """The stamp to write after ``current`` passed on ``level``, or None to keep it.
+
+    A golden is stamped when it is unverified (new, or its SQL / params changed)
+    or was verified on another system level or Django version; otherwise its
+    stamp, and its date, stay as they are.
+    """
+    match = VERIFIED_PATTERN.match(current)
+    if match and match["level"] == level:
+        return None
+    return f"{level}, {today}"
+
+
+def render_last_verification(level: str, today: str, results: dict[str, str]) -> str:
+    counts = {
+        outcome: sum(1 for r in results.values() if r == outcome)
+        for outcome in ("passed", "failed", "skipped")
+    }
+    return (
+        "# Latest golden verification run (tests/pub400/test_goldens.py --record-verification)\n"
+        f"date: {today}\n"
+        f"level: {level}\n"
+        f"passed: {counts['passed']}\n"
+        f"failed: {counts['failed']}\n"
+        f"skipped: {counts['skipped']}\n"
+    )

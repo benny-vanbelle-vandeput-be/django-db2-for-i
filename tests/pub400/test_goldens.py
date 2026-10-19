@@ -12,20 +12,30 @@
 5. ``drop`` goldens; teardown drops whatever remains, then the marker.
 
 A golden whose create dependency did not pass is skipped with a reason.
-``pytest --record-verification`` writes "IBM i <release> on PUB400, <date>"
-into each golden that passed (review the diff, commit it in a PR).
+``pytest --record-verification`` stamps a golden that passed with "<level>,
+<date>" only when it was unverified or verified on another level (IBM i release,
+TR, Db2 PTF Group, Django version), and writes the run's date and counts to
+tests/offline/golden/last-verification.txt (review the diff, commit it in a PR).
 """
 
 import dataclasses
 import datetime as dt
 
+import django
 import pytest
 from django.db import connection, transaction
 
 from django_db2_for_i import capabilities
 from django_db2_for_i.compat import DJANGO_SERIES
 from django_db2_for_i.creation import MARKER_TABLE
-from tests.golden import golden_path, read
+from tests.golden import (
+    LAST_VERIFICATION,
+    golden_path,
+    new_stamp,
+    read,
+    render_last_verification,
+    verification_level,
+)
 from tests.golden_cases import FLUSH_METADATA, TESTAPP_TABLES, ordered_cases
 
 RESULTS: dict[str, str] = {}  # golden name -> "passed" | "failed" | "skipped"
@@ -112,8 +122,28 @@ def run_golden(live, kind, golden) -> None:
             execute(cursor, sql, params, kind)
 
 
+@pytest.fixture(scope="module")
+def level(django_db_blocker, request):
+    """The system level of this run; the run summary is written at the end."""
+    # TR and Db2 PTF Group levels are not queried here: on PUB400 the PTF views
+    # fail with SQL0443 and leave the statement open (SQL0519 for everything
+    # after it). They come from the capabilities when those ever carry them.
+    with django_db_blocker.unblock():
+        capabilities_ = connection.capabilities
+        value = verification_level(
+            capabilities_.release_name,
+            getattr(capabilities_, "technology_refresh", None) or "unknown",
+            getattr(capabilities_, "db2_ptf_group", None) or "unknown",
+            django.get_version(),
+        )
+    yield value
+    if request.config.getoption("--record-verification"):
+        today = f"{dt.datetime.now(dt.UTC):%Y-%m-%d}"
+        LAST_VERIFICATION.write_text(render_last_verification(value, today, RESULTS))
+
+
 @pytest.mark.parametrize("case", CASES)
-def test_golden_is_accepted(case, live, request) -> None:
+def test_golden_is_accepted(case, live, level, request) -> None:
     release = live.capabilities.release
     profile = capabilities.profile_for_release(release)
     path = golden_path(DJANGO_SERIES, profile, case.name)
@@ -126,6 +156,6 @@ def test_golden_is_accepted(case, live, request) -> None:
     run_golden(live, case.kind, golden)
     RESULTS[case.name] = "passed"
     if request.config.getoption("--record-verification"):
-        stamp = f"IBM i {release[0]}.{release[1]} on PUB400, {dt.datetime.now(dt.UTC):%Y-%m-%d}"
-        if golden.verified != stamp:
+        stamp = new_stamp(golden.verified, level, f"{dt.datetime.now(dt.UTC):%Y-%m-%d}")
+        if stamp is not None:
             path.write_text(dataclasses.replace(golden, verified=stamp).render())
