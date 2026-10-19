@@ -1104,3 +1104,36 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   one place.
 - **Alternatives:** a documented list of `runtests.sh` calls (it drifts from
   TEST_STATUS.md and is easy to run only partly).
+
+## 2026-10-19: Offline query corpus, captured on PUB400, replayed offline
+- **Decision (project owner):** approve docs/proposals/offline-query-corpus.md.
+  - **What is recorded:** during PUB400 runs of Django's test modules, a
+    capture hook records per **passing** test (expected failures excluded)
+    the pickled `Query` plus the SQL and params our backend produced.
+  - **Replay:** offline, each `Query` is unpickled, recompiled under the 7.5
+    profile and compared.
+  - **One corpus per Django version.** Its offline step installs Django (the
+    library and the test suite) from exactly the commit the corpus was
+    captured with.
+  - **Storage:** gzip JSONL per module plus a plain SQL index, with no Git
+    LFS. A refresh keeps unchanged entries byte-identical and rewrites only
+    modules whose SQL changed.
+  - **CI:** the replay is a separate step inside each offline job.
+  - **Refresh:** module runs in backend PRs and release runs both refresh it;
+    a bumped `vendor/` checkout is replayed offline first and re-captured on
+    the next PUB400 run if entries differ.
+  - **Scope:** the query corpus comes first, the DDL corpus in a second PR.
+  - **Order:** the 6.1 corpus comes before the phase 3 compat changes.
+- **Why:** it turns every statement of a passing Django test into an offline
+  regression check without hand-written cases. An offline feasibility check
+  on Django's `ordering` tests replayed 128 of 128 statements identically and
+  caught a simulated pagination change (7 mismatches). Pinning the Django
+  commit keeps Django patch releases from breaking the corpus. Byte-identical
+  refreshes keep the repository from growing on every run. Capturing 6.1
+  before the compat changes makes it guard that 6.1 SQL stays unchanged while
+  6.0 and 5.2 support is added.
+- **Alternatives:** more hand-written goldens only (slow to write, small
+  coverage); Git LFS (bandwidth quota, CI cost); a separate CI job (more
+  runners, image loads); installing Django from PyPI for the replay (a patch
+  release could change the SQL); including expected failures (their results
+  are known to be wrong).

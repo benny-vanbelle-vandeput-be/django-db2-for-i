@@ -1,6 +1,8 @@
 # Offline query corpus
 
-> Status: Proposed, not yet approved
+> Status: Approved, 2026-10-19
+
+The maintainer's answers to the open questions are in "Decisions" at the end.
 
 ## Goal
 Get as many offline tests as possible out of the Django tests we already run
@@ -13,8 +15,18 @@ Two parts:
 - **B, query corpus:** for each Django test, the pickled `Query` objects
   together with the SQL and params our backend produced for them on PUB400.
 
+B comes first. A follows in a small second PR once the capture hook exists
+(decision 1).
+
 The capture on PUB400 is **not** part of this proposal. It is a follow-up that
-the main session runs once this proposal is approved (see "Follow-up").
+the main session runs (see "Follow-up").
+
+**Why now:** the 6.1 corpus must exist before the phase 3 compat changes (see the phase 3 plan,
+[#86](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/86),
+decision 6). The compat changes touch
+`expressions.py`, `operations.py` and the test lists. A corpus captured
+before them guards that the SQL our backend writes for Django 6.1 stays
+unchanged while 6.0 and 5.2 support is added.
 
 ## Feasibility check (offline only, done)
 I ran a throwaway script outside the repository (in the worktree's
@@ -100,18 +112,31 @@ Pickles are not portable between Django versions, and they refer to the test
 apps' models by import path (`ordering.models.Article`). So there is one
 corpus per Django version (5.2, 6.0, 6.1):
 - each corpus records the Django commit it was captured with;
-- replay needs that version's test-suite checkout, at that commit, on
-  `sys.path`;
+- the corpus step installs **Django itself from exactly that commit**: both
+  the library and the test suite (`tests/` on `sys.path`). It never uses the
+  latest PyPI patch release; otherwise a Django patch release could break the
+  corpus without any backend change;
 - a corpus is replayed only by the jobs of its own Django series
   (`compat.DJANGO_SERIES`).
+
+**When the `vendor/` checkout is bumped** (a new commit on `stable/<x.y>.x`):
+1. Replay the corpus offline against the new commit first.
+2. If every entry matches, the manifest's commit moves to the new commit in
+   the same PR as the bump.
+3. If entries differ, the change comes from Django, not the backend. The
+   corpus keeps the old commit, so CI stays green on it, and the next PUB400
+   run of the affected modules on the new checkout re-captures them. The
+   re-capture moves the manifest to the new commit; the PR shows the SQL
+   differences.
 
 ### Layout and format
 
 ```
 tests/offline/corpus/<django>/<profile>/
-    manifest.toml          # Django commit, capture level, capture date, counts
-    ddl/<module>.sql       # A: DDL statements in execution order, golden-style header
-    queries/<module>.jsonl # B: one JSON object per unique statement
+    manifest.toml             # Django commit, capture level, capture date, counts
+    queries/<module>.jsonl.gz # B: one JSON object per unique statement (gzip)
+    queries/<module>.sql      # B: plain index of the unique SQL, for review
+    ddl/<module>.sql          # A (second PR): DDL in execution order, golden-style header
 ```
 
 Each query entry holds:
@@ -148,13 +173,20 @@ after the first capture:
   about 4,000 unique entries per Django version.
 - At about 1.7 KB each, that is about 7 MB per version uncompressed, so about
   20 MB for three versions.
-- That is too large to keep as plain text. Proposed:
-  - gzip each `queries/<module>.jsonl.gz` (pickles compress well; the ratio
-    is not measured yet);
+- That is too large to keep as plain text. Decided (decision 4):
+  - gzip each `queries/<module>.jsonl.gz` (the ratio is not measured yet);
   - keep a plain-text `queries/<module>.sql` index with the unique SQL only,
     for review;
-  - leave insert statements from `setUpTestData` out unless they are unique
-    (the maintainer decides, open question 3).
+  - no Git LFS (bandwidth quota on public repositories, CI cost).
+- `setUpTestData` inserts are kept, because they test the insert path; dedup
+  removes repeats (decision 3).
+- **Stable files:** a refresh keeps unchanged entries byte-identical and
+  rewrites only the modules whose SQL changed, so git history does not grow on
+  every run. In practice:
+  - entries in a fixed order (by key);
+  - deterministic JSON (sorted keys, fixed separators);
+  - gzip with a fixed header (`mtime=0`, no file name);
+  - an unchanged module file is not rewritten at all.
 
 ### Capture hook (for the follow-up)
 - A small module under `tests/` is enabled only by an environment variable
@@ -163,8 +195,8 @@ after the first capture:
   check above. It records before executing, and catches every exception of
   its own, so it can never change a test's outcome.
 - A custom test result keeps an entry only if the test **passed**. Entries
-  from failures, errors, skips and expected failures are dropped.
-- For A, the hook also records the DDL that the test database setup executes
+  from failures, errors, skips and expected failures are dropped (decision 2).
+- For A (second PR), the hook also records the DDL that the test database setup executes
   (`schema_editor.execute`). Offline, the same DDL is generated with
   `collect_sql=True` for the same models and compared.
 
@@ -193,22 +225,24 @@ Stamps follow the existing goldens; see
 
 ### nox and CI
 - A nox session, `corpus`, is parametrized exactly like `offline` (every
-  Python × Django version). It runs in its own process with settings that
-  install the corpus modules' apps (the offline settings stay as they are).
+  Python × Django version).
+  - It runs in its own process with settings that install the corpus
+    modules' apps; the offline settings stay as they are.
+  - It installs Django from the corpus's commit (see above), not from PyPI.
 - The connection guard stays: `pyodbc.connect` raises, and the fake
   connection never reaches a driver.
-- CI ([#87](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/87)):
-  the matrix comes from the noxfile, so the `corpus` sessions become parallel
-  jobs next to `offline`, or a second step in the same job (open question 5).
-  Either way the required `offline` check aggregates them.
-- Each job needs the Django test suite at the corpus's commit: a shallow fetch
-  of that one commit, about 10–30 s (estimated).
-- Expected duration per job: setup about 2 s, replay of about 4,000 entries a
-  few seconds (the check above replayed 129 in under 0.1 s), plus the fetch.
-  Under 1 minute per job (estimated).
+- CI (`.github/workflows/offline.yml`, from #87): the corpus is **a separate
+  step inside each offline job**, not a separate job (decision 5). The
+  required `offline` check therefore covers it.
+- Each job fetches that one Django commit shallowly, about 10–30 s
+  (estimated).
+- Expected extra time per job: setup about 2 s, plus a few seconds to replay
+  about 4,000 entries (the check above replayed 129 in under 0.1 s), plus the
+  fetch. Under 1 minute in total (estimated).
 
 ### Refreshing and review
-Refresh happens only from PUB400 runs, by the main session (never in CI):
+Refresh happens only from PUB400 runs, by the main session, never in CI. Both
+kinds of run refresh (decision 6):
 - **Module runs during development:** a backend PR that changes SQL reruns
   the affected Django modules on PUB400, as it already does. With the capture
   enabled, the same run refreshes those modules' corpus files in the same PR.
@@ -222,24 +256,39 @@ Refresh happens only from PUB400 runs, by the main session (never in CI):
   in this repository, which reach `main` through reviewed, signed PRs. It is
   never fetched from elsewhere.
 
-## Follow-up (after approval; main session, PUB400)
-1. Capture hook, offline replay (`tests/offline/test_corpus.py` or the
-   `corpus` session) and the report, as a PR with only offline tests.
+## Follow-up (main session, PUB400)
+Order: tag 0.1.0a3, then #69, then this corpus for 6.1, then phase 3 step A.
+
+1. Capture hook, offline replay (the `corpus` session, as a step in each
+   offline CI job) and the report, as a PR with only offline tests.
 2. First capture: `ordering` on 6.1, to compare the real numbers with this
    check.
-3. Capture the other modules in TEST_STATUS.md, one module per run, sequential
-   and with one connection, as usual on PUB400.
-4. 6.0 and 5.2 corpora with phase 3 (release run).
+3. Capture the other modules in TEST_STATUS.md, one module per run,
+   sequentially and with one connection, as usual on PUB400.
+4. A, the DDL corpus, in a small second PR once the capture hook exists.
+5. 6.0 and 5.2 corpora with phase 3 (release run).
 
-## Open questions for the maintainer
-1. **Scope:** start with B only (the larger gain), or A and B together?
-2. **Which tests count:** only passing tests (as proposed), or also expected
-   failures, whose SQL ran but whose result is known to be wrong?
-3. **Inserts from `setUpTestData`:** keep them (they test the insert path) or
-   leave them out to save space?
-4. **Storage:** gzip JSONL plus a plain SQL index (as proposed), or plain JSONL
-   with a size limit, or Git LFS?
-5. **CI:** a separate `corpus` job per combination, or a step inside each
-   `offline` job?
-6. **Refresh:** release runs only, or also module runs in backend PRs (as
-   proposed)?
+## Decisions
+Approved by the maintainer on 2026-10-19
+([DECISIONS](../DECISIONS.md#2026-10-19-offline-query-corpus-captured-on-pub400-replayed-offline)):
+
+1. **Scope:** B (the query corpus) first. A (the DDL corpus) follows in a
+   small second PR once the capture hook exists.
+2. **Only passing tests count.** Expected failures are excluded.
+3. **`setUpTestData` inserts are kept**, because they test the insert path.
+   Dedup removes repeats.
+4. **Storage:** gzip JSONL per module plus a plain SQL index. No Git LFS
+   (bandwidth quota on public repositories, CI cost). A refresh keeps
+   unchanged entries byte-identical and rewrites only modules whose SQL
+   changed, so git history does not grow on every run.
+5. **CI:** a separate step inside each offline job, not a separate job.
+6. **Refresh:** both module runs in backend PRs and release runs.
+
+Requirements the maintainer added:
+- The corpus step installs Django from exactly the commit the corpus was
+  captured with, both the library and the test suite, not the latest PyPI
+  patch release.
+- When `vendor/` is bumped, replay offline first; if entries differ,
+  re-capture in the next PUB400 run.
+- The 6.1 corpus must exist before the phase 3 compat changes, so it guards
+  that the 6.1 SQL stays unchanged.
