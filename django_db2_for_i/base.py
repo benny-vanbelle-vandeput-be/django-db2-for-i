@@ -419,6 +419,10 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         )
 
     def is_usable(self) -> bool:
+        # The driver knows when the connection cannot run statements any more
+        # (drivers/pyodbc.py: SQL0443 on a parameterized service, SQL0519).
+        if not self.connection.usable:
+            return False
         try:
             with self.connection.cursor() as cursor:
                 cursor.execute("SELECT 1 FROM SYSIBM.SYSDUMMY1")

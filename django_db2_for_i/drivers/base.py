@@ -284,6 +284,10 @@ class Cursor(abc.ABC):
 
 
 class Connection(abc.ABC):
+    # False once the driver knows the connection cannot run statements any more
+    # (DatabaseWrapper.is_usable() then reports it, and Django replaces it).
+    usable: bool = True
+
     @property
     @abc.abstractmethod
     def autocommit(self) -> bool: ...

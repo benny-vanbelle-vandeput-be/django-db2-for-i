@@ -263,10 +263,15 @@ class DatabaseCreation(BaseDatabaseCreation):
                 f"Test library {library} does not exist. With TEST['CREATE_DB'] = False the "
                 "backend never creates schemas; create the library first."
             )
+        # QSYS2.JOURNAL_INFO is a service (system APIs), not a catalog view: if
+        # it failed with SQL0443 on a parameterized statement, the connection
+        # would be unusable (drivers/pyodbc.py). The validated system name is a
+        # literal instead.
+        if not _SYSTEM_NAME.match(library):
+            raise TestDatabaseRefused(f"Test library {library!r} is not a valid system name.")
         cursor.execute(
             "SELECT JOURNAL_STATE FROM QSYS2.JOURNAL_INFO "
-            "WHERE JOURNAL_LIBRARY = %s AND JOURNAL_NAME = 'QSQJRN'",
-            [library],
+            f"WHERE JOURNAL_LIBRARY = '{library}' AND JOURNAL_NAME = 'QSQJRN'"
         )
         row = cursor.fetchone()
         if row is None:

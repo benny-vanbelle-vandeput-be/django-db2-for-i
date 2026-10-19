@@ -13,6 +13,7 @@ import pytest
 from django.core.management.color import no_style
 from django.db import connection, connections
 
+from tests.pub400.connection_guard import replace_if_unusable
 from tests.pub400.testapp_tables import MODELS, TABLES
 
 
@@ -38,6 +39,7 @@ def testapp_tables(django_db_blocker):
                     created.append(model)
             yield
         finally:
+            replace_if_unusable()
             errors = []
             for model in reversed(created):
                 try:
@@ -58,4 +60,5 @@ def live(django_db_blocker):
 def empty(live):
     """Empty all testapp tables (and restart identities) after the test."""
     yield
+    replace_if_unusable(live)
     live.ops.execute_sql_flush(live.ops.sql_flush(no_style(), sorted(TABLES), reset_sequences=True))

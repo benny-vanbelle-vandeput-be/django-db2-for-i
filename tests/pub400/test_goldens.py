@@ -37,6 +37,7 @@ from tests.golden import (
     verification_level,
 )
 from tests.golden_cases import FLUSH_METADATA, TESTAPP_TABLES, ordered_cases
+from tests.pub400.connection_guard import replace_if_unusable
 
 RESULTS: dict[str, str] = {}  # golden name -> "passed" | "failed" | "skipped"
 
@@ -79,6 +80,7 @@ def marked_empty_library(django_db_blocker):
                 pytest.fail(f"{library()} is not empty after setup: {sorted(leftover)}")
             yield
         finally:
+            replace_if_unusable()
             creation._destroy_test_db(library(), 0)
             assert tables() == set(), f"tables left in {library()}: {sorted(tables())}"
 
@@ -125,9 +127,10 @@ def run_golden(live, kind, golden) -> None:
 @pytest.fixture(scope="module")
 def level(django_db_blocker, request):
     """The system level of this run; the run summary is written at the end."""
-    # TR and Db2 PTF Group levels are not queried here: on PUB400 the PTF views
-    # fail with SQL0443 and leave the statement open (SQL0519 for everything
-    # after it). They come from the capabilities when those ever carry them.
+    # TR and Db2 PTF Group levels are not queried here: on PUB400 the PTF group
+    # service fails with SQL0443, and a parameterized statement failing that way
+    # leaves the connection unusable (drivers/pyodbc.py). They come from the
+    # capabilities when those ever carry them; otherwise "unknown", never a guess.
     with django_db_blocker.unblock():
         capabilities_ = connection.capabilities
         value = verification_level(

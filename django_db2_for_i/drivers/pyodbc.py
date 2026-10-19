@@ -197,11 +197,35 @@ def check_string_params(params: Sequence[Any]) -> None:
 
 # --- Connection and cursor ------------------------------------------------------
 
+# A statement on a service or system command (a QSYS2 table function or view
+# that calls system APIs) that fails with SQL0443 at execute leaves its server
+# statement in use when it had parameters. Once that cursor is closed, the
+# driver reuses the statement name and every later statement on the connection
+# fails with SQL0519 ("Prepared statement ... in use"), also after a rollback;
+# only a new connection clears it (probe fetch_errors, docs/IBMI_NOTES.md).
+# Errors at fetch, other execute errors (SQL0204, SQL0802, ...) and SQL0443
+# without parameters leave the connection usable.
+POISONING_SQLCODE = -443
+STATEMENT_IN_USE_SQLCODE = -519
+STATEMENT_IN_USE_HINT = (
+    " The connection can no longer be used (a statement that failed earlier, e.g. "
+    "with SQL0443, is still in use on the server); it needs to be closed. Django "
+    "opens a new connection at the next request or test."
+)
+
 
 class Cursor(base.Cursor):
-    def __init__(self, raw: Any, secrets: Sequence[str]):
+    def __init__(self, raw: Any, secrets: Sequence[str], connection: Connection):
         self._raw = raw
         self._secrets = secrets
+        self._connection = connection
+
+    def _run[T](self, func: Callable[..., T], *args: Any, parameterized: bool = False) -> T:
+        try:
+            return _call(self._secrets, func, *args)
+        except base.Error as error:
+            self._connection.note_error(error, parameterized=parameterized)
+            raise
 
     @property
     def description(self) -> Sequence[tuple] | None:
@@ -213,31 +237,31 @@ class Cursor(base.Cursor):
 
     def execute(self, sql: str, params: Sequence[Any] | None = None) -> Cursor:
         if params is None:
-            _call(self._secrets, self._raw.execute, sql)
+            self._run(self._raw.execute, sql)
         else:
             check_string_params(params)
-            _call(self._secrets, self._raw.execute, sql, params)
+            self._run(self._raw.execute, sql, params, parameterized=bool(params))
         return self
 
     def executemany(self, sql: str, param_list: Sequence[Sequence[Any]]) -> Cursor:
         for params in param_list:
             check_string_params(params)
-        _call(self._secrets, self._raw.executemany, sql, param_list)
+        self._run(self._raw.executemany, sql, param_list, parameterized=True)
         return self
 
     # pyodbc returns pyodbc.Row objects; the interface promises plain tuples.
     def fetchone(self) -> tuple | None:
-        row = _call(self._secrets, self._raw.fetchone)
+        row = self._run(self._raw.fetchone)
         return None if row is None else tuple(row)
 
     def fetchmany(self, size: int) -> list[tuple]:
-        return [tuple(row) for row in _call(self._secrets, self._raw.fetchmany, size)]
+        return [tuple(row) for row in self._run(self._raw.fetchmany, size)]
 
     def fetchall(self) -> list[tuple]:
-        return [tuple(row) for row in _call(self._secrets, self._raw.fetchall)]
+        return [tuple(row) for row in self._run(self._raw.fetchall)]
 
     def close(self) -> None:
-        _call(self._secrets, self._raw.close)
+        self._run(self._raw.close)
 
 
 class Connection(base.Connection):
@@ -254,7 +278,22 @@ class Connection(base.Connection):
         _call(self._secrets, setattr, self._raw, "autocommit", value)
 
     def cursor(self) -> Cursor:
-        return Cursor(_call(self._secrets, self._raw.cursor), self._secrets)
+        return Cursor(_call(self._secrets, self._raw.cursor), self._secrets, self)
+
+    def note_error(self, error: base.Error, *, parameterized: bool) -> None:
+        """Mark the connection unusable at the known trigger and on SQL0519.
+
+        The trigger (SQL0443 at execute with parameters) is re-raised as it is,
+        so the real cause shows; SQL0519 is replaced by an error saying that a
+        new connection is needed. The driver never reconnects by itself.
+        """
+        if error.sqlcode == STATEMENT_IN_USE_SQLCODE:
+            self.usable = False
+            raise base.OperationalError(
+                f"{error}{STATEMENT_IN_USE_HINT}", sqlstate=error.sqlstate, sqlcode=error.sqlcode
+            ) from None
+        if parameterized and error.sqlcode == POISONING_SQLCODE:
+            self.usable = False
 
     def commit(self) -> None:
         _call(self._secrets, self._raw.commit)
