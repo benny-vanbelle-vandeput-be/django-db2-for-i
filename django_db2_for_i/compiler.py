@@ -74,8 +74,9 @@ from django.db.models.expressions import (
     RawSQL,
     Ref,
 )
-from django.db.models.lookups import Exact, IsNull, Lookup
+from django.db.models.lookups import Exact, In, IsNull, Lookup
 from django.db.models.sql import compiler
+from django.db.models.sql.query import Query
 from django.db.models.sql.where import WhereNode
 
 from .expressions import NegatedValue, renders_as_predicate
@@ -87,6 +88,8 @@ COMPOUND_WRAPPER = "SELECT * FROM ( "
 LATERAL_COMPOUND_WRAPPER = "SELECT * FROM LATERAL ( "
 # The LATERAL derived table of grouped expressions, and its columns G1, G2, ...
 GROUPING_TABLE = "DJDB2I_GROUPING"
+# The derived table of a rewritten IN (subquery) (_in_subquery_as_value).
+IN_TABLE = '"DJDB2I_IN"'
 
 
 def _exists_selecting_literal(node: Exists) -> Exists:
@@ -156,6 +159,8 @@ class SQLCompiler(compiler.SQLCompiler):
     def compile(self, node):
         if self._grouping_columns and _hashable(node) and node in self._grouping_columns:
             return self._grouping_columns[node], []
+        if isinstance(node, In) and isinstance(node.rhs, Query) and not self._in_condition:
+            return self._in_subquery_as_value(node)
         if isinstance(node, NegatedExpression) and not renders_as_predicate(node.expression):
             # NOT <BOOLEAN value> is TRUE for NULL on Db2 for i (also in WHERE).
             node = NegatedValue(node.expression)
@@ -176,6 +181,28 @@ class SQLCompiler(compiler.SQLCompiler):
             self._depth -= 1
         if as_value:
             return f"CASE WHEN {sql} THEN TRUE ELSE FALSE END", params
+        return sql, params
+
+    def _in_subquery_as_value(self, lookup: In):
+        """``x IN (subquery)`` outside a search condition (see the module docstring)."""
+        x, x_params = lookup.process_lhs(self, self.connection)
+        subquery, subquery_params = lookup.process_rhs(self, self.connection)
+        rows = f"LATERAL {subquery} AS {IN_TABLE} (V)"
+        match = f"(SELECT 1 FROM {rows} WHERE {IN_TABLE}.V = {x} FETCH FIRST 1 ROWS ONLY)"
+        any_row = f"(SELECT 1 FROM {rows} FETCH FIRST 1 ROWS ONLY)"
+        null_row = f"(SELECT 1 FROM {rows} WHERE {IN_TABLE}.V IS NULL FETCH FIRST 1 ROWS ONLY)"
+        sql = (
+            f"(CASE WHEN {match} IS NOT NULL THEN TRUE WHEN {any_row} IS NULL THEN FALSE "
+            f"WHEN {x} IS NULL THEN NULL WHEN {null_row} IS NOT NULL THEN NULL "
+            "ELSE FALSE END) = TRUE"
+        )
+        params = (
+            *subquery_params,
+            *x_params,  # match
+            *subquery_params,  # any_row
+            *x_params,  # x IS NULL
+            *subquery_params,  # null_row
+        )
         return sql, params
 
     def as_sql(self, with_limits=True, with_col_aliases=False):

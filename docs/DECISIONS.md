@@ -884,3 +884,19 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   deciding in Python that a longer value cannot match (wrong for `<` / `>`,
   and Db2 pads with blanks when comparing, so Python could disagree with the
   database).
+
+## 2026-10-19: IN (subquery) outside a search condition as a three-valued BOOLEAN
+- **Decision (project owner chose the rewrite):** where `x IN (subquery)`
+  lands outside a search condition (Django's XOR emulation, a selected `Q`),
+  the compiler writes `(CASE WHEN <match> THEN TRUE WHEN <no rows> THEN FALSE
+  WHEN x IS NULL THEN NULL WHEN <a NULL row> THEN NULL ELSE FALSE END) =
+  TRUE`, with first-row subqueries over `LATERAL (<subquery>)`. In WHERE /
+  HAVING it stays `IN (subquery)`.
+- **Why:** Db2 for i rejects IN / = ANY (subquery) inside CASE WHEN (SQL0115,
+  probe `in_subquery`). Comparing a BOOLEAN with TRUE is a real predicate, so
+  `NOT` stays three-valued (Db2's NOT on a BOOLEAN value treats NULL as
+  false, IBMI_NOTES.md); the negated form is exact, not an expected failure.
+- **Alternatives:** the IS NOT NULL first-row form alone (exact for the
+  positive form, wrong when negated: NOT would turn UNKNOWN into TRUE);
+  rewriting only positive cases and marking negated ones as expected
+  failures.

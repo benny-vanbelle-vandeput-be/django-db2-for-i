@@ -705,6 +705,23 @@ attributes; a QTEMP table with `NAME NVARCHAR(10)`, `SMALL SMALLINT`,
   match. Django settles out-of-range integers for `exact`/`gt`/... in Python
   (`integer_field_ranges`, which match Db2's SMALLINT/INTEGER/BIGINT).
 
+### IN (subquery) inside CASE WHEN (`probe -- in_subquery`, `probe -- queries`)
+2026-10-19, read-only, PUB400 (IBM i 7.5). **`x IN (subquery)` and `x = ANY
+(subquery)` are rejected inside CASE WHEN** with SQL0115 ("Comparison operator
+IN / = not valid"), also when the CASE is in a WHERE clause (Django's XOR
+emulation: `CAST(? AS INTEGER) = (CASE WHEN x IN (...) THEN 1 ELSE 0 END +
+...)`) and in the select list; `EXISTS` has the same restriction. A first-row
+subquery works there: `CASE WHEN (SELECT 1 FROM (<subquery>) AS S (V) WHERE
+S.V = x FETCH FIRST 1 ROWS ONLY) IS NOT NULL`, also correlated through
+`LATERAL`. Three-valued form checked against plain `IN` / `NOT IN` in WHERE
+for x = 1, 2, 3, NULL and subqueries {1, NULL}, {2}, {NULL} and empty, positive
+and negated, in WHERE and inside CASE WHEN: all 16 combinations identical,
+including `NULL NOT IN (empty)` (TRUE) and `1 NOT IN (2, NULL)` (UNKNOWN):
+
+    (CASE WHEN <match> IS NOT NULL THEN TRUE WHEN <any row> IS NULL THEN FALSE
+          WHEN x IS NULL THEN NULL WHEN <NULL row> IS NOT NULL THEN NULL
+          ELSE FALSE END) = TRUE
+
 ### Truncating dates and times (`probe -- trunc`)
 2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
 compared with Django's truncation in Python.

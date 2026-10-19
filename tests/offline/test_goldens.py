@@ -143,6 +143,8 @@ def allowed_identifiers() -> set[str]:
         # The backend's LATERAL grouping table and its columns (compiler.py).
         "DJDB2I_GROUPING",
         "G1",
+        # The derived table of a rewritten IN (subquery) (compiler.py).
+        "DJDB2I_IN",
     }
     for model in (Author, Book, Code, Defaults, Link, Node, Profile, Schedule, Tag):
         names.add(model._meta.db_table.upper())
