@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import datetime as dt
+
 from django.db.models import Case as CaseExpr
 from django.db.models import (
     CharField,
+    DurationField,
+    ExpressionWrapper,
     F,
     Value,
     When,
@@ -12,7 +16,8 @@ from django.db.models import (
 from django.db.models.functions import Cast, Coalesce
 from django.db.models.lookups import LessThan
 
-from tests.golden_cases.base import AUTHOR, Case, annotate
+from tests.golden_cases.base import AUTHOR, SCHEDULE, Case, annotate, select
+from tests.testapp.models import Schedule
 
 CASES: tuple[Case, ...] = (
     Case(
@@ -59,5 +64,46 @@ CASES: tuple[Case, ...] = (
             ("left_shift", lambda f: f.bitleftshift(2)),
             ("right_shift", lambda f: f.bitrightshift(1)),
         )
+    ),
+    # Durations: timestamp +/- labeled durations split into DAYS + MICROSECONDS
+    # (one MICROSECONDS duration gives NULL from 10**15 on); DATE cast to
+    # TIMESTAMP(6), TIME through a timestamp; duration * number stays BIGINT.
+    Case(
+        "expressions/duration_datetime_plus_field",
+        "query",
+        select(lambda: Schedule.objects.annotate(x=F("start") + F("length")).values("x")),
+        (SCHEDULE,),
+    ),
+    Case(
+        "expressions/duration_datetime_minus_value",
+        "query",
+        select(
+            lambda: Schedule.objects.annotate(x=F("start") - Value(dt.timedelta(days=40))).values(
+                "x"
+            )
+        ),
+        (SCHEDULE,),
+    ),
+    Case(
+        "expressions/duration_date_plus_field",
+        "query",
+        select(lambda: Schedule.objects.annotate(x=F("day") + F("length")).values("x")),
+        (SCHEDULE,),
+    ),
+    Case(
+        "expressions/duration_time_plus_field",
+        "query",
+        select(lambda: Schedule.objects.annotate(x=F("clock") + F("length")).values("x")),
+        (SCHEDULE,),
+    ),
+    Case(
+        "expressions/duration_times_number",
+        "query",
+        select(
+            lambda: Schedule.objects.annotate(
+                x=ExpressionWrapper(F("length") * 3.2, output_field=DurationField())
+            ).values("x")
+        ),
+        (SCHEDULE,),
     ),
 )

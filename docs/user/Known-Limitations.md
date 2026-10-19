@@ -212,11 +212,21 @@ Unicode) regular expressions; see IBM's "REGEXP_LIKE predicate" and
 or data mapping error") instead of being truncated. `StringAgg(...,
 distinct=True)` is not supported yet (Django raises NotSupportedError).
 
+## Durations
+
+A `DurationField` is stored as a BIGINT of microseconds, as on MySQL and
+SQLite. The largest value is 2^63 - 1 microseconds (106,751,991 days);
+Python's `timedelta.max` does not fit. Adding a duration to a date, time or
+datetime gives NULL, not an error, when the result falls outside the
+timestamp range (years 1 to 9999). `TimeField + DurationField` wraps at 24
+hours and has no fractional seconds (see "TimeField has no fractional
+seconds").
+
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and
 enabled one at a time: foreign key constraints in the database, bulk insert,
-returning columns, check constraints, JSONField, DurationField (and subtracting
-datetimes), window functions, `select_for_update`, set operations
+returning columns, check constraints, JSONField, subtracting dates, times and
+datetimes (`F("end") - F("start")`), window functions, `select_for_update`, set operations
 (`intersection`, `difference`; `union` is supported), `inspectdb`, and creating test schemas (tests
 run in an existing library, see [Configuration](Configuration.md#test-database-test)).

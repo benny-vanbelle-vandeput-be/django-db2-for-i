@@ -54,3 +54,12 @@ class Defaults(models.Model):
     data = models.BinaryField(db_default=b"\x01\xab")
     code = models.UUIDField(db_default=uuid.UUID("12345678-1234-5678-1234-567812345678"))
     nothing = models.IntegerField(null=True, db_default=None)
+
+
+class Schedule(models.Model):
+    """Date/time columns and a DurationField (BIGINT microseconds)."""
+
+    start = models.DateTimeField(null=True)
+    day = models.DateField(null=True)
+    clock = models.TimeField(null=True)
+    length = models.DurationField(null=True)

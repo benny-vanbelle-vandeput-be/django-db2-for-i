@@ -26,10 +26,11 @@ from the Python value. Type rules:
 - Decimal without ``max_digits``: ``DECIMAL(p, s)`` from the value's digits;
 - ``None`` with a known output_field: ``CAST(NULL AS <type>)``; without one:
   plain ``NULL``, there is no type to cast to;
-- booleans, other integer fields, floats, dates, times, datetimes, UUIDs: the
-  field's cast type (BOOLEAN, ..., DOUBLE, DATE, TIME, TIMESTAMP(6), CHAR(32)).
+- booleans, other integer fields, floats, dates, times, datetimes, UUIDs,
+  durations: the field's cast type (BOOLEAN, ..., DOUBLE, DATE, TIME,
+  TIMESTAMP(6), CHAR(32), BIGINT microseconds).
 
-Any other type (bytes, timedelta, JSON, ...) raises NotSupportedError;
+Any other type (bytes, JSON, ...) raises NotSupportedError;
 its rule comes with the field support in a later phase.
 
 Predicates as operands
@@ -46,6 +47,17 @@ Boolean columns and values are never wrapped, and ``filter(<cond>=True)``
 value>`` (``~Value(False)``, ``~F("flag")``) is written as ``CASE <value> WHEN
 TRUE THEN FALSE WHEN FALSE THEN TRUE END`` (``NegatedValue``), as an operand
 and everywhere else (compiler.py: Db2 for i's NOT is TRUE for a NULL value).
+
+Durations
+---------
+A DurationField is a BIGINT of microseconds. Adding it to a timestamp uses
+labeled durations, split into whole days and the remaining microseconds:
+``ts + INTEGER(d / 86400000000) DAYS + MOD(d, 86400000000) MICROSECONDS``. A
+single ``d MICROSECONDS`` silently gives NULL from 10**15 microseconds (about
+31.7 years) on; the split is exact from year 1 to 9999 (probe ``durations``).
+A DATE is cast to TIMESTAMP(6) first (``TIMESTAMP(<date>)`` drops the
+microseconds); a TIME goes through a timestamp on 2000-01-01 and wraps at 24
+hours. A duration times or divided by a number is BIGINT arithmetic.
 
 Aggregates
 ----------
@@ -91,6 +103,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.core.exceptions import FieldError
 from django.db import NotSupportedError
 from django.db.models import (
     Avg,
@@ -106,6 +119,8 @@ from django.db.models import (
 )
 from django.db.models.expressions import (
     Case,
+    Combinable,
+    DurationExpression,
     Exists,
     Expression,
     ExpressionWrapper,
@@ -144,6 +159,7 @@ SUPPORTED_TYPES = frozenset(
         "DateTimeField",
         "TimeField",
         "UUIDField",
+        "DurationField",
     }
 )
 
@@ -380,3 +396,50 @@ def string_agg_as_db2_for_i(self, compiler, connection, **extra_context):
 
 
 StringAgg.as_db2_for_i = string_agg_as_db2_for_i
+
+
+# --- Durations ----------------------------------------------------------------------------
+
+DAY_MICROSECONDS = 86_400_000_000
+TEMPORAL_TYPES = frozenset({"DateField", "DateTimeField", "TimeField"})
+
+
+def _internal_type_or_none(expression) -> str | None:
+    try:
+        return expression.output_field.get_internal_type()
+    except FieldError:
+        return None
+
+
+def duration_expression_as_db2_for_i(self, compiler, connection):
+    connection.ops.check_expression_support(self)
+    lhs_type, rhs_type = _internal_type_or_none(self.lhs), _internal_type_or_none(self.rhs)
+    temporal = (
+        self.lhs if lhs_type in TEMPORAL_TYPES else self.rhs if rhs_type in TEMPORAL_TYPES else None
+    )
+    if temporal is not None and self.connector in (Combinable.ADD, Combinable.SUB):
+        duration = self.rhs if temporal is self.lhs else self.lhs
+        temporal_sql, temporal_params = compiler.compile(temporal)
+        duration_sql, duration_params = compiler.compile(duration)
+        kind = _internal_type_or_none(temporal)
+        if kind == "DateField":
+            temporal_sql = f"CAST({temporal_sql} AS TIMESTAMP(6))"
+        elif kind == "TimeField":
+            temporal_sql = f"TIMESTAMP(DATE('2000-01-01'), {temporal_sql})"
+        sign = "-" if self.connector == Combinable.SUB else "+"
+        sql = (
+            f"{temporal_sql} {sign} INTEGER(({duration_sql}) / {DAY_MICROSECONDS}) DAYS "
+            f"{sign} MOD(({duration_sql}), {DAY_MICROSECONDS}) MICROSECONDS"
+        )
+        if kind == "TimeField":
+            sql = f"TIME({sql})"
+        return f"({sql})", (*temporal_params, *duration_params, *duration_params)
+    lhs_sql, lhs_params = compiler.compile(self.lhs)
+    rhs_sql, rhs_params = compiler.compile(self.rhs)
+    sql = connection.ops.combine_expression(self.connector, [lhs_sql, rhs_sql])
+    if self.connector in (Combinable.MUL, Combinable.DIV):
+        sql = f"BIGINT({sql})"  # microseconds stay a whole number
+    return f"({sql})", (*lhs_params, *rhs_params)
+
+
+DurationExpression.as_db2_for_i = duration_expression_as_db2_for_i

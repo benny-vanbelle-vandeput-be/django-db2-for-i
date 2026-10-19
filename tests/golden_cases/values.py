@@ -70,4 +70,10 @@ CASES: tuple[Case, ...] = (
         annotate(lambda: Value(uuid.UUID("12345678-1234-5678-1234-567812345678"))),
         (AUTHOR,),
     ),
+    Case(
+        "values/duration",
+        "query",
+        annotate(lambda: Value(dt.timedelta(days=1, microseconds=7))),
+        (AUTHOR,),
+    ),
 )

@@ -75,3 +75,4 @@ AUTHOR, BOOK, NODE, TAG, DEFAULTS = (
     "ddl/create_tag",
     "ddl/create_defaults",
 )
+SCHEDULE = "ddl/create_schedule"

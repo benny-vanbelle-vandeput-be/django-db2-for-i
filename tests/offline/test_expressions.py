@@ -95,10 +95,9 @@ def test_buckets_end_at_the_maximum() -> None:
     ("expression", "type_name"),
     [
         (Value(b"\x00\x01"), "bytes"),
-        (Value(dt.timedelta(days=1)), "timedelta"),
         (Value({"a": 1}, output_field=JSONField()), "dict"),
     ],
-    ids=["bytes", "timedelta", "json"],
+    ids=["bytes", "json"],
 )
 def test_types_without_a_rule_are_refused(expression, type_name: str) -> None:
     with pytest.raises(NotSupportedError, match=f"Value of type {type_name}"):
@@ -108,6 +107,10 @@ def test_types_without_a_rule_are_refused(expression, type_name: str) -> None:
 def test_uuid_values_are_char_32() -> None:
     assert cast_of(Value(uuid.UUID(int=1))) == "CAST(%s AS CHAR(32))"
     assert cast_of(Value(None, output_field=UUIDField())) == "CAST(NULL AS CHAR(32))"
+
+
+def test_duration_values_are_bigint_microseconds() -> None:
+    assert cast_of(Value(dt.timedelta(days=1))) == "CAST(%s AS BIGINT)"
 
 
 def test_value_without_any_type_is_refused() -> None:
@@ -163,3 +166,18 @@ def test_inferred_integer_types_follow_the_range() -> None:
     assert cast_of(Value(2**31 - 1)) == "CAST(%s AS INTEGER)"
     assert cast_of(Value(2**31)) == "CAST(%s AS BIGINT)"
     assert cast_of(Value(2**63)) == "CAST(%s AS DECIMAL(19, 0))"
+
+
+def test_duration_arithmetic_repeats_the_duration_parameters() -> None:
+    """ts + d is split into DAYS + MICROSECONDS, so d's parameters appear twice."""
+    from django.db.models import F
+
+    from tests.testapp.models import Schedule
+
+    queryset = Schedule.objects.annotate(x=F("start") - Value(dt.timedelta(microseconds=5)))
+    sql, params = queryset.values("x").query.get_compiler("default").as_sql()
+    assert (
+        '("TESTAPP_SCHEDULE"."START" - INTEGER((CAST(%s AS BIGINT)) / 86400000000) DAYS '
+        "- MOD((CAST(%s AS BIGINT)), 86400000000) MICROSECONDS)"
+    ) in sql
+    assert params == (5, 5)
