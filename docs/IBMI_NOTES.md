@@ -594,6 +594,37 @@ BIGINT extremes, NULL and a typed marker for n; a `VALUES` subquery with
 BIGINT(POWER(2, n))` is exact. An untyped NULL argument of BITXOR fails
 (SQL0171, Django's `F("x").bitxor(None)`).
 
+### Durations (`probe -- durations`)
+2026-10-19, read-only (SYSDUMMY1), results compared with Python's own
+arithmetic. A DurationField is stored as BIGINT microseconds.
+
+- **`<timestamp> + n MICROSECONDS` stops at 15 digits:** n = 999,999,999,999,999
+  (about 31.7 years) works, n = 10^15 and larger give **NULL**, silently (not
+  an error). 10000 days (8.64 * 10^14) still works.
+- **Split into days and the rest:** `<ts> + INTEGER(n / 86400000000) DAYS +
+  MOD(n, 86400000000) MICROSECONDS` (truncated division, the remainder has the
+  sign of n) is exact for every case probed: negative n, 10^15 and 10^16
+  microseconds, year 1 + 1 day, year 9999 - 1 day and the whole span from
+  0001-01-01 to 9999-12-31. Python's `timedelta.max` (999,999,999 days) does
+  not fit a BIGINT; the largest DurationField value is 2^63 - 1 microseconds
+  (106,751,991 days 4:00:54.775807). A result outside the timestamp range
+  (n = 2^63 - 1) is **NULL**, not an error.
+- **DATE and TIME:** a labeled duration on a DATE or TIME with MICROSECONDS is
+  rejected (SQL0187). `TIMESTAMP(<date>)` drops the microseconds of the result
+  (precision 0); `CAST(<date> AS TIMESTAMP(6))` and `TIMESTAMP(<date>,
+  TIME('00:00:00'))` keep them. `TIME(TIMESTAMP(DATE('2000-01-01'), <time>) +
+  ...)` adds to a time and wraps at 24 hours.
+- **Duration times or divided by a number:** `BIGINT(<bigint> * <DOUBLE /
+  DECIMAL / INTEGER>)` gives the truncated microseconds.
+- **Exact subtraction in microseconds:** `BIGINT(DAYS(a) - DAYS(b)) *
+  86400000000 + BIGINT(MIDNIGHT_SECONDS(a) - MIDNIGHT_SECONDS(b)) * 1000000 +
+  (MICROSECOND(a) - MICROSECOND(b))` matches Python for spans of months and
+  years (leap days), negative results, year 1 to 9999 and microseconds; for
+  dates `BIGINT(DAYS(a) - DAYS(b)) * 86400000000`, for times
+  `BIGINT(MIDNIGHT_SECONDS(a) - MIDNIGHT_SECONDS(b)) * 1000000`.
+  **`TIMESTAMPDIFF(1, CHAR(a - b))`** is NULL or wrong for anything beyond a
+  few days (only the same-day case was right); the backend never uses it.
+
 ### Truncating dates and times (`probe -- trunc`)
 2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
 compared with Django's truncation in Python.
