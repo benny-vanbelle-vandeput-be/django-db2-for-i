@@ -2,7 +2,7 @@
 
 Usage (inside the "tests" container):
     nox -s probe -- [reachability|connect|sysinfo|libraries|packages|features|
-                     string_limits|extract|queries|listagg|trunc|durations|all] ...
+                     string_limits|extract|queries|listagg|trunc|durations|in_subquery|all] ...
     nox -s probe -- fetch_errors | mapping_errors | long_string_params
                                        (own connection attributes, run alone)
     nox -s probe -- session
@@ -34,6 +34,7 @@ import p12_durations
 import p13_fetch_errors
 import p14_mapping_errors
 import p15_long_string_params
+import p16_in_subquery
 from _common import ProbeError, Settings, connect, write_result
 
 PROBES = {
@@ -53,6 +54,7 @@ PROBES = {
     "fetch_errors": p13_fetch_errors,
     "mapping_errors": p14_mapping_errors,
     "long_string_params": p15_long_string_params,
+    "in_subquery": p16_in_subquery,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
