@@ -385,4 +385,29 @@ CASES: tuple[Case, ...] = (
         ),
         (ACCOUNT, CONTACT),
     ),
+    # The search-condition context of a tuple IN never reaches a CASE context:
+    # a selected value and a When condition use the rewrite (SQL0115 otherwise).
+    Case(
+        "queries/annotate_tuple_in_subquery",
+        "query",
+        select(
+            lambda: Contact.objects.annotate(
+                b=Q(account__in=Account.objects.filter(number__gt=1))
+            ).values("b")
+        ),
+        (ACCOUNT, CONTACT),
+    ),
+    Case(
+        "queries/case_when_tuple_in_subquery",
+        "query",
+        select(
+            lambda: Contact.objects.annotate(
+                x=CaseExpr(
+                    When(Q(account__in=Account.objects.filter(number__gt=1)), then=Value(1)),
+                    default=Value(0),
+                )
+            ).values("x")
+        ),
+        (ACCOUNT, CONTACT),
+    ),
 )
