@@ -660,6 +660,20 @@ unusable at the trigger and on any SQL0519 (DECISIONS.md, 2026-10-19).
 division by zero in the select list return NULL without an error (see the
 separate note on data mapping errors); in WHERE the same errors raise SQL0802.
 
+### Data mapping errors in the select list (`nox -s probe -- mapping_errors`)
+2026-10-19, read-only, PUB400 (IBM i 7.5), IBM i Access ODBC Driver 07.01.029,
+pyodbc 5.3.0, the backend's connection attributes.
+
+A value that cannot be converted, or a division by zero, **in the select
+list** gives **NULL without an error**: `SELECT CAST('abc' AS INTEGER)`, the
+same with a parameter (`CAST(CAST(? AS VARCHAR(3)) AS INTEGER)`), and `SELECT
+1 / 0` (via a subquery) all return NULL. With several rows, only the bad row
+is NULL (`'1', 'x', '3'` cast to INTEGER gives 1, NULL, 3). The driver reports
+**no warning**: pyodbc's `cursor.messages` is empty after execute and after
+fetch (so there is no SQL_SUCCESS_WITH_INFO the backend could turn into an
+error). In WHERE, the same errors raise SQL0802 ("Data conversion or data
+mapping error").
+
 ### Truncating dates and times (`probe -- trunc`)
 2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
 compared with Django's truncation in Python.

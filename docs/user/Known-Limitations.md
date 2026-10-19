@@ -212,6 +212,16 @@ Unicode) regular expressions; see IBM's "REGEXP_LIKE predicate" and
 or data mapping error") instead of being truncated. `StringAgg(...,
 distinct=True)` is not supported yet (Django raises NotSupportedError).
 
+## Conversion errors in selected values give NULL
+
+When a selected value cannot be converted, or divides by zero, Db2 for i
+returns NULL for that row instead of raising an error, and the driver gives
+no warning. For example, `Cast("text", IntegerField())` on a row whose text is
+not a number gives `None` for that row; other rows convert normally. In a
+filter (`WHERE`), the same conversion raises SQL0802 ("Data conversion or
+data mapping error"). Validate or clean such data before casting, or check
+for unexpected `None` values.
+
 ## Durations
 
 A `DurationField` is stored as a BIGINT of microseconds, as on MySQL and
