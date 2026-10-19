@@ -452,3 +452,24 @@ def test_extra_with_a_cast_parameter(live, empty) -> None:
     Author.objects.create(name="a")
     rows = Author.objects.extra(select={"foo": "CAST(%s AS INTEGER)"}, select_params=(1,))
     assert [(a.name, a.foo) for a in rows] == [("a", 1)]
+
+
+def test_intersection_and_difference(live, empty) -> None:
+    """The real-world patterns: authors in both / only one of two filters, as model
+    instances, ordered, counted, as values, and as a subquery."""
+    for name in ("abz", "abc", "xyz", "axz"):
+        Author.objects.create(name=name)
+    starts = Author.objects.filter(name__startswith="a")
+    ends = Author.objects.filter(name__endswith="z")
+    both = starts.intersection(ends)
+    only_starts = starts.difference(ends)
+    assert sorted(a.name for a in both) == ["abz", "axz"]
+    assert [a.name for a in both.order_by("-name")] == ["axz", "abz"]
+    assert both.count() == 2
+    assert list(only_starts.values_list("name", flat=True)) == ["abc"]
+    assert sorted(ends.difference(starts).values_list("name", flat=True)) == ["xyz"]
+    ids = both.values("pk")
+    assert sorted(Author.objects.filter(pk__in=ids).values_list("name", flat=True)) == [
+        "abz",
+        "axz",
+    ]

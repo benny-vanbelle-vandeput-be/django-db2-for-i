@@ -334,4 +334,27 @@ CASES: tuple[Case, ...] = (
         ),
         (AUTHOR, BOOK),
     ),
+    # INTERSECT / EXCEPT (Db2 for i rejects their ALL forms, which Django never uses).
+    Case(
+        "queries/intersection",
+        "query",
+        select(
+            lambda: Author.objects.filter(name__startswith="a").intersection(
+                Author.objects.filter(name__endswith="z")
+            )
+        ),
+        (AUTHOR,),
+    ),
+    Case(
+        "queries/difference_ordered",
+        "query",
+        select(
+            lambda: (
+                Author.objects.filter(name__startswith="a")
+                .difference(Author.objects.filter(name__endswith="z"))
+                .order_by("-name")
+            )
+        ),
+        (AUTHOR,),
+    ),
 )
