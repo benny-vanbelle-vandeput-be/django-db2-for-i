@@ -900,3 +900,26 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   positive form, wrong when negated: NOT would turn UNKNOWN into TRUE);
   rewriting only positive cases and marking negated ones as expected
   failures.
+
+## 2026-10-19: one IN (subquery) rewrite for any number of columns
+- **Decision:** the IN (subquery) rewrite outside a search condition uses one
+  general form with columns V1..Vn: TRUE if a row matches on every column,
+  else NULL if a row has no column that is definitely unequal (equal, or NULL
+  on either side), else FALSE. It replaces the single-column form (two
+  first-row subqueries instead of three). A lookup that renders as another
+  lookup on the same lhs (Django's `RelatedIn` as `TupleIn` for a
+  multi-column relation) keeps the search-condition context, so a tuple IN in
+  WHERE is not rewritten.
+- **Why:** Django's `TupleIn` lost the context (its parent lookup switched it
+  off), and the single-column rewrite compared one column with a tuple
+  (SQL0216). Probe `tuple_in` checked the general form against plain IN /
+  NOT IN for pairs and single columns, positive, negated and in CASE WHEN.
+- **Alternatives:** a separate tuple form next to the single-column one (two
+  forms to keep exact); treating every lookup inside a condition lookup as a
+  condition (wrong for lookups used as operands, e.g. `Exact(<lookup>,
+  <lookup>)`).
+- **Known difference:** with `supports_tuple_lookups = False`, `exclude()` by
+  a multi-column relation in WHERE uses Django's two-valued `NOT EXISTS`
+  fallback, while the rewrite (selected value, XOR) is three-valued like SQL
+  (docs/user/Known-Limitations.md). Enabling tuple lookups would align them.
+

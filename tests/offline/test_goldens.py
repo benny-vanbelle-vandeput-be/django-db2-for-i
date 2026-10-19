@@ -27,7 +27,19 @@ from tests.golden import (
     render_last_verification,
 )
 from tests.golden_cases import CASES, CASES_BY_NAME, GROUPS, build_case
-from tests.testapp.models import Author, Book, Code, Defaults, Link, Node, Profile, Schedule, Tag
+from tests.testapp.models import (
+    Account,
+    Author,
+    Book,
+    Code,
+    Contact,
+    Defaults,
+    Link,
+    Node,
+    Profile,
+    Schedule,
+    Tag,
+)
 
 PROFILES = sorted(capabilities.PROFILES)
 PAIRS = [(profile, case) for profile in PROFILES for case in CASES]
@@ -148,9 +160,10 @@ def allowed_identifiers() -> set[str]:
         # The derived table of a rewritten IN (subquery) (compiler.py).
         "DJDB2I_IN",
     }
-    for model in (Author, Book, Code, Defaults, Link, Node, Profile, Schedule, Tag):
+    models = (Account, Author, Book, Code, Contact, Defaults, Link, Node, Profile, Schedule, Tag)
+    for model in models:
         names.add(model._meta.db_table.upper())
-        names.update(field.column.upper() for field in model._meta.local_fields)
+        names.update(field.column.upper() for field in model._meta.local_fields if field.column)
     return names
 
 

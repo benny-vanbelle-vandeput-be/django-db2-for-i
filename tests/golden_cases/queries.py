@@ -22,8 +22,18 @@ from django.db.models import (
 )
 from django.db.models.lookups import LessThan
 
-from tests.golden_cases.base import AUTHOR, AWARE, BOOK, Case, books_of_author, exists, select
-from tests.testapp.models import Author, Book
+from tests.golden_cases.base import (
+    ACCOUNT,
+    AUTHOR,
+    AWARE,
+    BOOK,
+    CONTACT,
+    Case,
+    books_of_author,
+    exists,
+    select,
+)
+from tests.testapp.models import Account, Author, Book, Contact
 
 
 def _last_insert_id(connection):
@@ -356,5 +366,23 @@ CASES: tuple[Case, ...] = (
             )
         ),
         (AUTHOR,),
+    ),
+    # A two-column relation: (a, b) IN (subquery) in WHERE, and the rewrite
+    # with one column per tuple element outside a search condition.
+    Case(
+        "queries/filter_tuple_in_subquery",
+        "query",
+        select(lambda: Contact.objects.filter(account__in=Account.objects.filter(number__gt=1))),
+        (ACCOUNT, CONTACT),
+    ),
+    Case(
+        "queries/xor_tuple_in_subquery",
+        "query",
+        select(
+            lambda: Contact.objects.filter(
+                Q(account__in=Account.objects.filter(number__gt=1)) ^ Q(company="b")
+            )
+        ),
+        (ACCOUNT, CONTACT),
     ),
 )

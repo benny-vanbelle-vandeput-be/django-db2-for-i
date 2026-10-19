@@ -67,6 +67,7 @@ from __future__ import annotations
 from django.db.models import IntegerField
 from django.db.models.expressions import (
     Col,
+    ColPairs,
     Exists,
     ExpressionWrapper,
     NegatedExpression,
@@ -155,55 +156,74 @@ class SQLCompiler(compiler.SQLCompiler):
     _depth = 0
     # Grouped expression -> its column in the LATERAL grouping table.
     _grouping_columns: dict = {}
+    # The lookup being compiled as a search condition, while it renders.
+    _condition_lookup = None
 
     def compile(self, node):
         if self._grouping_columns and _hashable(node) and node in self._grouping_columns:
             return self._grouping_columns[node], []
-        if isinstance(node, In) and isinstance(node.rhs, Query) and not self._in_condition:
+        # A lookup that renders as another lookup on the same lhs (RelatedIn as
+        # TupleIn for a multi-column relation) keeps the search condition.
+        in_condition = self._in_condition or (
+            isinstance(node, Lookup)
+            and self._condition_lookup is not None
+            and node.lhs is self._condition_lookup.lhs
+        )
+        if isinstance(node, In) and isinstance(node.rhs, Query) and not in_condition:
             return self._in_subquery_as_value(node)
         if isinstance(node, NegatedExpression) and not renders_as_predicate(node.expression):
             # NOT <BOOLEAN value> is TRUE for NULL on Db2 for i (also in WHERE).
             node = NegatedValue(node.expression)
         if isinstance(node, Exists):
             node = _exists_selecting_literal(node)
-            if not self._in_condition:
+            if not in_condition:
                 return node.as_sql(self, self.connection, template=EXISTS_AS_VALUE)
-        outer = self._in_condition
-        self._in_condition = (outer and _is_condition_wrapper(node)) or (
-            isinstance(node, WhereNode) and (outer or self._is_query_condition(node))
+        outer, outer_lookup = self._in_condition, self._condition_lookup
+        self._in_condition = (in_condition and _is_condition_wrapper(node)) or (
+            isinstance(node, WhereNode) and (in_condition or self._is_query_condition(node))
         )
+        self._condition_lookup = node if in_condition and isinstance(node, Lookup) else None
         as_value = self._depth == 0 and not self._in_condition and _is_value_predicate(node)
         self._depth += 1
         try:
             sql, params = super().compile(node)
         finally:
-            self._in_condition = outer
+            self._in_condition, self._condition_lookup = outer, outer_lookup
             self._depth -= 1
         if as_value:
             return f"CASE WHEN {sql} THEN TRUE ELSE FALSE END", params
         return sql, params
 
     def _in_subquery_as_value(self, lookup: In):
-        """``x IN (subquery)`` outside a search condition (see the module docstring)."""
-        x, x_params = lookup.process_lhs(self, self.connection)
+        """``x IN (subquery)`` outside a search condition, where Db2 for i rejects
+        it (inside CASE WHEN: SQL0115; probes ``in_subquery``, ``tuple_in``).
+
+        TRUE if a row matches on every column; else NULL if a row has no
+        column that is definitely unequal (equal, or NULL on either side);
+        else FALSE. ``x`` is one column, or the columns of a multi-column
+        relation (``(a, b) IN (subquery)``)."""
+        if isinstance(lookup.lhs, ColPairs):
+            xs = [self.compile(col) for col in lookup.lhs]
+        else:
+            xs = [lookup.process_lhs(self, self.connection)]
         subquery, subquery_params = lookup.process_rhs(self, self.connection)
-        rows = f"LATERAL {subquery} AS {IN_TABLE} (V)"
-        match = f"(SELECT 1 FROM {rows} WHERE {IN_TABLE}.V = {x} FETCH FIRST 1 ROWS ONLY)"
-        any_row = f"(SELECT 1 FROM {rows} FETCH FIRST 1 ROWS ONLY)"
-        null_row = f"(SELECT 1 FROM {rows} WHERE {IN_TABLE}.V IS NULL FETCH FIRST 1 ROWS ONLY)"
+        names = [f"V{number}" for number in range(1, len(xs) + 1)]
+        rows = f"LATERAL {subquery} AS {IN_TABLE} ({', '.join(names)})"
+        equal, maybe = [], []
+        equal_params, maybe_params = [], []
+        for name, (x, x_params) in zip(names, xs, strict=True):
+            v = f"{IN_TABLE}.{name}"
+            equal.append(f"{v} = {x}")
+            equal_params.extend(x_params)
+            maybe.append(f"({v} = {x} OR {v} IS NULL OR {x} IS NULL)")
+            maybe_params.extend((*x_params, *x_params))
+        match = f"(SELECT 1 FROM {rows} WHERE {' AND '.join(equal)} FETCH FIRST 1 ROWS ONLY)"
+        unknown = f"(SELECT 1 FROM {rows} WHERE {' AND '.join(maybe)} FETCH FIRST 1 ROWS ONLY)"
         sql = (
-            f"(CASE WHEN {match} IS NOT NULL THEN TRUE WHEN {any_row} IS NULL THEN FALSE "
-            f"WHEN {x} IS NULL THEN NULL WHEN {null_row} IS NOT NULL THEN NULL "
-            "ELSE FALSE END) = TRUE"
+            f"(CASE WHEN {match} IS NOT NULL THEN TRUE "
+            f"WHEN {unknown} IS NOT NULL THEN NULL ELSE FALSE END) = TRUE"
         )
-        params = (
-            *subquery_params,
-            *x_params,  # match
-            *subquery_params,  # any_row
-            *x_params,  # x IS NULL
-            *subquery_params,  # null_row
-        )
-        return sql, params
+        return sql, (*subquery_params, *equal_params, *subquery_params, *maybe_params)
 
     def as_sql(self, with_limits=True, with_col_aliases=False):
         sql, params = super().as_sql(with_limits, with_col_aliases)

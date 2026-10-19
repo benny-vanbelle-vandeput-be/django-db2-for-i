@@ -12,9 +12,11 @@ from django_db2_for_i.creation import MARKER_TABLE, TestDatabaseRefused
 from tests.testapp.models import Author
 
 MODEL_TABLES = {
+    "TESTAPP_ACCOUNT",
     "TESTAPP_AUTHOR",
     "TESTAPP_BOOK",
     "TESTAPP_CODE",
+    "TESTAPP_CONTACT",
     "TESTAPP_DEFAULTS",
     "TESTAPP_DOCUMENT",
     "TESTAPP_LINK",

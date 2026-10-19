@@ -2,9 +2,10 @@
 
 from django.db import connection
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
+from django.db.models.lookups import Exact
 
 from django_db2_for_i import compiler
-from tests.testapp.models import Author, Book
+from tests.testapp.models import Account, Author, Book, Contact
 
 
 def compiled(queryset):
@@ -186,7 +187,41 @@ def test_in_subquery_stays_plain_in_a_search_condition() -> None:
 def test_in_subquery_as_a_value_is_three_valued() -> None:
     queryset = Book.objects.annotate(b=Q(author__in=Author.objects.values("id"))).values("b")
     sql, _params = queryset.query.get_compiler(connection=connection).as_sql()
-    rows = 'LATERAL (SELECT "U0"."ID" AS "ID" FROM "TESTAPP_AUTHOR" "U0") AS "DJDB2I_IN" (V)'
-    assert sql.count(rows) == 3  # a match, any row, a NULL row
-    assert 'WHEN "TESTAPP_BOOK"."AUTHOR_ID" IS NULL THEN NULL' in sql
-    assert "ELSE FALSE END) = TRUE" in sql
+    rows = 'LATERAL (SELECT "U0"."ID" AS "ID" FROM "TESTAPP_AUTHOR" "U0") AS "DJDB2I_IN" (V1)'
+    assert sql.count(rows) == 2  # a match, a row that may match (NULL)
+    x = '"TESTAPP_BOOK"."AUTHOR_ID"'
+    assert f'WHERE "DJDB2I_IN".V1 = {x} FETCH' in sql
+    assert f'("DJDB2I_IN".V1 = {x} OR "DJDB2I_IN".V1 IS NULL OR {x} IS NULL)' in sql
+    assert "THEN NULL ELSE FALSE END) = TRUE" in sql
+
+
+def test_tuple_in_subquery_is_not_rewritten_in_a_search_condition() -> None:
+    """RelatedIn renders as TupleIn on the same lhs: still a search condition, so
+    Django's fallback for supports_tuple_lookups = False (Exists of the
+    subquery filtered by a = x AND b = y), not the IN rewrite."""
+    queryset = Contact.objects.filter(account__in=Account.objects.filter(number__gt=1))
+    _, sql = compiled(queryset)
+    assert '"TESTAPP_CONTACT"."ACCOUNT_NUMBER" = ("U0"."NUMBER")' in sql
+    assert "DJDB2I_IN" not in sql
+
+
+def test_tuple_in_subquery_as_a_value_has_a_column_per_element() -> None:
+    queryset = Contact.objects.annotate(
+        b=Q(account__in=Account.objects.filter(number__gt=1))
+    ).values("b")
+    sql, params = queryset.query.get_compiler(connection=connection).as_sql()
+    assert sql.count('AS "DJDB2I_IN" (V1, V2)') == 2
+    assert (
+        'WHERE "DJDB2I_IN".V1 = "TESTAPP_CONTACT"."COMPANY" '
+        'AND "DJDB2I_IN".V2 = "TESTAPP_CONTACT"."ACCOUNT_NUMBER" FETCH' in sql
+    )
+    assert params == (1, 1)
+
+
+def test_a_lookup_as_an_operand_is_not_a_search_condition() -> None:
+    """A lookup compiled inside a condition lookup, on another lhs, stays a value."""
+    queryset = Book.objects.filter(
+        Exact(Q(author__in=Author.objects.values("id")), Q(pages__lt=10))
+    )
+    _, sql = compiled(queryset)
+    assert "DJDB2I_IN" in sql
