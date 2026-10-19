@@ -65,6 +65,7 @@ Details per module: [docs/TEST_STATUS.md](docs/TEST_STATUS.md).
 
 ### Releases
 
+- **`v0.1.0a3`** (2026-10-20): Phase 2: queries & pagination (release run: 7 Django modules, 1249 tests, 0 failed).
 - **`v0.1.0a2`** (2026-10-18): Encoding fixes (UTF-8 statement text, long strings intact) and the signed-tag release workflow.
 - **`v0.1.0a1`** (2026-10-17): Phase 1: minimal backend (its code reports version 0.0.1.dev0).
 
@@ -110,7 +111,7 @@ Alpha releases are published as [GitHub releases](https://github.com/benny-vanbe
 (sdist and wheel), not on PyPI:
 
 ```sh
-pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0a2"
+pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0a3"
 ```
 
 You also need unixODBC and the IBM i Access ODBC Driver, see

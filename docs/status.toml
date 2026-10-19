@@ -15,6 +15,11 @@ ibmi = "7.5"
 test_system = "PUB400"
 
 [[releases]]
+tag = "v0.1.0a3"
+date = "2026-10-20"
+summary = "Phase 2: queries & pagination (release run: 7 Django modules, 1249 tests, 0 failed)."
+
+[[releases]]
 tag = "v0.1.0a2"
 date = "2026-10-18"
 summary = "Encoding fixes (UTF-8 statement text, long strings intact) and the signed-tag release workflow."
