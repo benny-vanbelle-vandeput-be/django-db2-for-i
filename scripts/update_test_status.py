@@ -502,23 +502,55 @@ def status_lines(status: dict, results: list[ModuleResult]) -> list[str]:
     lines += ["", "### Phases", "", "| Phase | Content | Status |", "|---|---|---|"]
     for phase in status.get("phases", []):
         lines.append(f"| {phase['phase']} | {phase['content']} | {phase['status']} |")
+    section = status.get("modules_section", {})
     lines += [
         "",
-        "### Phase 2 modules",
+        f"### {section.get('title', 'Modules')}",
         "",
         "Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS.md).",
         "",
-        "| Module | Tests | Result | Status |",
-        "|---|---|---|---|",
     ]
-    for module in status.get("modules", []):
-        r = by_module.get(module["module"])
-        tests = "" if r is None or r.ran is None else str(r.ran)
-        result = "not run yet" if r is None else _result_text(r)
-        state = module["status"] + (f" ({module['note']})" if module.get("note") else "")
-        lines.append(f"| {module['module']} | {tests} | {result} | {state} |")
+    columns = section.get("django")
+    if columns:
+        lines += _modules_per_version(status, results, columns)
+    else:
+        lines += ["| Module | Tests | Result | Status |", "|---|---|---|---|"]
+        for module in status.get("modules", []):
+            r = by_module.get(module["module"])
+            tests = "" if r is None or r.ran is None else str(r.ran)
+            result = "not run yet" if r is None else _result_text(r)
+            lines.append(f"| {module['module']} | {tests} | {result} | {_module_state(module)} |")
     lines += ["", "### Open tracks and notes", ""]
     lines += [f"- {track['text']}" for track in status.get("tracks", [])] or ["- (none)"]
+    return lines
+
+
+def _module_state(module: dict) -> str:
+    return module["status"] + (f" ({module['note']})" if module.get("note") else "")
+
+
+def _modules_per_version(
+    status: dict, results: list[ModuleResult], columns: list[str]
+) -> list[str]:
+    """One column per Django version (``[modules_section] django``): the module's
+    tests and result on that version, or "planned" without a recorded run."""
+    by_key = {(r.module, r.django): r for r in results}
+    lines = [
+        "| Module | " + " | ".join(f"Django {v}" for v in columns) + " | Status |",
+        "|---|" + "---|" * len(columns) + "---|",
+    ]
+    for module in status.get("modules", []):
+        cells = []
+        for version in columns:
+            r = by_key.get((module["module"], version))
+            if r is None:
+                cells.append("planned")
+            elif r.ran is None:
+                cells.append(_result_text(r))
+            else:
+                cells.append(f"{r.ran} tests, {_result_text(r)}")
+        row = " | ".join([module["module"], *cells, _module_state(module)])
+        lines.append(f"| {row} |")
     return lines
 
 

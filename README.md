@@ -82,17 +82,19 @@ Details per module: [docs/TEST_STATUS.md](docs/TEST_STATUS.md).
 | 7 | PUB400 tier & release prep | planned |
 | Encoding track | CCSID / UTF-8 investigation, findings A/B/C (released in 0.1.0a2) | done |
 
-### Phase 2 modules
+### Phase 3: supported modules per Django version
 
 Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS.md).
 
-| Module | Tests | Result | Status |
-|---|---|---|---|
-| ordering | 43 | OK | done |
-| lookup | 148 | OK (5 skipped, 2 expected failures) | done |
-| aggregation | 168 | OK (16 skipped) | done |
-| expressions | 213 | OK (5 skipped, 2 expected failures) | done |
-| queries | 506 | OK (21 skipped, 3 expected failures) | done (split into labels Q1–Q5 because of its size) |
+| Module | Django 6.1 | Django 6.0 | Django 5.2 | Status |
+|---|---|---|---|---|
+| basic | 83 tests, OK (3 skipped) | planned | planned | planned |
+| transactions | 88 tests, OK (3 skipped) | planned | planned | planned |
+| ordering | 43 tests, OK | planned | planned | planned |
+| lookup | 148 tests, OK (5 skipped, 2 expected failures) | planned | planned | planned |
+| aggregation | 168 tests, OK (16 skipped) | planned | planned | planned |
+| expressions | 213 tests, OK (5 skipped, 2 expected failures) | planned | planned | planned |
+| queries | 506 tests, OK (21 skipped, 3 expected failures) | planned | planned | planned (split into labels Q1–Q5 because of its size) |
 
 ### Open tracks and notes
 
