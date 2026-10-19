@@ -768,6 +768,21 @@ compared with Django's expanded form, in WHERE and negated:
 - Against a subquery: `(a, b) = (subquery)` works, `(a, b) > (subquery)` is
   rejected (SQL0115).
 
+### Ordered and sliced parts of compound queries (`probe -- compound_parts`)
+2026-10-19, read-only (VALUES only), PUB400 (IBM i 7.5). Besides probe 9's
+parenthesised top-level parts with `ORDER BY` + `FETCH FIRST` / `OFFSET`, all
+13 shapes Django writes with `supports_slicing_ordering_in_compound` and
+`supports_parentheses_in_compound` work with the expected rows: a part's
+`ORDER BY` with the NULL ordering emulation (`X IS NULL, X`), by a column
+that is not selected, or without `FETCH FIRST`; typed markers with `OFFSET`;
+`FETCH FIRST` after parenthesised parts; a nested compound query as a
+parenthesised part, also with parenthesised parts inside; and inside
+subqueries: `IN ((part) UNION (part))` with sliced and with correlated
+parts, a scalar subquery, `EXISTS`, and the backend's `SELECT * FROM LATERAL
+((part) UNION (part))` wrapper, correlated and with an expression in its
+ORDER BY. `ORDER BY X DESC` inside a part puts NULLs first (NULLs sort as
+the largest value).
+
 ### Truncating dates and times (`probe -- trunc`)
 2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
 compared with Django's truncation in Python.
