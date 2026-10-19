@@ -704,6 +704,10 @@ attributes; a QTEMP table with `NAME NVARCHAR(10)`, `SMALL SMALLINT`,
   range) and with 1.005 (30126, right truncation). Errors, never a silent
   match. Django settles out-of-range integers for `exact`/`gt`/... in Python
   (`integer_field_ranges`, which match Db2's SMALLINT/INTEGER/BIGINT).
+- A typed marker shorter than the value fails the same way:
+  `NAME = CAST(? AS NVARCHAR(10))`, `(NAME, SMALL) = (CAST(? AS NVARCHAR(10)),
+  ?)` and `SELECT CAST(? AS NVARCHAR(10))` with `nonexistent` give CWB0111
+  (2026-10-19); never a truncated match.
 
 ### IN (subquery) inside CASE WHEN (`probe -- in_subquery`, `probe -- queries`)
 2026-10-19, read-only, PUB400 (IBM i 7.5). **`x IN (subquery)` and `x = ANY
@@ -746,6 +750,23 @@ identical):
           WHEN <a row with (Vi = xi OR Vi IS NULL OR xi IS NULL) for every i>
                IS NOT NULL THEN NULL
           ELSE FALSE END) = TRUE
+
+### Row-value predicates for tuple lookups (`probe -- tuple_lookups`)
+2026-10-19, read-only (VALUES only), PUB400 (IBM i 7.5). The forms Django
+writes with `supports_tuple_lookups`, on rows with NULLs in either column,
+compared with Django's expanded form, in WHERE and negated:
+
+- `(a, b) = (?, ?)` and `<>`: accepted with untyped and typed markers;
+  identical rows, also negated (UNKNOWN for a NULL in either column), and in
+  CASE WHEN.
+- `(a, b) IN ((?, ?), (?, ?))`: rejected (SQL0104), typed or not.
+- `(a, b) > / >= / < / <= (?, ?)`: rejected (SQL0115), typed or not.
+- `(a, b) IN (subquery)`: accepted in WHERE; positive rows identical to
+  Django's EXISTS fallback, negated rows three-valued (`NOT IN` leaves out
+  rows that are UNKNOWN, `NOT EXISTS` returns them). Inside CASE WHEN: SQL0115
+  (the IN rewrite handles it).
+- Against a subquery: `(a, b) = (subquery)` works, `(a, b) > (subquery)` is
+  rejected (SQL0115).
 
 ### Truncating dates and times (`probe -- trunc`)
 2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
