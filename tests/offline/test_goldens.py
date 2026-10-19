@@ -152,8 +152,9 @@ def allowed_identifiers() -> set[str]:
         "HAS",
         "N",
         "B",
-        # values("pk") in a subquery.
+        # values("pk") / values("author") in a subquery.
         "PK",
+        "AUTHOR",
         # The backend's LATERAL grouping table and its columns (compiler.py).
         "DJDB2I_GROUPING",
         "G1",

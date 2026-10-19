@@ -75,7 +75,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     allows_group_by_select_index = False
     update_can_self_select = False
     delete_can_self_reference_subquery = False
-    allow_sliced_subqueries_with_in = False
+    # IN (SELECT ... FETCH FIRST n ROWS ONLY), also with OFFSET (probe queries).
+    allow_sliced_subqueries_with_in = True
     # A scalar subquery in GROUP BY works (probe queries).
     supports_subqueries_in_group_by = True
     # ANY_VALUE aggregate (probe queries).

@@ -486,3 +486,24 @@ def test_delete_with_a_subquery_on_its_own_table(live, empty) -> None:
     assert sorted(Book.objects.values_list("title", flat=True)) == ["10", "50"]
     Book.objects.exclude(pk__in=Book.objects.filter(pages__lt=20).values("pk")).delete()
     assert list(Book.objects.values_list("title", flat=True)) == ["10"]
+
+
+def test_sliced_subqueries_in_in(live, empty) -> None:
+    """The real-world patterns of allow_sliced_subqueries_with_in: the authors of
+    the newest books (IN (... FETCH FIRST n ROWS ONLY)), with an offset, in XOR,
+    and a delete limited by a sliced subquery."""
+    authors = [Author.objects.create(name=n) for n in ("a", "b", "c")]
+    for year, author in ((2020, authors[0]), (2023, authors[1]), (2025, authors[2])):
+        Book.objects.create(
+            author=author, title=str(year), published=dt.datetime(year, 1, 1, tzinfo=dt.UTC)
+        )
+    newest = Book.objects.order_by("-published").values("author")
+    assert sorted(Author.objects.filter(pk__in=newest[:2]).values_list("name", flat=True)) == [
+        "b",
+        "c",
+    ]
+    assert list(Author.objects.filter(pk__in=newest[1:2]).values_list("name", flat=True)) == ["b"]
+    xor = Author.objects.filter(Q(pk__in=newest[:2]) ^ Q(name="c"))
+    assert list(xor.values_list("name", flat=True)) == ["b"]
+    Book.objects.filter(pk__in=Book.objects.order_by("published").values("pk")[:1]).delete()
+    assert sorted(Book.objects.values_list("title", flat=True)) == ["2023", "2025"]
