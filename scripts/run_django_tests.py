@@ -16,8 +16,8 @@ Called by the ``django_tests`` nox session (see scripts/runtests.sh):
   a whole module, or test-results/<version>/labels/<label>.log for a dotted
   label (not counted in TEST_STATUS.md), with the password from DB2I_PASSWORD
   replaced by ``***`` in both. The log starts with a header (label, Django
-  and backend commits, keepdb, start time) and ends with the exit code and
-  end time.
+  and backend commits, the Python version that runs ``runtests.py``, keepdb,
+  start time) and ends with the exit code and end time.
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -130,6 +131,9 @@ def run_label(version: str, label: str, keepdb: bool, verbosity: int, scrub) -> 
         f"# module: {label}",
         f"# django: {version} ({git_commit(django_dir)})",
         f"# backend: {git_commit(ROOT)}",
+        # runtests.py is started with sys.executable (runtests_command), so this
+        # interpreter's version is the one the tests ran on.
+        f"# python: {platform.python_version()}",
         f"# keepdb: {'yes' if keepdb else 'no'}",
         f"# started: {now}",
     ]

@@ -97,6 +97,29 @@ def test_missing_checkout_is_refused(monkeypatch, tmp_path, capsys) -> None:
     assert "git clone --branch stable/6.1.x" in capsys.readouterr().err
 
 
+def test_log_header_records_the_python_version(monkeypatch, tmp_path, capsys) -> None:
+    import io
+    import platform
+
+    class FakeProcess:
+        stdout = io.StringIO("Ran 0 tests in 0.000s\n\nOK\n")
+
+        def __init__(self, command, **kwargs):
+            # runtests.py runs on this interpreter, so its version is the one recorded.
+            assert command[0] == sys.executable
+
+        def wait(self):
+            return 0
+
+    monkeypatch.setattr(runner, "ROOT", tmp_path)
+    monkeypatch.setattr(runner, "git_commit", lambda path: "abc1234 2026-10-19")
+    monkeypatch.setattr(runner.subprocess, "Popen", FakeProcess)
+    assert runner.run_label("6.1", "basic", True, 2, lambda text: text) == 0
+    header = (tmp_path / "test-results/6.1/basic.log").read_text().splitlines()[:6]
+    assert f"# python: {platform.python_version()}" in header
+    capsys.readouterr()
+
+
 def test_main_refuses_without_modules(capsys) -> None:
     assert runner.main(["6.1"]) == 2
     assert "full Django test suite" in capsys.readouterr().err
