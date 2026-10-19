@@ -78,6 +78,11 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
   libraries, and record the result in `docs/IBMI_NOTES.md`.
 - **Probes are read-only by default.** Anything that changes the IBM i (e.g. creating a
   journal receiver and `QSQJRN` journal) is proposed first and only run after approval.
+  - **Exception: QTEMP.** Probes may create and change objects in `QTEMP` without
+    approval: QTEMP is job-scoped, private to the probe's own connection, and
+    everything in it vanishes when the job ends.
+  - Nothing outside QTEMP (a library, a table in a user library, a journal, a
+    system value, a reply list entry) may be created or changed without approval.
 - PUB400 limits connections per IP: one connection per run, `--parallel=1`, no retry storms.
 - No uptime guarantee: test runs must fail fast and clearly when the system is unreachable.
 - Allowed on PUB400: single, small Django test modules (e.g. `basic`, `transactions`) and the
