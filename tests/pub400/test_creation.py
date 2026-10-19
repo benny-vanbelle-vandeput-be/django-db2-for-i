@@ -14,9 +14,12 @@ from tests.testapp.models import Author
 MODEL_TABLES = {
     "TESTAPP_AUTHOR",
     "TESTAPP_BOOK",
+    "TESTAPP_CODE",
     "TESTAPP_DEFAULTS",
     "TESTAPP_DOCUMENT",
+    "TESTAPP_LINK",
     "TESTAPP_NODE",
+    "TESTAPP_PROFILE",
     "TESTAPP_SCHEDULE",
     "TESTAPP_TAG",
 }

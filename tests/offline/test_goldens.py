@@ -27,7 +27,7 @@ from tests.golden import (
     render_last_verification,
 )
 from tests.golden_cases import CASES, CASES_BY_NAME, GROUPS, build_case
-from tests.testapp.models import Author, Book, Defaults, Node, Schedule, Tag
+from tests.testapp.models import Author, Book, Code, Defaults, Link, Node, Profile, Schedule, Tag
 
 PROFILES = sorted(capabilities.PROFILES)
 PAIRS = [(profile, case) for profile in PROFILES for case in CASES]
@@ -144,7 +144,7 @@ def allowed_identifiers() -> set[str]:
         "DJDB2I_GROUPING",
         "G1",
     }
-    for model in (Author, Book, Defaults, Node, Schedule, Tag):
+    for model in (Author, Book, Code, Defaults, Link, Node, Profile, Schedule, Tag):
         names.add(model._meta.db_table.upper())
         names.update(field.column.upper() for field in model._meta.local_fields)
     return names
