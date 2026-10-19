@@ -28,7 +28,7 @@ version's runs.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-10-17 18:31:12 UTC to 2026-10-18 23:34:39 UTC
+- **Runs:** 2026-10-17 18:31:12 UTC to 2026-10-19 01:19:21 UTC
 - **Django:** 6.1 (1e01021 2026-10-12)
 - **IBM i:** 7.5 on PUB400
 
@@ -36,9 +36,9 @@ version's runs.
 
 | Module | Django | Tests | Passed | Failures | Errors | Skipped | Expected failures | Unexpected successes | Result | Run |
 |---|---|---|---|---|---|---|---|---|---|---|
-| aggregation | 6.1 | 168 | 150 | 0 | 0 | 18 | 0 | 0 | OK | 2026-10-18 22:02:06 UTC |
+| aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-10-19 01:19:21 UTC |
 | basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-17 18:31:12 UTC |
-| expressions | 6.1 | 213 | 177 | 0 | 21 | 14 | 1 | 0 | FAILED | 2026-10-18 23:34:39 UTC |
+| expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-19 01:14:13 UTC |
 | lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-18 21:34:27 UTC |
 | ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-18 21:39:25 UTC |
 | transactions | 6.1 | 88 | 85 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-17 18:33:32 UTC |
@@ -56,6 +56,7 @@ version's runs.
 - `supports_regex_backreferencing`
 - `supports_select_union`
 - `supports_subqueries_in_group_by`
+- `supports_temporal_subtraction`
 - `supports_transactions`
 - `uses_savepoints`
 - `has_native_boolean_field` (from the `has_boolean_type` capability)
@@ -64,13 +65,12 @@ version's runs.
 
 | Reason | Expected failures | Skips |
 |---|---|---|
-| Db2 for i TIME has no fractional seconds | 0 | 0 |
+| Db2 for i TIME has no fractional seconds | 1 | 0 |
 | Db2 for i rejects an untyped NULL as an expression (SQL0206) | 1 | 0 |
-| DurationField storage and timestamp subtraction are not implemented yet (deferred to a separate track) | 0 | 2 |
 | a bare %s in RawSQL is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 1 | 0 |
 | identity restart deferred in TestCase (SQL0910) | 0 | 0 |
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
 
 ## Golden files
 
-107 goldens, 0 unverified.
+117 goldens, 0 unverified.

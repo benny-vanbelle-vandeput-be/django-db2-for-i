@@ -77,15 +77,14 @@ Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS
 |---|---|---|---|
 | ordering | 43 | OK | done |
 | lookup | 148 | OK (5 skipped, 2 expected failures) | done |
-| aggregation | 168 | OK (18 skipped) | done |
-| expressions | 213 | FAILED (21 errors, 14 skipped, 1 expected failures) | in progress (operators, negated booleans, UUID values fixed; RawSQL limitation; the 21 remaining errors are durations (duration track next)) |
+| aggregation | 168 | OK (16 skipped) | done |
+| expressions | 213 | OK (5 skipped, 2 expected failures) | done |
 | queries |  | not run yet | planned (split into labels Q1–Q5 because of its size) |
 
 ### Open tracks and notes
 
 - Verify the column order of created tables (phase 4, [#23](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/23)).
 - `DROP COLUMN` on a table with rows is cancelled by CPA32B2 (`HY008`), which raises the question of table rebuilds in phase 4 (see [IBMI_NOTES](docs/IBMI_NOTES.md)).
-- Durations track: `DurationField` storage, `timedelta` values, exact timestamp subtraction (approved; follows the `expressions` fixes, and removes the duration skips).
 - Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier.
 <!-- status:end -->
 

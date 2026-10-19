@@ -91,3 +91,57 @@ def test_duration_times_and_divided_by_numbers(live, empty) -> None:
     assert Schedule.objects.values_list("length", flat=True).get() == dt.timedelta(
         days=-10, microseconds=5
     )
+
+
+def test_temporal_subtraction(live, empty) -> None:
+    """supports_temporal_subtraction: exact microseconds with DAYS(),
+    MIDNIGHT_SECONDS() and MICROSECOND() (never TIMESTAMPDIFF, which assumes
+    30-day months): several months and years, negative results, year 1 to
+    9999, DateField - DateField and TimeField - TimeField."""
+    cases = [
+        # (start, day, clock), compared with the first row
+        (
+            dt.datetime(2026, 1, 31, 1, 0, 0, 2, tzinfo=UTC),
+            dt.date(2026, 2, 28),
+            dt.time(18, 30, 15),
+        ),
+        (
+            dt.datetime(2026, 3, 31, 23, 0, 0, 1, tzinfo=UTC),
+            dt.date(2026, 5, 31),
+            dt.time(23, 59, 59),
+        ),
+        (dt.datetime(2019, 2, 28, 0, 0, 0, 500000, tzinfo=UTC), dt.date(2001, 1, 1), dt.time(6, 0)),
+        (dt.datetime(1, 1, 1, tzinfo=UTC), dt.date(1, 1, 1), dt.time(0, 0)),
+        (
+            dt.datetime(9999, 12, 31, 23, 59, 59, 999999, tzinfo=UTC),
+            dt.date(9999, 12, 31),
+            dt.time(0, 0, 1),
+        ),
+    ]
+    for start, day, clock in cases:
+        Schedule.objects.create(start=start, day=day, clock=clock)
+    first = Schedule.objects.order_by("id").first()
+    rows = Schedule.objects.order_by("id").values_list(
+        F("start") - Value(first.start),
+        F("day") - Value(first.day),
+        F("clock") - Value(first.clock),
+    )
+    base = dt.date(2000, 1, 1)
+    expected = [
+        (
+            start - first.start,
+            day - first.day,
+            dt.datetime.combine(base, clock) - dt.datetime.combine(base, first.clock),
+        )
+        for start, day, clock in cases
+    ]
+    assert list(rows) == expected
+    # A filter on a computed duration (rows more than 60 days after the first).
+    later = Schedule.objects.filter(start__gt=first.start).annotate(
+        gap=F("start") - Value(first.start)
+    )
+    assert later.filter(gap__gt=dt.timedelta(days=60)).count() == 1
+    # Subtraction between two columns of the same row.
+    assert set(Schedule.objects.values_list(F("start") - F("start"), flat=True)) == {
+        dt.timedelta(0)
+    }

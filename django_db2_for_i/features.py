@@ -25,10 +25,6 @@ REASON_UNTYPED_RAW_SQL_PARAMETER = (
     "a bare %s in RawSQL is an untyped parameter marker, which Db2 for i rejects in the "
     "select list (SQL0418); cast it in the SQL"
 )
-REASON_DURATIONS_DEFERRED = (
-    "DurationField storage and timestamp subtraction are not implemented yet "
-    "(deferred to a separate track)"
-)
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -93,6 +89,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_order_by_nulls_modifier = False
     # UNION / UNION ALL (probe queries).
     supports_select_union = True
+    # Exact date/time/datetime subtraction in microseconds (operations.py, probe durations).
+    supports_temporal_subtraction = True
     # The ORDER BY of a compound query accepts only result columns, not
     # expressions such as Django's NULL ordering emulation (SQL0214); an
     # ordered compound query is wrapped: SELECT * FROM (<compound>) ORDER BY.
@@ -162,14 +160,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # Known failures of Django's own test suite, grouped by one fixed reason
     # string each (see the REASON_* constants). Filled from real runs (phase 1,
     # step 9).
-    django_test_skips: dict[str, set[str]] = {
-        REASON_DURATIONS_DEFERRED: {
-            "aggregation.tests.AggregateTestCase.test_aggregation_default_using_duration_from_database",
-            "aggregation.tests.AggregateTestCase.test_aggregation_default_using_duration_from_python",
-        },
-    }
+    django_test_skips: dict[str, set[str]] = {}
     expected_failures: dict[str, set[str]] = {
-        REASON_TIME_FRACTIONS: set(),
+        # Subtracts from a TimeField stored with microseconds (TIME has none).
+        REASON_TIME_FRACTIONS: {
+            "expressions.tests.FTimeDeltaTests.test_time_subtraction",
+        },
         REASON_IDENTITY_RESTART_DEFERRED: set(),
         # A custom transform with template "NULL" gives WHERE NULL IS NULL.
         REASON_UNTYPED_NULL: {

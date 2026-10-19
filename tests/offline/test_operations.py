@@ -590,3 +590,22 @@ def test_out_of_range_durations_are_refused_in_filters_and_values() -> None:
         str(Schedule.objects.filter(length=dt.timedelta.max).query)
     with pytest.raises(ValueError, match="does not fit a DurationField"):
         Schedule.objects.annotate(x=Value(dt.timedelta.max)).query.get_compiler("default").as_sql()
+
+
+def test_subtract_temporals_is_exact_microseconds() -> None:
+    lhs, rhs = ("a", ("p",)), ("b", ("q",))
+    assert ops.subtract_temporals("DateField", lhs, rhs) == (
+        "(BIGINT(DAYS(a) - DAYS(b)) * 86400000000)",
+        ("p", "q"),
+    )
+    assert ops.subtract_temporals("TimeField", lhs, rhs) == (
+        "(BIGINT(MIDNIGHT_SECONDS(a) - MIDNIGHT_SECONDS(b)) * 1000000)",
+        ("p", "q"),
+    )
+    sql, params = ops.subtract_temporals("DateTimeField", lhs, rhs)
+    assert sql == (
+        "(BIGINT(DAYS(a) - DAYS(b)) * 86400000000 + BIGINT(MIDNIGHT_SECONDS(a) - "
+        "MIDNIGHT_SECONDS(b)) * 1000000 + (MICROSECOND(a) - MICROSECOND(b)))"
+    )
+    assert params == ("p", "q") * 3
+    assert "TIMESTAMPDIFF" not in sql
