@@ -117,6 +117,13 @@ class DatabaseOperations(BaseDatabaseOperations):
         name = truncate_name(name, self.max_name_length()).upper()
         return '"{}"'.format(name.replace('"', '""'))
 
+    # --- Durations -----------------------------------------------------------------
+
+    def format_for_duration_arithmetic(self, sql):
+        """A DurationField is a BIGINT of microseconds; expressions.py builds the
+        labeled durations (DurationExpression.as_db2_for_i)."""
+        return sql
+
     # --- Operators -----------------------------------------------------------------
 
     def combine_expression(self, connector, sub_expressions):

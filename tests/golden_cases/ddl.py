@@ -6,8 +6,8 @@ from django.db.models import (
     CharField,
 )
 
-from tests.golden_cases.base import AUTHOR, BOOK, DEFAULTS, NODE, TAG, Case
-from tests.testapp.models import Author, Book, Defaults, Document, Node, Tag
+from tests.golden_cases.base import AUTHOR, BOOK, DEFAULTS, NODE, SCHEDULE, TAG, Case
+from tests.testapp.models import Author, Book, Defaults, Document, Node, Schedule, Tag
 
 
 def _ddl(*models, foreign_keys: bool = False):
@@ -55,6 +55,8 @@ CASES: tuple[Case, ...] = (
     Case(DEFAULTS, "create", _ddl(Defaults)),
     # TextField and BinaryField: NCLOB and BLOB (1M, the default length).
     Case("ddl/create_document", "create", _ddl(Document)),
+    # DurationField: BIGINT microseconds.
+    Case(SCHEDULE, "create", _ddl(Schedule)),
     Case(
         "ddl/add_field_not_null_default",
         "create",
