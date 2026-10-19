@@ -462,8 +462,9 @@ def test_uuid_values(live, empty) -> None:
 def test_null_column_compared_with_a_negated_value(live, empty) -> None:
     """TRUE, FALSE and NULL column values (NULL: an author without books, LEFT
     OUTER JOIN). Db2 for i's NOT is TRUE for NULL; the backend's CASE form keeps
-    NULL, so filter(~F()), exclude(flag=True) and a selected ~F() follow SQL's
-    three-valued logic (and Django's semantics on other databases)."""
+    NULL as a selected value, and boolean values as conditions are compared with
+    TRUE / FALSE, so filter(~F()), exclude(flag=True) and a selected ~F() follow
+    SQL's three-valued logic (and Django's semantics on other databases)."""
     yes = Author.objects.create(name="a: true")
     no = Author.objects.create(name="b: false")
     Author.objects.create(name="c: no book")
@@ -475,8 +476,9 @@ def test_null_column_compared_with_a_negated_value(live, empty) -> None:
     assert names(authors.filter(available__isnull=True)) == ["c: no book"]
     # filter(~F("flag")): only the FALSE row, not the NULL row.
     assert names(authors.filter(~F("book__available"))) == ["b: false"]
-    # exclude(flag=True): Django keeps the NULL row (NOT (flag = TRUE AND flag IS NOT NULL)).
-    assert names(authors.exclude(available=True)) == ["b: false", "c: no book"]
+    # exclude(flag=True) on this annotation: NOT (flag = TRUE), UNKNOWN for the NULL
+    # row, so only the FALSE row (as on PostgreSQL; tests/boolean_condition_scenarios.py).
+    assert names(authors.exclude(available=True)) == ["b: false"]
     # A selected ~F("flag"): NULL stays NULL.
     negated = authors.annotate(negated=~F("book__available"))
     assert list(negated.values_list("name", "negated")) == [
@@ -557,3 +559,20 @@ def test_sliced_subqueries_in_in(live, empty) -> None:
     assert list(xor.values_list("name", flat=True)) == ["b"]
     Book.objects.filter(pk__in=Book.objects.order_by("published").values("pk")[:1]).delete()
     assert sorted(Book.objects.values_list("title", flat=True)) == ["2023", "2025"]
+
+
+def test_boolean_conditions_match_the_reference(live, empty) -> None:
+    """A nullable BooleanField used as a condition by every path Django has
+    (filter / exclude with True and False, ~Q, ~F, a When condition, a boolean
+    annotation in filter / exclude), on TRUE, FALSE and NULL rows, gives the rows
+    of the reference (tests/boolean_condition_scenarios.py)."""
+    from tests import boolean_condition_scenarios as scenarios
+
+    scenarios.create("default")
+    actual = {name: scenarios.rows(qs) for name, qs in scenarios.querysets("default").items()}
+    differences = {
+        name: (actual[name], expected)
+        for name, expected in scenarios.EXPECTED.items()
+        if actual[name] != expected
+    }
+    assert differences == {}

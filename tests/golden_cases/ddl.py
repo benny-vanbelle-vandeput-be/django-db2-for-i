@@ -14,6 +14,7 @@ from tests.golden_cases.base import (
     DEFAULTS,
     NODE,
     SCHEDULE,
+    SWITCH,
     TAG,
     Case,
 )
@@ -29,6 +30,7 @@ from tests.testapp.models import (
     Node,
     Profile,
     Schedule,
+    Switch,
     Tag,
 )
 
@@ -87,6 +89,8 @@ CASES: tuple[Case, ...] = (
     # A composite UNIQUE key, the target of a two-column ForeignObject.
     Case(ACCOUNT, "create", _ddl(Account)),
     Case(CONTACT, "create", _ddl(Contact)),
+    # A nullable BOOLEAN column.
+    Case(SWITCH, "create", _ddl(Switch)),
     Case(
         "ddl/add_field_not_null_default",
         "create",

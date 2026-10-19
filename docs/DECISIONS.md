@@ -959,3 +959,38 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   state after #74); emulating NOT IN's three-valued logic in the EXISTS
   fallback (more SQL than the native form).
 
+## 2026-10-19: Boolean values as conditions are compared with TRUE / FALSE
+- **Decision:** where Django uses a BOOLEAN value as a condition
+  (`Exact(<value>, True/False)`: `filter(flag=True/False)`, a boolean
+  annotation in `filter()`, `filter(~F("flag"))`, `filter(<boolean
+  ExpressionWrapper or Case>)`), the backend writes `<value> = TRUE` /
+  `<value> = FALSE` instead of Django's bare `value` / `NOT value`
+  (`expressions.py`, the Lookup hook). A negated value is unwrapped with the
+  truth flipped, so `~F("flag")` as a condition is `flag = FALSE`; this
+  replaces the NegatedValue CASE form in WHERE from 2026-10-19 ("NOT of a
+  BOOLEAN value"). Selected values and comparison operands keep the CASE form.
+- **Why:** Db2 for i evaluates a BOOLEAN value used as a predicate two-valued,
+  so `filter(flag=False)` (`NOT flag`), `exclude(~F("flag"))` and a boolean
+  annotation in `filter(...=False)` returned NULL rows (probe
+  `selected_predicates`; 9 of 24 paths in tests/boolean_condition_scenarios.py
+  on a nullable BooleanField). #51 only replaced `NegatedExpression`;
+  `filter(flag=False)` reaches `NOT flag` through Exact's boolean shortcut,
+  and its tests had no nullable BooleanField (NULLs only through a LEFT JOIN,
+  where they never used `filter(flag=False)`). A comparison is three-valued in
+  every position and can use an index on the column, which the CASE form in
+  WHERE could not. It also makes every condition a real predicate, which
+  issue #75's `CASE WHEN p THEN TRUE WHEN NOT (p) THEN FALSE END` needs.
+- **Reference:** Django writing native-boolean SQL (`has_native_boolean_field`,
+  as on PostgreSQL), evaluated by SQLite (tests/offline/test_boolean_reference.py).
+  Plain SQLite is not a reference here: without native booleans Django writes
+  `~F("flag")` as `CASE WHEN flag = 0 THEN 1 ELSE 0 END`, two-valued.
+- **Correction:** #55's pub400 test expected `exclude(available=True)` on an
+  annotation over a LEFT JOIN to keep the NULL row ("Django adds IS NOT
+  NULL"); Django adds no IS NOT NULL there, and PostgreSQL leaves the row out.
+  The test had recorded the two-valued result; it now expects the reference.
+- **Alternatives:** overriding `conditional_expression_supported_in_where_clause`
+  to return False for values (Django then also takes its 1/0 emulation paths,
+  e.g. `CASE WHEN x = 0` for NegatedExpression, wrong for a real BOOLEAN);
+  keeping the CASE form in WHERE and fixing only Exact's shortcut (not
+  index-friendly, two forms for the same condition).
+

@@ -77,3 +77,4 @@ AUTHOR, BOOK, NODE, TAG, DEFAULTS = (
 )
 SCHEDULE = "ddl/create_schedule"
 ACCOUNT, CONTACT = "ddl/create_account", "ddl/create_contact"
+SWITCH = "ddl/create_switch"

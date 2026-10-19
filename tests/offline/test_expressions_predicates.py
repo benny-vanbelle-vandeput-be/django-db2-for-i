@@ -50,7 +50,6 @@ def test_exists_operands_use_the_first_row_form() -> None:
 
 
 def test_conditions_compared_with_true_are_not_wrapped() -> None:
-    assert where(Book.objects.filter(available=True)) == '"TESTAPP_BOOK"."AVAILABLE"'
     books = Exists(Book.objects.filter(author=OuterRef("pk")))
     assert where(Author.objects.annotate(has=books).filter(has=True)).startswith("EXISTS(")
 
@@ -70,10 +69,22 @@ def test_negated_boolean_value_as_an_operand_keeps_null() -> None:
     )
 
 
-def test_negated_boolean_column_is_a_case_value_everywhere() -> None:
+def test_boolean_values_as_conditions_are_comparisons() -> None:
+    """NOT <BOOLEAN value> is TRUE for NULL on Db2 for i: a BOOLEAN value used as a
+    condition is compared with TRUE / FALSE (three-valued, index-friendly)."""
+    column = '"TESTAPP_BOOK"."AVAILABLE"'
+    assert where(Book.objects.filter(available=True)) == f"{column} = TRUE"
+    assert where(Book.objects.filter(available=False)) == f"{column} = FALSE"
+    assert where(Book.objects.exclude(available=True)) == f"NOT ({column} = TRUE)"
+    assert where(Book.objects.filter(~F("available"))) == f"{column} = FALSE"
+    assert where(Book.objects.annotate(x=~F("available")).filter(x=False)) == f"{column} = TRUE"
+    wrapped = ExpressionWrapper(F("available"), output_field=BooleanField())
+    assert where(Book.objects.filter(wrapped)) == f"{column} = TRUE"
+
+
+def test_negated_boolean_column_is_a_case_value_when_selected() -> None:
     """NOT <BOOLEAN value> is TRUE for NULL on Db2 for i; the CASE form keeps NULL."""
     negated = 'CASE "TESTAPP_BOOK"."AVAILABLE" WHEN TRUE THEN FALSE WHEN FALSE THEN TRUE END'
-    assert where(Book.objects.filter(~F("available"))) == negated
     sql, _params = (
         Book.objects.annotate(x=~F("available"))
         .values("x")

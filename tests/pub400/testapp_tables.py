@@ -13,6 +13,7 @@ from tests.testapp.models import (
     Node,
     Profile,
     Schedule,
+    Switch,
     Tag,
 )
 
@@ -29,5 +30,6 @@ MODELS = (
     Link,
     Account,
     Contact,
+    Switch,
 )
 TABLES = {model._meta.db_table for model in MODELS}

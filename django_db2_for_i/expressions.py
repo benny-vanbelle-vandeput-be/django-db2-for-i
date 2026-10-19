@@ -48,7 +48,19 @@ Boolean columns and values are never wrapped, and ``filter(<cond>=True)``
 (rendered by Django as just the condition) is unchanged. ``NOT <BOOLEAN
 value>`` (``~Value(False)``, ``~F("flag")``) is written as ``CASE <value> WHEN
 TRUE THEN FALSE WHEN FALSE THEN TRUE END`` (``NegatedValue``), as an operand
-and everywhere else (compiler.py: Db2 for i's NOT is TRUE for a NULL value).
+and as a selected value (compiler.py: Db2 for i's NOT is TRUE for a NULL value).
+
+Boolean values as conditions
+----------------------------
+Django writes a BOOLEAN value used as a condition as the bare value or ``NOT
+value``: ``filter(flag=True)`` / ``filter(flag=False)`` through Exact's
+boolean shortcut, ``filter(<boolean annotation>=False)``, ``filter(~F("flag"))``.
+Db2 for i evaluates a BOOLEAN value used as a predicate two-valued (NULL as
+false), so ``NOT flag`` matches NULL rows (probes ``queries``,
+``selected_predicates``). Such conditions are written as comparisons,
+``<value> = TRUE`` / ``<value> = FALSE``, which are three-valued in every
+position and can use an index on the column; a negated value is unwrapped
+(``~F("flag")`` as a condition is ``flag = FALSE``).
 
 Durations
 ---------
@@ -465,7 +477,32 @@ def with_typed_long_strings(lookup, connection):
     return clone
 
 
+def _is_boolean_value_condition(lookup) -> bool:
+    """Django's ``Exact(<value>, True/False)`` for a BOOLEAN value used as a
+    condition (``filter(flag=False)``, ``filter(~F("flag"))``, a boolean
+    annotation in ``filter()``), which it would write as ``value`` / ``NOT value``."""
+    return (
+        isinstance(lookup, Exact)
+        and isinstance(lookup.rhs, bool)
+        and getattr(lookup.lhs, "conditional", False)
+        and not renders_as_predicate(lookup.lhs)
+    )
+
+
+def boolean_value_condition(lookup, compiler):
+    """``<value> = TRUE`` / ``<value> = FALSE``: three-valued, where Db2 for i's
+    ``NOT <value>`` is TRUE for NULL (see the module docstring). A negated value
+    is unwrapped with the truth flipped: ``~F("flag")`` becomes ``flag = FALSE``."""
+    value, truth = lookup.lhs, lookup.rhs
+    while isinstance(value, NegatedExpression) and not renders_as_predicate(value.expression):
+        value, truth = value.expression, not truth
+    sql, params = compiler.compile(value)
+    return f"{sql} = {'TRUE' if truth else 'FALSE'}", params
+
+
 def lookup_as_db2_for_i(self, compiler, connection):
+    if _is_boolean_value_condition(self):
+        return boolean_value_condition(self, compiler)
     typed = with_typed_long_strings(self, connection)
     if typed is not None:
         return typed.as_sql(compiler, connection)
