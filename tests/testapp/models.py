@@ -109,3 +109,10 @@ class Contact(models.Model):
         to_fields=["company", "number"],
         related_name="contacts",
     )
+
+
+class Switch(models.Model):
+    """A nullable BooleanField: TRUE, FALSE and NULL rows."""
+
+    name = models.CharField(max_length=10)
+    flag = models.BooleanField(null=True)

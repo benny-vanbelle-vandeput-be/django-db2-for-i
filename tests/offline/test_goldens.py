@@ -38,6 +38,7 @@ from tests.testapp.models import (
     Node,
     Profile,
     Schedule,
+    Switch,
     Tag,
 )
 
@@ -152,6 +153,7 @@ def allowed_identifiers() -> set[str]:
         "HAS",
         "N",
         "B",
+        "NEG",
         # values("pk") / values("author") in a subquery.
         "PK",
         "AUTHOR",
@@ -161,7 +163,20 @@ def allowed_identifiers() -> set[str]:
         # The derived table of a rewritten IN (subquery) (compiler.py).
         "DJDB2I_IN",
     }
-    models = (Account, Author, Book, Code, Contact, Defaults, Link, Node, Profile, Schedule, Tag)
+    models = (
+        Account,
+        Author,
+        Book,
+        Code,
+        Contact,
+        Defaults,
+        Link,
+        Node,
+        Profile,
+        Schedule,
+        Switch,
+        Tag,
+    )
     for model in models:
         names.add(model._meta.db_table.upper())
         names.update(field.column.upper() for field in model._meta.local_fields if field.column)

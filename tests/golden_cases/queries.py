@@ -28,12 +28,13 @@ from tests.golden_cases.base import (
     AWARE,
     BOOK,
     CONTACT,
+    SWITCH,
     Case,
     books_of_author,
     exists,
     select,
 )
-from tests.testapp.models import Account, Author, Book, Contact
+from tests.testapp.models import Account, Author, Book, Contact, Switch
 
 
 def _last_insert_id(connection):
@@ -501,5 +502,25 @@ CASES: tuple[Case, ...] = (
             )
         ),
         (AUTHOR,),
+    ),
+    # A BOOLEAN value as a condition: compared with TRUE / FALSE (Db2 for i's
+    # NOT <value> is TRUE for NULL); a negated value is unwrapped.
+    Case(
+        "queries/filter_nullable_boolean_false",
+        "query",
+        select(lambda: Switch.objects.filter(flag=False)),
+        (SWITCH,),
+    ),
+    Case(
+        "queries/exclude_negated_nullable_boolean",
+        "query",
+        select(lambda: Switch.objects.exclude(~F("flag"))),
+        (SWITCH,),
+    ),
+    Case(
+        "queries/filter_boolean_annotation_false",
+        "query",
+        select(lambda: Switch.objects.annotate(neg=~F("flag")).filter(neg=False)),
+        (SWITCH,),
     ),
 )

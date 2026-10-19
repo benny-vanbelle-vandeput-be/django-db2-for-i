@@ -783,6 +783,25 @@ parts, a scalar subquery, `EXISTS`, and the backend's `SELECT * FROM LATERAL
 ORDER BY. `ORDER BY X DESC` inside a part puts NULLs first (NULLs sort as
 the largest value).
 
+### Predicates as three-valued values (`probe -- selected_predicates`)
+2026-10-19, read-only (VALUES only), PUB400 (IBM i 7.5). Issue #75's
+candidate `CASE WHEN p THEN TRUE WHEN NOT (p) THEN FALSE END` (NULL
+otherwise), in the select list, and `WHERE p` / `WHERE NOT (p)`, compared with
+the three-valued truth computed in Python, on rows with NULLs:
+
+- **Exact for every real predicate** (11 kinds): `X < ?` (untyped) and
+  `X < CAST(? AS INTEGER)`, `V = TRUE`, `V = FALSE`, AND / OR with NULLs, LIKE,
+  `REGEXP_LIKE`, row-value `(X, S) = (?, ?)`, the NegatedValue CASE compared
+  with TRUE, and predicates with subqueries evaluated twice by the form (the
+  IN rewrite over a subquery with a NULL, a correlated sliced scalar
+  subquery).
+- **Wrong for a bare BOOLEAN value used as a predicate** (3 kinds): `V`,
+  `NOT V` and the NegatedValue CASE as a condition. The selected value gives
+  FALSE/TRUE for NULL, and `WHERE NOT V` / `WHERE NOT (V)` return the NULL rows
+  (Db2 for i's NOT of a BOOLEAN value is two-valued, see "NOT of a NULL
+  BOOLEAN value is TRUE" above). Their comparison forms (`V = TRUE`, `V =
+  FALSE`, `(CASE ...) = TRUE`) are exact in every position.
+
 ### Truncating dates and times (`probe -- trunc`)
 2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
 compared with Django's truncation in Python.
