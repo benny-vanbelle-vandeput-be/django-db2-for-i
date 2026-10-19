@@ -3,5 +3,5 @@
 -- profile: 7.5
 -- depends: ddl/create_schedule
 -- params: [[3.2]]
--- verified: IBM i 7.5 on PUB400, 2026-10-19
+-- verified: IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.1.2, 2026-10-19
 SELECT (BIGINT("TESTAPP_SCHEDULE"."LENGTH" * CAST(%s AS DOUBLE))) AS "X" FROM "TESTAPP_SCHEDULE";
