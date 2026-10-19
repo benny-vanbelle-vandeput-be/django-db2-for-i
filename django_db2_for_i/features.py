@@ -87,6 +87,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_regex_backreferencing = True
     supports_date_lookup_using_string = False
     supports_order_by_nulls_modifier = False
+    # NULL sorts as the largest value: last ascending, first descending (probe
+    # queries). order_by_nulls_first stays False (NULLs are not first ascending).
+    nulls_order_largest = True
     # UNION / UNION ALL (probe queries).
     supports_select_union = True
     # Exact date/time/datetime subtraction in microseconds (operations.py, probe durations).
