@@ -42,3 +42,4 @@ done. Every file follows the template below.
 |---|---|---|
 | 0 | Skeleton & environment | [phase-0.md](phase-0.md) |
 | 1 | Minimal backend | [phase-1.md](phase-1.md) |
+| 3 | Django 6.0 and 5.2 support | [phase-3.md](phase-3.md) (approved plan) |

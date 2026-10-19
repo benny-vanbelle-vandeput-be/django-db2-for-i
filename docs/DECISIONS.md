@@ -1036,3 +1036,71 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   before); a hard-coded matrix in the workflow (a second list to keep in sync
   with the noxfile); requiring every matrix job in the ruleset (the ruleset
   would change with every added version).
+
+## 2026-10-19: StringAgg requires Django 6.0+, imported through compat.py
+- **Decision (project owner):** `StringAgg` is not supported on Django 5.2.
+  `compat.py` imports `django.db.models.StringAgg` only where it exists, so
+  the backend loads on 5.2. Known Limitations says "StringAgg requires Django
+  6.0+". `django.contrib.postgres.aggregates.StringAgg` is not patched.
+- **Why:** the general `StringAgg` (and `Aggregate(order_by=...)`) only exists
+  from 6.0. The unconditional import in `expressions.py` would raise
+  `ImportError` on 5.2. The PostgreSQL class is PostgreSQL-specific API.
+- **Alternatives:** patching the `contrib.postgres` class on 5.2 (it would
+  support a PostgreSQL-only API, with its own `ordering` argument, on Db2 for i).
+
+## 2026-10-19: Minimum Django patch releases 5.2.12, 6.0.3 and 6.1.0
+- **Decision (project owner):** the `pyproject.toml` floors are 5.2.12 and
+  6.0.3, the patch releases with the latest Python 3.14 fixes, and 6.1.0 for
+  6.1. The user docs say: always use the latest security release.
+- **Why:** Python 3.14 is supported from 5.2.8 and 6.0.0, but later patches
+  fix 3.14 bugs (5.2.9, 5.2.10, 5.2.12; 6.0.1, 6.0.3), and the matrix tests
+  3.14 on every version.
+- **Alternatives:** the first patch with 3.14 support (5.2.8, 6.0.0); always
+  pinning the newest security release (a floor bump for every Django release).
+
+## 2026-10-19: The duration range check on every supported Django version
+- **Decision (project owner):** the BIGINT range check in
+  `adapt_durationfield_value` (#57) is kept on 6.0 and 5.2 through
+  `compat.py`, so the same input gives the same clear `ValueError` on every
+  supported version. Each version gets a pub400 test for it.
+- **Why:** Django calls `adapt_durationfield_value` only from 6.1. On older
+  versions, an out-of-range duration would fail in the driver with an unclear
+  error.
+- **Alternatives:** accepting the driver's `OverflowError` on 6.0 and 5.2.
+
+## 2026-10-19: DROP COLUMN SQL pinned for every version after a QTEMP probe
+- **Decision (project owner):** Django 5.2's `sql_delete_column` ends in
+  `CASCADE`; 6.0+ does not. Db2 for i's behaviour for `DROP COLUMN ...
+  CASCADE` is probed in QTEMP first. Then the backend pins the same
+  `sql_delete_column` for all versions.
+- **Why:** never guess IBM i behaviour. One SQL text for every version keeps
+  the goldens and the behaviour identical.
+- **Alternatives:** pinning the 6.x text without a probe; keeping each
+  Django version's own text.
+
+## 2026-10-19: compat.py in three sections: 6.0 only, 5.2 only, before 6.1
+- **Decision (project owner):** `compat.py` holds the only `django.VERSION`
+  checks, as named facts that other modules import. They are in three
+  sections, each with its removal rule:
+  - "Django 6.0 only": deleted when 6.0 is dropped;
+  - "Django 5.2 only": deleted when 5.2 is dropped;
+  - "before 6.1: Django 6.0 and 5.2": deleted when both are dropped.
+
+  An offline test asserts that `django.VERSION` appears nowhere else.
+- **Why:** 6.0 reaches end of security support (April 2027) a year before
+  5.2 (April 2028). Most shims are needed by both older versions, so one block
+  per version could not be deleted on its own.
+- **Alternatives:** one block per version (6.0's block would still be needed
+  by 5.2); version checks at the call sites (forbidden by CLAUDE.md).
+
+## 2026-10-19: The release run as one nox session
+- **Decision (project owner):** the release run (CLAUDE.md section 6) is one
+  nox session, for example `nox -s release_run -- <django>`, with the fixed
+  list of Django modules and labels plus the pub400 tier in code. It runs
+  sequentially with one connection, fails fast when PUB400 is unreachable and
+  logs to `test-results/<django>/`. The documented list is generated from it.
+- **Why:** the list has one source, nobody types a sequence of `runtests.sh`
+  calls by hand before a release, and the shared-system rules are enforced in
+  one place.
+- **Alternatives:** a documented list of `runtests.sh` calls (it drifts from
+  TEST_STATUS.md and is easy to run only partly).
