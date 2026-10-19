@@ -421,4 +421,45 @@ CASES: tuple[Case, ...] = (
         ),
         (AUTHOR, BOOK),
     ),
+    # supports_tuple_lookups: row-value = stays; a row-value IN list and > use
+    # Django's expanded form (Db2 for i rejects them: SQL0104 / SQL0115).
+    Case(
+        "queries/filter_tuple_exact",
+        "query",
+        select(lambda: Contact.objects.filter(account=Account(id=1, company="a", number=1))),
+        (ACCOUNT, CONTACT),
+    ),
+    # A value longer than its column ("ab" for CharField(max_length=1)): a larger
+    # typed marker, so it matches nothing instead of failing (CWB0111).
+    Case(
+        "queries/filter_tuple_exact_longer_than_column",
+        "query",
+        select(lambda: Contact.objects.filter(account=Account(id=1, company="ab", number=1))),
+        (ACCOUNT, CONTACT),
+    ),
+    Case(
+        "queries/filter_tuple_in_list",
+        "query",
+        select(
+            lambda: Contact.objects.filter(
+                account__in=[
+                    Account(id=1, company="a", number=1),
+                    Account(id=2, company="b", number=2),
+                ]
+            )
+        ),
+        (ACCOUNT, CONTACT),
+    ),
+    Case(
+        "queries/filter_tuple_gt",
+        "query",
+        select(lambda: Contact.objects.filter(account__gt=Account(id=1, company="a", number=1))),
+        (ACCOUNT, CONTACT),
+    ),
+    Case(
+        "queries/exclude_tuple_in_subquery",
+        "query",
+        select(lambda: Contact.objects.exclude(account__in=Account.objects.filter(number__gt=1))),
+        (ACCOUNT, CONTACT),
+    ),
 )

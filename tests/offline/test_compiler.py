@@ -197,11 +197,10 @@ def test_in_subquery_as_a_value_is_three_valued() -> None:
 
 def test_tuple_in_subquery_is_not_rewritten_in_a_search_condition() -> None:
     """RelatedIn renders as TupleIn on the same lhs: still a search condition, so
-    Django's fallback for supports_tuple_lookups = False (Exists of the
-    subquery filtered by a = x AND b = y), not the IN rewrite."""
+    a row-value IN (subquery), not the IN rewrite."""
     queryset = Contact.objects.filter(account__in=Account.objects.filter(number__gt=1))
     _, sql = compiled(queryset)
-    assert '"TESTAPP_CONTACT"."ACCOUNT_NUMBER" = ("U0"."NUMBER")' in sql
+    assert '("TESTAPP_CONTACT"."COMPANY", "TESTAPP_CONTACT"."ACCOUNT_NUMBER") IN (SELECT' in sql
     assert "DJDB2I_IN" not in sql
 
 
@@ -229,7 +228,8 @@ def test_a_lookup_as_an_operand_is_not_a_search_condition() -> None:
 
 def test_tuple_in_subquery_in_case_contexts_uses_the_rewrite() -> None:
     """The search-condition context of WHERE never reaches XOR, a selected value
-    or a When condition: no plain IN (subquery) there (SQL0115 on Db2 for i)."""
+    or a When condition: no plain IN (subquery) inside CASE (SQL0115 on Db2 for i;
+    XOR's first half is a search condition and keeps the row-value IN)."""
     in_accounts = Q(account__in=Account.objects.filter(number__gt=1))
     querysets = (
         Contact.objects.filter(in_accounts ^ Q(company="c")),
@@ -239,4 +239,4 @@ def test_tuple_in_subquery_in_case_contexts_uses_the_rewrite() -> None:
     for queryset in querysets:
         _, sql = compiled(queryset)
         assert 'AS "DJDB2I_IN" (V1, V2)' in sql
-        assert " IN (SELECT" not in sql
+        assert " IN (SELECT" not in sql[sql.index("CASE WHEN") :]

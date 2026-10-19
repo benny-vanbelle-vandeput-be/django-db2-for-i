@@ -231,16 +231,14 @@ value out of range", "Character data right truncation") instead of matching
 nothing; it is never rounded or truncated. Planned fix:
 [#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69).
 
-## Excluding by a multi-column relation with a NULL
+## Selected conditions give False where SQL gives unknown
 
-For a `ForeignObject` over several columns, `exclude()` / `filter(~Q(...))`
-by a subquery (`account__in=<queryset>`) also returns rows where one of the
-relation's columns is NULL, e.g. a contact `("a", NULL)` when the subquery
-holds `("a", 1)`. The same condition as a selected value
-(`annotate(no=~Q(account__in=...))`) or in XOR gives NULL (unknown) for such a
-row, like SQL's `(a, b) NOT IN (...)`. The difference comes from Django's
-fallback for databases without tuple comparisons (`NOT EXISTS`), which the
-backend uses until tuple lookups are enabled.
+A condition selected as a value (`annotate(b=Q(pages__lt=10))`,
+`annotate(b=Q(account__in=...))`) returns `False` where its result is unknown
+because of a NULL (a NULL `pages`, or a NULL in one column of a multi-column
+relation); other backends return `None`. In `filter()`, `exclude()`, XOR and
+`When` the condition behaves as on other backends. Tracked in
+[#75](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/75).
 
 ## Conversion errors in selected values give NULL
 

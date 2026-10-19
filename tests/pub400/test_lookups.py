@@ -119,9 +119,9 @@ def test_in_subquery_outside_a_search_condition(live, empty) -> None:
 
 
 def test_tuple_in_subquery(live, empty) -> None:
-    """A two-column relation filtered by a subquery: (a, b) IN (...) in WHERE, as a
-    selected value (positive and negated) and in XOR gives the rows of raw SQL
-    row-value IN / NOT IN, with a NULL in one column of x."""
+    """A two-column relation filtered by a subquery: (a, b) IN (...) in WHERE
+    (positive and negated), as a selected value (positive and negated) and in XOR
+    gives the rows of raw SQL row-value IN / NOT IN, with a NULL in one column of x."""
     from django.db.models import Q
 
     from tests.testapp.models import Account, Contact
@@ -155,11 +155,10 @@ def test_tuple_in_subquery(live, empty) -> None:
         ).values_list("pk", "yes", "no")
         assert {pk for pk, yes, _ in selected if yes} == plain["IN"], name
         # Three-valued like SQL's row-value NOT IN: ("a", NULL) NOT IN (("a", 1)) is
-        # UNKNOWN. In WHERE, ~Q uses Django's two-valued fallback for
-        # supports_tuple_lookups = False (NOT EXISTS), which also returns that row.
+        # UNKNOWN, as a selected value and in WHERE.
         assert {pk for pk, _, no in selected if no} == plain["NOT IN"], name
         negated = set(Contact.objects.filter(~Q(account__in=accounts)).values_list("pk", flat=True))
-        assert negated >= plain["NOT IN"], name
+        assert negated == plain["NOT IN"], name
         xor = Contact.objects.filter(Q(account__in=accounts) ^ Q(pk=contacts[2].pk))
         assert set(xor.values_list("pk", flat=True)) == plain["IN"] ^ {contacts[2].pk}, name
 
@@ -206,4 +205,37 @@ def test_tuple_in_subquery_in_a_case_context_uses_the_rewrite(live, empty) -> No
         sql = captured.captured_queries[-1]["sql"]
         assert rows == expected[name], name
         assert "DJDB2I_IN" in sql, name
-        assert " IN (SELECT" not in sql, name
+        # XOR's first half is a search condition (row-value IN there is fine).
+        assert " IN (SELECT" not in sql[sql.index("CASE WHEN") :], name
+
+
+def test_tuple_lookups_match_the_reference(live, empty) -> None:
+    """Every lookup on a multi-column relation, in every context, gives the rows of
+    the reference (SQLite with supports_tuple_lookups, tests/tuple_lookup_scenarios.py),
+    except the listed known differences."""
+    from tests import tuple_lookup_scenarios as scenarios
+
+    scenarios.create("default")
+    actual = {name: scenarios.rows(qs) for name, qs in scenarios.querysets("default").items()}
+    expected = dict(scenarios.EXPECTED)
+    for differences in scenarios.KNOWN_DIFFERENCES.values():
+        expected.update(differences)
+    assert actual == expected
+
+
+def test_values_longer_than_their_column(live, empty) -> None:
+    """A tuple lookup value longer than its column matches nothing (it is never cut
+    short to match a row holding the shortened value), and a selected Value longer
+    than its field comes back whole."""
+    from django.db.models import Value
+
+    from tests.testapp.models import Account, Contact
+
+    account = Account.objects.create(company="a", number=1)
+    Contact.objects.create(company="a", account_number=1)
+    longer = Account(id=account.pk, company="a\U0001f600", number=1)  # 3 UTF-16 units
+    assert list(Contact.objects.filter(account=longer)) == []
+    assert Contact.objects.filter(account=account).count() == 1
+    field = Account._meta.get_field("company")
+    selected = Contact.objects.annotate(v=Value("abc\U0001f600", output_field=field))
+    assert list(selected.values_list("v", flat=True)) == ["abc\U0001f600"]

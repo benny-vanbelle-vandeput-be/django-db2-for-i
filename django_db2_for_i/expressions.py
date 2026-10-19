@@ -19,7 +19,8 @@ from the Python value. Type rules:
 - strings (CharField, TextField) without ``max_length``: ``NVARCHAR(<bucket>)``,
   the value's UTF-16 length rounded up to 32, 256, 1024, 4000 or 16370, so
   values of different lengths share one SQL text (statement cache); with
-  ``max_length``: ``NVARCHAR(max_length)``. Longer than 16370 units: refused
+  ``max_length``: ``NVARCHAR(max_length)``, or the bucket of the value's own
+  length when it is longer (never cut short). Longer than 16370 units: refused
   (no rule for longer casts yet; NVARCHAR(16382) and up fail with SQL0901);
 - integers whose type was inferred: ``INTEGER``, ``BIGINT`` outside the
   INTEGER range, ``DECIMAL(n, 0)`` outside the BIGINT range;
@@ -98,6 +99,19 @@ NULL, and keeps a real empty string (one empty value) as it is.
 ...)``. Django's NULL ordering emulation (``<expr> IS NULL, <expr>``) is not
 valid there (SQL0199), so ``nulls_first`` / ``nulls_last`` items are ordered by
 ``CASE WHEN <expr> IS NULL THEN 0 ELSE 1 END`` first (probe ``listagg``).
+
+Tuple lookups
+-------------
+With ``supports_tuple_lookups``, Django writes lookups on a multi-column
+relation as row values. Db2 for i accepts ``(a, b) = (x, y)`` and ``(a, b) IN
+(subquery)``, but rejects a row-value IN list (``(a, b) IN ((x, y), ...)``,
+SQL0104) and row-value ``>``, ``>=``, ``<``, ``<=`` (SQL0115; probe
+``tuple_lookups``). For those, ``TupleIn`` with values and the tuple
+comparisons use Django's expanded form (``a = x AND b = y OR ...``, ``a > x OR
+(a = x AND b > y)``), which is how SQL defines row-value comparisons, so the
+result is the same, NULLs included. Against a subquery they go through
+Django's own SQL (native IN; comparisons raise NotSupportedError, as
+``supports_tuple_comparison_against_subquery`` is off).
 """
 
 from __future__ import annotations
@@ -132,6 +146,13 @@ from django.db.models.expressions import (
     OrderBy,
     Value,
 )
+from django.db.models.fields.tuple_lookups import (
+    TupleGreaterThan,
+    TupleGreaterThanOrEqual,
+    TupleIn,
+    TupleLessThan,
+    TupleLessThanOrEqual,
+)
 from django.db.models.functions import Cast
 from django.db.models.lookups import (
     Exact,
@@ -143,6 +164,7 @@ from django.db.models.lookups import (
     LessThanOrEqual,
     Lookup,
 )
+from django.db.models.sql.query import Query
 from django.db.models.sql.where import WhereNode
 
 INTEGER_RANGE = (-(2**31), 2**31 - 1)
@@ -243,6 +265,10 @@ def value_cast_type(
             return string_type(utf16_length(value) if value is not None else 0)
         if max_length > NVARCHAR_MAX:
             return string_type(max_length)  # raises
+        if isinstance(value, str) and utf16_length(value) > max_length:
+            # Longer than the field: never cast it shorter (the driver refuses it
+            # with CWB0111; probe long_string_params), so its own bucket.
+            return string_type(utf16_length(value))
         return f"NVARCHAR({max_length})"
     if isinstance(output_field, DecimalField) and output_field.max_digits is None:
         return decimal_type(Decimal(value)) if value is not None else "DECIMAL(31, 0)"
@@ -451,6 +477,24 @@ def lookup_as_db2_for_i(self, compiler, connection):
 
 
 Lookup.as_db2_for_i = lookup_as_db2_for_i
+
+
+def tuple_expanded_as_db2_for_i(self, compiler, connection):
+    """Row-value IN lists and comparisons in Django's expanded form (see the
+    module docstring); against a subquery, Django's own SQL."""
+    if isinstance(self.rhs, Query):
+        return lookup_as_db2_for_i(self, compiler, connection)
+    return self.get_fallback_sql(compiler, connection)
+
+
+for _tuple_lookup in (
+    TupleIn,
+    TupleGreaterThan,
+    TupleGreaterThanOrEqual,
+    TupleLessThan,
+    TupleLessThanOrEqual,
+):
+    _tuple_lookup.as_db2_for_i = tuple_expanded_as_db2_for_i
 
 
 # --- Aggregates ---------------------------------------------------------------------------
