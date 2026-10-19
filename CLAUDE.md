@@ -230,6 +230,16 @@ Three tiers, selectable via pytest markers / nox sessions.
   signed with the machine account's SSH signing key (all set in the
   repository's local git config). Never commit with a personal email address.
 - Before every push: `nox -s lint offline` passes locally.
+- Every backend PR (touching `django_db2_for_i/`) gets the label `needs-full-tier` when it
+  is opened. Remove it only after the full pub400 tier on the PR's **latest** commit has
+  passed and the result is posted on the PR (the SHA it ran on, the counts). Any later
+  push (a rebase, a fix, a changelog fragment rename) puts the label back until a fresh
+  run on the new latest commit is posted. The maintainer does not merge PRs that still
+  carry the label.
+  - **Exception:** a commit that only contains the golden verification stamps written by
+    the full-tier run (`--record-verification`) on the previous commit needs no new run.
+    The PR comment then states the SHA the tier ran on and that the latest commit only
+    adds those stamps.
 - Before review, and whenever a PR branch is behind `main`, Claude rebases it
   onto `main` and pushes it itself (`git push --force-with-lease`, PR branches
   only), so every PR is up to date and its commits stay signed. The maintainer
