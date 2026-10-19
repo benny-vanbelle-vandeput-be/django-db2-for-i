@@ -922,4 +922,40 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   a multi-column relation in WHERE uses Django's two-valued `NOT EXISTS`
   fallback, while the rewrite (selected value, XOR) is three-valued like SQL
   (docs/user/Known-Limitations.md). Enabling tuple lookups would align them.
+  Resolved by enabling them (entry "supports_tuple_lookups with expanded IN
+  lists and comparisons" below).
+
+## 2026-10-19: A string Value longer than its field gets its own bucket
+- **Decision:** a string `Value` whose output field has a `max_length` is cast
+  to `NVARCHAR(max_length)` only when it fits (UTF-16 units); a longer value
+  is cast to the bucket of its own length. This refines "an explicit
+  `output_field` always wins" (2026-10-17) for strings.
+- **Why:** `CAST(? AS NVARCHAR(n))` with a longer value is refused by the
+  driver (CWB0111, probe `long_string_params`; never truncated). With
+  `supports_tuple_lookups`, `filter(account=<instance>)` sends its values as
+  `Value`s with the column's field, so a value longer than the column failed
+  instead of matching nothing (as it does through the untyped markers of #65).
+  A selected `Value` longer than its field failed the same way.
+- **Alternatives:** keeping `NVARCHAR(max_length)` and raising a clear error
+  (Django's other backends compare or return the value); typing every string
+  `Value` by its own length (changes the SQL of values that fit).
+
+## 2026-10-19: supports_tuple_lookups with expanded IN lists and comparisons
+- **Decision:** `supports_tuple_lookups = True`. Row-value `=` and `IN
+  (subquery)` are Django's SQL; `TupleIn` with values and the tuple `>`, `>=`,
+  `<`, `<=` keep Django's expanded form through an `as_db2_for_i` hook
+  (`expressions.py`). `supports_tuple_comparison_against_subquery` stays off.
+- **Why:** with the fallback, `exclude()` by a multi-column relation in WHERE
+  was two-valued (`NOT EXISTS`) while the same condition elsewhere was
+  three-valued, so a NULL in one column gave different rows in different
+  contexts. Row-value `IN (subquery)` makes WHERE three-valued like the
+  reference: Django on SQLite with the flag on, which
+  `tests/offline/test_tuple_reference.py` runs for every lookup and context;
+  the pub400 test gets the same rows on IBM i, except a selected UNKNOWN
+  (issue #75). Db2 for i rejects row-value IN lists (SQL0104) and ordering
+  comparisons (SQL0115, probe `tuple_lookups`); the expanded form is SQL's
+  definition of those comparisons, so the result is the same.
+- **Alternatives:** keeping the flag off and documenting the difference (the
+  state after #74); emulating NOT IN's three-valued logic in the EXISTS
+  fallback (more SQL than the native form).
 

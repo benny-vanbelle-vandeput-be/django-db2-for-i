@@ -113,7 +113,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # Exists() is rendered as a first-row subquery there (compiler.py).
     supports_boolean_expr_in_select_clause = True
     supports_comparing_boolean_expr = False
-    supports_tuple_lookups = False
+    # Row values: (a, b) = (x, y) and (a, b) IN (subquery); IN lists and
+    # >, >=, <, <= in Django's expanded form (expressions.py, probe tuple_lookups).
+    supports_tuple_lookups = True
     supports_tuple_comparison_against_subquery = False
 
     # Inserts and fetching

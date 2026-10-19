@@ -68,6 +68,21 @@ QUERIES = [
         (LONG,),
     ),
     (
+        "= CAST(? AS NVARCHAR(10)) (Value cast to max_length)",
+        "SELECT NAME FROM QTEMP.P15 WHERE NAME = CAST(? AS NVARCHAR(10))",
+        (LONG,),
+    ),
+    (
+        "(NAME, SMALL) = (CAST(? AS NVARCHAR(10)), ?) (row value)",
+        "SELECT NAME FROM QTEMP.P15 WHERE (NAME, SMALL) = (CAST(? AS NVARCHAR(10)), ?)",
+        (LONG, 1),
+    ),
+    (
+        "SELECT CAST(? AS NVARCHAR(10)) (selected)",
+        "SELECT CAST(? AS NVARCHAR(10)) FROM SYSIBM.SYSDUMMY1",
+        (LONG,),
+    ),
+    (
         "LIKE CAST(? AS NVARCHAR(32))",
         "SELECT NAME FROM QTEMP.P15 WHERE NAME LIKE CAST(? AS NVARCHAR(32))",
         (LONG + "%",),

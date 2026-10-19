@@ -39,6 +39,14 @@ CASES: tuple[Case, ...] = (
         annotate(lambda: Value("x", output_field=CharField(max_length=20))),
         (AUTHOR,),
     ),
+    # Longer than max_length (UTF-16 units: the emoji counts 2): its own bucket,
+    # never cast shorter (CWB0111).
+    Case(
+        "values/string_longer_than_max_length",
+        "query",
+        annotate(lambda: Value("abcd\U0001f600", output_field=CharField(max_length=5))),
+        (AUTHOR,),
+    ),
     Case(
         "values/null_typed",
         "query",
