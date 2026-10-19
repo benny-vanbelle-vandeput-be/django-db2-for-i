@@ -6,11 +6,23 @@ from django.db.models import (
     CharField,
 )
 
-from tests.golden_cases.base import AUTHOR, BOOK, DEFAULTS, NODE, SCHEDULE, TAG, Case
+from tests.golden_cases.base import (
+    ACCOUNT,
+    AUTHOR,
+    BOOK,
+    CONTACT,
+    DEFAULTS,
+    NODE,
+    SCHEDULE,
+    TAG,
+    Case,
+)
 from tests.testapp.models import (
+    Account,
     Author,
     Book,
     Code,
+    Contact,
     Defaults,
     Document,
     Link,
@@ -72,6 +84,9 @@ CASES: tuple[Case, ...] = (
     Case("ddl/create_code", "create", _ddl(Code)),
     Case("ddl/create_profile", "create", _ddl(Profile)),
     Case("ddl/create_link", "create", _ddl(Link)),
+    # A composite UNIQUE key, the target of a two-column ForeignObject.
+    Case(ACCOUNT, "create", _ddl(Account)),
+    Case(CONTACT, "create", _ddl(Contact)),
     Case(
         "ddl/add_field_not_null_default",
         "create",

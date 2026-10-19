@@ -2,9 +2,11 @@
 (``testapp_tables`` in conftest.py)."""
 
 from tests.testapp.models import (
+    Account,
     Author,
     Book,
     Code,
+    Contact,
     Defaults,
     Document,
     Link,
@@ -14,5 +16,18 @@ from tests.testapp.models import (
     Tag,
 )
 
-MODELS = (Author, Book, Node, Tag, Defaults, Document, Schedule, Code, Profile, Link)
+MODELS = (
+    Author,
+    Book,
+    Node,
+    Tag,
+    Defaults,
+    Document,
+    Schedule,
+    Code,
+    Profile,
+    Link,
+    Account,
+    Contact,
+)
 TABLES = {model._meta.db_table for model in MODELS}

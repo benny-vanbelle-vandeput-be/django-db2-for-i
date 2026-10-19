@@ -85,3 +85,27 @@ class Link(models.Model):
     tag = models.ForeignKey(Tag, models.CASCADE, null=True)
     profile = models.ForeignKey(Profile, models.CASCADE, null=True)
     ip = models.GenericIPAddressField(null=True)
+
+
+class Account(models.Model):
+    """The target of a two-column relation (company, number)."""
+
+    company = models.CharField(max_length=1)
+    number = models.IntegerField()
+
+    class Meta:
+        unique_together = (("company", "number"),)
+
+
+class Contact(models.Model):
+    """A ForeignObject over two columns: Django filters it with (a, b) IN (...)."""
+
+    company = models.CharField(max_length=1)
+    account_number = models.IntegerField(null=True)
+    account = models.ForeignObject(
+        Account,
+        models.CASCADE,
+        from_fields=["company", "account_number"],
+        to_fields=["company", "number"],
+        related_name="contacts",
+    )

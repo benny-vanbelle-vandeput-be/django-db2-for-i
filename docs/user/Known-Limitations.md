@@ -231,6 +231,17 @@ value out of range", "Character data right truncation") instead of matching
 nothing; it is never rounded or truncated. Planned fix:
 [#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69).
 
+## Excluding by a multi-column relation with a NULL
+
+For a `ForeignObject` over several columns, `exclude()` / `filter(~Q(...))`
+by a subquery (`account__in=<queryset>`) also returns rows where one of the
+relation's columns is NULL, e.g. a contact `("a", NULL)` when the subquery
+holds `("a", 1)`. The same condition as a selected value
+(`annotate(no=~Q(account__in=...))`) or in XOR gives NULL (unknown) for such a
+row, like SQL's `(a, b) NOT IN (...)`. The difference comes from Django's
+fallback for databases without tuple comparisons (`NOT EXISTS`), which the
+backend uses until tuple lookups are enabled.
+
 ## Conversion errors in selected values give NULL
 
 When a selected value cannot be converted, or divides by zero, Db2 for i

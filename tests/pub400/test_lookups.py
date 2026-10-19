@@ -116,3 +116,49 @@ def test_in_subquery_outside_a_search_condition(live, empty) -> None:
         xor = Link.objects.filter(Q(author__in=subquery) ^ Q(pk=links[1].pk))
         expected = plain["IN"] ^ {links[1].pk}
         assert set(xor.values_list("pk", flat=True)) == expected, name
+
+
+def test_tuple_in_subquery(live, empty) -> None:
+    """A two-column relation filtered by a subquery: (a, b) IN (...) in WHERE, as a
+    selected value (positive and negated) and in XOR gives the rows of raw SQL
+    row-value IN / NOT IN, with a NULL in one column of x."""
+    from django.db.models import Q
+
+    from tests.testapp.models import Account, Contact
+
+    for company, number in (("a", 1), ("b", 2), ("c", 3)):
+        Account.objects.create(company=company, number=number)
+    contacts = [
+        Contact.objects.create(company=company, account_number=number)
+        for company, number in (("a", 1), ("a", None), ("b", 2), ("c", 9))
+    ]
+    by_name = {
+        "one match": Account.objects.filter(number=1),
+        "two matches": Account.objects.filter(number__lte=2),
+        "no match": Account.objects.filter(number=3),
+        "empty": Account.objects.filter(number=-1),
+    }
+    for name, accounts in by_name.items():
+        numbers = ", ".join(str(n) for n in accounts.values_list("number", flat=True)) or "-1"
+        with live.cursor() as cursor:
+            plain = {}
+            for op in ("IN", "NOT IN"):
+                cursor.execute(
+                    f'SELECT ID FROM "TESTAPP_CONTACT" WHERE (COMPANY, ACCOUNT_NUMBER) {op} '
+                    f'(SELECT COMPANY, NUMBER FROM "TESTAPP_ACCOUNT" WHERE NUMBER IN ({numbers}))'
+                )
+                plain[op] = {row[0] for row in cursor.fetchall()}
+        where = set(Contact.objects.filter(account__in=accounts).values_list("pk", flat=True))
+        assert where == plain["IN"], name
+        selected = Contact.objects.annotate(
+            yes=Q(account__in=accounts), no=~Q(account__in=accounts)
+        ).values_list("pk", "yes", "no")
+        assert {pk for pk, yes, _ in selected if yes} == plain["IN"], name
+        # Three-valued like SQL's row-value NOT IN: ("a", NULL) NOT IN (("a", 1)) is
+        # UNKNOWN. In WHERE, ~Q uses Django's two-valued fallback for
+        # supports_tuple_lookups = False (NOT EXISTS), which also returns that row.
+        assert {pk for pk, _, no in selected if no} == plain["NOT IN"], name
+        negated = set(Contact.objects.filter(~Q(account__in=accounts)).values_list("pk", flat=True))
+        assert negated >= plain["NOT IN"], name
+        xor = Contact.objects.filter(Q(account__in=accounts) ^ Q(pk=contacts[2].pk))
+        assert set(xor.values_list("pk", flat=True)) == plain["IN"] ^ {contacts[2].pk}, name
