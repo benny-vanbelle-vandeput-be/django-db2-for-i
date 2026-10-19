@@ -15,6 +15,11 @@ ibmi = "7.5"
 test_system = "PUB400"
 
 [[releases]]
+tag = "v0.1.0a3"
+date = "2026-10-20"
+summary = "Phase 2: queries & pagination (release run: 7 Django modules, 1249 tests, 0 failed)."
+
+[[releases]]
 tag = "v0.1.0a2"
 date = "2026-10-18"
 summary = "Encoding fixes (UTF-8 statement text, long strings intact) and the signed-tag release workflow."
@@ -69,27 +74,41 @@ phase = "Encoding track"
 content = "CCSID / UTF-8 investigation, findings A/B/C (released in 0.1.0a2)"
 status = "done"
 
-# Phase 2 modules: the number of tests and the result come from the logs in
-# test-results/ (the same data as docs/TEST_STATUS.md).
+# The modules table in README ("Project status"): the supported Django test
+# modules (the release run's list), one column per Django version in
+# [modules_section] django. Tests and results come from the logs in
+# test-results/; a version without a run shows "planned".
+[modules_section]
+title = "Phase 3: supported modules per Django version"
+django = ["6.1", "6.0", "5.2"]
+
+[[modules]]
+module = "basic"
+status = "planned"
+
+[[modules]]
+module = "transactions"
+status = "planned"
+
 [[modules]]
 module = "ordering"
-status = "done"
+status = "planned"
 
 [[modules]]
 module = "lookup"
-status = "done"
+status = "planned"
 
 [[modules]]
 module = "aggregation"
-status = "done"
+status = "planned"
 
 [[modules]]
 module = "expressions"
-status = "done"
+status = "planned"
 
 [[modules]]
 module = "queries"
-status = "done"
+status = "planned"
 # Run as these labels (Q1-Q5); the module row sums their logs.
 labels = [
     "queries.test_q",

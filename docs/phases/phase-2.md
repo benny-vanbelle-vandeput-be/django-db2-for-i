@@ -124,5 +124,5 @@ policy; every module log records that commit ([TEST_STATUS](../TEST_STATUS.md)):
   [#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69) and the offline query corpus for 6.1.
 
 ## Links
-- Release: 0.1.0a3 (proposed); [CHANGELOG](../../CHANGELOG.md).
+- Release: `v0.1.0a3` (2026-10-20); [CHANGELOG](../../CHANGELOG.md#010a3---2026-10-20).
 - [TEST_STATUS](../TEST_STATUS.md), [Known limitations](../user/Known-Limitations.md).

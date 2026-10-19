@@ -65,6 +65,7 @@ Details per module: [docs/TEST_STATUS.md](docs/TEST_STATUS.md).
 
 ### Releases
 
+- **`v0.1.0a3`** (2026-10-20): Phase 2: queries & pagination (release run: 7 Django modules, 1249 tests, 0 failed).
 - **`v0.1.0a2`** (2026-10-18): Encoding fixes (UTF-8 statement text, long strings intact) and the signed-tag release workflow.
 - **`v0.1.0a1`** (2026-10-17): Phase 1: minimal backend (its code reports version 0.0.1.dev0).
 
@@ -82,17 +83,19 @@ Details per module: [docs/TEST_STATUS.md](docs/TEST_STATUS.md).
 | 7 | PUB400 tier & release prep | planned |
 | Encoding track | CCSID / UTF-8 investigation, findings A/B/C (released in 0.1.0a2) | done |
 
-### Phase 2 modules
+### Phase 3: supported modules per Django version
 
 Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS.md).
 
-| Module | Tests | Result | Status |
-|---|---|---|---|
-| ordering | 43 | OK | done |
-| lookup | 148 | OK (5 skipped, 2 expected failures) | done |
-| aggregation | 168 | OK (16 skipped) | done |
-| expressions | 213 | OK (5 skipped, 2 expected failures) | done |
-| queries | 506 | OK (21 skipped, 3 expected failures) | done (split into labels Q1–Q5 because of its size) |
+| Module | Django 6.1 | Django 6.0 | Django 5.2 | Status |
+|---|---|---|---|---|
+| basic | 83 tests, OK (3 skipped) | planned | planned | planned |
+| transactions | 88 tests, OK (3 skipped) | planned | planned | planned |
+| ordering | 43 tests, OK | planned | planned | planned |
+| lookup | 148 tests, OK (5 skipped, 2 expected failures) | planned | planned | planned |
+| aggregation | 168 tests, OK (16 skipped) | planned | planned | planned |
+| expressions | 213 tests, OK (5 skipped, 2 expected failures) | planned | planned | planned |
+| queries | 506 tests, OK (21 skipped, 3 expected failures) | planned | planned | planned (split into labels Q1–Q5 because of its size) |
 
 ### Open tracks and notes
 
@@ -110,7 +113,7 @@ Alpha releases are published as [GitHub releases](https://github.com/benny-vanbe
 (sdist and wheel), not on PyPI:
 
 ```sh
-pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0a2"
+pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0a3"
 ```
 
 You also need unixODBC and the IBM i Access ODBC Driver, see

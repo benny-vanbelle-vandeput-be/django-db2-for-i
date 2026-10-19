@@ -337,6 +337,19 @@ def test_readme_rendering_between_markers() -> None:
     assert status.render_readme(text, STATUS, results) == text
 
 
+def test_readme_modules_per_django_version() -> None:
+    """With [modules_section] django, one column per version: the run's tests and
+    result, or "planned" without a run; the title comes from the data."""
+    data = dict(STATUS, modules_section={"title": "Phase 3: per version", "django": ["6.1", "5.2"]})
+    text = status.render_readme(README_TEXT, data, results_ok_and_failed())
+    assert "### Phase 3: per version" in text
+    assert "| Module | Django 6.1 | Django 5.2 | Status |" in text
+    assert "| basic | 60 tests, OK (3 skipped, 2 expected failures) | planned | done |" in text
+    assert "| queries | planned | planned | planned (split into labels) |" in text
+    # Without the section: the single-column table under a neutral title.
+    assert "### Modules" in status.render_readme(README_TEXT, STATUS, results_ok_and_failed())
+
+
 @pytest.mark.parametrize(
     "readme",
     [

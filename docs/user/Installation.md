@@ -19,7 +19,7 @@
 A release (replace the version with the one you want):
 
 ```sh
-pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0a2"
+pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0a3"
 ```
 
 Or download the wheel from the release page and install it with
