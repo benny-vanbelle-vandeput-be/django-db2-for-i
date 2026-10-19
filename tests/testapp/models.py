@@ -63,3 +63,25 @@ class Schedule(models.Model):
     day = models.DateField(null=True)
     clock = models.TimeField(null=True)
     length = models.DurationField(null=True)
+
+
+class Code(models.Model):
+    """A CharField primary key (foreign keys to it are NVARCHAR)."""
+
+    code = models.CharField(max_length=8, primary_key=True)
+
+
+class Profile(models.Model):
+    """A OneToOneField primary key: a key to a key (Author.id, INTEGER)."""
+
+    author = models.OneToOneField(Author, models.CASCADE, primary_key=True)
+
+
+class Link(models.Model):
+    """Foreign keys to an integer, CharField, UUID and key primary key; an IP."""
+
+    author = models.ForeignKey(Author, models.CASCADE, null=True)
+    code = models.ForeignKey(Code, models.CASCADE, null=True)
+    tag = models.ForeignKey(Tag, models.CASCADE, null=True)
+    profile = models.ForeignKey(Profile, models.CASCADE, null=True)
+    ip = models.GenericIPAddressField(null=True)

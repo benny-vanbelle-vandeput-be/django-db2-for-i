@@ -244,3 +244,34 @@ def test_values_longer_than_the_largest_bucket_are_refused() -> None:
 
     with pytest.raises(NotSupportedError, match="never truncated"):
         where_of(Author.objects.filter(name="x" * 16371))
+
+
+# --- Values of relations and IP addresses -------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("field", "cast"),
+    [
+        ("author", "INTEGER"),  # ForeignKey to an AutoField
+        ("code", "NVARCHAR(8)"),  # to a CharField primary key
+        ("tag", "CHAR(32)"),  # to a UUIDField primary key
+        ("profile", "INTEGER"),  # to a OneToOneField primary key, to Author.id
+        ("ip", "VARCHAR(39)"),  # GenericIPAddressField
+    ],
+)
+def test_values_of_relations_take_the_target_type(field, cast) -> None:
+    from tests.testapp.models import Link
+
+    output_field = Link._meta.get_field(field)
+    assert cast_of(Value(None, output_field=output_field)) == f"CAST(NULL AS {cast})"
+
+
+def test_a_uuid_key_value_is_sent_as_hex() -> None:
+    import uuid as uuid_module
+
+    from tests.testapp.models import Link
+
+    value = uuid_module.UUID("12345678-1234-5678-1234-567812345678")
+    queryset = Author.objects.annotate(x=Value(value, output_field=Link._meta.get_field("tag")))
+    sql, params = queryset.values("x").query.get_compiler("default").as_sql()
+    assert "CAST(%s AS CHAR(32))" in sql and params == ("12345678123456781234567812345678",)

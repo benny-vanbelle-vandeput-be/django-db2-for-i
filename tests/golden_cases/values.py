@@ -12,12 +12,14 @@ from django.db.models import Case as CaseExpr
 from django.db.models import (
     CharField,
     DecimalField,
+    GenericIPAddressField,
     IntegerField,
     Value,
     When,
 )
 
 from tests.golden_cases.base import AUTHOR, AWARE, Case, annotate
+from tests.testapp.models import Link
 
 CASES: tuple[Case, ...] = (
     Case("values/integer", "query", annotate(lambda: Value(1)), (AUTHOR,)),
@@ -74,6 +76,24 @@ CASES: tuple[Case, ...] = (
         "values/duration",
         "query",
         annotate(lambda: Value(dt.timedelta(days=1, microseconds=7))),
+        (AUTHOR,),
+    ),
+    # A ForeignKey value takes its target's type (bulk_update builds these).
+    Case(
+        "values/foreign_key_to_uuid",
+        "query",
+        annotate(
+            lambda: Value(
+                uuid.UUID("12345678-1234-5678-1234-567812345678"),
+                output_field=Link._meta.get_field("tag"),
+            )
+        ),
+        (AUTHOR,),
+    ),
+    Case(
+        "values/ip_address",
+        "query",
+        annotate(lambda: Value("2001::1", output_field=GenericIPAddressField())),
         (AUTHOR,),
     ),
 )

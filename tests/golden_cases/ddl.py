@@ -7,7 +7,18 @@ from django.db.models import (
 )
 
 from tests.golden_cases.base import AUTHOR, BOOK, DEFAULTS, NODE, SCHEDULE, TAG, Case
-from tests.testapp.models import Author, Book, Defaults, Document, Node, Schedule, Tag
+from tests.testapp.models import (
+    Author,
+    Book,
+    Code,
+    Defaults,
+    Document,
+    Link,
+    Node,
+    Profile,
+    Schedule,
+    Tag,
+)
 
 
 def _ddl(*models, foreign_keys: bool = False):
@@ -57,6 +68,10 @@ CASES: tuple[Case, ...] = (
     Case("ddl/create_document", "create", _ddl(Document)),
     # DurationField: BIGINT microseconds.
     Case(SCHEDULE, "create", _ddl(Schedule)),
+    # Foreign keys to integer, CharField, UUID and key primary keys; an IP.
+    Case("ddl/create_code", "create", _ddl(Code)),
+    Case("ddl/create_profile", "create", _ddl(Profile)),
+    Case("ddl/create_link", "create", _ddl(Link)),
     Case(
         "ddl/add_field_not_null_default",
         "create",
