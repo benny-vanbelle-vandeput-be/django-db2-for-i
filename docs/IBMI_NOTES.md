@@ -682,6 +682,29 @@ mapping error").
 `UPPER(column)` with `UPPER(value)`, both on the server, so they agree with each
 other.
 
+### String parameters longer than the column (`nox -s probe -- long_string_params`)
+2026-10-19, PUB400 (IBM i 7.5), driver 07.01.029, the backend's connection
+attributes; a QTEMP table with `NAME NVARCHAR(10)`, `SMALL SMALLINT`,
+`AMOUNT DECIMAL(5, 2)` and a row holding the truncated value `nonexisten`.
+
+- An **untyped** marker compared with a string column (`=`, `IN`, `NOT IN`,
+  `<>`, `>`) is sized by the column: a longer value (`nonexistent`, 11
+  characters) fails on the client with **CWB0111** "Input data is too big to
+  fit into field" (30207). Nothing is truncated: the row `nonexisten` is never
+  matched. The length counts **UTF-16 units**: `nonexiste` + an emoji (10 by
+  `len()`, 11 units) fails too. pyodbc's `setinputsizes` does not change it.
+- Expressions are sized by their result: `LOWER(NAME) = ?` and `SUBSTR(NAME,
+  1, 3) = ?` fail the same way (SUBSTR at 3 characters, whatever the field
+  says); `NAME || 'x' = ?` and `CAST(NAME AS NVARCHAR(16370)) = ?` do not.
+- `LIKE ?` and `UPPER(NAME) = UPPER(?)` are not affected.
+- A typed marker `CAST(? AS NVARCHAR(32))` works in every comparison, with the
+  correct result.
+- Numbers: `SMALLINT = ?` / `> ?` with 100000 fail with "Numeric value out of
+  range" (30018); `DECIMAL(5, 2) = ?` with 123456.789 fails (30160, out of
+  range) and with 1.005 (30126, right truncation). Errors, never a silent
+  match. Django settles out-of-range integers for `exact`/`gt`/... in Python
+  (`integer_field_ranges`, which match Db2's SMALLINT/INTEGER/BIGINT).
+
 ### Truncating dates and times (`probe -- trunc`)
 2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
 compared with Django's truncation in Python.
