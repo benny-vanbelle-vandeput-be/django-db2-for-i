@@ -7,6 +7,8 @@
 [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue)](LICENSE)
 [![offline CI](https://img.shields.io/github/actions/workflow/status/benny-vanbelle-vandeput-be/django-db2-for-i/offline.yml?branch=main&label=offline%20CI)](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/actions/workflows/offline.yml)
 [![release](https://img.shields.io/github/v/release/benny-vanbelle-vandeput-be/django-db2-for-i?include_prereleases&label=release)](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases)
+
+[![Django modules](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/modules.json)](docs/TEST_STATUS.md)
 [![passed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/passed.json)](docs/TEST_STATUS.md)
 [![failed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/failed.json)](docs/TEST_STATUS.md)
 [![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/skipped.json)](docs/TEST_STATUS.md)
@@ -90,7 +92,7 @@ Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS
 | lookup | 148 | OK (5 skipped, 2 expected failures) | done |
 | aggregation | 168 | OK (16 skipped) | done |
 | expressions | 213 | OK (5 skipped, 2 expected failures) | done |
-| queries |  | not run yet | planned (split into labels Q1–Q5 because of its size) |
+| queries | 506 | PARTIAL (different commits a7ca5f8 2026-10-19, unknown) | in progress (split into labels Q1–Q5 because of its size) |
 
 ### Open tracks and notes
 

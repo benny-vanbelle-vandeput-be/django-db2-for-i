@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "Django tests (PUB400)",
-  "message": "4 expected failures",
+  "label": "Django 6.1 on PUB400",
+  "message": "5 expected failures",
   "color": "blue"
 }
