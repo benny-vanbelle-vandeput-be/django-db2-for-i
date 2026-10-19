@@ -27,8 +27,9 @@ from the Python value. Type rules:
 - ``None`` with a known output_field: ``CAST(NULL AS <type>)``; without one:
   plain ``NULL``, there is no type to cast to;
 - booleans, other integer fields, floats, dates, times, datetimes, UUIDs,
-  durations: the field's cast type (BOOLEAN, ..., DOUBLE, DATE, TIME,
-  TIMESTAMP(6), CHAR(32), BIGINT microseconds).
+  durations, IP addresses: the field's cast type (BOOLEAN, ..., DOUBLE, DATE,
+  TIME, TIMESTAMP(6), CHAR(32), BIGINT microseconds, VARCHAR(39));
+- a ForeignKey or OneToOneField: its target field's type, recursively.
 
 Any other type (bytes, JSON, ...) raises NotSupportedError;
 its rule comes with the field support in a later phase.
@@ -172,6 +173,7 @@ SUPPORTED_TYPES = frozenset(
         "TimeField",
         "UUIDField",
         "DurationField",
+        "GenericIPAddressField",
     }
 )
 
@@ -200,6 +202,19 @@ def decimal_type(value: Decimal) -> str:
     return f"DECIMAL({max(integer_digits + scale, 1)}, {scale})"
 
 
+def _concrete_field(output_field):
+    """The field whose SQL type a relation's value has: a ForeignKey or
+    OneToOneField takes its target field's type, recursively (a key to a key)."""
+    seen = set()
+    while getattr(output_field, "is_relation", False) and id(output_field) not in seen:
+        seen.add(id(output_field))
+        target = getattr(output_field, "target_field", None)
+        if target is None:
+            break
+        output_field = target
+    return output_field
+
+
 def _internal_type(output_field) -> str:
     if isinstance(output_field, (CharField, TextField)):
         return "TextField" if isinstance(output_field, TextField) else "CharField"
@@ -214,6 +229,7 @@ def value_cast_type(
     ``explicit``: the output_field was given, not inferred from the value.
     ``python_type``: the original value's type name, for error messages.
     """
+    output_field = _concrete_field(output_field)
     internal = _internal_type(output_field)
     if internal not in SUPPORTED_TYPES:
         raise NotSupportedError(
