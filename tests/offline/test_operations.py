@@ -609,3 +609,9 @@ def test_subtract_temporals_is_exact_microseconds() -> None:
     )
     assert params == ("p", "q") * 3
     assert "TIMESTAMPDIFF" not in sql
+
+
+def test_iexact_values_are_not_escaped_for_like() -> None:
+    """iexact is UPPER(col) = UPPER(%s); LIKE escaping would change the value."""
+    assert ops.prep_for_iexact_query("a_b%c\\d") == "a_b%c\\d"
+    assert ops.prep_for_like_query("a_b") == "a\\_b"  # contains & co. still escape

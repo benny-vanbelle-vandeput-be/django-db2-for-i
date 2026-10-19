@@ -291,4 +291,11 @@ CASES: tuple[Case, ...] = (
         select(lambda: Book.objects.filter(~F("available"))),
         (AUTHOR, BOOK),
     ),
+    # iexact compares with = UPPER(%s): the value is not escaped for LIKE.
+    Case(
+        "queries/filter_iexact_wildcards",
+        "query",
+        select(lambda: Author.objects.filter(name__iexact="50%_Off\\x")),
+        (AUTHOR,),
+    ),
 )

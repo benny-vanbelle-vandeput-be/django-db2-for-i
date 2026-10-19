@@ -204,6 +204,13 @@ class DatabaseOperations(BaseDatabaseOperations):
             return "UPPER(%s)"
         return "%s"
 
+    def prep_for_iexact_query(self, x):
+        """``iexact`` is ``UPPER(col) = UPPER(%s)``, not LIKE, so the value is compared
+        as it is. Django's default escapes ``_``, ``%`` and ``\\`` for LIKE, which made
+        ``iexact="A_b"`` look for ``A\\_B``. PostgreSQL and Oracle override it the
+        same way."""
+        return x
+
     def regex_lookup(self, lookup_type: str) -> str:
         """``regex`` / ``iregex`` as the REGEXP_LIKE predicate (ICU regular expressions).
 
