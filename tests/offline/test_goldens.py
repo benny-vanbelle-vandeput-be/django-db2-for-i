@@ -127,7 +127,7 @@ DJANGO_ALIAS = re.compile(r"^(?:[TU]\d+|COL\d+)$")
 
 
 def allowed_identifiers() -> set[str]:
-    # Aliases (exists(), the annotations), the column the AddField golden
+    # Aliases (exists(), the annotations, values()), the column the AddField golden
     # adds and the savepoint names of dml/savepoints.
     names = {
         "A",
@@ -140,6 +140,8 @@ def allowed_identifiers() -> set[str]:
         "HAS",
         "N",
         "B",
+        # values("pk") in a subquery.
+        "PK",
         # The backend's LATERAL grouping table and its columns (compiler.py).
         "DJDB2I_GROUPING",
         "G1",

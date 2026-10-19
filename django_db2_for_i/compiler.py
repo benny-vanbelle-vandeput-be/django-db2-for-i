@@ -217,6 +217,7 @@ class SQLCompiler(compiler.SQLCompiler):
             getattr(self, "having", None),
             getattr(self, "qualify", None),
             self.query.where,
+            getattr(self, "outer_where", None),
         )
         return any(node is condition for condition in conditions)
 
@@ -334,7 +335,14 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
 
 
 class SQLDeleteCompiler(compiler.SQLDeleteCompiler, SQLCompiler):
-    pass
+    outer_where = None
+
+    def _as_sql(self, query):
+        # A delete that references its own table compiles the WHERE of a new
+        # outer query (pk IN (SELECT * FROM (...) subquery)): a search
+        # condition too, not a value.
+        self.outer_where = query.where
+        return super()._as_sql(query)
 
 
 class SQLUpdateCompiler(compiler.SQLUpdateCompiler, SQLCompiler):
