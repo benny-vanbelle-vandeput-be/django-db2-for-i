@@ -445,3 +445,10 @@ def test_raw_sql_with_a_cast_parameter(live, empty) -> None:
     raw = RawSQL("CAST(%s AS NVARCHAR(20))", ["value"])
     authors = Author.objects.annotate(foo=raw).filter(foo="value").order_by("name")
     assert [(a.name, a.foo) for a in authors] == [("a", "value"), ("b", "value")]
+
+
+def test_extra_with_a_cast_parameter(live, empty) -> None:
+    """The fix shown in Known Limitations for extra(): cast the parameter."""
+    Author.objects.create(name="a")
+    rows = Author.objects.extra(select={"foo": "CAST(%s AS INTEGER)"}, select_params=(1,))
+    assert [(a.name, a.foo) for a in rows] == [("a", 1)]
