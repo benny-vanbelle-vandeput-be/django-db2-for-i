@@ -66,6 +66,10 @@ class ModuleResult:
     unexpected_successes: int = 0
     exit_code: str = ""
     django_build: str = ""  # the full "# django:" header, e.g. "6.1 (1e01021 2026-10-12)"
+    backend: str = (
+        ""  # the "# backend:" header: commit the run was made on, e.g. "a7ca5f8 2026-10-19"
+    )
+    partial: str = ""  # why a module summed from label logs is incomplete (empty: complete)
 
     @property
     def passed(self) -> int | None:
@@ -90,6 +94,7 @@ def parse_log(text: str, module: str, django: str) -> ModuleResult:
         started=header.get("started", ""),
         keepdb=header.get("keepdb", ""),
         exit_code=header.get("exit", ""),
+        backend=header.get("backend", ""),
     )
     ran = _RAN.findall(text)
     outcomes = _RESULT.findall(text)
@@ -111,6 +116,64 @@ def collect(results_dir: Path = RESULTS) -> list[ModuleResult]:
             continue
         found.append(parse_log(log.read_text(errors="replace"), log.stem, log.parent.name))
     return sorted(found, key=lambda r: (r.module, r.django))
+
+
+def collect_label_groups(status: dict, results_dir: Path = RESULTS) -> list[ModuleResult]:
+    """Modules run as several labels (``labels`` in docs/status.toml), summed per
+    Django version from ``<version>/labels/<label>.log``.
+
+    Only logs of one run set are combined: all labels present and made on the
+    same backend commit. Otherwise the row is marked partial (the counts are
+    those of the logs found).
+    """
+    groups = []
+    if not results_dir.is_dir():
+        return groups
+    for module in status.get("modules", []):
+        labels = module.get("labels")
+        if not labels:
+            continue
+        for version_dir in sorted(p for p in results_dir.iterdir() if p.is_dir()):
+            if version_dir.name == "probes":
+                continue
+            found = {
+                label: parse_log(path.read_text(errors="replace"), label, version_dir.name)
+                for label in labels
+                if (path := version_dir / "labels" / f"{label}.log").exists()
+            }
+            if found:
+                groups.append(_sum_labels(module["module"], version_dir.name, labels, found))
+    return groups
+
+
+def _sum_labels(module: str, django: str, labels: list[str], found: dict) -> ModuleResult:
+    runs = list(found.values())
+    commits = sorted({r.backend or "unknown" for r in runs})
+    total = ModuleResult(
+        module=module,
+        django=django,
+        django_build=", ".join(sorted({r.django_build for r in runs if r.django_build})),
+        started=min((r.started for r in runs if r.started), default=""),
+        backend=", ".join(commits),
+        ran=sum(r.ran or 0 for r in runs),
+    )
+    for key in COUNT_KEYS.values():
+        setattr(total, key, sum(getattr(r, key) for r in runs))
+    reasons = []
+    missing = [label for label in labels if label not in found]
+    if missing:
+        reasons.append(f"missing {', '.join(missing)}")
+    if len(commits) > 1:
+        reasons.append(f"different commits {', '.join(commits)}")
+    stopped = [label for label, r in found.items() if r.ran is None]
+    if stopped:
+        reasons.append(f"stopped before the summary: {', '.join(stopped)}")
+    total.partial = "; ".join(reasons)
+    if total.partial:
+        total.outcome = "PARTIAL"
+    else:
+        total.outcome = "OK" if all(r.outcome == "OK" for r in runs) else "FAILED"
+    return total
 
 
 def feature_section() -> list[str]:
@@ -260,6 +323,8 @@ def load_status(path: Path | None = None) -> dict:
 def _result_text(r: ModuleResult) -> str:
     if r.ran is None:
         return "stopped before the summary"
+    if r.partial:
+        return f"PARTIAL ({r.partial})"
     details = [
         f"{count} {label}"
         for count, label in [
@@ -333,6 +398,7 @@ def run_header(results: list[ModuleResult], status: dict | None) -> list[str]:
     ibmi = versions.get("ibmi", "unknown")
     system = versions.get("test_system", "unknown system")
     builds = sorted({r.django_build or r.django for r in results}, key=_version_key)
+    commits = sorted({r.backend for r in results if r.backend})
     started = sorted(r.started for r in results if r.started)
     if not started:
         runs = "none recorded"
@@ -343,6 +409,7 @@ def run_header(results: list[ModuleResult], status: dict | None) -> list[str]:
     return [
         f"- **Runs:** {runs}",
         f"- **Django:** {', '.join(builds) or 'none'}",
+        f"- **Backend commits:** {', '.join(commits) or 'not recorded'} (per module in the table)",
         f"- **IBM i:** {ibmi} on {system}",
     ]
 
@@ -384,15 +451,16 @@ def render(results: list[ModuleResult], status: dict | None = None) -> str:
     if results:
         lines += [
             "| Module | Django | Tests | Passed | Failures | Errors | Skipped | Expected failures"
-            " | Unexpected successes | Result | Run |",
-            "|---|---|---|---|---|---|---|---|---|---|---|",
+            " | Unexpected successes | Result | Run | Backend commit |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|",
         ]
         for r in results:
             lines.append(
                 f"| {r.module} | {r.django} | {'' if r.ran is None else r.ran} | "
                 f"{'' if r.passed is None else r.passed} | {r.failures} | {r.errors} | "
                 f"{r.skipped} | {r.expected_failures} | {r.unexpected_successes} | "
-                f"{r.outcome} | {r.started} |"
+                f"{r.outcome if not r.partial else f'PARTIAL ({r.partial})'} | {r.started} | "
+                f"{r.backend or 'not recorded'} |"
             )
     else:
         lines.append("No Django test modules have been run yet.")
@@ -401,8 +469,8 @@ def render(results: list[ModuleResult], status: dict | None = None) -> str:
 
 
 def main() -> int:
-    results = collect()
     status = load_status()
+    results = sorted(collect() + collect_label_groups(status), key=lambda r: (r.module, r.django))
     try:
         readme = render_readme(README.read_text(), status, results)
     except MarkerError as error:

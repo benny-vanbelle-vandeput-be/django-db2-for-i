@@ -89,7 +89,20 @@ status = "done"
 
 [[modules]]
 module = "queries"
-status = "planned"
+status = "in progress"
+# Run as these labels (Q1-Q5); the module row sums their logs.
+labels = [
+    "queries.test_q",
+    "queries.test_query",
+    "queries.test_sqlcompiler",
+    "queries.test_contains",
+    "queries.test_iterator",
+    "queries.test_explain",
+    "queries.test_qs_combinators",
+    "queries.test_db_returning",
+    "queries.test_bulk_update",
+    "queries.tests",
+]
 note = "split into labels Q1–Q5 because of its size"
 
 [[tracks]]
