@@ -222,6 +222,15 @@ Unicode) regular expressions; see IBM's "REGEXP_LIKE predicate" and
 or data mapping error") instead of being truncated. `StringAgg(...,
 distinct=True)` is not supported yet (Django raises NotSupportedError).
 
+## Numeric filter values that do not fit the column
+
+An integer outside the column's range inside an `__in` list (e.g. `100000`
+for a `SmallIntegerField`), or a `Decimal` with more digits than the
+column's `max_digits` / `decimal_places`, raises a driver error ("Numeric
+value out of range", "Character data right truncation") instead of matching
+nothing; it is never rounded or truncated. Planned fix:
+[#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69).
+
 ## Conversion errors in selected values give NULL
 
 When a selected value cannot be converted, or divides by zero, Db2 for i
