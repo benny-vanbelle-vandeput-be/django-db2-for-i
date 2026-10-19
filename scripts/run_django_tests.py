@@ -2,7 +2,7 @@
 
 Called by the ``django_tests`` nox session (see scripts/runtests.sh):
 
-    python scripts/run_django_tests.py <django-version> [--clean] <label> [<label> ...]
+    python scripts/run_django_tests.py <django-version> [--clean] [--debug-sql] <label> ...
 
 - A label is a test module (``basic``) or a dotted label inside one
   (``basic.tests.ModelTest.test_x``).
@@ -10,6 +10,10 @@ Called by the ``django_tests`` nox session (see scripts/runtests.sh):
   unless ``--clean`` is given, ``--keepdb`` (the test library is reused; the
   marker table records the top-level module, so labels of the same module
   reuse its tables and another module's tables are dropped).
+- ``--debug-sql`` passes runtests.py's ``--debug-sql``: for each failing
+  test the log shows the SQL it ran (``last_executed_query()``, with the
+  parameter values), to see the exact failing statement when rerunning
+  failing labels. It goes through the same password scrubber as all output.
 - Safety for shared systems: refuses to run without labels (that would be
   the full suite) and with more than MAX_LABELS labels; each label counts.
 - Output goes to the terminal and to test-results/<version>/<module>.log for
@@ -17,7 +21,7 @@ Called by the ``django_tests`` nox session (see scripts/runtests.sh):
   label (not counted in TEST_STATUS.md), with the password from DB2I_PASSWORD
   replaced by ``***`` in both. The log starts with a header (label, Django
   and backend commits, the Python version that runs ``runtests.py``, keepdb,
-  start time) and ends with the exit code and end time.
+  debug-sql, start time) and ends with the exit code and end time.
 """
 
 from __future__ import annotations
@@ -107,7 +111,9 @@ def git_commit(path: Path) -> str:
     return result.stdout.strip() or "unknown"
 
 
-def runtests_command(label: str, keepdb: bool, verbosity: int) -> list[str]:
+def runtests_command(
+    label: str, keepdb: bool, verbosity: int, debug_sql: bool = False
+) -> list[str]:
     command = [
         sys.executable,
         "runtests.py",
@@ -118,10 +124,14 @@ def runtests_command(label: str, keepdb: bool, verbosity: int) -> list[str]:
     ]
     if keepdb:
         command.append("--keepdb")
+    if debug_sql:
+        command.append("--debug-sql")
     return [*command, label]
 
 
-def run_label(version: str, label: str, keepdb: bool, verbosity: int, scrub) -> int:
+def run_label(
+    version: str, label: str, keepdb: bool, verbosity: int, scrub, debug_sql: bool = False
+) -> int:
     django_dir = ROOT / "vendor" / f"django-{version}"
     path = log_path(version, label)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -135,6 +145,7 @@ def run_label(version: str, label: str, keepdb: bool, verbosity: int, scrub) -> 
         # interpreter's version is the one the tests ran on.
         f"# python: {platform.python_version()}",
         f"# keepdb: {'yes' if keepdb else 'no'}",
+        f"# debug-sql: {'yes' if debug_sql else 'no'}",
         f"# started: {now}",
     ]
     with path.open("w") as log:
@@ -142,7 +153,7 @@ def run_label(version: str, label: str, keepdb: bool, verbosity: int, scrub) -> 
             print(line)
             log.write(line + "\n")
         process = subprocess.Popen(
-            runtests_command(label, keepdb, verbosity),
+            runtests_command(label, keepdb, verbosity, debug_sql),
             cwd=django_dir / "tests",
             env=environment,
             stdout=subprocess.PIPE,
@@ -168,6 +179,9 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument("version", help="Django feature release, e.g. 6.1")
     parser.add_argument("labels", nargs="*", help="Django test modules or dotted labels")
     parser.add_argument("--clean", action="store_true", help="do not reuse the test library")
+    parser.add_argument(
+        "--debug-sql", action="store_true", help="log the SQL of failing tests (runtests.py)"
+    )
     parser.add_argument("-v", "--verbosity", type=int, default=2)
     args = parser.parse_args(argv)
     try:
@@ -186,7 +200,7 @@ def main(argv: Sequence[str]) -> int:
         return 2
     scrub = make_scrubber([os.environ.get("DB2I_PASSWORD", "")])
     codes = [
-        run_label(args.version, label, not args.clean, args.verbosity, scrub)
+        run_label(args.version, label, not args.clean, args.verbosity, scrub, args.debug_sql)
         for label in args.labels
     ]
     return max(codes, default=0)

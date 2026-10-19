@@ -1,20 +1,23 @@
 #!/bin/sh
 # Run modules of Django's own test suite against IBM i, in the tests container.
 #
-#   scripts/runtests.sh <django-version> [--clean] <label> [<label> ...]
+#   scripts/runtests.sh <django-version> [--clean] [--debug-sql] <label> [<label> ...]
 #   scripts/runtests.sh 6.1 basic transactions
 #   scripts/runtests.sh 6.1 basic.tests.ModelTest.test_x
+#   scripts/runtests.sh 6.1 --clean --debug-sql basic.tests.ModelTest.test_x
 #
 # A label is a test module or a dotted label inside one. One runtests.py call
 # per label (--parallel=1 --noinput, --keepdb unless --clean), logs in
 # test-results/<version>/<module>.log (dotted labels: labels/<label>.log) with
-# the password scrubbed. Refuses to run without labels (the full suite) or
+# the password scrubbed. --debug-sql passes runtests.py's --debug-sql: the
+# log shows the SQL of each failing test (with its parameter values, scrubbed
+# like the rest of the output), for rerunning failing labels. Refuses to run without labels (the full suite) or
 # with more than three labels: the system is shared (CLAUDE.md, PUB400 rules).
 # The checks are repeated inside the container (scripts/run_django_tests.py).
 set -eu
 
 usage() {
-    echo "usage: $0 <django-version> [--clean] <label> [<label> ...]" >&2
+    echo "usage: $0 <django-version> [--clean] [--debug-sql] <label> [<label> ...]" >&2
     exit 2
 }
 
@@ -24,7 +27,7 @@ shift
 labels=0
 for arg in "$@"; do
     case $arg in
-        --clean) ;;
+        --clean|--debug-sql) ;;
         -*) echo "refused: unknown option $arg" >&2; exit 2 ;;
         *) labels=$((labels + 1)) ;;
     esac

@@ -110,10 +110,12 @@ def pub400(session: nox.Session) -> None:
 def django_tests(session: nox.Session) -> None:
     """Tier 3 on a shared system: Django's runtests.py for named modules (scripts/runtests.sh).
 
-    nox -s django_tests -- <django-version> [--clean] <module> [<module> ...]
+    nox -s django_tests -- <django-version> [--clean] [--debug-sql] <module> [<module> ...]
     """
     if not session.posargs:
-        session.error("usage: nox -s django_tests -- <django-version> [--clean] <module> ...")
+        session.error(
+            "usage: nox -s django_tests -- <django-version> [--clean] [--debug-sql] <module> ..."
+        )
     version = session.posargs[0]
     checkout = f"vendor/django-{version}"
     # Django from the vendor checkout (stable/<version>.x); the backend without

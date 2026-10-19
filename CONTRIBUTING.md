@@ -99,6 +99,8 @@ full suite:
 ```sh
 scripts/runtests.sh 6.1 basic              # reuse the test library (--keepdb)
 scripts/runtests.sh 6.1 --clean basic      # fully clean run
+scripts/runtests.sh 6.1 --clean --debug-sql basic.tests.ModelTest.test_x
+                                           # rerun a failing label: log its SQL
 docker compose run --rm tests nox -s test_status   # regenerate docs/TEST_STATUS.md
 ```
 
@@ -108,6 +110,10 @@ docker compose run --rm tests nox -s test_status   # regenerate docs/TEST_STATUS
   `other` are the two journaled libraries from `.env`
   (`DB2I_DEFAULT_LIBRARY`, `DB2I_OTHER_LIBRARY`), each guarded by the test
   marker table. `other` connects only when a selected test uses it.
+- `--debug-sql` passes Django's `runtests.py --debug-sql`: the log shows the
+  SQL of each failing test with its parameter values, so the exact failing
+  statement is visible. The password is scrubbed from all output, as always;
+  the SQL never contains the connection string.
 - The scripts refuse runs without modules or with more than three, always
   use `--parallel=1 --noinput`, and write one log per module to
   `test-results/<version>/<module>.log`, with the password scrubbed.
