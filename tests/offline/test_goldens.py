@@ -21,8 +21,10 @@ from tests.golden import (
     Golden,
     all_golden_paths,
     merge,
+    new_stamp,
     parse,
     read,
+    render_last_verification,
 )
 from tests.golden_cases import CASES, CASES_BY_NAME, GROUPS, build_case
 from tests.testapp.models import Author, Book, Defaults, Node, Schedule, Tag
@@ -94,7 +96,7 @@ def test_golden_header(path) -> None:
     assert golden.name == "/".join(rest)
     assert (golden.django, golden.profile) == (django, profile)
     assert golden.verified == UNVERIFIED or VERIFIED_PATTERN.match(golden.verified), (
-        f"verified must be '{UNVERIFIED}' or 'IBM i <release> on PUB400, <date>'"
+        f"verified must be '{UNVERIFIED}' or '<level>, <date>' (tests/golden.py)"
     )
     creates = {case.name for case in CASES if case.kind == "create"}
     assert set(golden.depends) <= creates, "a golden can only depend on create goldens"
@@ -233,3 +235,43 @@ def test_update_goldens_is_refused_in_ci(pytester, monkeypatch) -> None:
     pytester.makepyfile("def test_nothing():\n    pass\n")
     result = pytester.runpytest_inprocess("-p", "no:django", "--update-goldens")
     assert "--update-goldens must not be used in CI" in result.stderr.str()
+
+
+# --- Verification stamps -----------------------------------------------------------
+
+LEVEL = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.1.2"
+
+
+def test_unverified_goldens_get_a_stamp() -> None:
+    assert new_stamp(UNVERIFIED, LEVEL, "2026-10-20") == f"{LEVEL}, 2026-10-20"
+
+
+def test_a_stamp_on_the_same_level_is_kept() -> None:
+    """A run on the same level does not touch the golden (its date stays)."""
+    assert new_stamp(f"{LEVEL}, 2026-10-18", LEVEL, "2026-10-20") is None
+
+
+@pytest.mark.parametrize(
+    "old",
+    [
+        "IBM i 7.5 on PUB400, 2026-10-18",  # older stamps without TR / PTF / Django
+        "IBM i 7.5 on PUB400 (TR 6, Db2 PTF Group 7), Django 6.1.2, 2026-10-18",
+        "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.1.1, 2026-10-18",
+    ],
+    ids=["old format", "other system level", "other Django version"],
+)
+def test_a_stamp_from_another_level_is_replaced(old) -> None:
+    assert VERIFIED_PATTERN.match(old)
+    assert new_stamp(old, LEVEL, "2026-10-20") == f"{LEVEL}, 2026-10-20"
+
+
+def test_last_verification_report() -> None:
+    results = {"a": "passed", "b": "passed", "c": "failed", "d": "skipped"}
+    text = render_last_verification(LEVEL, "2026-10-20", results)
+    assert text.splitlines()[1:] == [
+        "date: 2026-10-20",
+        f"level: {LEVEL}",
+        "passed: 2",
+        "failed: 1",
+        "skipped: 1",
+    ]

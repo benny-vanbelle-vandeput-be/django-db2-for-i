@@ -71,13 +71,18 @@ SQL and params with them on every run.
 - **Changing SQL on purpose:** run `pytest -m offline --update-goldens`, review
   the diff and commit it with the code change. Never in CI (refused there).
 - **Verification status** (`-- verified:` header): `unverified`, or
-  `IBM i <release> on PUB400, <date>`. **"Verified" means "accepted by Db2 for
+  `<level>, <date>` with the level `IBM i <release> on PUB400 (TR <n>, Db2 PTF
+  Group <n>), Django <version>` (TR and PTF Group are `unknown` where they
+  cannot be read, as on PUB400). **"Verified" means "accepted by Db2 for
   i"** (the statement executed without an error), **not** "returns correct
   results"; correct results are what the Django test runs check. Any change to
   a golden's SQL **or** params resets it to `unverified`.
 - **Verifying:** `nox -s pub400 -- -k goldens --record-verification` executes
-  every golden on IBM i (create goldens first, in an empty marked test library)
-  and stamps those that were accepted. Commit the header changes in a PR.
+  every golden on IBM i (create goldens first, in an empty marked test library).
+  A golden that passed is stamped only when it was unverified or verified on
+  another level (release, TR, PTF Group or Django version); a run on the same
+  level leaves the goldens alone and only writes its date and counts to
+  `tests/offline/golden/last-verification.txt`. Commit the changes in a PR.
   Goldens that Db2 for i rejects are listed in `tests/pub400/test_goldens.py`
   (`REJECTED`) with the reason until the backend is fixed.
 - **Completeness:** every case has a golden and every golden has a case;
