@@ -674,6 +674,14 @@ fetch (so there is no SQL_SUCCESS_WITH_INFO the backend could turn into an
 error). In WHERE, the same errors raise SQL0802 ("Data conversion or data
 mapping error").
 
+### UPPER() on NVARCHAR (pub400 test, 2026-10-19)
+`tests/pub400/test_lookups.py::test_iexact_with_non_ascii_letters`: Db2 for i's
+`UPPER()` on NVARCHAR uppercases `é` to `É` and `ü` to `Ü`, but keeps `ß` as `ß`
+(Python's `"straße".upper()` is `"STRASSE"`): `iexact="STRASSE"` does not match
+`straße`, `iexact="STRAßE"` does. Case-insensitive lookups compare
+`UPPER(column)` with `UPPER(value)`, both on the server, so they agree with each
+other.
+
 ### Truncating dates and times (`probe -- trunc`)
 2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
 compared with Django's truncation in Python.
