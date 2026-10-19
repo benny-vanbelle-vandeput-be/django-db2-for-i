@@ -1,24 +1,25 @@
 # Phase 3: Django 6.0 and 5.2 support
 
-> Status: Proposed, not yet approved
+> Status: Approved, 2026-10-19
 
-This is a plan, not a record. It follows the phase template in
-`docs/phases/README.md`, added by [#85](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/85).
-The version policy (5.2 LTS, 6.0 and 6.1) and the phase name come from
+This is the approved plan, not yet a record. It follows the phase template in
+[README.md](README.md). The version policy (5.2 LTS, 6.0 and 6.1) and the
+phase name come from
 [#88](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/88).
+The maintainer's answers to the open questions are in "Decisions" at the end.
 
 The analysis compares three Django checkouts:
 
 | Branch | Commit | Version |
 |---|---|---|
-| `stable/6.1.x` | the one used for the Django test runs | 6.1.3 alpha |
+| `stable/6.1.x` | `1e01021`, 2026-10-12 (the checkout used for the Django test runs) | 6.1.3 alpha |
 | `stable/6.0.x` | `52e5ba1`, 2026-10-08 | 6.0.10 alpha |
 | `stable/5.2.x` | `cae7247`, 2026-10-08 | 5.2.19 alpha |
 
 They are compared against the backend on `main` at `18eded3`.
 
 ## Goal
-From CLAUDE.md section 9, as proposed in #88: work backwards in two steps,
+From CLAUDE.md section 9: work backwards in two steps,
 6.1 → 6.0 first, then 6.0 → 5.2. Build `compat.py` from real differences,
 extend the nox matrix, fill `DJANGO_VERSIONS.md`.
 
@@ -34,15 +35,15 @@ Proposed "done when", per step (6.0, then 5.2):
 At the end of the phase, the release run passes on 5.2, 6.0 and 6.1.
 
 ## What was done
-Nothing yet. The proposed work follows.
+Nothing yet. The planned work follows.
 
 ### 1. Supported versions, Python and minimum patch releases
 
 | Django | Python (release notes) | Minimum patch for Python 3.14 | End of security support |
 |---|---|---|---|
 | 6.1 | 3.12, 3.13, 3.14 | 6.1.0 | December 2027 |
-| 6.0 | 3.12, 3.13, 3.14 | 6.0.0 | **April 2027** |
-| 5.2 LTS | 3.10–3.14 (3.14 from 5.2.8) | 5.2.8 | April 2028 |
+| 6.0 | 3.12, 3.13, 3.14 | 6.0.0 (floor: 6.0.3, decision 2) | **April 2027** |
+| 5.2 LTS | 3.10–3.14 (3.14 from 5.2.8) | 5.2.8 (floor: 5.2.12, decision 2) | April 2028 |
 
 Sources:
 - **6.0**, `docs/releases/6.0.txt` line 21: "Django 6.0 supports Python 3.12,
@@ -75,7 +76,7 @@ is missing in 5.2 only.
 
 | Item | Uses it | Impact |
 |---|---|---|
-| `adapt_durationfield_value()` hook | `operations.py` overrides it (BIGINT range check, [#57](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/57)) | Never called on 6.0 or 5.2: `DurationField.get_db_prep_value()` returns `duration_microseconds(value)` itself. Values still arrive as microseconds, but out-of-range durations fail in the driver instead of raising the backend's `ValueError`. Open question 3. |
+| `adapt_durationfield_value()` hook | `operations.py` overrides it (BIGINT range check, [#57](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/57)) | Never called on 6.0 or 5.2: `DurationField.get_db_prep_value()` returns `duration_microseconds(value)` itself. Values still arrive as microseconds, but out-of-range durations fail in the driver instead of raising the backend's `ValueError`. Decision 3: keep the check through compat. |
 | `get_relations()` 3-tuples with `db_on_delete` | not implemented yet | Phase 4: compat shapes the tuple. |
 | `supports_inspectdb`, `supports_bit_aggregations`, `supports_on_delete_db_*` | set to False | Ignored before 6.1: harmless. DB-level `on_delete` stays 6.1+ (phase 6). |
 | `prohibits_dollar_signs_in_column_aliases` removed | no | None. |
@@ -90,8 +91,8 @@ is missing in 5.2 only.
 
 | Item | Uses it | Impact on 5.2 |
 |---|---|---|
-| `StringAgg`, `AnyValue`, `Aggregate(order_by=...)` become general | `expressions.py` imports `StringAgg` from `django.db.models` | **Blocker:** `ImportError` on 5.2, so the backend does not load. 5.2 has `StringAgg` only in `contrib.postgres`. Open question 1. |
-| `sql_delete_column` without `CASCADE` | `schema.py` does not override it | 5.2 writes `DROP COLUMN ... CASCADE`. Db2 for i's handling is not probed. Open question 4. |
+| `StringAgg`, `AnyValue`, `Aggregate(order_by=...)` become general | `expressions.py` imports `StringAgg` from `django.db.models` | **Blocker:** `ImportError` on 5.2, so the backend does not load. 5.2 has `StringAgg` only in `contrib.postgres`. Decision 1: conditional import, not supported on 5.2. |
+| `sql_delete_column` without `CASCADE` | `schema.py` does not override it | 5.2 writes `DROP COLUMN ... CASCADE`. Db2 for i's handling is not probed. Decision 4: QTEMP probe, then the same SQL everywhere. |
 | `returning_columns()` / `fetch_returned_rows()` (renamed), `can_return_rows_from_update` | no (phase 5) | Phase 5 provides both names through compat. |
 | `supports_tuple_comparison_against_subquery` | set to False | 5.2 does not raise `NotSupportedError`. It writes a row-value comparison against a subquery, which Db2 for i rejects (SQL0115, probe `tuple_lookups`). Proposal: our tuple hook raises the same error on 5.2. |
 | Collapsed `Case` casts its `Value` default | `case_as_db2_for_i` | Our patch also handles 5.2's plain `NULL`. Goldens per series. |
@@ -195,11 +196,13 @@ Dropping 6.0 (after April 2027) means deleting section 1, the 6.0 entries in
 the per-version lists, `tests/offline/golden/6.0/`, and the `"6.0"` line in
 the noxfile; section 3 then serves 5.2 alone. Dropping 5.2 (after April
 2028) deletes sections 2 and 3. An offline test asserts that
-`django.VERSION` appears only in `compat.py`. Open question 5.
+`django.VERSION` appears only in `compat.py`. Approved (decision 5).
 
 **Packaging and nox:**
-- `pyproject.toml`: `"Django>=5.2.8,<6.2"` (5.2, 6.0 and 6.1; there is no
-  5.3), with the classifiers `Framework :: Django :: 5.2 / 6.0 / 6.1`.
+- `pyproject.toml`: `"Django>=5.2.12,!=6.0.0,!=6.0.1,!=6.0.2,<6.2"`, which
+  allows 5.2.12+, 6.0.3+ and 6.1.0+ (decision 2; there is no 5.3). The exact
+  spelling is for the build PR. Classifiers
+  `Framework :: Django :: 5.2 / 6.0 / 6.1`.
 - `noxfile.py`: `DJANGO_PYTHONS` gets `"6.0"` (step A) and `"5.2"` (step B),
   each with 3.12, 3.13 and 3.14. The offline tier then covers every Python ×
   every Django version (9 sessions).
@@ -210,8 +213,8 @@ the noxfile; section 3 then serves 5.2 alone. Dropping 5.2 (after April
   parallel jobs without a workflow change.
 
 **Goldens:** `tests/offline/golden/6.0/7.5/...` and `.../5.2/7.5/...`,
-generated, reviewed, and verified on PUB400 by the pub400 tier's golden job
-on that version.
+generated and reviewed. **All** of them are verified on PUB400 by the pub400
+tier's golden job on that version (decision 8).
 
 **`docs/DJANGO_VERSIONS.md` outline:**
 - the table of section 1;
@@ -242,8 +245,9 @@ not edited:
   `lookup`, `ordering`, `queries` as its labels, and `transactions`) plus the
   pub400 tier. The run is sequential, uses one connection at a time, runs
   preferably off-peak, and is never the full Django suite.
-  `scripts/runtests.sh` takes at most three labels per call, so the run is a
-  fixed list of calls per version (open question 7).
+  The run is one nox session (`nox -s release_run -- <django>`) with the
+  fixed list in code, failing fast when PUB400 is unreachable and logging to
+  `test-results/<django>/` (decision 7).
 - **Full tier**: only on a dedicated IBM i.
 
 ### 6. Plan with PR boundaries
@@ -252,21 +256,25 @@ not edited:
 1. `docs`: `DJANGO_VERSIONS.md`, the 6.0 and 6.1 sections (sections 1–3 of
    this plan).
 2. `feat(compat)`: `compat.py` sections and the `django.VERSION` guard test.
-   - The duration range check for versions before 6.1.
+   - The duration range check for versions before 6.1, with a pub400 test.
    - Per-version skip and expected-failure lists.
    - No behaviour change on 6.1.
-3. `build`: `"6.0"` in the noxfile and the pyproject range up to 6.0, plus
-   the Django parameter for `pub400` / `django_tests`.
-4. `test`: 6.0 goldens, verified on PUB400; pub400 tier fixes for 6.0.
+3. `build`: `"6.0"` in the noxfile and the pyproject floor 6.0.3, plus the
+   Django parameter for `pub400` / `django_tests`.
+   - The `release_run` nox session (decision 7).
+4. `test`: all 6.0 goldens, verified on PUB400; pub400 tier fixes for 6.0.
 5. `test`: the supported Django modules on 6.0, one per run, shrinking the
    6.0 lists. The main session updates `status.toml` and the badges.
 
 **Step B: 6.0 → 5.2**
 6. `docs`: `DJANGO_VERSIONS.md`, the 5.2 section.
-7. `feat(compat)`: the 5.2 section (`StringAgg`, the tuple subquery check).
-8. `fix(schema)`: `sql_delete_column` without `CASCADE` for all versions,
-   with a DDL golden. This may need a QTEMP probe first (open question 4).
-9. `build`: `"5.2"` in the noxfile, pyproject `>=5.2.8`.
+7. `feat(compat)`: the 5.2 section.
+   - `StringAgg` imported conditionally.
+   - Known Limitations: "StringAgg requires Django 6.0+".
+   - The tuple subquery check.
+8. `test(probes)` + `fix(schema)`: a QTEMP probe of `DROP COLUMN ... CASCADE`,
+   then the same `sql_delete_column` for all versions, with a DDL golden.
+9. `build`: `"5.2"` in the noxfile, pyproject floor 5.2.12.
 10. `test`: 5.2 goldens and pub400 tier fixes.
 11. `test`: the supported Django modules on 5.2.
 
@@ -276,12 +284,13 @@ not edited:
     versions before the next release.
 
 ## Key decisions
-None yet. The decisions are in the open questions at the end.
+Approved on 2026-10-19; see the "Decisions" section at the end. Each one is
+linked to its [DECISIONS.md](../DECISIONS.md) entry.
 
 ## IBM i findings
-None expected: phase 3 is about the Django version axis. The one open IBM i
-question is `DROP COLUMN ... CASCADE` (question 4). A probe would be proposed
-first and would use QTEMP only.
+None expected: phase 3 is about the Django version axis. The one IBM i
+question is `DROP COLUMN ... CASCADE` (decision 4). It will be answered by a
+QTEMP probe, which is proposed first.
 
 ## Test status at the end of the phase
 Not started. Baseline on 6.1 at `18eded3`: see
@@ -295,9 +304,10 @@ tier passing on Python 3.12–3.14 × Django 6.1).
   - `binary_placeholder_sql` (when binary values are supported);
   - DB-level `on_delete`, 6.1+ (phase 6).
 - When 6.2 LTS ships, the same steps apply forwards.
-- Open issues that touch every version: [#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69),
-  [#75](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/75),
-  [#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82).
+- Open issues that touch every version: [#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69)
+  (before step A, see Decisions) and
+  [#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82)
+  (does not block phase 3).
 
 ## Links
 - [docs/DJANGO_VERSIONS.md](../DJANGO_VERSIONS.md), [CLAUDE.md](../../CLAUDE.md)
@@ -306,23 +316,40 @@ tier passing on Python 3.12–3.14 × Django 6.1).
   `6.0.1.txt`, `6.0.3.txt`, `6.1.txt` ("Database backend API").
 - djangoproject.com/download ("Supported versions").
 
-## Open questions for the maintainer
-1. **`StringAgg` on 5.2**: leave it unsupported (5.2 has only the PostgreSQL
-   class in `contrib.postgres`), or also patch that class?
-2. **Minimum patch releases**: what should the minimums be?
-   - 5.2: 5.2.8 (first with 3.14) or 5.2.12 (the latest 3.14 fix)?
-   - 6.0: 6.0.0 or 6.0.3?
-   - Or always the newest security release?
-3. **Duration range check before 6.1**: keep it on 6.0 and 5.2 through a
-   compat hook (for example wrapping `DurationField.get_db_prep_value`), or
-   accept the driver's `OverflowError` there?
-4. **`DROP COLUMN ... CASCADE`** (5.2): pin the 6.x text for all versions
-   without a probe, or probe Db2 for i's behaviour in QTEMP first?
-5. **compat structure**: is the three-section layout (6.0 only, 5.2 only,
-   before 6.1) right, given that 6.0 is dropped a year before 5.2?
-6. **Timing**: start step A only after phase 2 is done (`queries` is still
-   partial), or in parallel?
-7. **Release run**: one nox session that runs the whole list, or a
-   documented list of `runtests.sh` calls?
-8. **Golden verification**: verify every 6.0 and 5.2 golden on PUB400, or
-   only those whose SQL differs from 6.1?
+## Decisions
+The maintainer approved this plan on 2026-10-19 and answered its open
+questions as follows:
+
+1. **`StringAgg` on 5.2: not supported.** `compat.py` imports it
+   conditionally, so the backend loads on 5.2. Known Limitations gets
+   "StringAgg requires Django 6.0+". `contrib.postgres` is not patched.
+   ([DECISIONS](../DECISIONS.md#2026-10-19-stringagg-requires-django-60-imported-through-compatpy))
+2. **Minimum patch releases**: the pyproject floor is 5.2.12 and 6.0.3 (the
+   latest Python 3.14 fixes), and 6.1.0 for 6.1. The user docs say "always use
+   the latest security release".
+   ([DECISIONS](../DECISIONS.md#2026-10-19-minimum-django-patch-releases-5212-603-and-610))
+3. **Duration range check before 6.1: kept, through `compat.py`.** The same
+   input gives the same clear `ValueError` on every supported version, with a
+   pub400 test on each version.
+   ([DECISIONS](../DECISIONS.md#2026-10-19-the-duration-range-check-on-every-supported-django-version))
+4. **`DROP COLUMN ... CASCADE` on 5.2: probe in QTEMP first**, then pin the
+   same SQL for all versions.
+   ([DECISIONS](../DECISIONS.md#2026-10-19-drop-column-sql-pinned-for-every-version-after-a-qtemp-probe))
+5. **The `compat.py` three-section layout** (6.0 only / 5.2 only / before 6.1)
+   **is approved.**
+   ([DECISIONS](../DECISIONS.md#2026-10-19-compatpy-in-three-sections-60-only-52-only-before-61))
+6. **Timing**: first tag 0.1.0a3, then
+   [#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69),
+   then the offline query corpus for 6.1
+   ([#89](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/89)),
+   then step A. Step A's PR 1 (`DJANGO_VERSIONS.md`, docs only) may start in
+   parallel now.
+   [#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82)
+   does not block phase 3.
+7. **Release run: one nox session** (for example `nox -s release_run --
+   <django>`) with the fixed list in code. It runs sequentially, fails fast
+   when PUB400 is unreachable, and logs to `test-results/<django>/`. The
+   documented list is generated from it.
+   ([DECISIONS](../DECISIONS.md#2026-10-19-the-release-run-as-one-nox-session))
+8. **Goldens**: verify all 6.0 and 5.2 goldens on PUB400, not only those that
+   differ from 6.1.
