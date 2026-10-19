@@ -6,34 +6,16 @@ import pytest
 from django.db import connections
 
 from tests import tuple_lookup_scenarios as scenarios
+from tests.offline.reference_db import sqlite_reference
 from tests.testapp.models import Account, Contact
-
-ALIAS = "tuple_reference"
 
 
 @pytest.fixture
 def reference(django_db_blocker):
-    settings = connections.configure_settings(
-        {
-            "default": connections.settings["default"],
-            ALIAS: {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"},
-        }
-    )
-    connections.settings[ALIAS] = settings[ALIAS]
-    django_db_blocker.unblock()
-    try:
-        connection = connections[ALIAS]
-        assert connection.features.supports_tuple_lookups
-        with connection.schema_editor() as editor:
-            editor.create_model(Account)
-            editor.create_model(Contact)
-        scenarios.create(ALIAS)
-        yield ALIAS
-    finally:
-        connections[ALIAS].close()
-        del connections[ALIAS]
-        del connections.settings[ALIAS]
-        django_db_blocker.restore()
+    with sqlite_reference(django_db_blocker, (Account, Contact)) as alias:
+        assert connections[alias].features.supports_tuple_lookups
+        scenarios.create(alias)
+        yield alias
 
 
 def test_expected_rows_are_the_reference(reference) -> None:
