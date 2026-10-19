@@ -156,6 +156,7 @@ from django.db.models.expressions import (
     ExpressionWrapper,
     NegatedExpression,
     OrderBy,
+    RawSQL,
     Value,
 )
 from django.db.models.fields.tuple_lookups import (
@@ -486,6 +487,9 @@ def _is_boolean_value_condition(lookup) -> bool:
         and isinstance(lookup.rhs, bool)
         and getattr(lookup.lhs, "conditional", False)
         and not renders_as_predicate(lookup.lhs)
+        # A conditional RawSQL is trusted to be a condition (as Django's own
+        # conditional_expression_supported_in_where_clause does): left as it is.
+        and not isinstance(lookup.lhs, RawSQL)
     )
 
 

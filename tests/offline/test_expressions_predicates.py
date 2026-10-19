@@ -2,6 +2,7 @@
 
 from django.db import connection
 from django.db.models import BooleanField, Exists, ExpressionWrapper, F, OuterRef, Q, Value
+from django.db.models.expressions import RawSQL
 from django.db.models.lookups import LessThan
 
 from django_db2_for_i.expressions import PredicateValue, renders_as_predicate
@@ -80,6 +81,13 @@ def test_boolean_values_as_conditions_are_comparisons() -> None:
     assert where(Book.objects.annotate(x=~F("available")).filter(x=False)) == f"{column} = TRUE"
     wrapped = ExpressionWrapper(F("available"), output_field=BooleanField())
     assert where(Book.objects.filter(wrapped)) == f"{column} = TRUE"
+
+
+def test_a_conditional_raw_sql_stays_a_condition() -> None:
+    """Django trusts a conditional RawSQL to be a condition; = TRUE after a predicate
+    would be SQL0104 (Django's test_filtering_on_rawsql_that_is_boolean)."""
+    raw = RawSQL("pages > %s", (3,), output_field=BooleanField())
+    assert where(Book.objects.filter(raw)) == "(pages > %s)"
 
 
 def test_negated_boolean_column_is_a_case_value_when_selected() -> None:
