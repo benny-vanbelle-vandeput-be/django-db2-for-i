@@ -193,10 +193,8 @@ def test_tuple_in_subquery_in_a_case_context_uses_the_rewrite(live, empty) -> No
     }
     expected = {
         "xor": {("a", 1), ("c", 9)},
-        # ("a", NULL) IN (("a", 1)) is UNKNOWN: no When match. As a selected value
-        # the select-column wrapper (CASE WHEN ... ELSE FALSE) makes it False, not
-        # None; issue #75.
-        "selected": {("a", 1, True), ("a", None, False), ("b", 2, False), ("c", 9, False)},
+        # ("a", NULL) IN (("a", 1)) is UNKNOWN: no When match, None as a value (#75).
+        "selected": {("a", 1, True), ("a", None, None), ("b", 2, False), ("c", 9, False)},
         "when": {("a", 1, 1), ("a", None, 0), ("b", 2, 0), ("c", 9, 0)},
     }
     for name, queryset in querysets.items():

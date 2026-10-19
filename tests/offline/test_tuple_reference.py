@@ -23,12 +23,7 @@ def test_expected_rows_are_the_reference(reference) -> None:
     assert actual == scenarios.EXPECTED
 
 
-def test_known_differences_are_only_unknown_as_false() -> None:
-    """The backend differs from the reference only where a selected UNKNOWN is
-    False (issue #75): no other row or context."""
-    for differences in scenarios.KNOWN_DIFFERENCES.values():
-        for name, rows in differences.items():
-            expected = scenarios.EXPECTED[name]
-            assert len(rows) == len(expected)
-            changed = set(rows) ^ set(expected)
-            assert all(row[-1] in (None, False) for row in changed), name
+def test_there_are_no_known_differences() -> None:
+    """The backend gets the reference rows in every context (issue #75 fixed the
+    selected UNKNOWN, the last difference)."""
+    assert scenarios.KNOWN_DIFFERENCES == {}

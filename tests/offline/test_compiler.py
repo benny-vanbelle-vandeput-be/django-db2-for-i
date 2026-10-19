@@ -153,7 +153,9 @@ def test_q_and_lookup_annotations_are_case_values() -> None:
     for annotation in (Q(pages__lt=100), ~Q(pages__lt=100), LessThan(F("pages"), 100)):
         _, sql = compiled(Book.objects.annotate(b=annotation).values("b"))
         assert sql.startswith(f"SELECT {WRAPPED}") and sql.count(WRAPPED) == 1
-        assert ' THEN TRUE ELSE FALSE END AS "B" FROM' in sql
+        # Three-valued: NULL when the predicate is UNKNOWN (no ELSE; issue #75).
+        assert " THEN TRUE WHEN NOT (" in sql
+        assert ' THEN FALSE END AS "B" FROM' in sql
 
 
 def test_group_by_a_predicate_with_a_value_uses_the_lateral_column() -> None:
@@ -163,11 +165,12 @@ def test_group_by_a_predicate_with_a_value_uses_the_lateral_column() -> None:
     sql, params = queryset.query.get_compiler(connection=connection).as_sql()
     assert sql.startswith('SELECT "DJDB2I_GROUPING"."G1" AS "B", ')
     assert sql.endswith(' GROUP BY "DJDB2I_GROUPING"."G1"')
+    pages = '"TESTAPP_BOOK"."PAGES" < %s'
     assert (
-        f'CROSS JOIN LATERAL (SELECT {WRAPPED}"TESTAPP_BOOK"."PAGES" < %s THEN TRUE ELSE FALSE '
+        f"CROSS JOIN LATERAL (SELECT {WRAPPED}{pages} THEN TRUE WHEN NOT ({pages}) THEN FALSE "
         'END AS "G1" FROM SYSIBM.SYSDUMMY1) AS "DJDB2I_GROUPING"'
     ) in sql
-    assert params == (100,)
+    assert params == (100, 100)
 
 
 def test_conditions_and_exists_are_not_wrapped() -> None:
@@ -192,7 +195,9 @@ def test_in_subquery_as_a_value_is_three_valued() -> None:
     x = '"TESTAPP_BOOK"."AUTHOR_ID"'
     assert f'WHERE "DJDB2I_IN".V1 = {x} FETCH' in sql
     assert f'("DJDB2I_IN".V1 = {x} OR "DJDB2I_IN".V1 IS NULL OR {x} IS NULL)' in sql
-    assert "THEN NULL ELSE FALSE END) = TRUE" in sql
+    # Selected as it is: the rewrite's three-valued BOOLEAN, its subqueries once.
+    assert 'THEN NULL ELSE FALSE END) AS "B" FROM' in sql
+    assert "= TRUE" not in sql
 
 
 def test_tuple_in_subquery_is_not_rewritten_in_a_search_condition() -> None:

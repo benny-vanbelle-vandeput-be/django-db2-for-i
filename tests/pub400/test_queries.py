@@ -576,3 +576,37 @@ def test_boolean_conditions_match_the_reference(live, empty) -> None:
         if actual[name] != expected
     }
     assert differences == {}
+
+
+def test_selected_predicates_are_three_valued(live, empty) -> None:
+    """Issue #75: a Q(...) as a selected value is True, False or None (UNKNOWN, a NULL
+    operand), as on PostgreSQL, and the same predicate in filter() returns exactly
+    the rows where it is True: a comparison, the IN rewrite over a subquery with a
+    NULL, a correlated Exists, and a combination with AND."""
+    from tests.testapp.models import Account, Contact
+
+    Account.objects.create(company="a", number=1)
+    for company, number in (("a", 1), ("b", 7), ("c", None)):
+        Contact.objects.create(company=company, account_number=number)
+    numbers = Contact.objects.values("account_number")  # holds a NULL
+    predicates = {
+        "lt": (Q(account_number__lt=5), {"a": True, "b": False, "c": None}),
+        "in subquery with a NULL": (
+            Q(account_number__in=numbers.filter(company="a")) | Q(account_number__in=numbers),
+            {"a": True, "b": True, "c": None},
+        ),
+        "exists": (
+            Q(Exists(Account.objects.filter(company=OuterRef("company")))),
+            {"a": True, "b": False, "c": False},
+        ),
+        "and": (
+            Q(account_number__lt=5) & Q(company__in=["a", "c"]),
+            {"a": True, "b": False, "c": None},
+        ),
+        "not": (~Q(account_number__gte=5), {"a": True, "b": False, "c": True}),
+    }
+    for name, (predicate, expected) in predicates.items():
+        selected = dict(Contact.objects.annotate(v=predicate).values_list("company", "v"))
+        assert selected == expected, name
+        matching = sorted(Contact.objects.filter(predicate).values_list("company", flat=True))
+        assert matching == sorted(c for c, v in expected.items() if v is True), name

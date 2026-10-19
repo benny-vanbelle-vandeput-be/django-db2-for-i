@@ -112,15 +112,6 @@ EXPECTED: dict[str, list[tuple]] = {
 }
 
 
-def _unknown_as_false(expected: list[tuple]) -> list[tuple]:
-    return sorted(((*row[:-1], False) if row[-1] is None else row for row in expected), key=repr)
-
-
-# Reason -> {name: the backend's rows}.
-KNOWN_DIFFERENCES: dict[str, dict[str, list[tuple]]] = {
-    "issue #75: a selected UNKNOWN predicate is False, not None": {
-        name: _unknown_as_false(expected)
-        for name, expected in EXPECTED.items()
-        if name.endswith("/selected")
-    },
-}
+# Reason -> {name: the backend's rows}. None: the backend gets the reference rows
+# in every context (issue #75 made a selected UNKNOWN None, as in the reference).
+KNOWN_DIFFERENCES: dict[str, dict[str, list[tuple]]] = {}

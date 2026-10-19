@@ -231,15 +231,6 @@ value out of range", "Character data right truncation") instead of matching
 nothing; it is never rounded or truncated. Planned fix:
 [#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69).
 
-## Selected conditions give False where SQL gives unknown
-
-A condition selected as a value (`annotate(b=Q(pages__lt=10))`,
-`annotate(b=Q(account__in=...))`) returns `False` where its result is unknown
-because of a NULL (a NULL `pages`, or a NULL in one column of a multi-column
-relation); other backends return `None`. In `filter()`, `exclude()`, XOR and
-`When` the condition behaves as on other backends. Tracked in
-[#75](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/75).
-
 ## Conversion errors in selected values give NULL
 
 When a selected value cannot be converted, or divides by zero, Db2 for i
