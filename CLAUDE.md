@@ -49,17 +49,18 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
 ## 3. Supported versions
 
 ### Django
-- Supported now: **Django 5.2 LTS and 6.1**. Not 6.0, not 4.2.
+- Supported now: **Django 5.2 LTS, 6.0 and 6.1**. Not 4.2.
 - Policy: follow Django's own support table. A version stays supported until it reaches
-  end of life (end of security support), then it is dropped in the next release of this backend.
-  When **6.2 LTS** ships it is added alongside 5.2 and 6.1.
-- Develop phases 0–2 against **6.1 only**. Add 5.2 support after phase 2.
+  end of life (end of security support), then it is dropped in the first release of this
+  backend after that date (6.0 included).
+  When **6.2 LTS** ships it is added alongside the versions still supported.
+- Develop phases 0–2 against **6.1 only**. Add 6.0 and 5.2 support after phase 2 (phase 3).
 - For each supported version, read the **"Database backend API"** section of the Django
   release notes and record the impact in `docs/DJANGO_VERSIONS.md`.
 
 ### Python
 - Python **3.12, 3.13, 3.14** — verify per Django version in its release notes
-  (including the minimum 5.2.x patch release that supports 3.14).
+  (including the minimum 6.0.x and 5.2.x patch releases that support 3.14).
 
 ### IBM i
 - Minimum and primary target: **IBM i 7.5**. 7.4 may be added later on request; the
@@ -157,6 +158,9 @@ Three tiers, selectable via pytest markers / nox sessions.
 - Each golden file records whether it has been **verified** against a real IBM i
   (version + date). Unverified goldens are listed in a report.
 - The `DatabaseWrapper` must never open a connection in this tier; a fixture fails loudly if it tries.
+- CI never connects to PUB400 or any IBM i: it runs only lint and the offline tier, as
+  parallel jobs (one per Python × Django combination). The aggregating `offline` job stays
+  a required check on `main`.
 
 ### Tier 2 — `pub400` (small curated smoke set for a shared, restricted system)
 - Works in **pre-existing libraries**: `creation.py` supports a "use existing schema,
@@ -177,11 +181,16 @@ Three tiers, selectable via pytest markers / nox sessions.
   per test module the pass/fail/skip/xfail counts per Django version, date of the last run,
   and the enabled feature flags.
 - Day-to-day: single modules against the primary version (6.1).
-  Full matrix: at the end of each phase and before every release.
+- Before every release: one run of all Django test modules we support (the modules in
+  `docs/TEST_STATUS.md`) plus our own pub400 tier, for every supported Django version,
+  newest Python. Sequential, one connection at a time, preferably off-peak. Never the full
+  Django suite. During development nothing changes: single modules/labels, a full pub400
+  tier per backend PR.
 
 ### Version matrix
 - offline: every Python × every Django version.
-- pub400: one combination (newest Python, newest Django).
+- pub400: one combination (newest Python, newest Django) during development; every
+  supported Django version (newest Python) in the release run.
 - full: newest Python × every Django version, plus oldest Python × newest Django.
 
 ## 7. Containerized environment
@@ -324,7 +333,8 @@ django-db2-for-i/
    Done when: Django modules `basic` and `transactions` run on 6.1 against PUB400, the offline
    tier has first golden files, and `TEST_STATUS.md` is generated.
 2. **Queries & pagination.** `queries`, `lookup`, `ordering`, `aggregation`, `expressions`.
-3. **Django 5.2 support.** Build `compat.py` from real differences, extend nox matrix,
+3. **Django 6.0 and 5.2 support.** Worked backwards in two steps: 6.1 → 6.0 first, then
+   6.0 → 5.2. Build `compat.py` from real differences, extend nox matrix,
    fill `DJANGO_VERSIONS.md`.
 4. **Schema editor completeness.** `schema`, `migrations`, `introspection`, `inspectdb`.
    Also: verify the column order of created tables (issue #23).
