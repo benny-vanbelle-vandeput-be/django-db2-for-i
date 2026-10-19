@@ -1,6 +1,6 @@
 # Latest golden verification run (tests/pub400/test_goldens.py --record-verification)
 date: 2026-10-19
 level: IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.1.2
-passed: 118
+passed: 120
 failed: 0
 skipped: 0

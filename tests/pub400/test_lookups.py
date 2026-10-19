@@ -36,3 +36,40 @@ def test_iexact_with_non_ascii_letters(live, empty) -> None:
     assert names(Author.objects.filter(name__iexact="münchen")) == ["MÜNCHEN"]
     assert names(Author.objects.filter(name__iexact="STRASSE")) == []
     assert names(Author.objects.filter(name__iexact="STRAßE")) == ["straße"]
+
+
+def test_values_longer_than_the_column_never_match_a_truncated_row(live, empty) -> None:
+    """A value longer than NVARCHAR(100) must not fail (CWB0111) and must never
+    match a row holding its truncated form."""
+    truncated = "n" * 100
+    longer = truncated + "x"  # 101 characters
+    Author.objects.create(name=truncated)
+    Author.objects.create(name="other")
+    assert names(Author.objects.filter(name=longer)) == []
+    assert names(Author.objects.filter(name__in=[longer, "other"])) == ["other"]
+    assert names(Author.objects.exclude(name__in=[longer])) == sorted([truncated, "other"])
+    assert names(Author.objects.exclude(name=longer)) == sorted([truncated, "other"])
+    assert names(Author.objects.filter(name__gt=longer)) == ["other"]  # "nnn...n" < "nnn...nx"
+    assert names(Author.objects.filter(name__lt=longer)) == [truncated]
+
+
+def test_utf16_units_decide_whether_a_value_fits(live, empty) -> None:
+    from tests.testapp.models import Tag
+
+    fits = "e" * 49 + "é"
+    too_long = "e" * 49 + "\U0001f600"  # 50 by len(), 51 UTF-16 units
+    Tag.objects.create(label=fits)
+    assert list(Tag.objects.filter(label=fits).values_list("label", flat=True)) == [fits]
+    assert Tag.objects.filter(label=too_long).count() == 0
+
+
+def test_expressions_compare_long_values(live, empty) -> None:
+    from django.db.models.functions import Lower, Substr
+
+    Author.objects.create(name="Abcdef")
+    lowered = Author.objects.annotate(low=Lower("name"))
+    assert names(lowered.filter(low="abcdef")) == ["Abcdef"]
+    assert names(lowered.filter(low="x" * 150)) == []
+    start = Author.objects.annotate(start=Substr("name", 1, 3))
+    assert names(start.filter(start="Abc")) == ["Abcdef"]
+    assert names(start.filter(start="Abcdef")) == []  # longer than SUBSTR(..., 1, 3)

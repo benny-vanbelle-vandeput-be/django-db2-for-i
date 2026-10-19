@@ -298,4 +298,18 @@ CASES: tuple[Case, ...] = (
         select(lambda: Author.objects.filter(name__iexact="50%_Off\\x")),
         (AUTHOR,),
     ),
+    # A string value longer than the column: the driver would size an untyped
+    # marker by the column (CWB0111); only too-long values become typed markers.
+    Case(
+        "queries/filter_exact_longer_than_column",
+        "query",
+        select(lambda: Author.objects.filter(name="x" * 101)),
+        (AUTHOR,),
+    ),
+    Case(
+        "queries/filter_in_one_value_longer_than_column",
+        "query",
+        select(lambda: Author.objects.filter(name__in=["fits", "y" * 120])),
+        (AUTHOR,),
+    ),
 )
