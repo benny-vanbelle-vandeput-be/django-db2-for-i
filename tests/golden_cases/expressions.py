@@ -106,4 +106,29 @@ CASES: tuple[Case, ...] = (
         ),
         (SCHEDULE,),
     ),
+    # Subtraction in exact microseconds: DAYS(), MIDNIGHT_SECONDS(), MICROSECOND().
+    Case(
+        "expressions/subtract_datetimes",
+        "query",
+        select(
+            lambda: Schedule.objects.annotate(
+                x=F("start") - Value(dt.datetime(2026, 1, 31, 1, 0, 0, 2, tzinfo=dt.UTC))
+            ).values("x")
+        ),
+        (SCHEDULE,),
+    ),
+    Case(
+        "expressions/subtract_dates",
+        "query",
+        select(
+            lambda: Schedule.objects.annotate(x=F("day") - Value(dt.date(2001, 1, 1))).values("x")
+        ),
+        (SCHEDULE,),
+    ),
+    Case(
+        "expressions/subtract_times",
+        "query",
+        select(lambda: Schedule.objects.annotate(x=F("clock") - Value(dt.time(6, 0))).values("x")),
+        (SCHEDULE,),
+    ),
 )

@@ -43,7 +43,7 @@ from django.db.backends.base.operations import BaseDatabaseOperations
 from django.db.backends.utils import truncate_name
 from django.utils import timezone
 
-from .expressions import NVARCHAR_MAX
+from .expressions import DAY_MICROSECONDS, NVARCHAR_MAX
 from .schema import default_literal
 
 logger = logging.getLogger("django_db2_for_i")
@@ -138,6 +138,24 @@ class DatabaseOperations(BaseDatabaseOperations):
                 f"at least {dt.timedelta(microseconds=BIGINT_MIN)})."
             )
         return microseconds
+
+    def subtract_temporals(self, internal_type, lhs, rhs):
+        """Exact microseconds between two dates, times or datetimes (BIGINT).
+
+        DAYS(), MIDNIGHT_SECONDS() and MICROSECOND() are exact over the whole
+        range (probe ``durations``); TIMESTAMPDIFF assumes 30-day months and
+        is never used. Each operand appears several times, so are its params.
+        """
+        (lhs_sql, lhs_params), (rhs_sql, rhs_params) = lhs, rhs
+        days = f"BIGINT(DAYS({lhs_sql}) - DAYS({rhs_sql})) * {DAY_MICROSECONDS}"
+        seconds = f"BIGINT(MIDNIGHT_SECONDS({lhs_sql}) - MIDNIGHT_SECONDS({rhs_sql})) * 1000000"
+        both = (*lhs_params, *rhs_params)
+        if internal_type == "DateField":
+            return f"({days})", both
+        if internal_type == "TimeField":
+            return f"({seconds})", both
+        micro = f"(MICROSECOND({lhs_sql}) - MICROSECOND({rhs_sql}))"
+        return f"({days} + {seconds} + {micro})", both * 3
 
     def format_for_duration_arithmetic(self, sql):
         """A DurationField is a BIGINT of microseconds; expressions.py builds the
