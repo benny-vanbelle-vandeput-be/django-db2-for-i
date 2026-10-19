@@ -98,8 +98,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # expressions such as Django's NULL ordering emulation (SQL0214); an
     # ordered compound query is wrapped: SELECT * FROM (<compound>) ORDER BY.
     requires_compound_order_by_subquery = True
-    supports_select_intersection = False
-    supports_select_difference = False
+    # INTERSECT / EXCEPT (without ALL, which Db2 for i rejects; Django uses neither ALL).
+    supports_select_intersection = True
+    supports_select_difference = True
     supports_parentheses_in_compound = False
     supports_select_for_update_with_limit = False
     supports_aggregate_distinct_multiple_argument = False
