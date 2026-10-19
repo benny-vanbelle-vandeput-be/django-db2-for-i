@@ -558,3 +558,35 @@ def test_bitwise_operators_cast_an_untyped_null() -> None:
     assert ops.combine_expression(">>", ["NULL", "b"]).startswith(
         "BIGINT(FLOOR(CAST(CAST(NULL AS BIGINT) AS DECFLOAT(34))"
     )
+
+
+# --- Durations -------------------------------------------------------------------------
+
+
+def test_durations_are_microseconds() -> None:
+    assert ops.adapt_durationfield_value(dt.timedelta(days=1, microseconds=7)) == 86_400_000_007
+    assert ops.adapt_durationfield_value(None) is None
+    largest = dt.timedelta(microseconds=2**63 - 1)
+    assert ops.adapt_durationfield_value(largest) == 2**63 - 1
+    assert ops.adapt_durationfield_value(-largest) == -(2**63 - 1)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [dt.timedelta(microseconds=2**63), dt.timedelta.max, dt.timedelta.min],
+    ids=["one past the maximum", "timedelta.max", "timedelta.min"],
+)
+def test_durations_outside_the_bigint_range_are_refused(value) -> None:
+    with pytest.raises(ValueError, match="does not fit a DurationField"):
+        ops.adapt_durationfield_value(value)
+
+
+def test_out_of_range_durations_are_refused_in_filters_and_values() -> None:
+    from django.db.models import Value
+
+    from tests.testapp.models import Schedule
+
+    with pytest.raises(ValueError, match="does not fit a DurationField"):
+        str(Schedule.objects.filter(length=dt.timedelta.max).query)
+    with pytest.raises(ValueError, match="does not fit a DurationField"):
+        Schedule.objects.annotate(x=Value(dt.timedelta.max)).query.get_compiler("default").as_sql()
