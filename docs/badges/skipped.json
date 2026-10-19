@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "Django 6.1 on PUB400",
-  "message": "83 skipped",
+  "label": "Django 6.1 · Python 3.14 on PUB400",
+  "message": "53 skipped",
   "color": "lightgrey"
 }

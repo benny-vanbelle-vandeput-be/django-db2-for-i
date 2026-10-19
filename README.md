@@ -1,7 +1,7 @@
 # django-db2-for-i
 
 <!-- badges:start -->
-[![Django](https://img.shields.io/badge/Django-6.1%20%7C%205.2%20planned-0C4B33)](https://www.djangoproject.com/)
+[![Django](https://img.shields.io/badge/Django-6.1%20%7C%206.0,%205.2%20planned-0C4B33)](https://www.djangoproject.com/)
 ![Python](https://img.shields.io/badge/Python-3.12%20%7C%203.13%20%7C%203.14-3776AB)
 ![IBM i](https://img.shields.io/badge/IBM%20i-7.5-054ADA)
 [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue)](LICENSE)
@@ -74,8 +74,8 @@ Details per module: [docs/TEST_STATUS.md](docs/TEST_STATUS.md).
 |---|---|---|
 | 0 | Skeleton & environment | done |
 | 1 | Minimal backend | done |
-| 2 | Queries & pagination (ordering, lookup, aggregation, expressions, queries) | in progress |
-| 3 | Django 5.2 support | planned |
+| 2 | Queries & pagination (ordering, lookup, aggregation, expressions, queries) | done |
+| 3 | Django 6.0 and 5.2 support (plan approved: docs/phases/phase-3.md) | planned |
 | 4 | Schema editor completeness | planned |
 | 5 | Returning & bulk | planned |
 | 6 | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
@@ -92,10 +92,13 @@ Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS
 | lookup | 148 | OK (5 skipped, 2 expected failures) | done |
 | aggregation | 168 | OK (16 skipped) | done |
 | expressions | 213 | OK (5 skipped, 2 expected failures) | done |
-| queries | 506 | PARTIAL (different commits a7ca5f8 2026-10-19, unknown) | in progress (split into labels Q1–Q5 because of its size) |
+| queries | 506 | OK (21 skipped, 3 expected failures) | done (split into labels Q1–Q5 because of its size) |
 
 ### Open tracks and notes
 
+- Numeric filter values out of range give a driver error instead of no match ([#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69)), next after 0.1.0a3.
+- Offline query corpus from the PUB400 runs (approved: docs/proposals/offline-query-corpus.md), for Django 6.1 before phase 3 step A.
+- Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82)).
 - Verify the column order of created tables (phase 4, [#23](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/23)).
 - `DROP COLUMN` on a table with rows is cancelled by CPA32B2 (`HY008`), which raises the question of table rebuilds in phase 4 (see [IBMI_NOTES](docs/IBMI_NOTES.md)).
 - Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier.
@@ -133,7 +136,7 @@ All settings: [Configuration](docs/user/Configuration.md).
 
 | Component | Versions |
 |---|---|
-| Django | 5.2 LTS, 6.1 (development currently targets 6.1 only) |
+| Django | 6.1 (6.0 and 5.2 LTS are planned in phase 3; see [DJANGO_VERSIONS](docs/DJANGO_VERSIONS.md)) |
 | Python | 3.12, 3.13, 3.14 (subject to each Django version's own support) |
 | IBM i | 7.5 and later |
 
@@ -142,6 +145,10 @@ All settings: [Configuration](docs/user/Configuration.md).
 User documentation: [`docs/user/`](docs/user/Home.md), also published as the
 [wiki](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/wiki)
 (a generated mirror; edit `docs/user/`, never the wiki).
+
+Project history and plans: one record per phase in [`docs/phases/`](docs/phases/README.md)
+(goal, what was done, decisions, IBM i findings, test status); developer notes in
+[`docs/DECISIONS.md`](docs/DECISIONS.md) and [`docs/IBMI_NOTES.md`](docs/IBMI_NOTES.md).
 
 ## Known limitations
 

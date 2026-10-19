@@ -8,7 +8,7 @@
 
 [versions]
 # Static badges and the TEST_STATUS.md header.
-django = "6.1 | 5.2 planned"
+django = "6.1 | 6.0, 5.2 planned"
 python = "3.12 | 3.13 | 3.14"
 ibmi = "7.5"
 # The system the recorded Django test runs used.
@@ -37,11 +37,11 @@ status = "done"
 [[phases]]
 phase = "2"
 content = "Queries & pagination (ordering, lookup, aggregation, expressions, queries)"
-status = "in progress"
+status = "done"
 
 [[phases]]
 phase = "3"
-content = "Django 5.2 support"
+content = "Django 6.0 and 5.2 support (plan approved: docs/phases/phase-3.md)"
 status = "planned"
 
 [[phases]]
@@ -89,7 +89,7 @@ status = "done"
 
 [[modules]]
 module = "queries"
-status = "in progress"
+status = "done"
 # Run as these labels (Q1-Q5); the module row sums their logs.
 labels = [
     "queries.test_q",
@@ -104,6 +104,15 @@ labels = [
     "queries.tests",
 ]
 note = "split into labels Q1–Q5 because of its size"
+
+[[tracks]]
+text = "Numeric filter values out of range give a driver error instead of no match ([#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69)), next after 0.1.0a3."
+
+[[tracks]]
+text = "Offline query corpus from the PUB400 runs (approved: docs/proposals/offline-query-corpus.md), for Django 6.1 before phase 3 step A."
+
+[[tracks]]
+text = "Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82))."
 
 [[tracks]]
 text = "Verify the column order of created tables (phase 4, [#23](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/23))."

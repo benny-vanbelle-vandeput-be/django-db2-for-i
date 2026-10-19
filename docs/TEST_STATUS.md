@@ -1,6 +1,6 @@
 # Test status
 
-[![Django](https://img.shields.io/badge/Django-6.1%20%7C%205.2%20planned-0C4B33)](https://www.djangoproject.com/)
+[![Django](https://img.shields.io/badge/Django-6.1%20%7C%206.0,%205.2%20planned-0C4B33)](https://www.djangoproject.com/)
 ![Python](https://img.shields.io/badge/Python-3.12%20%7C%203.13%20%7C%203.14-3776AB)
 ![IBM i](https://img.shields.io/badge/IBM%20i-7.5-054ADA)
 [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue)](../LICENSE)
@@ -45,39 +45,46 @@ version's runs (one row while only one version has runs).
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-10-17 18:31:12 UTC to 2026-10-19 08:28:23 UTC
+- **Runs:** 2026-10-19 20:10:46 UTC to 2026-10-19 20:29:21 UTC
 - **Django:** 6.1 (1e01021 2026-10-12)
-- **Python:** not recorded
-- **Backend commits:** 6d33d94 2026-10-17, 702951a 2026-10-19, a7a1d4e 2026-10-18, a7ca5f8 2026-10-19, unknown, unknown (per module in the table)
+- **Python:** 3.14.8
+- **Backend commits:** 8434482 2026-10-19 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
 
 | Module | Django | Tests | Passed | Failures | Errors | Skipped | Expected failures | Unexpected successes | Result | Run | Backend commit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-10-19 01:19:21 UTC | 702951a 2026-10-19 |
-| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-17 18:31:12 UTC | 6d33d94 2026-10-17 |
-| expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-19 01:14:13 UTC | 702951a 2026-10-19 |
-| lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-18 21:34:27 UTC | a7a1d4e 2026-10-18 |
-| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-18 21:39:25 UTC | unknown |
-| queries | 6.1 | 506 | 441 | 2 | 11 | 51 | 1 | 0 | PARTIAL (different commits a7ca5f8 2026-10-19, unknown) | 2026-10-19 08:28:23 UTC | a7ca5f8 2026-10-19, unknown |
-| transactions | 6.1 | 88 | 85 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-17 18:33:32 UTC | 6d33d94 2026-10-17 |
+| aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-10-19 20:23:51 UTC | 8434482 2026-10-19 |
+| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-19 20:10:46 UTC | 8434482 2026-10-19 |
+| expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-19 20:25:49 UTC | 8434482 2026-10-19 |
+| lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-19 20:18:35 UTC | 8434482 2026-10-19 |
+| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-19 20:17:00 UTC | 8434482 2026-10-19 |
+| queries | 6.1 | 506 | 482 | 0 | 0 | 21 | 3 | 0 | OK | 2026-10-19 20:29:21 UTC | 8434482 2026-10-19 |
+| transactions | 6.1 | 88 | 85 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-19 20:12:23 UTC | 8434482 2026-10-19 |
 
 ## Feature flags set to True by the backend
 
+- `allow_sliced_subqueries_with_in`
 - `can_release_savepoints`
 - `implied_column_null`
+- `nulls_order_largest`
 - `pattern_lookup_needs_param_pattern`
 - `requires_compound_order_by_subquery`
 - `requires_literal_defaults`
 - `supports_aggregate_order_by_clause`
 - `supports_any_value`
 - `supports_boolean_expr_in_select_clause`
+- `supports_parentheses_in_compound`
 - `supports_regex_backreferencing`
+- `supports_select_difference`
+- `supports_select_intersection`
 - `supports_select_union`
+- `supports_slicing_ordering_in_compound`
 - `supports_subqueries_in_group_by`
 - `supports_temporal_subtraction`
 - `supports_transactions`
+- `supports_tuple_lookups`
 - `uses_savepoints`
 - `has_native_boolean_field` (from the `has_boolean_type` capability)
 
@@ -87,10 +94,10 @@ version's runs (one row while only one version has runs).
 |---|---|---|
 | Db2 for i TIME has no fractional seconds | 1 | 0 |
 | Db2 for i rejects an untyped NULL as an expression (SQL0206) | 1 | 0 |
-| a bare %s in RawSQL is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 1 | 0 |
+| a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 3 | 0 |
 | identity restart deferred in TestCase (SQL0910) | 0 | 0 |
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
 
 ## Golden files
 
-118 goldens, 0 unverified.
+150 goldens, 0 unverified.
