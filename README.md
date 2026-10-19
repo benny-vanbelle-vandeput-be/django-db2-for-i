@@ -78,7 +78,7 @@ Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS
 | ordering | 43 | OK | done |
 | lookup | 148 | OK (5 skipped, 2 expected failures) | done |
 | aggregation | 168 | OK (18 skipped) | done |
-| expressions | 213 | FAILED (37 errors, 14 skipped) | in progress (first run recorded, fixes being merged) |
+| expressions | 213 | FAILED (21 errors, 14 skipped, 1 expected failures) | in progress (operators, negated booleans, UUID values fixed; RawSQL limitation; the 21 remaining errors are durations (duration track next)) |
 | queries |  | not run yet | planned (split into labels Q1–Q5 because of its size) |
 
 ### Open tracks and notes

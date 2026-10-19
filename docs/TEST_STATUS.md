@@ -28,7 +28,7 @@ version's runs.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-10-17 18:31:12 UTC to 2026-10-18 22:04:48 UTC
+- **Runs:** 2026-10-17 18:31:12 UTC to 2026-10-18 23:34:39 UTC
 - **Django:** 6.1 (1e01021 2026-10-12)
 - **IBM i:** 7.5 on PUB400
 
@@ -38,7 +38,7 @@ version's runs.
 |---|---|---|---|---|---|---|---|---|---|---|
 | aggregation | 6.1 | 168 | 150 | 0 | 0 | 18 | 0 | 0 | OK | 2026-10-18 22:02:06 UTC |
 | basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-17 18:31:12 UTC |
-| expressions | 6.1 | 213 | 162 | 0 | 37 | 14 | 0 | 0 | FAILED | 2026-10-18 22:04:48 UTC |
+| expressions | 6.1 | 213 | 177 | 0 | 21 | 14 | 1 | 0 | FAILED | 2026-10-18 23:34:39 UTC |
 | lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-18 21:34:27 UTC |
 | ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-18 21:39:25 UTC |
 | transactions | 6.1 | 88 | 85 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-17 18:33:32 UTC |
@@ -67,9 +67,10 @@ version's runs.
 | Db2 for i TIME has no fractional seconds | 0 | 0 |
 | Db2 for i rejects an untyped NULL as an expression (SQL0206) | 1 | 0 |
 | DurationField storage and timestamp subtraction are not implemented yet (deferred to a separate track) | 0 | 2 |
+| a bare %s in RawSQL is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 1 | 0 |
 | identity restart deferred in TestCase (SQL0910) | 0 | 0 |
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
 
 ## Golden files
 
-106 goldens, 0 unverified.
+107 goldens, 0 unverified.

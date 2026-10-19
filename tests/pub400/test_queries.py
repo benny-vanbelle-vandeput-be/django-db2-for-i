@@ -427,3 +427,14 @@ def test_null_column_compared_with_a_negated_value(live, empty) -> None:
         ("with book", False),
         ("without book", None),
     ]
+
+
+def test_raw_sql_with_a_cast_parameter(live, empty) -> None:
+    """The fix shown in Known Limitations: cast the parameter in RawSQL."""
+    from django.db.models.expressions import RawSQL
+
+    Author.objects.create(name="b")
+    Author.objects.create(name="a")
+    raw = RawSQL("CAST(%s AS NVARCHAR(20))", ["value"])
+    authors = Author.objects.annotate(foo=raw).filter(foo="value").order_by("name")
+    assert [(a.name, a.foo) for a in authors] == [("a", "value"), ("b", "value")]

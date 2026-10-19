@@ -21,6 +21,10 @@ REASON_TYPED_PARAMETER_MARKERS = (
 )
 
 
+REASON_UNTYPED_RAW_SQL_PARAMETER = (
+    "a bare %s in RawSQL is an untyped parameter marker, which Db2 for i rejects in the "
+    "select list (SQL0418); cast it in the SQL"
+)
 REASON_DURATIONS_DEFERRED = (
     "DurationField storage and timestamp subtraction are not implemented yet "
     "(deferred to a separate track)"
@@ -175,6 +179,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         # (CAST(? AS INTEGER) > CAST(? AS INTEGER)), see docs/DECISIONS.md.
         REASON_TYPED_PARAMETER_MARKERS: {
             "lookup.tests.LookupTests.test_lookup_direct_value_rhs_unwrapped",
+        },
+        # RawSQL("%s", ["value"]): user SQL the backend does not rewrite.
+        REASON_UNTYPED_RAW_SQL_PARAMETER: {
+            "expressions.tests.BasicExpressionsTests.test_annotate_values_filter",
         },
     }
     django_test_expected_failures: set[str] = set().union(*expected_failures.values())
