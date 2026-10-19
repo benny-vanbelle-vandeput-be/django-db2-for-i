@@ -722,6 +722,24 @@ including `NULL NOT IN (empty)` (TRUE) and `1 NOT IN (2, NULL)` (UNKNOWN):
           WHEN x IS NULL THEN NULL WHEN <NULL row> IS NOT NULL THEN NULL
           ELSE FALSE END) = TRUE
 
+The backend now uses the equivalent general form for any number of columns
+(see "Tuple IN (subquery)" below).
+
+### Tuple IN (subquery) (`probe -- tuple_in`)
+2026-10-19, read-only (VALUES only), PUB400 (IBM i 7.5). Row-value
+`(a, b) IN (subquery)` and `NOT IN` work in WHERE. For IN (subquery) outside
+a search condition one general form, with one column per tuple element, gives
+exactly the rows of plain IN / NOT IN: for pairs ((1, 1), (1, NULL),
+(NULL, NULL), (2, 2), (3, 9)) against subqueries with a match and a partly
+NULL row, no NULL, only (NULL, NULL), (1, NULL) and empty, and for one column
+against probe 16's subqueries, positive, negated and inside CASE WHEN (all 9
+identical):
+
+    (CASE WHEN <a row with V1 = x1 AND ... AND Vn = xn> IS NOT NULL THEN TRUE
+          WHEN <a row with (Vi = xi OR Vi IS NULL OR xi IS NULL) for every i>
+               IS NOT NULL THEN NULL
+          ELSE FALSE END) = TRUE
+
 ### Truncating dates and times (`probe -- trunc`)
 2026-10-18, read-only (SYSDUMMY1), timestamps around week and year edges
 compared with Django's truncation in Python.
