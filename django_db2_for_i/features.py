@@ -102,7 +102,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # INTERSECT / EXCEPT (without ALL, which Db2 for i rejects; Django uses neither ALL).
     supports_select_intersection = True
     supports_select_difference = True
-    supports_parentheses_in_compound = False
+    # Parts of a compound query in parentheses, each with its own ORDER BY and
+    # OFFSET / FETCH FIRST, also inside subqueries and nested (probes queries,
+    # compound_parts).
+    supports_parentheses_in_compound = True
+    supports_slicing_ordering_in_compound = True
     supports_select_for_update_with_limit = False
     supports_aggregate_distinct_multiple_argument = False
     supports_bit_aggregations = False
