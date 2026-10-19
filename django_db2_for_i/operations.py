@@ -30,6 +30,7 @@ TRUNC_TIMESTAMP does not accept, through a timestamp on 0001-01-01 (``TIME()``
 first: Django passes timestamps with a TimeField output to time_trunc_sql).
 """
 
+import datetime as dt
 import logging
 import uuid
 from collections import defaultdict
@@ -46,6 +47,9 @@ from .expressions import NVARCHAR_MAX
 from .schema import default_literal
 
 logger = logging.getLogger("django_db2_for_i")
+
+# A DurationField is a BIGINT of microseconds.
+BIGINT_MIN, BIGINT_MAX = -(2**63), 2**63 - 1
 
 # Django lookup type -> Db2 for i function (probe ``extract``, docs/IBMI_NOTES.md).
 # EXTRACT(SECOND ...) returns fractional seconds and EXTRACT has no ISODOW, so
@@ -118,6 +122,22 @@ class DatabaseOperations(BaseDatabaseOperations):
         return '"{}"'.format(name.replace('"', '""'))
 
     # --- Durations -----------------------------------------------------------------
+
+    def adapt_durationfield_value(self, value):
+        """Microseconds in a BIGINT; refuse durations that do not fit, before sending.
+
+        Python's timedelta reaches 999,999,999 days, a BIGINT of microseconds
+        only 2**63 - 1 (106,751,991 days); the driver would fail with an
+        unclear OverflowError.
+        """
+        microseconds = super().adapt_durationfield_value(value)
+        if microseconds is not None and not BIGINT_MIN <= microseconds <= BIGINT_MAX:
+            raise ValueError(
+                f"Db2 for i backend: the duration {value} does not fit a DurationField "
+                f"(BIGINT microseconds: at most {dt.timedelta(microseconds=BIGINT_MAX)}, "
+                f"at least {dt.timedelta(microseconds=BIGINT_MIN)})."
+            )
+        return microseconds
 
     def format_for_duration_arithmetic(self, sql):
         """A DurationField is a BIGINT of microseconds; expressions.py builds the
