@@ -227,16 +227,21 @@ def test_totals_sum_the_newest_django_version() -> None:
 
 
 def test_badge_json_counts_and_colours(tmp_path) -> None:
-    written = status.write_badges(status.totals(results_ok_and_failed()), tmp_path)
+    written = status.write_badges(results_ok_and_failed(), STATUS, tmp_path, tmp_path / "vendor")
     assert sorted(p.name for p in written) == [
         "failed.json",
+        "modules.json",
         "passed.json",
         "skipped.json",
         "xfail.json",
     ]
     data = {p.stem: json.loads(p.read_text()) for p in written}
     assert all(d["schemaVersion"] == 1 for d in data.values())
-    assert all(d["label"] == "Django tests (PUB400)" for d in data.values())
+    # The logs record no Python version: the label leaves it out.
+    assert {data[name]["label"] for name in ("passed", "failed", "skipped", "xfail")} == {
+        "Django 6.1 on PUB400"
+    }
+    assert (data["modules"]["label"], data["modules"]["message"]) == ("Django 6.1 modules", "2 run")
     assert (data["passed"]["message"], data["passed"]["color"]) == ("122 passed", "brightgreen")
     assert (data["failed"]["message"], data["failed"]["color"]) == ("6 failed", "red")
     assert (data["skipped"]["message"], data["skipped"]["color"]) == ("8 skipped", "lightgrey")
@@ -245,7 +250,7 @@ def test_badge_json_counts_and_colours(tmp_path) -> None:
 
 
 def test_zero_failed_badge_is_green() -> None:
-    data = status.badge_data(status.totals([status.parse_log(OK_LOG, "basic", "6.1")]))
+    data = status.badge_data(status.totals([status.parse_log(OK_LOG, "basic", "6.1")]), "x")
     assert (data["failed"]["message"], data["failed"]["color"]) == ("0 failed", "brightgreen")
 
 
@@ -304,6 +309,7 @@ def _redirect(monkeypatch, tmp_path, collected):
     monkeypatch.setattr(status, "README", readme)
     monkeypatch.setattr(status, "OUTPUT", tmp_path / "TEST_STATUS.md")
     monkeypatch.setattr(status, "BADGES_DIR", tmp_path / "badges")
+    monkeypatch.setattr(status, "VENDOR", tmp_path / "vendor")
     monkeypatch.setattr(status, "load_status", lambda: STATUS)
     monkeypatch.setattr(status, "collect", lambda: collected)
     return readme
@@ -444,3 +450,208 @@ def test_the_runner_reads_the_commit_despite_foreign_ownership() -> None:
 
     source = inspect.getsource(load("run_django_tests").git_commit)
     assert "safe.directory=" in source
+
+
+# --- Badge labels, the modules badge and one badge set per Django version -------------
+
+
+def with_python(log: str, python: str) -> str:
+    return log.replace("# keepdb:", f"# python: {python}\n# keepdb:", 1)
+
+
+def test_label_names_the_python_version_when_all_logs_agree() -> None:
+    results = [
+        status.parse_log(with_python(OK_LOG, "3.14.0"), "basic", "6.1"),
+        status.parse_log(with_python(FAILED_LOG, "3.14.1"), "transactions", "6.1"),
+    ]
+    assert results[0].python == "3.14.0"
+    label = status.combination_label(results, "6.1", "PUB400")
+    assert label == "Django 6.1 · Python 3.14 on PUB400"
+
+
+def test_label_without_python_headers() -> None:
+    label = status.combination_label(results_ok_and_failed(), "6.1", "PUB400")
+    assert label == "Django 6.1 on PUB400"
+
+
+@pytest.mark.parametrize(
+    "pythons",
+    [("3.14.0", "3.13.7"), ("3.14.0", None)],
+    ids=["different-versions", "one-log-without"],
+)
+def test_label_omits_python_when_the_logs_disagree(pythons) -> None:
+    logs = [OK_LOG, FAILED_LOG]
+    results = [
+        status.parse_log(with_python(log, python) if python else log, name, "6.1")
+        for log, python, name in zip(logs, pythons, ["basic", "transactions"], strict=True)
+    ]
+    assert status.combination_label(results, "6.1", "PUB400") == "Django 6.1 on PUB400"
+
+
+def test_label_ignores_other_django_versions_and_logs_without_summary() -> None:
+    results = [
+        status.parse_log(with_python(OK_LOG, "3.14.0"), "basic", "6.1"),
+        # No summary: not counted in the badges, so its missing version does not matter.
+        status.parse_log(CRASHED_LOG.replace("basic", "ordering"), "ordering", "6.1"),
+        status.parse_log(OK_LOG.replace("6.1 (", "5.2 ("), "basic", "5.2"),
+    ]
+    assert status.combination_label(results, "6.1", "X") == "Django 6.1 · Python 3.14 on X"
+    assert status.combination_label(results, "5.2", "X") == "Django 5.2 on X"
+
+
+def test_label_logs_of_one_module_must_agree_on_python(tmp_path) -> None:
+    root = write_labels(
+        tmp_path,
+        {
+            "q.a": with_python(label_log("q.a", "a7ca5f8 2026-10-19", "OK"), "3.14.0"),
+            "q.b": label_log("q.b", "a7ca5f8 2026-10-19", "OK"),
+        },
+    )
+    (total,) = status.collect_label_groups(LABEL_STATUS, root)
+    assert total.python == ""
+
+
+def make_django_tests(root, modules=(), others=()):
+    tests = root / "tests"
+    tests.mkdir(parents=True)
+    (tests / "runtests.py").write_text("")
+    for name in modules:
+        (tests / name).mkdir()
+        (tests / name / "__init__.py").write_text("")
+    for name in others:
+        (tests / name).mkdir(parents=True)
+    return tests
+
+
+def test_module_count_mirrors_runtests(tmp_path) -> None:
+    tests = make_django_tests(
+        tmp_path,
+        modules=["basic", "queries", "import_error_package", "test_runner_apps", "gis_tests"],
+        others=["templates", "no_init"],
+    )
+    (tests / "with.dot").mkdir()
+    (tests / "with.dot" / "__init__.py").write_text("")
+    (tests / "urls.py").write_text("")
+    # basic and queries only: the rest has no __init__.py, a dot, is a file, or
+    # is skipped by runtests.py.
+    assert status.count_test_modules(tests) == 2
+    assert status.count_test_modules(tmp_path / "missing" / "tests") is None
+
+
+def test_modules_badge_counts_a_module_run_as_labels_once(tmp_path) -> None:
+    root = write_labels(
+        tmp_path,
+        {
+            "q.a": label_log("q.a", "a7ca5f8 2026-10-19", "OK"),
+            "q.b": label_log("q.b", "a7ca5f8 2026-10-19", "OK"),
+        },
+    )
+    results = [*results_ok_and_failed(), *status.collect_label_groups(LABEL_STATUS, root)]
+    make_django_tests(tmp_path / "vendor" / "django-6.1", modules=["basic", "b", "c", "d", "e"])
+    status.write_badges(results, STATUS, tmp_path / "badges", tmp_path / "vendor")
+    data = json.loads((tmp_path / "badges" / "modules.json").read_text())
+    assert (data["label"], data["message"]) == ("Django 6.1 modules", "3/5")
+
+
+def test_modules_badge_keeps_the_total_without_the_checkout(tmp_path) -> None:
+    badges = tmp_path / "badges"
+    badges.mkdir()
+    previous = {"schemaVersion": 1, "label": "Django 6.1 modules", "message": "1/210"}
+    (badges / "modules.json").write_text(json.dumps(previous))
+    status.write_badges(results_ok_and_failed(), STATUS, badges, tmp_path / "vendor")
+    assert json.loads((badges / "modules.json").read_text())["message"] == "2/210"
+
+
+def test_modules_badge_never_takes_another_versions_total(tmp_path) -> None:
+    badges = tmp_path / "badges"
+    badges.mkdir()
+    previous = {"schemaVersion": 1, "label": "Django 6.0 modules", "message": "1/200"}
+    (badges / "modules.json").write_text(json.dumps(previous))
+    status.write_badges(results_ok_and_failed(), STATUS, badges, tmp_path / "vendor")
+    assert json.loads((badges / "modules.json").read_text())["message"] == "2 run"
+    assert status.previous_total(tmp_path / "absent.json", "Django 6.1 modules") is None
+
+
+def two_versions():
+    old = with_python(OK_LOG.replace("6.1 (", "5.2 ("), "3.13.5")
+    return [*results_ok_and_failed(), status.parse_log(old, "basic", "5.2")]
+
+
+def test_one_badge_set_per_django_version(tmp_path) -> None:
+    badges = tmp_path / "badges"
+    status.write_badges(two_versions(), STATUS, badges, tmp_path / "vendor")
+    names = ["failed", "modules", "passed", "skipped", "xfail"]
+    for directory in (badges, badges / "6.1", badges / "5.2"):
+        assert sorted(p.stem for p in directory.glob("*.json")) == names
+    old = json.loads((badges / "5.2" / "passed.json").read_text())
+    assert (old["label"], old["message"]) == ("Django 5.2 · Python 3.13 on PUB400", "55 passed")
+    new = json.loads((badges / "6.1" / "passed.json").read_text())
+    assert (new["label"], new["message"]) == ("Django 6.1 on PUB400", "122 passed")
+    # The top-level files stay the newest version's (their URLs keep working).
+    assert json.loads((badges / "passed.json").read_text()) == new
+    assert json.loads((badges / "5.2" / "modules.json").read_text())["message"] == "1 run"
+    # Back to one version: the per-version directories go.
+    status.write_badges(results_ok_and_failed(), STATUS, badges, tmp_path / "vendor")
+    assert not (badges / "6.1").exists()
+    assert not (badges / "5.2").exists()
+
+
+def test_no_logs_write_no_badges(tmp_path) -> None:
+    assert status.write_badges([], STATUS, tmp_path / "badges", tmp_path / "vendor") == []
+    assert not (tmp_path / "badges").exists()
+
+
+def test_badge_rows_per_django_version() -> None:
+    url = "https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main"
+    single = "\n".join(status.badge_lines(STATUS, "x", versions=["6.1"]))
+    assert f"{url}/docs/badges/modules.json)](x)" in single
+    assert "/docs/badges/6.1/" not in single
+    lines = status.badge_lines(STATUS, "x", versions=["6.1", "5.2"])
+    text = "\n".join(lines)
+    assert f"{url}/docs/badges/6.1/passed.json)](x)" in text
+    assert f"{url}/docs/badges/5.2/modules.json)](x)" in text
+    assert text.index("/6.1/passed") < text.index("/5.2/modules")
+    # Each row is its own paragraph.
+    assert lines.count("") == 2
+
+
+def test_readme_and_test_status_show_one_row_per_version() -> None:
+    results = two_versions()
+    readme = status.render_readme(README_TEXT, STATUS, results)
+    assert "docs/badges/5.2/passed.json)](docs/TEST_STATUS.md)" in readme
+    page = status.render(results, STATUS)
+    assert "docs/badges/5.2/xfail.json)](#django-test-modules)" in page
+    assert "- **Python:** 3.13.5 (not recorded in every log)" in page
+
+
+REQUIRED_STATEMENTS = [
+    "Django's own test modules",
+    "one Python × Django combination per row",
+    "shared PUB400 system",
+    "full version matrix",
+    "only on a dedicated IBM i",
+    "for every Python × Django combination, with no IBM i",
+    "pub400 tier (`tests/pub400/`) is separate and not counted",
+    "**Django modules** `<run>/<total>`",
+    "counts once",
+]
+
+
+def _flat(text: str) -> str:
+    return " ".join(text.split())
+
+
+def test_badge_definitions_state_what_is_counted() -> None:
+    text = _flat("\n".join(status.BADGE_DEFINITIONS))
+    for statement in REQUIRED_STATEMENTS:
+        assert statement in text
+    assert text in _flat(status.render([]))
+
+
+def test_readme_states_what_is_counted() -> None:
+    readme = Path(__file__).resolve().parents[2] / "README.md"
+    if not readme.exists():  # the wheel session copies no README.md
+        pytest.skip("README.md not available")
+    text = _flat(readme.read_text(encoding="utf-8"))
+    for statement in REQUIRED_STATEMENTS:
+        assert statement in text
