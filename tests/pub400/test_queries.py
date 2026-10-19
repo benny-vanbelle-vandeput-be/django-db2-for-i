@@ -410,22 +410,29 @@ def test_uuid_values(live, empty) -> None:
 
 
 def test_null_column_compared_with_a_negated_value(live, empty) -> None:
-    """A NULL column value (an author without books, LEFT OUTER JOIN) compared
-    with ~Value(False) matches nothing, and negating it stays NULL."""
-    author = Author.objects.create(name="with book")
-    Author.objects.create(name="without book")
-    Book.objects.create(author=author, title="t", available=True)
-    authors = Author.objects.annotate(available=F("book__available"))
-    assert list(authors.filter(available=~Value(False)).values_list("name", flat=True)) == [
-        "with book"
-    ]
-    assert authors.filter(available__isnull=True).count() == 1
-    # Db2 for i's NOT is TRUE for NULL; the backend's CASE form is not.
-    assert list(authors.filter(~F("book__available"))) == []
-    negated = authors.annotate(negated=~F("book__available")).order_by("name")
+    """TRUE, FALSE and NULL column values (NULL: an author without books, LEFT
+    OUTER JOIN). Db2 for i's NOT is TRUE for NULL; the backend's CASE form keeps
+    NULL, so filter(~F()), exclude(flag=True) and a selected ~F() follow SQL's
+    three-valued logic (and Django's semantics on other databases)."""
+    yes = Author.objects.create(name="a: true")
+    no = Author.objects.create(name="b: false")
+    Author.objects.create(name="c: no book")
+    Book.objects.create(author=yes, title="t", available=True)
+    Book.objects.create(author=no, title="f", available=False)
+    authors = Author.objects.annotate(available=F("book__available")).order_by("name")
+    names = lambda queryset: list(queryset.values_list("name", flat=True))  # noqa: E731
+    assert names(authors.filter(available=~Value(False))) == ["a: true"]
+    assert names(authors.filter(available__isnull=True)) == ["c: no book"]
+    # filter(~F("flag")): only the FALSE row, not the NULL row.
+    assert names(authors.filter(~F("book__available"))) == ["b: false"]
+    # exclude(flag=True): Django keeps the NULL row (NOT (flag = TRUE AND flag IS NOT NULL)).
+    assert names(authors.exclude(available=True)) == ["b: false", "c: no book"]
+    # A selected ~F("flag"): NULL stays NULL.
+    negated = authors.annotate(negated=~F("book__available"))
     assert list(negated.values_list("name", "negated")) == [
-        ("with book", False),
-        ("without book", None),
+        ("a: true", False),
+        ("b: false", True),
+        ("c: no book", None),
     ]
 
 
