@@ -344,3 +344,80 @@ def test_readme_defines_failed_explicitly() -> None:
     if not readme.exists():  # the wheel session copies no README.md
         pytest.skip("README.md not available")
     assert FAILED_DEFINITION in readme.read_text(encoding="utf-8")
+
+
+# --- Modules run as several labels (queries Q1-Q5) ------------------------------------
+
+
+def label_log(label: str, commit: str, summary: str, ran: int = 10) -> str:
+    return (
+        f"# module: {label}\n# django: 6.1 (1e01021 2026-10-12)\n# backend: {commit}\n"
+        f"# keepdb: no\n# started: 2026-10-19 08:30:10 UTC\n"
+        f"Ran {ran} tests in 1.0s\n\n{summary}\n# exit: 0\n"
+    )
+
+
+def write_labels(tmp_path, logs: dict[str, str]):
+    directory = tmp_path / "6.1" / "labels"
+    directory.mkdir(parents=True)
+    for label, text in logs.items():
+        (directory / f"{label}.log").write_text(text)
+    return tmp_path
+
+
+LABEL_STATUS = {
+    "modules": [{"module": "queries", "status": "in progress", "labels": ["q.a", "q.b"]}]
+}
+
+
+def test_labels_of_one_run_set_are_summed(tmp_path) -> None:
+    root = write_labels(
+        tmp_path,
+        {
+            "q.a": label_log("q.a", "a7ca5f8 2026-10-19", "OK (skipped=2)"),
+            "q.b": label_log("q.b", "a7ca5f8 2026-10-19", "FAILED (errors=1)", ran=5),
+        },
+    )
+    (total,) = status.collect_label_groups(LABEL_STATUS, root)
+    assert (total.module, total.ran, total.errors, total.skipped) == ("queries", 15, 1, 2)
+    assert (total.outcome, total.partial, total.backend) == ("FAILED", "", "a7ca5f8 2026-10-19")
+
+
+def test_a_missing_label_makes_the_module_partial(tmp_path) -> None:
+    root = write_labels(tmp_path, {"q.a": label_log("q.a", "a7ca5f8 2026-10-19", "OK")})
+    (total,) = status.collect_label_groups(LABEL_STATUS, root)
+    assert total.outcome == "PARTIAL" and total.partial == "missing q.b"
+    assert status._result_text(total) == "PARTIAL (missing q.b)"
+
+
+def test_labels_from_different_commits_are_partial(tmp_path) -> None:
+    root = write_labels(
+        tmp_path,
+        {
+            "q.a": label_log("q.a", "a7ca5f8 2026-10-19", "OK"),
+            "q.b": label_log("q.b", "efb1c26 2026-10-19", "OK"),
+        },
+    )
+    (total,) = status.collect_label_groups(LABEL_STATUS, root)
+    assert total.outcome == "PARTIAL"
+    assert total.partial == "different commits a7ca5f8 2026-10-19, efb1c26 2026-10-19"
+
+
+def test_test_status_records_the_backend_commit(tmp_path) -> None:
+    root = write_labels(
+        tmp_path,
+        {
+            "q.a": label_log("q.a", "a7ca5f8 2026-10-19", "OK"),
+            "q.b": label_log("q.b", "a7ca5f8 2026-10-19", "OK"),
+        },
+    )
+    text = status.render(status.collect_label_groups(LABEL_STATUS, root), {})
+    assert "- **Backend commits:** a7ca5f8 2026-10-19" in text
+    assert "| OK | 2026-10-19 08:30:10 UTC | a7ca5f8 2026-10-19 |" in text
+
+
+def test_the_runner_reads_the_commit_despite_foreign_ownership() -> None:
+    import inspect
+
+    source = inspect.getsource(load("run_django_tests").git_commit)
+    assert "safe.directory=" in source

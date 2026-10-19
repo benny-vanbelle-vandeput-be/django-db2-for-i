@@ -85,7 +85,18 @@ def log_path(version: str, label: str) -> Path:
 def git_commit(path: Path) -> str:
     try:
         result = subprocess.run(
-            ["git", "-C", str(path), "log", "-1", "--format=%h %cs"],
+            # safe.directory: in the container the checkout belongs to the host user,
+            # and git refuses it ("dubious ownership"); this read is all we do.
+            [
+                "git",
+                "-c",
+                f"safe.directory={path}",
+                "-C",
+                str(path),
+                "log",
+                "-1",
+                "--format=%h %cs",
+            ],
             capture_output=True,
             text=True,
             check=True,
