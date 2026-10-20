@@ -182,6 +182,7 @@ JOURNAL_REQUIRED_HINT = (
 # SQLCODEs whose SQLSTATE is too generic (e.g. HY000) to classify them.
 _SQLCODE_ERRORS: dict[int, tuple[type[Error], str | None]] = {
     -7008: (OperationalError, JOURNAL_REQUIRED_HINT),  # object not valid for operation
+    -545: (IntegrityError, None),  # CHECK constraint violated (reported as HY000)
 }
 
 # SQLSTATE class (first two characters) -> exception class.

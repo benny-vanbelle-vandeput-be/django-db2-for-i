@@ -35,6 +35,22 @@ running them after the commit. You can still hit it with your own DDL inside
 
 **Fix:** run the DDL outside the transaction, or commit first.
 
+## SQL0545 (-545): "... not allowed by CHECK constraint"
+
+```
+IntegrityError: [HY000] ... SQL0545 - INSERT, UPDATE, or MERGE not allowed by CHECK constraint. (-545)
+```
+
+**Cause:** a row violates a CHECK constraint, for example a negative value
+in a `PositiveIntegerField` column or a model `CheckConstraint`.
+
+The driver reports the generic SQLSTATE `HY000` instead of `23513`; the
+backend raises `IntegrityError` by SQLCODE, as for other constraint
+violations (duplicate key SQL0803, NOT NULL SQL0407).
+
+**Fix:** correct the value; validate the model (`full_clean()`) to catch it
+before saving.
+
 ## ALTER TABLE cancelled (CPA32B2, HY008)
 
 ```
