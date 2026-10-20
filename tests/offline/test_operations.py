@@ -12,6 +12,7 @@ from django.db.models.expressions import Col
 from django.test.utils import override_settings
 from django.utils import timezone
 
+from django_db2_for_i import compat
 from django_db2_for_i.base import DatabaseWrapper
 from django_db2_for_i.operations import children_first
 
@@ -590,6 +591,66 @@ def test_out_of_range_durations_are_refused_in_filters_and_values() -> None:
         str(Schedule.objects.filter(length=dt.timedelta.max).query)
     with pytest.raises(ValueError, match="does not fit a DurationField"):
         Schedule.objects.annotate(x=Value(dt.timedelta.max)).query.get_compiler("default").as_sql()
+
+
+def test_out_of_range_durations_are_refused_on_every_path() -> None:
+    """Insert, update, bulk_update's Case/When, a lookup and Value(): every path
+    that prepares a DurationField value, on every supported Django version."""
+    from django.db.models import Case, Value, When
+    from django.db.models.sql import InsertQuery, UpdateQuery
+
+    from tests.testapp.models import Schedule
+
+    field = Schedule._meta.get_field("length")
+    insert = InsertQuery(Schedule)
+    insert.insert_values([field], [Schedule(length=dt.timedelta.max)])
+    update = UpdateQuery(Schedule)
+    update.add_update_values({"length": dt.timedelta.max})
+    case = Case(When(pk=1, then=Value(dt.timedelta.max, output_field=field)), output_field=field)
+    bulk = UpdateQuery(Schedule)
+    bulk.add_update_fields([(field, None, case)])  # as bulk_update() writes it
+    lookup = Schedule.objects.filter(length__gt=dt.timedelta.min).query
+    for query in (insert, update, bulk, lookup):
+        with pytest.raises(ValueError, match="does not fit a DurationField"):
+            query.get_compiler("default").as_sql()
+    assert field.get_db_prep_value(None, connection) is None
+    assert field.get_db_prep_value(dt.timedelta(seconds=1), connection) == 1_000_000
+
+
+@pytest.mark.skipif(
+    compat.DJANGO_CALLS_ADAPT_DURATIONFIELD_VALUE, reason="Django 6.1+ calls the hook itself"
+)
+def test_the_duration_adapter_is_installed_once() -> None:
+    from django.db.models import DurationField
+
+    installed = DurationField.get_db_prep_value
+    assert installed.db2_for_i_adapter is True
+    compat.install_duration_adapter()
+    assert DurationField.get_db_prep_value is installed
+    assert not getattr(installed.__wrapped__, "db2_for_i_adapter", False)
+
+
+@pytest.mark.skipif(
+    compat.DJANGO_CALLS_ADAPT_DURATIONFIELD_VALUE, reason="Django 6.1+ calls the hook itself"
+)
+def test_the_duration_adapter_leaves_other_connections_alone(django_db_blocker) -> None:
+    """On SQLite the adapter gives exactly what Django's own method gives, also
+    for durations the Db2 for i backend refuses."""
+    from django.db import connections
+    from django.db.models import DurationField
+
+    from tests.offline.reference_db import sqlite_reference
+    from tests.testapp.models import Schedule
+
+    field = Schedule._meta.get_field("length")
+    original = DurationField.get_db_prep_value.__wrapped__
+    values = [None, dt.timedelta(0), dt.timedelta(days=-3, microseconds=7), dt.timedelta.max]
+    with sqlite_reference(django_db_blocker, (Schedule,)) as alias:
+        other = connections[alias]
+        for value in values:
+            assert field.get_db_prep_value(value, other) == original(field, value, other)
+        Schedule.objects.using(alias).create(length=dt.timedelta(days=2))
+        assert Schedule.objects.using(alias).get().length == dt.timedelta(days=2)
 
 
 def test_subtract_temporals_is_exact_microseconds() -> None:

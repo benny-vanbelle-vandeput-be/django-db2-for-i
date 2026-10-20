@@ -44,6 +44,7 @@ from django.utils.functional import cached_property
 
 from . import capabilities as caps
 from . import (
+    compat,
     expressions,  # noqa: F401  (registers as_db2_for_i() methods)
     inquiry,
 )
@@ -123,6 +124,10 @@ class FormatStyleCursor:
 
     def __exit__(self, *exc_info: object) -> None:
         self.cursor.close()
+
+
+# Before Django 6.1: duration values through ops.adapt_durationfield_value().
+compat.install_duration_adapter()
 
 
 class DatabaseWrapper(BaseDatabaseWrapper):

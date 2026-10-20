@@ -12,8 +12,9 @@ nox.options.sessions = ["lint", "offline"]
 PYPROJECT = nox.project.load_toml("pyproject.toml")
 
 # Python versions supported by each Django version, taken from Django's
-# release notes (see docs/DJANGO_VERSIONS.md). Phases 0-2 target 6.1 only.
+# release notes (see docs/DJANGO_VERSIONS.md), oldest first.
 DJANGO_PYTHONS = {
+    "6.0": ["3.12", "3.13", "3.14"],
     "6.1": ["3.12", "3.13", "3.14"],
 }
 NEWEST_DJANGO = "6.1"
@@ -29,6 +30,16 @@ def install(session: nox.Session, django: str, *groups: str) -> None:
     if groups:
         session.install(*nox.project.dependency_groups(PYPROJECT, *groups))
     session.install("-e", ".", f"Django~={django}.0")
+
+
+def django_argument(session: nox.Session) -> tuple[str, list[str]]:
+    """A supported Django version given as the first argument (default: the
+    newest), and the other arguments."""
+    if session.posargs and session.posargs[0] in DJANGO_PYTHONS:
+        return session.posargs[0], session.posargs[1:]
+    if session.posargs and session.posargs[0][:1].isdigit():
+        session.error(f"Django {session.posargs[0]} is not supported: {', '.join(DJANGO_PYTHONS)}")
+    return NEWEST_DJANGO, list(session.posargs)
 
 
 @nox.session(python=NEWEST_PYTHON)
@@ -165,12 +176,14 @@ def wheel(session: nox.Session) -> None:
 def pub400(session: nox.Session) -> None:
     """Tier 2: curated smoke set against PUB400 (newest Python, newest Django).
 
+    Another supported Django version as the first argument: nox -s pub400 -- 6.0
     Reuses the test library by default (pytest-django --reuse-db, Django's
     keepdb: safe with the test marker table, and saves DDL on PUB400).
     Fully clean run: nox -s pub400 -- --create-db
     """
-    install(session, NEWEST_DJANGO, "test")
-    reuse = [] if "--create-db" in session.posargs else ["--reuse-db"]
+    django, args = django_argument(session)
+    install(session, django, "test")
+    reuse = [] if "--create-db" in args else ["--reuse-db"]
     session.run(
         "pytest",
         "-m",
@@ -180,7 +193,7 @@ def pub400(session: nox.Session) -> None:
         # with the report redaction in tests/redaction.py).
         "--tb=short",
         *reuse,
-        *session.posargs,
+        *args,
     )
 
 

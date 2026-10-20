@@ -1,0 +1,7 @@
+-- golden: queries/last_insert_id
+-- django: 6.0
+-- profile: 7.5
+-- depends: -
+-- params: [[]]
+-- verified: IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.0.9, 2026-10-20
+SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1;

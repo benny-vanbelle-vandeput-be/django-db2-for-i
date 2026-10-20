@@ -198,9 +198,9 @@ def test_golden_contains_no_library_or_profile_names(path) -> None:
         # Quoted names were checked above; a placeholder keeps "T"."C" from
         # turning the preceding keyword into a qualifier.
         for qualifier in UNQUOTED_QUALIFIED.findall(QUOTED.sub(QUOTED_PLACEHOLDER, sql)):
-            assert qualifier.upper() in {"SYSIBM", "QSYS2", QUOTED_PLACEHOLDER}, (
-                f"unexpected qualifier {qualifier!r}"
-            )
+            # Django before 6.1 leaves its aliases unquoted (U0."ID").
+            known = qualifier.upper() in {"SYSIBM", "QSYS2", QUOTED_PLACEHOLDER}
+            assert known or DJANGO_ALIAS.match(qualifier), f"unexpected qualifier {qualifier!r}"
     text = path.read_text().upper()
     for variable in ("DB2I_USER", "DB2I_DEFAULT_LIBRARY", "DB2I_OTHER_LIBRARY"):
         value = os.environ.get(variable, "").strip().upper()

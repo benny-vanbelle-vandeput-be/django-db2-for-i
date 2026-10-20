@@ -1,5 +1,7 @@
 """compiler.py: hidden columns for SELECT DISTINCT with emulated NULL ordering."""
 
+import re
+
 from django.db import connection
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
 from django.db.models.lookups import Exact
@@ -180,16 +182,23 @@ def test_conditions_and_exists_are_not_wrapped() -> None:
     assert sql.startswith("SELECT ((SELECT (1)")
 
 
+def quoted_aliases(sql: str) -> str:
+    """Subquery aliases quoted, as Django 6.1 writes them; 6.0 and 5.2 leave U0
+    unquoted, which Db2 for i folds to the same identifier."""
+    return re.sub(r'(?<!")\b(U\d+)\b(?!")', r'"\1"', sql)
+
+
 def test_in_subquery_stays_plain_in_a_search_condition() -> None:
     queryset = Book.objects.filter(author__in=Author.objects.values("id"))
     _, sql = compiled(queryset)
-    assert ' IN (SELECT "U0"."ID" AS "ID" FROM "TESTAPP_AUTHOR" "U0")' in sql
+    assert ' IN (SELECT "U0"."ID" AS "ID" FROM "TESTAPP_AUTHOR" "U0")' in quoted_aliases(sql)
     assert "DJDB2I_IN" not in sql
 
 
 def test_in_subquery_as_a_value_is_three_valued() -> None:
     queryset = Book.objects.annotate(b=Q(author__in=Author.objects.values("id"))).values("b")
     sql, _params = queryset.query.get_compiler(connection=connection).as_sql()
+    sql = quoted_aliases(sql)
     rows = 'LATERAL (SELECT "U0"."ID" AS "ID" FROM "TESTAPP_AUTHOR" "U0") AS "DJDB2I_IN" (V1)'
     assert sql.count(rows) == 2  # a match, a row that may match (NULL)
     x = '"TESTAPP_BOOK"."AUTHOR_ID"'

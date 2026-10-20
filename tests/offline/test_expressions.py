@@ -126,7 +126,8 @@ def test_value_without_any_type_is_refused() -> None:
 def test_untyped_null_stays_null() -> None:
     from django.db import connection
 
-    assert Value(None).as_db2_for_i(None, connection) == ("NULL", ())
+    sql, params = Value(None).as_db2_for_i(None, connection)
+    assert (sql, tuple(params)) == ("NULL", ())  # a list on Django 6.0
 
 
 # --- Explicit output_field takes precedence ------------------------------------
