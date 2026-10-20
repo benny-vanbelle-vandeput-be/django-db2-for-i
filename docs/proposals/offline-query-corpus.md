@@ -167,8 +167,14 @@ not-replayable counts. The offline report prints the coverage per module:
 entries replayed, out of statements recorded.
 
 ### Expected size
-This is an extrapolation from one module, to be replaced by real numbers
-after the first capture:
+**First capture (2026-10-20, `ordering` on Django 6.1 at `1e01021`, PUB400):**
+43 tests passed; 138 statements kept, 115 unique, 0 unpicklable, 1 not
+compiled (a test that expects a FieldError); 208 KB of JSONL, **18 KB gzip
+(about 9 %)**, plus a 26 KB SQL index; all 115 replay identically on Python
+3.12, 3.13 and 3.14. At that ratio about 4,000 entries per version come to
+about 0.6 MB per version, not 7 MB.
+
+The extrapolation before the first capture:
 - The modules in [TEST_STATUS.md](../TEST_STATUS.md) have about 1,250 tests.
   At `ordering`'s rate (about 3.7 statements per test, 84% unique), that is
   about 4,000 unique entries per Django version.
