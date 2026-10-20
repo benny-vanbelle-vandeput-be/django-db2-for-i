@@ -222,6 +222,9 @@ Unicode) regular expressions; see IBM's "REGEXP_LIKE predicate" and
 or data mapping error") instead of being truncated. `StringAgg(...,
 distinct=True)` is not supported yet (Django raises NotSupportedError).
 
+`StringAgg` requires Django 6.0 or later: on Django 5.2 it exists only in
+`django.contrib.postgres`, which works with PostgreSQL only.
+
 ## Numbers with more than 63 digits
 
 A filter value that does not fit its column (an integer out of a

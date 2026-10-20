@@ -22,7 +22,19 @@ DJANGO_SERIES = f"{django.VERSION[0]}.{django.VERSION[1]}"
 # Nothing yet.
 
 # --- Django 5.2 only (delete when 5.2 is dropped) ------------------------------------
-# Nothing yet (5.2 support is phase 3, step B).
+
+# StringAgg is a general aggregate from Django 6.0; 5.2 has it only in
+# contrib.postgres, which is not patched: on 5.2 it is not supported (None).
+# When 5.2 is dropped: import StringAgg from django.db.models directly.
+if django.VERSION >= (6, 0):
+    from django.db.models import StringAgg
+else:
+    StringAgg = None
+
+# Django 6.0 refuses a composite field compared with a subquery (>, >=, <, <=)
+# when supports_tuple_comparison_against_subquery is off; 5.2 writes a row-value
+# comparison, which Db2 for i rejects (SQL0115). The tuple hook refuses it there.
+DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON = django.VERSION >= (6, 0)
 
 # --- Before 6.1: Django 6.0 and 5.2 (delete when both are dropped) -------------------
 

@@ -254,3 +254,27 @@ def test_tuple_in_subquery_in_case_contexts_uses_the_rewrite() -> None:
         _, sql = compiled(queryset)
         assert 'AS "DJDB2I_IN" (V1, V2)' in sql
         assert " IN (SELECT" not in sql[sql.index("CASE WHEN") :]
+
+
+def test_tuple_comparison_against_a_subquery_is_refused_on_every_version() -> None:
+    """Db2 for i rejects row-value comparisons with a subquery (SQL0115): Django
+    6.0+ refuses them (supports_tuple_comparison_against_subquery is off), and
+    on 5.2 the backend's tuple hook raises the same error (compat.py)."""
+    import pytest
+    from django.db import NotSupportedError
+    from django.db.models.fields.tuple_lookups import (
+        TupleGreaterThan,
+        TupleGreaterThanOrEqual,
+        TupleLessThan,
+        TupleLessThanOrEqual,
+    )
+
+    pair = Contact.objects.filter(account__gt=Account(company="a", number=1)).query
+    columns = pair.where.children[0].lhs  # (COMPANY, ACCOUNT_NUMBER)
+    for lookup in (TupleGreaterThan, TupleGreaterThanOrEqual, TupleLessThan, TupleLessThanOrEqual):
+        subquery = Account.objects.values("company", "number")[:1].query
+        subquery.subquery = True
+        query = Contact.objects.all().query
+        query.where.add(lookup(columns, subquery), "AND")
+        with pytest.raises(NotSupportedError, match="through subqueries on this backend"):
+            query.get_compiler(connection=connection).as_sql()

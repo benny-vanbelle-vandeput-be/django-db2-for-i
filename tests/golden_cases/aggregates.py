@@ -8,7 +8,6 @@ from django.db.models import (
     F,
     Min,
     Q,
-    StringAgg,
     Sum,
     Value,
     When,
@@ -16,6 +15,7 @@ from django.db.models import (
 from django.db.models import Case as CaseExpr
 from django.db.models.functions import Greatest, Least
 
+from django_db2_for_i.compat import StringAgg
 from tests.golden_cases.base import AUTHOR, BOOK, DEFAULTS, Case, select
 from tests.testapp.models import Author, Book, Defaults
 
@@ -46,34 +46,6 @@ CASES: tuple[Case, ...] = (
         "aggregates/count_empty_filter",
         "query",
         select(lambda: Author.objects.annotate(x=Count("book", filter=Q(book__in=[]))).values("x")),
-        (AUTHOR, BOOK),
-    ),
-    # StringAgg as LISTAGG of an NCLOB (results up to 1M characters), with a
-    # typed separator; a filter wraps the argument in CASE.
-    Case(
-        "aggregates/string_agg",
-        "query",
-        select(
-            lambda: Author.objects.annotate(
-                x=StringAgg("book__title", Value(", "), filter=Q(book__pages__gt=10))
-            ).values("x")
-        ),
-        (AUTHOR, BOOK),
-    ),
-    # StringAgg(order_by=...): LISTAGG(...) WITHIN GROUP (ORDER BY ...); a
-    # nulls_last item is ordered by a CASE NULL rank first (no IS NULL there).
-    Case(
-        "aggregates/string_agg_order_by",
-        "query",
-        select(
-            lambda: Author.objects.annotate(
-                x=StringAgg(
-                    "book__title",
-                    Value(", "),
-                    order_by=(F("book__published").desc(nulls_last=True), "book__title"),
-                )
-            ).values("x")
-        ),
         (AUTHOR, BOOK),
     ),
     # GROUP BY an expression with a parameter, or nested in a select
@@ -111,3 +83,38 @@ CASES: tuple[Case, ...] = (
         (AUTHOR, BOOK),
     ),
 )
+
+# StringAgg is a general aggregate from Django 6.0 (compat.py); on 5.2 these
+# cases, and their goldens, do not exist.
+STRING_AGG_CASES: tuple[Case, ...] = (
+    # StringAgg as LISTAGG of an NCLOB (results up to 1M characters), with a
+    # typed separator; a filter wraps the argument in CASE.
+    Case(
+        "aggregates/string_agg",
+        "query",
+        select(
+            lambda: Author.objects.annotate(
+                x=StringAgg("book__title", Value(", "), filter=Q(book__pages__gt=10))
+            ).values("x")
+        ),
+        (AUTHOR, BOOK),
+    ),
+    # StringAgg(order_by=...): LISTAGG(...) WITHIN GROUP (ORDER BY ...); a
+    # nulls_last item is ordered by a CASE NULL rank first (no IS NULL there).
+    Case(
+        "aggregates/string_agg_order_by",
+        "query",
+        select(
+            lambda: Author.objects.annotate(
+                x=StringAgg(
+                    "book__title",
+                    Value(", "),
+                    order_by=(F("book__published").desc(nulls_last=True), "book__title"),
+                )
+            ).values("x")
+        ),
+        (AUTHOR, BOOK),
+    ),
+)
+if StringAgg is not None:
+    CASES += STRING_AGG_CASES

@@ -24,9 +24,18 @@ from django.db.models import (
 )
 from django.db.models.functions import Cast
 
+from django_db2_for_i import compat
 from tests.testapp.models import Author, Book
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")
+
+# General aggregates from Django 6.0 (on 5.2, StringAgg only in contrib.postgres).
+needs_string_agg = pytest.mark.skipif(
+    compat.StringAgg is None, reason="StringAgg requires Django 6.0+ (Known limitations)"
+)
+needs_any_value = pytest.mark.skipif(
+    not hasattr(models, "AnyValue"), reason="AnyValue is a Django 6.0+ aggregate"
+)
 
 
 def test_avg_keeps_fractions(live, empty) -> None:
@@ -62,6 +71,7 @@ def test_aggregate_filter_matching_nothing(live, empty) -> None:
     assert list(Book.objects.annotate(p=pages).values_list("p", flat=True)) == [None]
 
 
+@needs_string_agg
 def test_string_agg(live, empty) -> None:
     """StringAgg as LISTAGG: per group, filtered, with a default, beyond NVARCHAR's
     2000 character LISTAGG limit, and non-ASCII values and separators."""
@@ -87,6 +97,7 @@ def test_string_agg(live, empty) -> None:
     assert Book.objects.filter(pages=0).aggregate(t=StringAgg("title", Value(","))) == {"t": ""}
 
 
+@needs_any_value
 def test_any_value(live, empty) -> None:
     """The real-world pattern: one value of a non-grouped column per group."""
     from django.db.models import AnyValue
@@ -132,6 +143,7 @@ def test_subqueries_in_group_by(live, empty) -> None:
     assert {(row["books"], row["n"]) for row in breakdown} == {(None, 1), (1, 1), (2, 1)}
 
 
+@needs_string_agg
 def test_string_agg_order_by(live, empty) -> None:
     """The real-world pattern: an ordered list per group, also with NULL ordering
     and a filter."""
