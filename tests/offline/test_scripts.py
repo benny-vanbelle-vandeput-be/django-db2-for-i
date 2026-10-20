@@ -459,7 +459,10 @@ def test_the_tier_log_counts_when_there_is_no_summary(tmp_path) -> None:
     assert status.set_results([], "5.2", tmp_path / "results")[status.SET_PUB400].totals.passed == 7
 
 
-def test_readme_sections_between_markers(tmp_path) -> None:
+def test_readme_sections_between_markers(monkeypatch, tmp_path) -> None:
+    (tmp_path / "docs" / "phases").mkdir(parents=True)
+    (tmp_path / "docs" / "phases" / "phase-2.md").write_text("# Phase 2\n")
+    monkeypatch.setattr(status, "ROOT", tmp_path)  # phase links: only to existing records
     features = tmp_path / "features"
     features.mkdir()
     (features / "6.1.json").write_text(
