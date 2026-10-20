@@ -5,7 +5,10 @@ from pathlib import Path
 
 import pytest
 
-PACKAGE = Path(__file__).resolve().parents[2] / "django_db2_for_i"
+import django_db2_for_i
+
+# The installed package: the source tree, or the wheel under nox -s wheel.
+PACKAGE = Path(django_db2_for_i.__file__).resolve().parent
 
 # django.VERSION, "from django import VERSION", django.get_version().
 DJANGO_VERSION_CHECK = re.compile(
