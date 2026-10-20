@@ -730,6 +730,28 @@ attributes; a QTEMP table with `NAME NVARCHAR(10)`, `SMALL SMALLINT`,
   they are created, check how SQL0530 / SQL0531 / SQL0532 arrive and map them
   to IntegrityError (#96).
 
+### Numeric values that do not fit the column (`nox -s probe -- numeric_params`)
+2026-10-20, PUB400 (IBM i 7.5), the backend's connection attributes; a QTEMP
+table with `SMALL SMALLINT` and `AMOUNT DECIMAL(5, 2)` whose rows hold the
+truncated (1.00) and the rounded (1.01) value of 1.005, the SMALLINT limits
+and NULLs.
+
+- Untyped markers (control): `SMALL IN (?, ?)` with 100000 gives 30018
+  ("Numeric value out of range"); `AMOUNT = ?` with 1.005 gives 30126 (right
+  truncation).
+- **A marker typed by the value, `CAST(? AS DECIMAL(p, s))`, compares
+  exactly**: for 1.005, `=` matches neither 1.00 nor 1.01; `<>`, `<`, `>`,
+  `IN` (mixed with untyped markers), `NOT IN` and `BETWEEN` give exactly the
+  rows of exact arithmetic (19 checks), also for 123456.789, `1E+5` as
+  `DECIMAL(6, 0)`, `-0.0`, a trailing zero (1.50), integers out of the
+  SMALLINT range as `DECIMAL(6, 0)`, and 10**20 as `DECIMAL(21, 0)`.
+- **DECIMAL holds at most 63 digits**: `CAST(? AS DECIMAL(63, 0))` and
+  `DECIMAL(63, 62)` work, `DECIMAL(64, 0)` fails with SQL0604 ("Attributes
+  not valid").
+- **pyodbc binds a Python int as a 64-bit integer**: a larger int fails before
+  the driver (`OverflowError: int too big to convert`); the same value as a
+  `Decimal` binds exactly.
+
 ### IN (subquery) inside CASE WHEN (`probe -- in_subquery`, `probe -- queries`)
 2026-10-19, read-only, PUB400 (IBM i 7.5). **`x IN (subquery)` and `x = ANY
 (subquery)` are rejected inside CASE WHEN** with SQL0115 ("Comparison operator
