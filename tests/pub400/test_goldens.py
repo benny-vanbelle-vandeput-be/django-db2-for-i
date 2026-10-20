@@ -41,9 +41,15 @@ from tests.pub400.connection_guard import replace_if_unusable
 
 RESULTS: dict[str, str] = {}  # golden name -> "passed" | "failed" | "skipped"
 
-# Goldens Db2 for i currently rejects: backend bugs found by this check, with
-# the reason. strict: once the SQL is fixed and accepted, the test reports it.
-REJECTED: dict[str, str] = {}
+# Goldens Db2 for i currently rejects (backend bugs found by this check) or
+# cannot execute on the test system, with the reason. strict: once the SQL is
+# accepted, the test reports it.
+REJECTED: dict[str, str] = {
+    "ddl/remove_field": (
+        "DROP COLUMN is cancelled by inquiry message CPA32B2 (HY008): PUB400's "
+        "system reply list has no CPA32B2 entry (probe 23, IBMI_NOTES)"
+    ),
+}
 
 CASES = [
     pytest.param(

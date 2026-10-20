@@ -62,6 +62,17 @@ def _add_not_null_with_python_default(connection):
     return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
 
 
+def _remove_field(model, name):
+    """RemoveField: ALTER TABLE ... DROP COLUMN, the same on every Django version."""
+
+    def build(connection):
+        with connection.schema_editor(collect_sql=True) as editor:
+            editor.remove_field(model, model._meta.get_field(name))
+        return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
+
+    return build
+
+
 def _drop(model):
     def build(connection):
         with connection.schema_editor(collect_sql=True) as editor:
@@ -101,6 +112,8 @@ CASES: tuple[Case, ...] = (
         _add_not_null_with_python_default,
         (DEFAULTS,),
     ),
+    # DROP COLUMN without CASCADE / RESTRICT on every Django version (probe 23).
+    Case("ddl/remove_field", "drop", _remove_field(Defaults, "ratio"), (DEFAULTS,)),
     # DROP TABLE (cascades on Db2 for i).
     Case("ddl/drop_tag", "drop", _drop(Tag), (TAG,)),
 )
