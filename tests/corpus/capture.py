@@ -16,7 +16,11 @@ would add a statement to the test; such a statement is counted as
 records the test id, the compiler class, that SQL with its tagged params, the
 pickle, and the USE_TZ / TIME_ZONE in effect. Statements of a test are kept
 only if the test passed; those run by ``TestCase.setUpClass`` (setUpTestData)
-are kept if a test of that class passed. Every error of the hook itself is
+are kept if a test of that class passed. At the end of the run every kept
+record is compiled once more from its pickle, with its settings; a record
+whose SQL or params changed depends on state at capture time (an ``auto_now``
+timestamp, a model option the test changed and restored), cannot be replayed,
+and is dropped and counted as ``volatile``. Every error of the hook itself is
 caught and counted, so it never changes a test's outcome.
 
 The raw capture is one JSON object per line: a header (``{"header": {...}}``:
@@ -69,6 +73,7 @@ class Recorder:
             "needs_database": 0,
             "no_sql": 0,
             "unencodable": 0,
+            "volatile": 0,
         }
         # Why statements were not recorded: "<count kind>: <exception>" -> count.
         self.reasons: dict[str, int] = defaultdict(int)
@@ -93,7 +98,7 @@ class Recorder:
         from django.conf import settings
         from django.core.exceptions import EmptyResultSet
 
-        from tests.corpus.store import dumps, encode_query, encode_statements, loads
+        from tests.corpus.store import dumps, encode_query, encode_statements
 
         try:
             pickled = dumps(compiler.query)
@@ -102,9 +107,7 @@ class Recorder:
             return
         self.compiling = True
         try:
-            copy = loads(pickled, PICKLE_FORMAT)
-            fresh = copy.get_compiler(using=compiler.using, connection=compiler.connection)
-            compiled = fresh.as_sql()
+            compiled = self._compile(pickled, compiler.using)
         except NeedsDatabase as exc:
             self._skip("needs_database", exc)
             return
@@ -116,9 +119,8 @@ class Recorder:
             return
         finally:
             self.compiling = False
-        statements = compiled if isinstance(compiled, list) else [compiled]
         try:
-            sql = encode_statements(statements)
+            sql = encode_statements(compiled)
         except (TypeError, ValueError) as exc:
             self._skip("unencodable", exc)
             return
@@ -129,11 +131,47 @@ class Recorder:
             "sql": sql,
             "query": encode_query(pickled),
             "settings": {"USE_TZ": bool(settings.USE_TZ), "TIME_ZONE": str(settings.TIME_ZONE)},
+            "_using": compiler.using,  # for the check at the end; not written
         }
         if self.context.endswith(".setUpTestData"):
             self.class_records[self.context.removesuffix(".setUpTestData")].append(record)
         else:
             self.pending[self.context].append(record)
+
+    def _compile(self, pickled: bytes, using: str) -> list:
+        """The statements a fresh copy of the pickled query compiles to."""
+        from django.db import connections
+
+        from tests.corpus.store import loads
+
+        copy = loads(pickled, PICKLE_FORMAT)
+        compiled = copy.get_compiler(using=using, connection=connections[using]).as_sql()
+        return compiled if isinstance(compiled, list) else [compiled]
+
+    def drop_volatile(self) -> None:
+        """Compile every kept record again; drop those whose SQL changed since."""
+        from django.test.utils import override_settings
+
+        from tests.corpus.store import decode_query, encode_statements
+
+        stable = []
+        for record in self.kept:
+            using = record.pop("_using")
+            self.compiling = True
+            try:
+                with override_settings(**record["settings"]):
+                    again = encode_statements(self._compile(decode_query(record["query"]), using))
+            except Exception as exc:
+                self._skip("volatile", exc)
+                continue
+            finally:
+                self.compiling = False
+            if again == record["sql"]:
+                stable.append(record)
+            else:
+                self.counts["volatile"] += 1
+                self.reasons[f"volatile: {record['tests'][0]}"] += 1
+        self.kept = stable
 
     # -- outcomes -------------------------------------------------------------------------
 
@@ -155,6 +193,7 @@ class Recorder:
             if key in self.passed_classes:
                 self.kept.extend(records)
         self.class_records.clear()
+        self.drop_volatile()
         self.write()
 
     def write(self) -> None:

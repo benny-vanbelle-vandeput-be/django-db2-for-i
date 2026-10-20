@@ -33,6 +33,9 @@ if str(ROOT) not in sys.path:
 
 from tests.corpus import store  # noqa: E402
 
+# The capture counts of statements that were not recorded (tests/corpus/capture.py).
+SKIPPED = ("unpicklable", "not_compiled", "needs_database", "no_sql", "unencodable", "volatile")
+
 
 class BuildRefused(Exception):
     """The captures cannot be combined into the corpus; nothing was written."""
@@ -74,7 +77,7 @@ def build(version: str, paths: Sequence[Path], profile: str = "7.5") -> dict[str
     for _path, header, records in captures:
         modules_here = {store.module_of(record["tests"][0]) for record in records}
         for module in modules_here or {header.get("label", "").split(".")[0]}:
-            for key in ("unpicklable", "not_compiled", "needs_database", "no_sql", "unencodable"):
+            for key in SKIPPED:
                 skipped[module][key] += header["counts"].get(key, 0)
         for record in records:
             module = store.module_of(record["tests"][0])

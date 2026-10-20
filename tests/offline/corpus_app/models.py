@@ -15,3 +15,10 @@ class Dish(models.Model):
 
     name = models.CharField(max_length=20)
     places = models.ManyToManyField(Place)
+
+
+class Note(models.Model):
+    """An auto_now_add field: compiling an insert stamps the current time."""
+
+    text = models.CharField(max_length=20)
+    written = models.DateTimeField(auto_now_add=True)

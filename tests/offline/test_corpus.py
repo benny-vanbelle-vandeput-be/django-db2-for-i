@@ -7,6 +7,7 @@ import sys
 import tomllib
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
@@ -133,6 +134,61 @@ def test_only_passing_tests_and_their_classes_setup_are_kept(tmp_path, monkeypat
     tests = sorted(json.loads(line)["tests"][0].rsplit(".", 1)[-1] for line in lines[1:])
     assert tests == ["setUpTestData", "test_ok"]  # Passing's only
     assert header["counts"]["kept"] == 2
+
+
+def test_records_that_compile_differently_at_the_end_of_the_run_are_dropped(
+    tmp_path, monkeypatch
+) -> None:
+    """Two records depend on state at capture time and cannot be replayed: a model
+    ordering the test changes and restores (as queries' test_ticket17429), and an
+    insert with an auto_now_add field (pre_save stamps the time while compiling).
+    Both are dropped at the end and counted as volatile; a stable one is kept."""
+    import datetime as dt
+
+    from django.conf import settings
+    from django.db.models.sql import InsertQuery
+    from django.test.utils import override_settings
+    from django.utils import timezone
+
+    clock = iter(dt.datetime(2026, 10, 20, 12, 0, second, tzinfo=dt.UTC) for second in range(10))
+    monkeypatch.setattr(timezone, "now", lambda: next(clock))
+    with override_settings(INSTALLED_APPS=[*settings.INSTALLED_APPS, "tests.offline.corpus_app"]):
+        from tests.offline.corpus_app.models import Note
+
+        recorder = capture.Recorder(tmp_path / "raw.jsonl")
+        monkeypatch.setattr(capture, "RECORDER", recorder)
+
+        class Case(unittest.TestCase):
+            def test_stable(self):
+                capture.RECORDER.record(Author.objects.all().query.get_compiler("default"))
+
+            def test_changed_ordering(self):
+                with mock.patch.object(Author._meta, "ordering", ["name"]):
+                    compiler = Author.objects.all().query.get_compiler("default")
+                    capture.RECORDER.record(compiler)
+
+            def test_auto_now(self):
+                query = InsertQuery(Note)
+                query.insert_values(Note._meta.concrete_fields[1:], [Note(text="n")])
+                capture.RECORDER.record(query.get_compiler("default"))
+
+        result = type("R", (capture.CaptureResultMixin, unittest.TestResult), {})()
+        result.startTestRun()
+        unittest.defaultTestLoader.loadTestsFromTestCase(Case).run(result)
+        result.stopTestRun()
+    assert result.wasSuccessful()
+    lines = (tmp_path / "raw.jsonl").read_text().splitlines()
+    header = json.loads(lines[0])["header"]
+    kept = [json.loads(line) for line in lines[1:]]
+    assert [record["tests"][0].rsplit(".", 1)[-1] for record in kept] == ["test_stable"]
+    assert "_using" not in kept[0]
+    assert header["counts"]["recorded"] == 3
+    assert header["counts"]["volatile"] == 2
+    assert header["counts"]["kept"] == 1
+    assert sorted(reason.rsplit(".", 1)[-1] for reason in header["reasons"]) == [
+        "test_auto_now",
+        "test_changed_ordering",
+    ]
 
 
 def test_the_hook_never_executes_sql_while_compiling_its_copy(tmp_path) -> None:
