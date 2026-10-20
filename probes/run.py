@@ -5,7 +5,7 @@ Usage (inside the "tests" container):
                      string_limits|extract|queries|listagg|trunc|durations|in_subquery|
                      tuple_in|tuple_lookups|compound_parts|selected_predicates|all] ...
     nox -s probe -- fetch_errors | mapping_errors | long_string_params |
-                    numeric_params | constraint_errors
+                    numeric_params | constraint_errors | drop_column
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -43,6 +43,7 @@ import p19_compound_parts
 import p20_selected_predicates
 import p21_numeric_params
 import p22_constraint_errors
+import p23_drop_column
 from _common import ProbeError, Settings, connect, write_result
 
 PROBES = {
@@ -69,6 +70,7 @@ PROBES = {
     "selected_predicates": p20_selected_predicates,
     "numeric_params": p21_numeric_params,
     "constraint_errors": p22_constraint_errors,
+    "drop_column": p23_drop_column,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 

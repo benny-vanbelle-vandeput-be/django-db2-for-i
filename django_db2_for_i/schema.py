@@ -85,6 +85,11 @@ def default_literal(value) -> str:
 
 
 class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
+    # The same DROP COLUMN on every supported Django version (Django 5.2 adds
+    # CASCADE, 6.0+ does not): Db2 for i's default for dependent objects is not
+    # known yet (probe 23, docs/IBMI_NOTES.md), so the SQL does not depend on it.
+    sql_delete_column = "ALTER TABLE %(table)s DROP COLUMN %(column)s"
+
     def execute(self, sql, params=()):
         """Explain an ALTER TABLE that Db2 for i cancelled (CPA32B2, see inquiry.py)."""
         try:
