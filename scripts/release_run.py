@@ -7,6 +7,12 @@ every supported Django test module, then the pub400 tier. The modules and
 their labels are the ``[[modules]]`` of docs/status.toml, the same list the
 README's module table is generated from, so there is one list.
 
+Every label runs with ``--capture``, so each release run also refreshes the
+offline query corpus (docs/OFFLINE_CORPUS.md; DECISIONS 2026-10-19, "Refresh:
+... release runs ... refresh it"): the raw captures land in
+test-results/<version>/corpus/, and scripts/build_corpus.py turns them into
+the corpus afterwards.
+
 Shared-system rules (PUB400): sequential, one connection at a time, each label
 in its own runtests.py call (``--clean``, ``--parallel=1``), never the full
 Django suite. A plain TCP check of the database host server port comes first,
@@ -106,7 +112,7 @@ def main(argv: Sequence[str]) -> int:
         return 2
     failed = []
     for label in run:
-        if run_django_tests.main([version, "--clean", label]) != 0:
+        if run_django_tests.main([version, "--clean", "--capture", label]) != 0:
             failed.append(label)
     if run_tier(version) != 0:
         failed.append("pub400 tier")

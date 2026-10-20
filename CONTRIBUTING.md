@@ -179,9 +179,12 @@ Claude never create release tags; the maintainer creates and signs them.**
    after another: `scripts/pub400.sh release_run <django>`.
    It checks that PUB400's database port answers (otherwise it stops at
    once), runs every supported Django test module (the `[[modules]]` of
-   `docs/status.toml`, `queries` as its labels), each with `--clean` in its own
-   run, then the pub400 tier with `--create-db`; logs in
-   `test-results/<django>/`. Report the results in the release PR.
+   `docs/status.toml`, `queries` as its labels), each with `--clean` and
+   `--capture` in its own run, then the pub400 tier with `--create-db`; logs in
+   `test-results/<django>/`, raw corpus captures in
+   `test-results/<django>/corpus/`. Build the corpus from them
+   ([OFFLINE_CORPUS.md](docs/OFFLINE_CORPUS.md), "Refreshing a corpus") and
+   report the results and the corpus counts in the release PR.
 1. **Release PR** (prepared like any other PR): set `__version__` in
    `django_db2_for_i/__init__.py` (the single source of the version) and run
    `python scripts/assemble_changelog.py release <version>`: it writes the

@@ -105,7 +105,11 @@ Release runs on PUB400 (IBM i 7.5), Python 3.14, one connection at a time:
 - 0 failed anywhere.
 
 ## Carried forward
-- 6.0 and 5.2 query corpora (capture with the next release run).
+- 6.0 and 5.2 query corpora: the phase 3 release runs did not capture, because
+  `release_run` (#111) did not pass `--capture`, although the corpus decision
+  says release runs refresh it. Fixed so every release run captures; the 6.0
+  and 5.2 corpora (and a 6.1 refresh) come from the release runs that close
+  phase 3, not later.
 - Db2 for i's `DROP COLUMN` default (CASCADE or RESTRICT): needs a system
   reply list entry for CPA32B2, so a system other than PUB400 and the
   maintainer's approval.
