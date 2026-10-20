@@ -158,7 +158,7 @@ Releases are alpha releases on GitHub only (no PyPI). **Contributors and
 Claude never create release tags; the maintainer creates and signs them.**
 
 0. **Release run**, for every supported Django version (newest Python), one
-   after another: `docker compose run --rm tests nox -s release_run -- <django>`.
+   after another: `scripts/pub400.sh release_run <django>`.
    It checks that PUB400's database port answers (otherwise it stops at
    once), runs every supported Django test module (the `[[modules]]` of
    `docs/status.toml`, `queries` as its labels), each with `--clean` in its own

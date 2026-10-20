@@ -146,7 +146,7 @@ def test_pub400_script_accepts_only_pub400_sessions_and_keeps_the_mac_awake() ->
     assert result.returncode == 2
     assert "usage:" in result.stderr
     text = script.read_text()
-    assert "pub400|django_tests|probe|probe_*) ;;" in text
+    assert "pub400|django_tests|release_run|probe|probe_*) ;;" in text
     assert "caffeinate -i -s" in text
     runtests = (script.parent / "runtests.sh").read_text()
     assert 'exec "$(dirname "$0")/pub400.sh" django_tests "$version" "$@"' in runtests
