@@ -43,6 +43,7 @@ import locale
 import logging
 import re
 from collections.abc import Callable, Mapping, Sequence
+from decimal import Decimal
 from typing import Any
 
 from . import base
@@ -195,6 +196,27 @@ def check_string_params(params: Sequence[Any]) -> None:
                 )
 
 
+# pyodbc binds a Python int as a 64-bit integer and refuses a larger one
+# (OverflowError, before the driver); as a Decimal it binds exactly (probe
+# numeric_params).
+INT64_MIN, INT64_MAX = -(2**63), 2**63 - 1
+
+
+def bindable_params(params: Sequence[Any]) -> Sequence[Any]:
+    """``params`` with ints outside the 64-bit range as Decimals (unchanged otherwise)."""
+    if not any(_beyond_int64(value) for value in params):
+        return params
+    return [Decimal(value) if _beyond_int64(value) else value for value in params]
+
+
+def _beyond_int64(value: Any) -> bool:
+    return (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and not INT64_MIN <= value <= INT64_MAX
+    )
+
+
 # --- Connection and cursor ------------------------------------------------------
 
 # A statement on a service or system command (a QSYS2 table function or view
@@ -240,12 +262,13 @@ class Cursor(base.Cursor):
             self._run(self._raw.execute, sql)
         else:
             check_string_params(params)
-            self._run(self._raw.execute, sql, params, parameterized=bool(params))
+            self._run(self._raw.execute, sql, bindable_params(params), parameterized=bool(params))
         return self
 
     def executemany(self, sql: str, param_list: Sequence[Sequence[Any]]) -> Cursor:
         for params in param_list:
             check_string_params(params)
+        param_list = [bindable_params(params) for params in param_list]
         self._run(self._raw.executemany, sql, param_list, parameterized=True)
         return self
 

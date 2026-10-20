@@ -116,3 +116,11 @@ class Switch(models.Model):
 
     name = models.CharField(max_length=10)
     flag = models.BooleanField(null=True)
+
+
+class Measure(models.Model):
+    """Numeric columns whose marker size a filter value can exceed (issue #69)."""
+
+    small = models.SmallIntegerField(null=True)
+    amount = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    big = models.BigIntegerField(null=True)

@@ -28,13 +28,14 @@ from tests.golden_cases.base import (
     AWARE,
     BOOK,
     CONTACT,
+    MEASURE,
     SWITCH,
     Case,
     books_of_author,
     exists,
     select,
 )
-from tests.testapp.models import Account, Author, Book, Contact, Switch
+from tests.testapp.models import Account, Author, Book, Contact, Measure, Switch
 
 
 def _last_insert_id(connection):
@@ -522,5 +523,25 @@ CASES: tuple[Case, ...] = (
         "query",
         select(lambda: Switch.objects.annotate(neg=~F("flag")).filter(neg=False)),
         (SWITCH,),
+    ),
+    # Numeric values that do not fit the column get a type of their own (#69):
+    # never rounded or truncated, compared exactly; values that fit stay untyped.
+    Case(
+        "queries/filter_in_integer_out_of_range",
+        "query",
+        select(lambda: Measure.objects.filter(small__in=[1, 100000])),
+        (MEASURE,),
+    ),
+    Case(
+        "queries/filter_range_integer_out_of_range",
+        "query",
+        select(lambda: Measure.objects.filter(small__range=(0, 100000))),
+        (MEASURE,),
+    ),
+    Case(
+        "queries/filter_decimal_more_digits",
+        "query",
+        select(lambda: Measure.objects.filter(amount=Decimal("1.005"))),
+        (MEASURE,),
     ),
 )

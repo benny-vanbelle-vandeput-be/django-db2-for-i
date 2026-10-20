@@ -99,7 +99,6 @@ Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS
 
 ### Open tracks and notes
 
-- Numeric filter values out of range give a driver error instead of no match ([#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69)), next after 0.1.0a3.
 - Offline query corpus from the PUB400 runs (approved: docs/proposals/offline-query-corpus.md), for Django 6.1 before phase 3 step A.
 - Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82)).
 - Verify the column order of created tables (phase 4, [#23](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/23)).
