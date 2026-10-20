@@ -731,6 +731,39 @@ attributes; a QTEMP table with `NAME NVARCHAR(10)`, `SMALL SMALLINT`,
   they are created, check how SQL0530 / SQL0531 / SQL0532 arrive and map them
   to IntegrityError (#96).
 
+### DROP COLUMN with and without CASCADE (`nox -s probe -- drop_column`)
+2026-10-20, PUB400 (IBM i 7.5), the backend's connection attributes, QTEMP,
+the job's inquiry message reply set to `*DFT` for the run (set back to
+`*RQD` afterwards). Phase 3 step B, decision 4: Django 5.2 writes
+`ALTER TABLE t DROP COLUMN c CASCADE`, 6.0+ writes it without a keyword.
+
+A table with one row; column B with a dependent index or a dependent view
+(created fresh for each case), column C without dependents as control:
+
+| Dependent | No keyword | RESTRICT | CASCADE |
+|---|---|---|---|
+| none (C) | HY008, cancelled | HY008, cancelled | HY008, cancelled |
+| index on B | HY008, cancelled; index kept | HY008, cancelled; index kept | HY008, cancelled; index kept |
+| view on B | HY008, cancelled; view kept | HY008, cancelled; view kept | HY008, cancelled; view kept |
+
+- Every case ends the same way: SQLSTATE `HY008` "Operation cancelled"
+  (30071), job log SQL0952 / CPF7304 / CPD32CE (inquiry message CPA32B2
+  answered with its default reply C), the column, the index and the view
+  all still there.
+- **All three forms are valid syntax** (no SQL0104), and **none is refused
+  over the dependency before the inquiry message**: even `RESTRICT` with a
+  dependent view gets the same cancel, not a dependency error (e.g.
+  SQL0478). Db2 for i asks CPA32B2 before it handles dependent objects.
+- **Db2 for i's default (CASCADE or RESTRICT) cannot be determined on
+  PUB400**: that needs a DROP COLUMN that is not cancelled, i.e. a system
+  reply list entry `MSGID(CPA32B2) RPY('I')` and
+  `OPTIONS["inquiry_message_reply"] = "*SYSRPYL"` (see "ALTER TABLE that
+  may lose data"), which PUB400 does not have and which is outside QTEMP.
+  Not assumed here; to be probed on a system with that entry (a dedicated
+  IBM i).
+- Constraint dependencies (a CHECK or foreign key on the column) cannot be
+  probed in QTEMP (SQL7008, probe 22).
+
 ### Numeric values that do not fit the column (`nox -s probe -- numeric_params`)
 2026-10-20, PUB400 (IBM i 7.5), the backend's connection attributes; a QTEMP
 table with `SMALL SMALLINT` and `AMOUNT DECIMAL(5, 2)` whose rows hold the
