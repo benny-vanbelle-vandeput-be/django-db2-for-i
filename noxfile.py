@@ -33,6 +33,11 @@ def install(session: nox.Session, django: str, *groups: str) -> None:
     session.install("-e", ".", f"Django~={django}.0")
 
 
+def results_summary(django: str, test_set: str) -> str:
+    """Where a run writes its counts for README's test status (update_test_status.py)."""
+    return f"test-results/{django}/sets/{test_set}.json"
+
+
 def django_argument(session: nox.Session) -> tuple[str, list[str]]:
     """A supported Django version given as the first argument (default: the
     newest), and the other arguments."""
@@ -60,7 +65,13 @@ def lint(session: nox.Session) -> None:
 def offline(session: nox.Session, django: str) -> None:
     """Tier 1: no IBM i needed. Every Python x every Django version."""
     install(session, django, "test")
-    session.run("pytest", "-m", "offline", *session.posargs)
+    session.run(
+        "pytest",
+        "-m",
+        "offline",
+        f"--results-summary={results_summary(django, f'offline-py{session.python}')}",
+        *session.posargs,
+    )
 
 
 def django_checkout(session: nox.Session, django: str, commit: str) -> str:
@@ -132,6 +143,7 @@ def corpus(session: nox.Session, django: str) -> None:
         "-m",
         "corpus",
         "--ds=tests.django_settings.settings_corpus",
+        f"--results-summary={results_summary(django, 'corpus')}",
         *session.posargs,
         env={
             "DB2I_DJANGO_TESTS": f"{checkout}/tests",
@@ -194,6 +206,7 @@ def pub400(session: nox.Session) -> None:
         # Short tracebacks: no function arguments (defense in depth, together
         # with the report redaction in tests/redaction.py).
         "--tb=short",
+        f"--results-summary={results_summary(django, 'pub400')}",
         *reuse,
         *args,
     )
@@ -245,6 +258,16 @@ def release_run(session: nox.Session) -> None:
         ]
     )
     session.run("python", "scripts/release_run.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
+def features(session: nox.Session) -> None:
+    """docs/FEATURES.md: dump the feature flags on every supported Django (offline), then render."""
+    session.install(*nox.project.dependency_groups(PYPROJECT, "test"))
+    for django in DJANGO_PYTHONS:
+        session.install("-e", ".", f"Django~={django}.0")
+        session.run("python", "scripts/features.py", "dump")
+    session.run("python", "scripts/features.py", "render")
 
 
 @nox.session(python=NEWEST_PYTHON)

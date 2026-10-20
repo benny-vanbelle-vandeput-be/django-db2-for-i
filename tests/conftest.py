@@ -72,6 +72,11 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store_true",
         help="mark goldens accepted by IBM i as verified (pub400 tier)",
     )
+    parser.getgroup("results").addoption(
+        "--results-summary",
+        metavar="PATH",
+        help="write the run's counts as JSON for scripts/update_test_status.py",
+    )
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -86,9 +91,16 @@ def pytest_configure(config: pytest.Config) -> None:
 def pytest_terminal_summary(terminalreporter, exitstatus, config: pytest.Config) -> None:
     from tests.golden import UNVERIFIED, all_golden_paths, read
 
+    summary = config.getoption("--results-summary")
     if "corpus" in (config.option.markexpr or ""):
         _corpus_summary(terminalreporter)
+        if summary:
+            _write_corpus_summary(Path(summary))
         return
+    if summary:
+        from tests import results_summary
+
+        results_summary.write(Path(summary), results_summary.counts_from(terminalreporter.stats))
     if "offline" not in (config.option.markexpr or ""):
         return
     goldens = [read(path) for path in all_golden_paths()]
@@ -126,3 +138,13 @@ def _corpus_summary(terminalreporter) -> None:
             f"replay {c['replayed']}/{c['entries']} replayed, {c['not_loadable']} not loadable, "
             f"{c.get('not_replayable', 0)} not replayable, {c['unverified']} unverified"
         )
+
+
+def _write_corpus_summary(path: Path) -> None:
+    """The replay counted per corpus entry: identical, not replayed, different."""
+    import sys
+
+    from tests import results_summary
+
+    coverage = getattr(sys.modules.get("tests.corpus.test_replay"), "COVERAGE", {})
+    results_summary.write(path, results_summary.counts_from_coverage(coverage))
