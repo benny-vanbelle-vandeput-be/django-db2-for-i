@@ -236,6 +236,14 @@ The extrapolation before the first capture:
     `needs_database` and not recorded, so the hook never adds a statement to
     a test. An offline test runs a workload with and without the hook on a real
     (in-memory SQLite) connection and requires identical executed statements.
+  - *Fixed (2026-10-20):* a few statements depend on state at capture time
+    and can never replay identically: an insert with an `auto_now(_add)` field
+    (`pre_save` stamps the time while compiling) and a query on a model whose
+    options the test changes and restores (`queries`' `test_ticket17429` sets
+    `Tag._meta.ordering = None`). At the end of the run the hook compiles every
+    kept record once more from its pickle, with its settings; a record whose
+    SQL or params changed is dropped and counted as `volatile` (with the test
+    id as reason). `queries` had 4 such entries out of 1149.
 - A custom test result keeps an entry only if the test **passed**. Entries
   from failures, errors, skips and expected failures are dropped (decision 2).
 - For A (second PR), the hook also records the DDL that the test database setup executes

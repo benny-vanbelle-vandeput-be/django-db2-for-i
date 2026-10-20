@@ -1218,3 +1218,21 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   attributes (patches Django's test apps); accepting the gap (a fifth of
   aggregation's statements unchecked).
 
+## 2026-10-20: The corpus capture drops records that compile differently at the end of the run
+- **Decision:** before the raw capture is written, the hook compiles every kept
+  record once more from its pickle (with its `USE_TZ` / `TIME_ZONE`, execution
+  blocked as during capture). A record whose SQL or params differ from what was
+  recorded is dropped and counted as `volatile`, with the test id as reason;
+  the count goes into the header, the manifest and the corpus report.
+- **Why:** the first `queries` capture had 4 of 1149 entries that replay
+  differently: three inserts with an `auto_now(_add)` field, whose datetime
+  param `pre_save` takes from the clock while compiling, and one query on
+  `Tag`, whose `_meta.ordering` the test sets to None while it runs. Neither is
+  backend output, and neither can ever replay identically, so they would make
+  the replay fail forever. Compiling again at the end catches both kinds, and
+  any other state a test changes and restores, without knowing the cause.
+- **Alternatives:** freezing the clock during the hook's compile and the replay
+  (covers only `auto_now`, patches `timezone.now` / `date.today` globally);
+  normalizing datetime params in the replay (hides real param changes);
+  excluding the tests by name (a list to maintain); checking at replay time
+  (a mismatch must stay a failure).
