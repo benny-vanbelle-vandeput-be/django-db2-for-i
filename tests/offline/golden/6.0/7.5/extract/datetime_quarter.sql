@@ -1,0 +1,7 @@
+-- golden: extract/datetime_quarter
+-- django: 6.0
+-- profile: 7.5
+-- depends: ddl/create_book
+-- params: [[]]
+-- verified: unverified
+SELECT QUARTER("TESTAPP_BOOK"."PUBLISHED") AS "X" FROM "TESTAPP_BOOK";
