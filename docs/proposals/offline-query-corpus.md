@@ -1,6 +1,8 @@
 # Offline query corpus
 
-> Status: Approved, 2026-10-19
+> Status: Approved, 2026-10-19. Implemented: the reference page is
+> [docs/OFFLINE_CORPUS.md](../OFFLINE_CORPUS.md); this proposal is kept as the
+> design record.
 
 The maintainer's answers to the open questions are in "Decisions" at the end.
 

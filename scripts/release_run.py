@@ -72,6 +72,7 @@ def run_tier(version: str) -> int:
         "--create-db",
         "-p",
         "no:cacheprovider",
+        f"--results-summary={ROOT / 'test-results' / version / 'sets' / 'pub400.json'}",
     ]
     with log.open("w", encoding="utf-8") as out:
         process = subprocess.Popen(

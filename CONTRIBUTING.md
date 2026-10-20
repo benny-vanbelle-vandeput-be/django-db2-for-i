@@ -30,6 +30,23 @@ other form), you agree that it is licensed under the same BSD 3-Clause License.
 All development and test runs happen in a container. See [README.md](README.md)
 for setup instructions.
 
+## Test sets
+
+Four test sets, named the same everywhere (README, TEST_STATUS, this file):
+
+| Test set | What and where | Called before (code keeps these names for now) |
+|---|---|---|
+| Offline · own tests | this project's unit tests and golden SQL checks, `tests/offline/`; CI on every commit | offline tier, `nox -s offline` |
+| IBM i · own tests | this project's tests against a real Db2 for i, `tests/pub400/`; for every backend change | pub400 tier, `nox -s pub400` |
+| IBM i · Django test suite | Django's own test modules against Db2 for i; before every release | Django modules on PUB400, `scripts/runtests.sh`, `release_run` |
+| Offline · Django test suite (replay) | the recorded SQL of passing Django tests, compiled again offline; CI on every commit | offline query corpus, `nox -s corpus` |
+
+The nox sessions, `tests/pub400/`, the pytest markers and the
+`needs-full-tier` label keep their names until a separate, mechanical rename.
+Each run of the nox sessions writes its counts to
+`test-results/<django>/sets/` (`--results-summary`); `nox -s test_status`
+turns them, with the Django test logs, into README's "Test status".
+
 ## Changelog
 
 Do not edit `CHANGELOG.md` in a pull request. Add a fragment instead, so
@@ -43,9 +60,9 @@ with `<type>` one of `added`, `enabled` (a feature flag switched on),
 kebab-case topic (`changelog.d/string-agg.added.md`); a topic gets no
 `(#<number>)` reference. Details in [changelog.d/README.md](changelog.d/README.md);
 `python scripts/assemble_changelog.py check` validates the fragments (the
-offline tier runs the same check) and `draft` shows the resulting section.
+Offline · own tests run the same check) and `draft` shows the resulting section.
 
-## pub400 tests
+## IBM i · own tests (`tests/pub400/`)
 
 Tests that write to the IBM i use the tests.testapp tables: a module asks for
 them with `pytestmark = pytest.mark.usefixtures("testapp_tables")`
@@ -63,13 +80,13 @@ CWBCO1034). `scripts/runtests.sh` goes through it too.
 
 `tests/offline/golden/<django>/<profile>/<group>/<name>.sql` hold the SQL the
 backend generates for a fixed set of cases (`tests/golden_cases/`), per
-Django series and capability profile. The offline tier compares the generated
+Django series and capability profile. The Offline · own tests compare the generated
 SQL and params with them on every run.
 
 - **Where cases live:** one module per group, `tests/golden_cases/<group>.py`
   (ddl, queries, values, expressions, aggregates, extract, dml, flush), with
   the shared builders in `base.py`. A case named `<group>/<name>` goes into
-  its group's module; the offline tier checks this.
+  its group's module; the Offline · own tests check this.
 
 - **Scope:** backend-specific SQL only (pagination, quoting, booleans,
   date/time parameters, LIKE escaping, identity handling, flush, DDL types).
@@ -97,7 +114,7 @@ SQL and params with them on every run.
 - **No system names:** goldens must not contain library or user profile names;
   the verification header names only the release and "PUB400".
 
-## Running Django's own test suite
+## IBM i · Django test suite (Django's own tests)
 
 On a shared system such as PUB400 only single, small modules run, never the
 full suite:
@@ -129,10 +146,11 @@ docker compose run --rm tests nox -s test_status   # regenerate docs/TEST_STATUS
 - Known failures go into `DatabaseFeatures.expected_failures` /
   `django_test_skips` under one of the fixed `REASON_*` strings.
 
-## Offline query corpus
+## Offline · Django test suite (replay)
 
 Statements that passing Django tests sent to Db2 for i become offline
-regression checks (design: `docs/proposals/offline-query-corpus.md`):
+regression checks: the test set "Offline · Django test suite (replay)",
+reference in [docs/OFFLINE_CORPUS.md](docs/OFFLINE_CORPUS.md):
 
 ```sh
 scripts/runtests.sh 6.1 --clean --capture ordering     # PUB400: record the passing tests' statements

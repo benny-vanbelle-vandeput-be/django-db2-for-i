@@ -1,0 +1,177 @@
+"""Generate docs/FEATURES.md: the backend's DatabaseFeatures flags per Django version.
+
+    nox -s features                         # dump on every supported Django, then render
+    python scripts/features.py dump         # in one Django version's environment
+    python scripts/features.py render       # from docs/features/*.json and docs/features.toml
+
+``dump`` records every boolean flag of Django's ``BaseDatabaseFeatures`` with
+the value the backend reports under the offline capability profile (no IBM i,
+no connection) into docs/features/<django-series>.json. The files are
+committed, so ``render`` and the offline test work in any single Django
+environment. ``render`` groups the flags (enabled; intentionally off, with the
+reason; planned, with the phase; not yet evaluated) and takes each flag's
+one-line description from docs/features.toml.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+import tomllib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+VALUES_DIR = ROOT / "docs" / "features"
+DESCRIPTIONS = ROOT / "docs" / "features.toml"
+OUTPUT = ROOT / "docs" / "FEATURES.md"
+
+ON, OFF, PLANNED, MISSING = "✅", "❌", "🗓️", "\u2013"  # an en dash
+GROUPS = [
+    ("enabled", "Enabled", "On in at least one supported Django version."),
+    ("off", "Intentionally off", "Off on purpose, with the reason."),
+    ("planned", "Planned", "Off for now; planned for the phase shown."),
+    ("unevaluated", "Not yet evaluated", "Off: Django's default or not looked at yet."),
+]
+
+
+def _version_key(version: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in version.split("."))
+
+
+def dump(directory: Path = VALUES_DIR) -> Path:
+    """The flags of the running Django version (offline profile) as JSON."""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.django_settings.settings_offline")
+    import django
+
+    django.setup()
+    from django.db import connection
+    from django.db.backends.base.features import BaseDatabaseFeatures
+
+    from django_db2_for_i.compat import DJANGO_SERIES
+
+    flags = {}
+    for name in sorted(dir(BaseDatabaseFeatures)):
+        if name.startswith("_"):
+            continue
+        try:
+            value = getattr(connection.features, name)
+        except Exception:  # a property that needs the database: not a static flag
+            continue
+        if isinstance(value, bool):
+            flags[name] = value
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / f"{DJANGO_SERIES}.json"
+    path.write_text(json.dumps({"django": DJANGO_SERIES, "flags": flags}, indent=2) + "\n")
+    return path
+
+
+def load_values(directory: Path = VALUES_DIR) -> dict[str, dict[str, bool]]:
+    """Django series -> {flag: value}, oldest series first."""
+    values = {}
+    for path in directory.glob("*.json"):
+        data = json.loads(path.read_text())
+        values[data["django"]] = data["flags"]
+    return dict(sorted(values.items(), key=lambda item: _version_key(item[0])))
+
+
+def load_descriptions(path: Path = DESCRIPTIONS) -> dict:
+    with path.open("rb") as handle:
+        return tomllib.load(handle)
+
+
+def group_of(name: str, values: dict[str, dict[str, bool]], info: dict) -> str:
+    if any(flags.get(name) for flags in values.values()):
+        return "enabled"
+    if info.get("off"):
+        return "off"
+    if info.get("planned"):
+        return "planned"
+    return "unevaluated"
+
+
+def cell(name: str, flags: dict[str, bool], info: dict) -> str:
+    if name not in flags:
+        return MISSING
+    if flags[name]:
+        return ON
+    return PLANNED if info.get("planned") else OFF
+
+
+def missing_descriptions(values: dict, descriptions: dict) -> list[str]:
+    """Flags that are on, intentionally off or planned but have no description."""
+    entries = descriptions.get("flags", {})
+    names = {name for flags in values.values() for name in flags}
+    return sorted(
+        name
+        for name in names
+        if group_of(name, values, entries.get(name, {})) != "unevaluated"
+        and not entries.get(name, {}).get("description")
+    )
+
+
+def render(values: dict | None = None, descriptions: dict | None = None) -> str:
+    values = load_values() if values is None else values
+    descriptions = load_descriptions() if descriptions is None else descriptions
+    entries = descriptions.get("flags", {})
+    development = set(descriptions.get("development", []))
+    versions = list(values)
+    names = sorted({name for flags in values.values() for name in flags})
+    headers = [f"Django {v}" + (" 🚧" if v in development else "") for v in versions]
+    newest = versions[-1] if versions else ""
+    enabled = sum(1 for name in names if values.get(newest, {}).get(name))
+    lines = [
+        "# Feature flags",
+        "",
+        "<!-- Generated by scripts/features.py (nox -s features); do not edit by hand. -->",
+        "",
+        "The backend's `DatabaseFeatures` flags per supported Django version, under the",
+        "offline IBM i 7.5 capability profile. Django's test suite skips the tests of a",
+        "feature that is off. Descriptions: [`docs/features.toml`](features.toml).",
+        "",
+        f"{ON} on · {OFF} off · {PLANNED} off, planned · {MISSING} the flag does not exist "
+        "in that Django version · 🚧 Django version still in development here.",
+        "",
+        f"**{enabled} flags enabled on Django {newest}.**",
+    ]
+    for key, title, note in GROUPS:
+        rows = [name for name in names if group_of(name, values, entries.get(name, {})) == key]
+        if not rows:
+            continue
+        extra = {"off": "Reason", "planned": "Phase"}.get(key)
+        lines += ["", f"## {title} ({len(rows)})", "", note, ""]
+        lines.append(
+            "| Flag | Description | " + " | ".join(headers) + (f" | {extra} |" if extra else " |")
+        )
+        lines.append("|---|---|" + "---|" * len(headers) + ("---|" if extra else ""))
+        for name in rows:
+            info = entries.get(name, {})
+            cells = [cell(name, values[v], info) for v in versions]
+            row = [f"`{name}`", info.get("description", ""), *cells]
+            if extra:
+                row.append(info.get("off" if key == "off" else "planned", ""))
+            lines.append("| " + " | ".join(row) + " |")
+    return "\n".join(lines) + "\n"
+
+
+def main(argv: list[str]) -> int:
+    if argv == ["dump"]:
+        print(f"wrote {dump().relative_to(ROOT)}")
+        return 0
+    if argv == ["render"]:
+        values, descriptions = load_values(), load_descriptions()
+        missing = missing_descriptions(values, descriptions)
+        if missing:
+            print(f"error: no description in docs/features.toml for: {', '.join(missing)}")
+            return 1
+        OUTPUT.write_text(render(values, descriptions))
+        print(f"wrote {OUTPUT.relative_to(ROOT)}")
+        return 0
+    print("usage: features.py dump | render", file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

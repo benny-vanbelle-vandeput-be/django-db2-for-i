@@ -69,6 +69,7 @@ def test_corpus_module_replays(module, request) -> None:
         "replayed": len(entries) - not_loadable - not_replayable,
         "not_loadable": not_loadable,
         "not_replayable": not_replayable,
+        "mismatches": len(mismatches),
         "unverified": sum(entry.verified == UNVERIFIED for entry in entries),
     }
     if updated:
