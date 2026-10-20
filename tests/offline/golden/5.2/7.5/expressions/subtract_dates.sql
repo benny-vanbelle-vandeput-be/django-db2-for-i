@@ -3,5 +3,5 @@
 -- profile: 7.5
 -- depends: ddl/create_schedule
 -- params: [[{"$date": "2001-01-01"}]]
--- verified: unverified
+-- verified: IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.18, 2026-10-20
 SELECT (BIGINT(DAYS("TESTAPP_SCHEDULE"."DAY") - DAYS(CAST(%s AS DATE))) * 86400000000) AS "X" FROM "TESTAPP_SCHEDULE";
