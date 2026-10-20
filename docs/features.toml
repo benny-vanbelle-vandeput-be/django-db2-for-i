@@ -1,0 +1,123 @@
+# One-line, plain-language descriptions of Django's DatabaseFeatures flags,
+# for docs/FEATURES.md (scripts/features.py, nox -s features).
+#
+# Per flag:
+#   description = what the flag means for users
+#   off         = why it is intentionally off (only for flags that are off)
+#   planned     = the phase it is planned for (only for flags that are off)
+# A flag that is on in a supported Django version, intentionally off or
+# planned must have a description (offline test). Values come from
+# docs/features/<django>.json, never from this file.
+
+# Django versions still in development in this backend (🚧 in the column header).
+development = ["5.2"]
+
+[flags]
+
+# --- Enabled ----------------------------------------------------------------
+
+allow_sliced_subqueries_with_in.description = "A sliced queryset (`qs[:n]`, also with an offset) can be used in `__in`."
+can_release_savepoints.description = "Savepoints are released after a nested `atomic()` block that succeeded."
+has_native_boolean_field.description = "`BooleanField` is a native `BOOLEAN` column (IBM i 7.5)."
+implied_column_null.description = "Columns are nullable unless `NOT NULL` is written; no bare `NULL` keyword in DDL."
+nulls_order_largest.description = "NULL sorts as the largest value: last in ascending order, first in descending."
+pattern_lookup_needs_param_pattern.description = "`contains`, `startswith` and friends are written with `LIKE` patterns."
+requires_compound_order_by_subquery.description = "An ordered `union()` / `intersection()` / `difference()` is wrapped in a subquery to order it."
+requires_literal_defaults.description = "Column defaults in DDL are written as literals, not parameters."
+supports_aggregate_order_by_clause.description = "`StringAgg(..., order_by=...)` and other ordered aggregates."
+supports_any_value.description = "The `AnyValue` aggregate (one value of a column per group)."
+supports_boolean_expr_in_select_clause.description = "Conditions such as `Exists()` or `Q()` can be selected and grouped by."
+supports_parentheses_in_compound.description = "Parts of a compound query may have their own `ORDER BY` / slice."
+supports_regex_backreferencing.description = "`regex` / `iregex` lookups support backreferences (ICU regular expressions)."
+supports_select_difference.description = "`QuerySet.difference()` (`EXCEPT`)."
+supports_select_intersection.description = "`QuerySet.intersection()` (`INTERSECT`)."
+supports_select_union.description = "`QuerySet.union()` (`UNION` / `UNION ALL`)."
+supports_slicing_ordering_in_compound.description = "Slicing and ordering of the parts of a compound query."
+supports_subqueries_in_group_by.description = "A subquery can be used in `GROUP BY`."
+supports_temporal_subtraction.description = "Subtracting dates, times and datetimes gives an exact `timedelta`."
+supports_transactions.description = "Transactions with commit and rollback (on journaled tables)."
+supports_tuple_lookups.description = "Lookups on several columns at once (composite keys, multi-column relations)."
+uses_savepoints.description = "Nested `atomic()` blocks use savepoints."
+
+# --- Intentionally off ------------------------------------------------------
+
+atomic_transactions.description = "An error inside a transaction aborts the whole transaction."
+atomic_transactions.off = "Db2 for i keeps the transaction usable after a failed statement (unlike PostgreSQL)."
+can_rollback_ddl.description = "Schema changes inside a transaction are rolled back with it."
+can_rollback_ddl.off = "Not relied on until a probe shows DDL is rolled back on Db2 for i."
+has_zoneinfo_database.description = "The database has its own time zone database."
+has_zoneinfo_database.off = "Db2 for i has no time zone names; conversions happen in Python."
+supports_forward_references.description = "Rows may reference rows inserted later in the same transaction (deferred constraints)."
+supports_forward_references.off = "Db2 for i checks constraints per statement; nothing is deferrable."
+supports_paramstyle_pyformat.description = "Raw SQL may use `%(name)s` parameters with a dict."
+supports_paramstyle_pyformat.off = "The driver takes positional `?` markers only."
+supports_timezones.description = "Datetimes are stored with their time zone."
+supports_timezones.off = "Db2 for i has no `TIMESTAMP WITH TIME ZONE`; datetimes are stored in UTC without zone."
+supports_tuple_comparison_against_subquery.description = "Composite fields compared with `>`, `<` against a subquery."
+supports_tuple_comparison_against_subquery.off = "Db2 for i rejects row-value comparisons with a subquery (SQL0115)."
+test_db_allows_multiple_connections.description = "The test database may be used by several connections at once."
+test_db_allows_multiple_connections.off = "The shared PUB400 system limits connections per client."
+
+# --- Planned ----------------------------------------------------------------
+
+# Phase 4: schema editor completeness, introspection, inspectdb.
+allows_multiple_constraints_on_same_fields.description = "Several constraints on the same columns."
+allows_multiple_constraints_on_same_fields.planned = "phase 4"
+can_create_inline_fk.description = "Foreign keys are created inline in `CREATE TABLE`."
+can_create_inline_fk.planned = "phase 4"
+can_introspect_check_constraints.description = "`inspectdb` and introspection find CHECK constraints."
+can_introspect_check_constraints.planned = "phase 4"
+can_introspect_default.description = "Introspection reads column defaults."
+can_introspect_default.planned = "phase 4"
+can_introspect_foreign_keys.description = "Introspection finds foreign keys."
+can_introspect_foreign_keys.planned = "phase 4"
+indexes_foreign_keys.description = "Foreign key columns get an index."
+indexes_foreign_keys.planned = "phase 4"
+supports_column_check_constraints.description = "CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database."
+supports_column_check_constraints.planned = "phase 4"
+supports_foreign_keys.description = "Foreign keys are enforced by the database."
+supports_foreign_keys.planned = "phase 4"
+supports_index_column_ordering.description = "Index columns can be ordered `DESC`."
+supports_index_column_ordering.planned = "phase 4"
+supports_index_on_text_field.description = "Indexes on `TextField` columns."
+supports_index_on_text_field.planned = "phase 4"
+supports_inspectdb.description = "`manage.py inspectdb` generates models from existing tables."
+supports_inspectdb.planned = "phase 4"
+supports_sequence_reset.description = "`sqlsequencereset` resets identity values."
+supports_sequence_reset.planned = "phase 4"
+supports_table_check_constraints.description = "Model `CheckConstraint`s are enforced by the database."
+supports_table_check_constraints.planned = "phase 4"
+
+# Phase 5: returning columns, bulk operations, constraints, indexes.
+can_return_columns_from_insert.description = "Inserted rows return their primary key and defaults in one statement."
+can_return_columns_from_insert.planned = "phase 5"
+can_return_rows_from_bulk_insert.description = "`bulk_create()` sets the primary keys of the created objects."
+can_return_rows_from_bulk_insert.planned = "phase 5"
+has_bulk_insert.description = "`bulk_create()` inserts many rows in one statement."
+has_bulk_insert.planned = "phase 5"
+supports_expression_indexes.description = "Indexes on expressions (`Index(Lower('name'))`)."
+supports_expression_indexes.planned = "phase 5"
+supports_ignore_conflicts.description = "`bulk_create(ignore_conflicts=True)`."
+supports_ignore_conflicts.planned = "phase 5"
+supports_nullable_unique_constraints.description = "Unique constraints on nullable columns allow several NULLs."
+supports_nullable_unique_constraints.planned = "phase 5"
+supports_partial_indexes.description = "Indexes and unique constraints with a `condition`."
+supports_partial_indexes.planned = "phase 5"
+supports_partially_nullable_unique_constraints.description = "Multi-column unique constraints where some columns are NULL."
+supports_partially_nullable_unique_constraints.planned = "phase 5"
+supports_update_conflicts.description = "`bulk_create(update_conflicts=True)` (upsert)."
+supports_update_conflicts.planned = "phase 5"
+
+# Phase 6: window functions, JSONField, database functions, DB-level on_delete.
+has_json_object_function.description = "JSON objects can be built in SQL (`JSONObject`)."
+has_json_object_function.planned = "phase 6"
+supports_json_field.description = "`JSONField`."
+supports_json_field.planned = "phase 6"
+supports_json_field_contains.description = "`JSONField` `contains` / `contained_by` lookups."
+supports_json_field_contains.planned = "phase 6"
+supports_on_delete_db_cascade.description = "`on_delete=DB_CASCADE`: the database deletes related rows (Django 6.1+)."
+supports_on_delete_db_cascade.planned = "phase 6"
+supports_on_delete_db_null.description = "`on_delete=DB_SET_NULL` (Django 6.1+)."
+supports_on_delete_db_null.planned = "phase 6"
+supports_over_clause.description = "Window functions (`Window`, `OVER (...)`)."
+supports_over_clause.planned = "phase 6"
