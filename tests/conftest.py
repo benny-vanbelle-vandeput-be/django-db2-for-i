@@ -101,16 +101,26 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config: pytest.Config)
 
 
 def _corpus_summary(terminalreporter) -> None:
-    """Coverage of the corpus replay: entries replayed out of entries stored, per module."""
+    """Coverage of the corpus, per module: what the capture recorded or skipped
+    (manifest) and what the replay could replay."""
     import sys
+
+    from tests.corpus import store
 
     replay = sys.modules.get("tests.corpus.test_replay")
     coverage = getattr(replay, "COVERAGE", {})
+    manifest = store.read_manifest(replay.DIRECTORY) if replay else {}
+    captured = manifest.get("modules", {})
     total = sum(c["entries"] for c in coverage.values())
     replayed = sum(c["replayed"] for c in coverage.values())
     terminalreporter.write_sep("-", f"corpus: {replayed} of {total} entries replayed")
     for module, c in sorted(coverage.items()):
+        m = captured.get(module, {})
         terminalreporter.write_line(
-            f"  {module}: {c['replayed']}/{c['entries']} replayed, "
-            f"{c['not_loadable']} not loadable, {c['unverified']} unverified"
+            f"  {module}: capture {m.get('recorded', '?')} recorded, "
+            f"{m.get('unique', '?')} unique, {m.get('unpicklable', 0)} unpicklable, "
+            f"{m.get('needs_database', 0)} needs database, "
+            f"{m.get('not_compiled', 0)} not compiled; "
+            f"replay {c['replayed']}/{c['entries']} replayed, {c['not_loadable']} not loadable, "
+            f"{c.get('not_replayable', 0)} not replayable, {c['unverified']} unverified"
         )

@@ -135,6 +135,84 @@ def test_only_passing_tests_and_their_classes_setup_are_kept(tmp_path, monkeypat
     assert header["counts"]["kept"] == 2
 
 
+def test_the_hook_never_executes_sql_while_compiling_its_copy(tmp_path) -> None:
+    """A compiler that executes SQL while compiling (an update with related updates
+    selects the pks first): during the hook's own compile the wrapped execute_sql
+    raises NeedsDatabase instead of running; outside it, it records and runs."""
+    recorder = capture.Recorder(tmp_path / "raw.jsonl")
+    executed = []
+
+    def original(self, *args, **kwargs):
+        executed.append(args)
+        return "rows"
+
+    execute_sql = capture.wrapped_execute_sql(original, recorder)
+    compiler = Author.objects.all().query.get_compiler("default")
+    recorder.compiling = True
+    with pytest.raises(capture.NeedsDatabase):
+        execute_sql(compiler, "multi")
+    assert executed == []
+    recorder.compiling = False
+    recorder.start("m.t.T.test_a")
+    assert execute_sql(compiler, "multi") == "rows"
+    assert executed == [("multi",)]
+    assert len(recorder.pending["m.t.T.test_a"]) == 1
+    recorder._skip("needs_database", capture.NeedsDatabase("compiling the query executes SQL"))
+    assert recorder.counts["needs_database"] == 1
+    assert list(recorder.reasons) == [
+        "needs_database: NeedsDatabase: compiling the query executes SQL"
+    ]
+
+
+def test_the_hook_is_invisible_to_the_statements_a_test_executes(
+    django_db_blocker, tmp_path
+) -> None:
+    """The same workload, on a fresh in-memory SQLite database each time, executes
+    exactly the same statements with the installed hook as without it: an insert,
+    a select, an aggregate, a delete, an update over a join that pre-selects its
+    pks (update_can_self_select = False, as on Db2 for i) and an update with
+    related updates (multi-table inheritance, tests/offline/corpus_app), the last
+    two the compilers that execute SQL while compiling."""
+    from django.conf import settings
+    from django.db import connections
+    from django.db.models import Count
+    from django.test.utils import CaptureQueriesContext, override_settings
+
+    from tests.offline.reference_db import sqlite_reference
+    from tests.testapp.models import Book
+
+    # Installed only here, so pickled queries of its models can be loaded again.
+    with override_settings(INSTALLED_APPS=[*settings.INSTALLED_APPS, "tests.offline.corpus_app"]):
+        from tests.offline.corpus_app.models import Place, Restaurant
+
+        def run(recorder=None) -> list[str]:
+            with sqlite_reference(django_db_blocker, (Author, Book, Place, Restaurant)) as alias:
+                connection = connections[alias]
+                connection.features.update_can_self_select = False
+                if recorder is not None:
+                    recorder.start("m.t.T.test_a")
+                with CaptureQueriesContext(connection) as queries:
+                    author = Author.objects.using(alias).create(name="a")
+                    Book.objects.using(alias).create(author=author, title="t", pages=10)
+                    Restaurant.objects.using(alias).create(name="r", rating=1)
+                    list(Author.objects.using(alias).filter(name__startswith="a"))
+                    Book.objects.using(alias).filter(author__name="a").update(pages=5)
+                    Restaurant.objects.using(alias).update(name="s", rating=2)
+                    authors = Author.objects.using(alias).annotate(n=Count("book"))
+                    authors.filter(n__gt=0).count()
+                    Book.objects.using(alias).filter(pages__lt=9).delete()
+                return [query["sql"] for query in queries.captured_queries]
+
+        without = run()
+        with capture.installed(tmp_path / "raw.jsonl") as recorder:
+            with_hook = run(recorder)
+    assert with_hook == without
+    assert any(sql.startswith("UPDATE") for sql in without)
+    assert recorder.counts["recorded"] > 0
+    assert recorder.counts["needs_database"] == 2  # the join update and the related update
+    assert recorder.counts["unpicklable"] == recorder.counts["not_compiled"] == 0
+
+
 def test_hook_errors_never_escape(tmp_path) -> None:
     recorder = capture.Recorder(tmp_path / "raw.jsonl")
     recorder.start("m.t.T.test_a")

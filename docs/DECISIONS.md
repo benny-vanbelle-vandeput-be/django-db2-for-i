@@ -1179,3 +1179,22 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Alternatives:** recording the executed SQL at the cursor (no pickle to
   replay); one corpus per settings combination (more files for few tests).
 
+## 2026-10-20: The corpus capture hook never executes SQL
+- **Decision:** while the capture hook compiles its copy of a query, the
+  wrapped `execute_sql` raises instead of executing; the statement is counted
+  as `needs_database` (with the reason) and not recorded. The replay counts an
+  entry whose compilation would connect as "not replayable" instead of
+  failing. The corpus report shows, per module, the capture counts (recorded,
+  unique, unpicklable, needs database, not compiled) next to the replay counts.
+- **Why:** `SQLUpdateCompiler.pre_sql_setup()` executes a SELECT for the pks
+  when an update spans joins (with `update_can_self_select = False`, as here)
+  or has related updates. Compiling the copy therefore ran an extra SELECT
+  inside the test on PUB400 (found by the replay of the first module captures,
+  2026-10-20): the tests still passed, but `assertNumQueries` could have
+  failed, and the hook must never change what a test does. An offline test
+  proves the fix directly: the same workload on a fresh in-memory SQLite
+  database executes identical statements with and without the hook.
+- **Alternatives:** recording only after Django's own execution (the query is
+  then changed by pre_sql_setup); skipping all update compilers (loses the
+  ordinary updates, which never execute while compiling).
+
