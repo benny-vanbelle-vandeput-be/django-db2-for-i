@@ -107,8 +107,8 @@ These come on top of the 6.0 table.
 
 | Difference | Impact on the backend | Status |
 |---|---|---|
-| No general `StringAgg` (only in `contrib.postgres`) | **Blocker:** `expressions.py` imports it, so the backend would not load. Fix: import it conditionally through `compat.py`. Not supported on 5.2, and `contrib.postgres` is not patched. Known Limitations: "StringAgg requires Django 6.0+" ([DECISIONS](DECISIONS.md#2026-10-19-stringagg-requires-django-60-imported-through-compatpy)). | planned (step B PR 7) |
-| No `supports_tuple_comparison_against_subquery` check | 5.2 writes a row-value `>`/`<` comparison against a subquery, which Db2 for i rejects (SQL0115, probe `tuple_lookups`). Our tuple hook will raise the same `NotSupportedError` as 6.0+. | planned (step B PR 7) |
+| No general `StringAgg` (only in `contrib.postgres`) | **Blocker:** `expressions.py` imports it, so the backend would not load. Fix: import it conditionally through `compat.py`. Not supported on 5.2, and `contrib.postgres` is not patched. Known Limitations: "StringAgg requires Django 6.0+" ([DECISIONS](DECISIONS.md#2026-10-19-stringagg-requires-django-60-imported-through-compatpy)). `compat.StringAgg` is None on 5.2. | done (step B PR 7) |
+| No `supports_tuple_comparison_against_subquery` check | 5.2 writes a row-value `>`/`<` comparison against a subquery, which Db2 for i rejects (SQL0115, probe `tuple_lookups`). The tuple hook raises the same `NotSupportedError` as 6.0+ (`compat.DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON`), with an offline test on every version. | done (step B PR 7) |
 | `sql_delete_column` ends in `CASCADE` | How Db2 for i handles `DROP COLUMN ... CASCADE` **can only be verified on IBM i**. A QTEMP probe comes first; then the same SQL is pinned for all versions ([DECISIONS](DECISIONS.md#2026-10-19-drop-column-sql-pinned-for-every-version-after-a-qtemp-probe)). | planned (step B PR 8) |
 | `return_insert_columns()` / `fetch_returned_insert_rows()` / `fetch_returned_insert_columns()` instead of `returning_columns()` / `fetch_returned_rows()` | No RETURNING support yet; compat provides both names when it comes | later (phase 5) |
 | A collapsed `Case` does not cast its `Value` default | Our `Case` hook also casts 5.2's plain `NULL`; goldens per series | planned (step B PR 10) |
@@ -127,7 +127,7 @@ steps of phase 3 find real differences:
 | Section | Holds | Deleted when |
 |---|---|---|
 | Django 6.0 only | nothing known yet | 6.0 is dropped |
-| Django 5.2 only | `StringAgg`, the tuple subquery check | 5.2 is dropped |
+| Django 5.2 only | `StringAgg` (None on 5.2), `DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON` | 5.2 is dropped |
 | Before 6.1 (6.0 and 5.2) | `install_duration_adapter()` (the duration range check, [DECISIONS](DECISIONS.md#2026-10-20-the-duration-range-check-before-django-61)); per-version test lists if the 6.0 runs need them | both are dropped |
 
 **Dropping a version** means deleting its section, its entries in the

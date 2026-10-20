@@ -142,7 +142,6 @@ from django.db.models import (
     DecimalField,
     FloatField,
     IntegerField,
-    StringAgg,
     TextField,
     When,
 )
@@ -180,6 +179,8 @@ from django.db.models.lookups import (
 )
 from django.db.models.sql.query import Query
 from django.db.models.sql.where import WhereNode
+
+from .compat import DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON, StringAgg
 
 SMALLINT_RANGE = (-(2**15), 2**15 - 1)
 INTEGER_RANGE = (-(2**31), 2**31 - 1)
@@ -650,6 +651,15 @@ def tuple_expanded_as_db2_for_i(self, compiler, connection):
     """Row-value IN lists and comparisons in Django's expanded form (see the
     module docstring); against a subquery, Django's own SQL."""
     if isinstance(self.rhs, Query):
+        if (
+            not DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON
+            and self.rhs.subquery
+            and not isinstance(self, TupleIn)
+        ):  # as Django 6.0+ refuses it (row-value comparisons give SQL0115)
+            raise NotSupportedError(
+                f'"{self.lookup_name}" cannot be used to target composite fields '
+                "through subqueries on this backend"
+            )
         return lookup_as_db2_for_i(self, compiler, connection)
     return self.get_fallback_sql(compiler, connection)
 
@@ -719,7 +729,8 @@ def string_agg_as_db2_for_i(self, compiler, connection, **extra_context):
     return f"CASE WHEN {count_sql} = 0 THEN NULL ELSE {sql} END", (*count_params, *params)
 
 
-StringAgg.as_db2_for_i = string_agg_as_db2_for_i
+if StringAgg is not None:  # Django 6.0+ (compat.py)
+    StringAgg.as_db2_for_i = string_agg_as_db2_for_i
 
 
 # --- Durations ----------------------------------------------------------------------------

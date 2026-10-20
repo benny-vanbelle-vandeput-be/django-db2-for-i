@@ -23,6 +23,9 @@ def sqlite_reference(django_db_blocker, models) -> Iterator[str]:
     )
     connections.settings[ALIAS] = settings[ALIAS]
     django_db_blocker.unblock()
+    # SQLite has row values (3.15+); Django 6.0+ uses them, 5.2 emulates them
+    # with AND/OR. Native everywhere, so the reference SQL is the same.
+    connections[ALIAS].features.supports_tuple_lookups = True
     try:
         with connections[ALIAS].schema_editor() as editor:
             for model in models:
