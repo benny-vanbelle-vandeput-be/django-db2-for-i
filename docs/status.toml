@@ -1,18 +1,55 @@
-# Project status data, rendered into README.md ("Project status") and the
-# header of docs/TEST_STATUS.md by scripts/update_test_status.py.
+# Project status data, rendered into README.md (badges, "Test status",
+# "Project status") and docs/TEST_STATUS.md by scripts/update_test_status.py.
 #
 # Update this file at every module or phase transition, then regenerate:
 #     docker compose run --rm tests nox -s test_status
 #
-# status values: "done", "in progress", "planned".
+# status values (phases, steps, modules): "done", "in progress", "planned".
 
 [versions]
-# Static badges and the TEST_STATUS.md header.
-django = "6.1 | 6.0 | 5.2"
-python = "3.12 | 3.13 | 3.14"
-ibmi = "7.5"
-# The system the recorded Django test runs used.
+# The system the recorded IBM i test runs used.
 test_system = "PUB400"
+
+# README's general badges: one per version, with its state.
+# state: "supported", "development" (in development), "planned", "unsupported".
+# eol = "YYYY-MM": end of security support (djangoproject.com/download); after
+# that month a supported version is shown as end of life (⚠️) until dropped.
+# Supported and in-development Django versions get a "Test status" section.
+
+[[ibmi]]
+version = "7.5"
+state = "supported"
+
+[[python]]
+version = "3.12"
+state = "supported"
+
+[[python]]
+version = "3.13"
+state = "supported"
+
+[[python]]
+version = "3.14"
+state = "supported"
+
+[[django]]
+version = "5.2"
+state = "development"
+eol = "2028-04"
+
+[[django]]
+version = "6.0"
+state = "supported"
+eol = "2027-04"
+
+[[django]]
+version = "6.1"
+state = "supported"
+eol = "2027-12"
+
+[[django]]
+version = "6.2"
+state = "planned"
 
 [[releases]]
 tag = "v0.1.0a3"
@@ -46,8 +83,23 @@ status = "done"
 
 [[phases]]
 phase = "3"
-content = "Django 6.0 and 5.2 support (plan approved: docs/phases/phase-3.md); steps A (6.0) and B (5.2) done; close-out (phase record, user docs) next"
+content = "Django 6.0 and 5.2 support"
 status = "in progress"
+
+[[phases.steps]]
+step = "A: Django 6.1 → 6.0"
+status = "done"
+prs = [107, 110, 111, 114]
+
+[[phases.steps]]
+step = "B: Django 6.0 → 5.2"
+status = "done"
+prs = [113, 115, 117, 118]
+
+[[phases.steps]]
+step = "Close-out: phase record, user docs, changelog"
+status = "planned"
+prs = []
 
 [[phases]]
 phase = "4"
@@ -74,13 +126,9 @@ phase = "Encoding track"
 content = "CCSID / UTF-8 investigation, findings A/B/C (released in 0.1.0a2)"
 status = "done"
 
-# The modules table in README ("Project status"): the supported Django test
-# modules (the release run's list), one column per Django version in
-# [modules_section] django. Tests and results come from the logs in
-# test-results/; a version without a run shows "planned".
-[modules_section]
-title = "Phase 3: supported modules per Django version"
-django = ["6.1", "6.0", "5.2"]
+# The supported Django test modules: the release run's list
+# (scripts/release_run.py) of the "IBM i · Django test suite"; their results
+# per version are in docs/TEST_STATUS.md.
 
 [[modules]]
 module = "basic"

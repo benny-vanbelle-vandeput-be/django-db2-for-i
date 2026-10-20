@@ -1,115 +1,121 @@
 # django-db2-for-i
 
-<!-- badges:start -->
-[![Django](https://img.shields.io/badge/Django-6.1%20%7C%206.0%20%7C%205.2-0C4B33)](https://www.djangoproject.com/)
-![Python](https://img.shields.io/badge/Python-3.12%20%7C%203.13%20%7C%203.14-3776AB)
-![IBM i](https://img.shields.io/badge/IBM%20i-7.5-054ADA)
-[![license](https://img.shields.io/badge/license-BSD--3--Clause-blue)](LICENSE)
-[![offline CI](https://img.shields.io/github/actions/workflow/status/benny-vanbelle-vandeput-be/django-db2-for-i/offline.yml?branch=main&label=offline%20CI)](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/actions/workflows/offline.yml)
-[![release](https://img.shields.io/github/v/release/benny-vanbelle-vandeput-be/django-db2-for-i?include_prereleases&label=release)](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases)
-
-[![Django modules](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.1/modules.json)](docs/TEST_STATUS.md)
-[![passed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.1/passed.json)](docs/TEST_STATUS.md)
-[![failed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.1/failed.json)](docs/TEST_STATUS.md)
-[![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.1/skipped.json)](docs/TEST_STATUS.md)
-[![expected failures](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.1/xfail.json)](docs/TEST_STATUS.md)
-
-[![Django modules](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/modules.json)](docs/TEST_STATUS.md)
-[![passed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/passed.json)](docs/TEST_STATUS.md)
-[![failed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/failed.json)](docs/TEST_STATUS.md)
-[![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/skipped.json)](docs/TEST_STATUS.md)
-[![expected failures](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/xfail.json)](docs/TEST_STATUS.md)
-
-[![Django modules](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/modules.json)](docs/TEST_STATUS.md)
-[![passed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/passed.json)](docs/TEST_STATUS.md)
-[![failed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/failed.json)](docs/TEST_STATUS.md)
-[![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/skipped.json)](docs/TEST_STATUS.md)
-[![expected failures](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/xfail.json)](docs/TEST_STATUS.md)
-<!-- badges:end -->
-
 A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
-> [!WARNING]
-> **Alpha.** Minimal backend (phase 1) plus the first query work of phase 2:
-> connections, transactions and savepoints, basic types, `CREATE`/`DROP
-> TABLE`, test databases in an existing library, and the queries covered by
-> the Django test modules in the status table below. Migrations that alter
-> tables and many field types are not done yet. Not for production use. APIs
-> and settings may change between alpha releases. See
-> [Known limitations](docs/user/Known-Limitations.md).
+<!-- badges:start -->
+[![release](https://img.shields.io/github/v/release/benny-vanbelle-vandeput-be/django-db2-for-i?include_prereleases&label=release)](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases)
+[![license](https://img.shields.io/badge/license-BSD--3--Clause-blue)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/benny-vanbelle-vandeput-be/django-db2-for-i/offline.yml?branch=main&label=CI)](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/actions/workflows/offline.yml)
 
-## What the test badges mean
+[![IBM i 7.5 ✅](https://img.shields.io/badge/IBM%20i-7.5%20%E2%9C%85-brightgreen)](docs/user/IBM-i-Requirements.md)
 
-- **What the test badges count:** Django's own test modules (Django's
-  `runtests.py`, the modules listed in [TEST_STATUS](docs/TEST_STATUS.md)),
-  run against Db2 for i 7.5 on the shared PUB400 system, for one Python ×
-  Django combination per row of badges. The label names it, for example
-  `Django 6.1 · Python 3.14 on PUB400`; the Python part is left out while not
-  every counted log records the same Python version. The counts come from the
-  last recorded run of each module, not from every commit.
-- **Not in these badges:** the full version matrix (every supported Python ×
-  Django combination) runs only on a dedicated IBM i, not on the shared
-  system. The backend's own pub400 tier (`tests/pub400/`) is separate and not
-  counted.
-- **offline CI:** the backend's offline tier on every commit, for every
-  Python × Django combination, with no IBM i.
-- **Django modules** `<run>/<total>`: how many of the Django version's test
-  modules have a recorded run (a module run as several labels counts once),
-  out of all test modules in that version's test suite (as `runtests.py`
-  finds them, without the GIS tests).
-- **passed:** the test ran and succeeded.
-- **failed** = failures + errors + unexpected successes: the test ran and did
-  not succeed (or an expected failure passed), and there is no known reason
-  yet. This should be 0 on `main`.
-- **skipped:** the test did not run, because it needs a feature the backend
-  reports as unsupported (a feature flag that is off, for example something
-  planned for a later phase) or because it is written for another database.
-  Skips shrink as features are implemented.
-- **expected failures:** the test runs but is known to fail because of a real
-  Db2 for i limitation, each with a documented reason (see
-  [Known limitations](docs/user/Known-Limitations.md)). If one starts
-  passing, it is reported as an unexpected success (counted as failed).
+![Python 3.12 ✅](https://img.shields.io/badge/Python-3.12%20%E2%9C%85-brightgreen)
+![Python 3.13 ✅](https://img.shields.io/badge/Python-3.13%20%E2%9C%85-brightgreen)
+![Python 3.14 ✅](https://img.shields.io/badge/Python-3.14%20%E2%9C%85-brightgreen)
 
-Details per module: [docs/TEST_STATUS.md](docs/TEST_STATUS.md).
+[![Django 5.2 🚧](https://img.shields.io/badge/Django-5.2%20%F0%9F%9A%A7-yellow)](docs/DJANGO_VERSIONS.md)
+[![Django 6.0 ✅](https://img.shields.io/badge/Django-6.0%20%E2%9C%85-brightgreen)](docs/DJANGO_VERSIONS.md)
+[![Django 6.1 ✅](https://img.shields.io/badge/Django-6.1%20%E2%9C%85-brightgreen)](docs/DJANGO_VERSIONS.md)
+[![Django 6.2 🗓️](https://img.shields.io/badge/Django-6.2%20%F0%9F%97%93%EF%B8%8F-blue)](docs/DJANGO_VERSIONS.md)
+
+<sub>✅ supported · 🚧 in development · 🗓️ planned · ⚠️ end of life, no longer maintained · ❌ not supported</sub>
+<!-- badges:end -->
+
+<!-- tests:start -->
+## Test status
+
+### Django 6.1 ✅
+
+[![passed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.1/passed.json)](docs/TEST_STATUS.md)
+[![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.1/skipped.json)](docs/TEST_STATUS.md)
+[![expected failures](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.1/xfail.json)](docs/TEST_STATUS.md)
+[![failed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.1/failed.json)](docs/TEST_STATUS.md)
+
+| Test set | Passed | Skipped | Expected failures | Failed | Last run |
+|---|---|---|---|---|---|
+| Offline · own tests | 2232 | 2 | 0 | 0 | 2026-10-20 22:13:09 UTC |
+| IBM i · own tests | 245 | 0 | 1 | 0 | 2026-10-20 17:04:47 UTC |
+| IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-20 16:21:24 UTC |
+| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-20 22:01:16 UTC |
+
+### Django 6.0 ✅
+
+[![passed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/passed.json)](docs/TEST_STATUS.md)
+[![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/skipped.json)](docs/TEST_STATUS.md)
+[![expected failures](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/xfail.json)](docs/TEST_STATUS.md)
+[![failed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/failed.json)](docs/TEST_STATUS.md)
+
+| Test set | Passed | Skipped | Expected failures | Failed | Last run |
+|---|---|---|---|---|---|
+| Offline · own tests | 2234 | 0 | 0 | 0 | 2026-10-20 22:12:21 UTC |
+| IBM i · own tests | 245 | 0 | 1 | 0 | 2026-10-20 16:03:26 UTC |
+| IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-20 15:22:20 UTC |
+| Offline · Django test suite (replay) | – | – | – | – | no corpus yet |
+
+### Django 5.2 🚧
+
+[![passed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/passed.json)](docs/TEST_STATUS.md)
+[![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/skipped.json)](docs/TEST_STATUS.md)
+[![expected failures](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/xfail.json)](docs/TEST_STATUS.md)
+[![failed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/failed.json)](docs/TEST_STATUS.md)
+
+| Test set | Passed | Skipped | Expected failures | Failed | Last run |
+|---|---|---|---|---|---|
+| Offline · own tests | 2232 | 0 | 0 | 0 | 2026-10-20 22:11:40 UTC |
+| IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-20 21:39:31 UTC |
+| IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 20:42:25 UTC |
+| Offline · Django test suite (replay) | – | – | – | – | no corpus yet |
+
+### About the tests
+
+- **Offline · own tests:** unit tests and SQL checks written for this project (golden
+  files of the generated SQL and DDL, operations, the driver layer). They run in
+  GitHub CI on every commit, for every Python × Django combination, without an IBM i.
+- **IBM i · own tests:** tests written for this project, run against a real Db2 for i
+  (PUB400, IBM i 7.5): queries with model instances, schema changes, transactions,
+  and every golden file executed on the server. They run for every backend change.
+- **IBM i · Django test suite:** Django's official test suite, limited to the modules that use
+  the database and that this backend supports so far: `aggregation`, `basic`, `expressions`, `lookup`, `ordering`, `queries`, `transactions`. They run on
+  PUB400 before every release (the release run) and for the modules a change
+  touches.
+- **Offline · Django test suite (replay):** the SQL of every passing test of that Django test suite is
+  recorded on IBM i; GitHub CI generates it again on every commit, without an IBM i,
+  and compares (counted per recorded statement). See
+  [docs/OFFLINE_CORPUS.md](docs/OFFLINE_CORPUS.md).
+
+**failed** = failures + errors + unexpected successes; it should be 0 on `main`.
+**Skipped** tests need a feature that is off (see the feature flags) or another
+database; **expected failures** are known Db2 for i limitations, each with a reason
+([Known limitations](docs/user/Known-Limitations.md)).
+
+Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (22 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
+<!-- tests:end -->
 
 <!-- status:start -->
 ## Project status
 
-### Releases
+**Phase 3: Django 6.0 and 5.2 support** (in progress)
 
-- **`v0.1.0a3`** (2026-10-20): Phase 2: queries & pagination (release run: 7 Django modules, 1249 tests, 0 failed).
-- **`v0.1.0a2`** (2026-10-18): Encoding fixes (UTF-8 statement text, long strings intact) and the signed-tag release workflow.
-- **`v0.1.0a1`** (2026-10-17): Phase 1: minimal backend (its code reports version 0.0.1.dev0).
-
-### Phases
+| Step | State | Pull requests |
+|---|---|---|
+| A: Django 6.1 → 6.0 | done | [#107](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/107), [#110](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/110), [#111](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/111), [#114](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/114) |
+| B: Django 6.0 → 5.2 | done | [#113](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/113), [#115](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/115), [#117](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/117), [#118](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/118) |
+| Close-out: phase record, user docs, changelog | planned |  |
 
 | Phase | Content | Status |
 |---|---|---|
-| 0 | Skeleton & environment | done |
-| 1 | Minimal backend | done |
-| 2 | Queries & pagination (ordering, lookup, aggregation, expressions, queries) | done |
-| 3 | Django 6.0 and 5.2 support (plan approved: docs/phases/phase-3.md); steps A (6.0) and B (5.2) done; close-out (phase record, user docs) next | in progress |
+| [0](docs/phases/phase-0.md) | Skeleton & environment | done |
+| [1](docs/phases/phase-1.md) | Minimal backend | done |
+| [2](docs/phases/phase-2.md) | Queries & pagination (ordering, lookup, aggregation, expressions, queries) | done |
+| [3](docs/phases/phase-3.md) | Django 6.0 and 5.2 support | in progress |
 | 4 | Schema editor completeness | planned |
 | 5 | Returning & bulk | planned |
 | 6 | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
 | 7 | PUB400 tier & release prep | planned |
-| Encoding track | CCSID / UTF-8 investigation, findings A/B/C (released in 0.1.0a2) | done |
 
-### Phase 3: supported modules per Django version
+Latest release: **`v0.1.0a3`** (2026-10-20): Phase 2: queries & pagination (release run: 7 Django modules, 1249 tests, 0 failed). ([CHANGELOG](CHANGELOG.md))
 
-Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS.md).
-
-| Module | Django 6.1 | Django 6.0 | Django 5.2 | Status |
-|---|---|---|---|---|
-| basic | 83 tests, OK (3 skipped) | 74 tests, OK (3 skipped) | 82 tests, OK (3 skipped) | done |
-| transactions | 88 tests, OK (3 skipped) | 87 tests, OK (2 skipped) | 87 tests, OK (2 skipped) | done |
-| ordering | 43 tests, OK | 35 tests, OK | 34 tests, OK | done |
-| lookup | 148 tests, OK (5 skipped, 2 expected failures) | 100 tests, OK (5 skipped, 2 expected failures) | 100 tests, OK (7 skipped, 2 expected failures) | done |
-| aggregation | 168 tests, OK (16 skipped) | 156 tests, OK (5 skipped) | 140 tests, OK (1 skipped) | done |
-| expressions | 213 tests, OK (5 skipped, 2 expected failures) | 212 tests, OK (5 skipped, 2 expected failures) | 208 tests, OK (5 skipped, 2 expected failures) | done |
-| queries | 506 tests, OK (21 skipped, 3 expected failures) | 495 tests, OK (21 skipped, 4 expected failures) | 493 tests, OK (20 skipped, 4 expected failures) | done (split into labels Q1–Q5 because of its size) |
-
-### Open tracks and notes
+Open tracks:
 
 - Offline query corpus: Django 6.1 done (7 modules, 2533 entries, replayed in every offline CI job); 6.0 and 5.2 corpora are still to be captured.
 - Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82)).
@@ -118,98 +124,142 @@ Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS
 - Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier.
 <!-- status:end -->
 
-## Install
+> [!WARNING]
+> **Alpha.** Connections, transactions and savepoints, the basic field types,
+> `CREATE` / `DROP TABLE`, test databases in an existing library, and the
+> queries covered by the Django test modules above (filters, lookups,
+> ordering, pagination, aggregation, expressions, compound queries) work on
+> Django 5.2, 6.0 and 6.1. Migrations that alter tables, many field types,
+> `bulk_create()` with returned keys, window functions and `JSONField` are not
+> done yet. Not for production use; APIs and settings may change between alpha
+> releases.
 
-Alpha releases are published as [GitHub releases](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases)
+## What it is
+
+`django_db2_for_i` lets a Django project use Db2 for i, the database built
+into IBM i, as `ENGINE = "django_db2_for_i"`. It is written from scratch,
+driven by Django's own test suite: every optional feature starts off and is
+enabled only when the related Django tests pass against a real IBM i (see the
+[feature flags](docs/FEATURES.md)). It talks to the server through pyodbc and
+the IBM i Access ODBC Driver.
+
+## Requirements
+
+- **IBM i 7.5** or later, reachable on the database host server port (8471,
+  or 9471 with TLS); the tables Django writes to must be journaled. See
+  [IBM i requirements](docs/user/IBM-i-Requirements.md).
+- **IBM i Access ODBC Driver** and unixODBC, see
+  [ODBC driver setup](docs/user/ODBC-Driver-Setup.md).
+- **Python** 3.12, 3.13 or 3.14.
+- **Django** 5.2 LTS (5.2.12 or later), 6.0 (6.0.3 or later) or 6.1; always
+  use the latest security release of your Django version
+  ([supported versions](docs/DJANGO_VERSIONS.md)).
+
+## Installation
+
+Alpha releases are published as
+[GitHub releases](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases)
 (sdist and wheel), not on PyPI:
 
 ```sh
 pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0a3"
 ```
 
-You also need unixODBC and the IBM i Access ODBC Driver, see
-[ODBC driver setup](docs/user/ODBC-Driver-Setup.md).
+Details: [Installation](docs/user/Installation.md).
 
-## Usage
+## Configuration
 
 ```python
+import os
+
 DATABASES = {
     "default": {
         "ENGINE": "django_db2_for_i",
-        "NAME": "MYLIB",  # library (schema); becomes CURRENT SCHEMA
+        "NAME": "MYLIB",  # library (schema) for unqualified table names
         "HOST": "ibmi.example.com",
         "USER": os.environ["DB2I_USER"],
         "PASSWORD": os.environ["DB2I_PASSWORD"],
+        "OPTIONS": {
+            "ssl": True,  # TLS on port 9471 (default); False uses port 8471
+            "isolation_level": "*CS",  # commitment control level (default)
+            "login_timeout": 10,  # seconds (default)
+            # "inquiry_message_reply": "*SYSRPYL",  # allow DROP COLUMN, see the docs
+        },
+        "TEST": {"NAME": "MYTESTLIB", "CREATE_DB": False},  # an existing library
     }
 }
 ```
 
-All settings: [Configuration](docs/user/Configuration.md).
-
-## Supported versions
-
-| Component | Versions |
-|---|---|
-| Django | 6.1 (6.0 and 5.2 LTS are planned in phase 3; see [DJANGO_VERSIONS](docs/DJANGO_VERSIONS.md)) |
-| Python | 3.12, 3.13, 3.14 (subject to each Django version's own support) |
-| IBM i | 7.5 and later |
-
-## Documentation
-
-User documentation: [`docs/user/`](docs/user/Home.md), also published as the
-[wiki](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/wiki)
-(a generated mirror; edit `docs/user/`, never the wiki).
-
-Project history and plans: one record per phase in [`docs/phases/`](docs/phases/README.md)
-(goal, what was done, decisions, IBM i findings, test status); developer notes in
-[`docs/DECISIONS.md`](docs/DECISIONS.md) and [`docs/IBMI_NOTES.md`](docs/IBMI_NOTES.md).
+All settings and options: [Configuration](docs/user/Configuration.md).
 
 ## Known limitations
 
-- **`TimeField` has no fractional seconds.** Db2 for i `TIME` stores whole
-  seconds only; the backend truncates microseconds before saving and in
-  lookups, so `filter(t=value)` matches what was stored. Use a
-  `DateTimeField` if you need sub-second precision.
-- **Identifiers are uppercased.** Table and column names are created in
-  uppercase; mixed-case `db_table` / `db_column` names are not preserved.
-- **Every table Django writes to must be journaled.** Libraries created with
-  `CREATE SCHEMA` are; libraries created with `CRTLIB` need a `QSQJRN`
-  journal (see `docs/IBMI_NOTES.md`).
+The most visible ones: `TimeField` has no fractional seconds, table and
+column names are uppercase, every table Django writes to must be journaled,
+`DROP COLUMN` needs a system reply list entry, and `StringAgg` requires
+Django 6.0 or later. The full list, with workarounds:
+[Known limitations](docs/user/Known-Limitations.md); errors by SQLCODE:
+[Troubleshooting](docs/user/Troubleshooting.md).
 
-## IBM i Access ODBC Driver
+## Documentation
 
-The backend connects through pyodbc and the IBM i Access ODBC Driver. The driver
-is IBM software under IBM's license terms. It is **not** part of this project and
-is never redistributed. The development container installs it from IBM's
-repository at build time. Container images that contain the driver must be
-built locally or in private CI, and **never pushed to a public registry**.
+- User documentation: [`docs/user/`](docs/user/Home.md), also published as the
+  [wiki](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/wiki)
+  (a generated mirror; edit `docs/user/`, never the wiki).
+- Project history and plans: one record per phase in
+  [`docs/phases/`](docs/phases/README.md); [CHANGELOG](CHANGELOG.md).
+- Developer notes: [decisions](docs/DECISIONS.md), [IBM i findings](docs/IBMI_NOTES.md),
+  [Django versions](docs/DJANGO_VERSIONS.md), [test status](docs/TEST_STATUS.md),
+  [feature flags](docs/FEATURES.md), [offline query corpus](docs/OFFLINE_CORPUS.md).
 
 ## Development
 
-All development and test runs happen in a container. The host only needs
+All development and test runs happen in a container; the host only needs
 Docker (e.g. Docker Desktop) with the `docker compose` plugin.
 
 ```sh
 cp .env.example .env          # then fill in DB2I_* (never commit .env)
 docker compose build          # builds the "offline" and "full" images
 docker compose run --rm tests nox --list
-docker compose run --rm tests nox -s offline
 ```
+
+| Test set | How it runs | Needs |
+|---|---|---|
+| Offline · own tests | `docker compose run --rm offline nox -s lint offline` | nothing |
+| IBM i · own tests | `scripts/pub400.sh pub400 [<django>]` | an IBM i (`.env`) |
+| IBM i · Django test suite | `scripts/runtests.sh <django> --clean <module>`; before a release `scripts/pub400.sh release_run <django>` | an IBM i, `vendor/django-<version>` |
+| Offline · Django test suite (replay) | `docker compose run --rm offline nox -s "corpus(3.14-django6.1)"` | nothing |
+
+`nox -s test_status` regenerates this README's generated sections and
+[docs/TEST_STATUS.md](docs/TEST_STATUS.md); `nox -s features` regenerates
+[docs/FEATURES.md](docs/FEATURES.md).
+
+**IBM i rules for contributors** (details in [CONTRIBUTING.md](CONTRIBUTING.md)):
+never run the full Django test suite against a shared system such as PUB400,
+use one connection at a time, keep probes read-only (only `QTEMP` may be
+changed), and never put credentials in the repository; `.env` stays local.
 
 | Service | Build target | Contents | Use |
 |---|---|---|---|
-| `tests` | `full` | uv, Python 3.12–3.14, nox, unixODBC, IBM i Access ODBC Driver | all tiers, probes |
-| `offline` | `offline` | same, without the IBM driver | offline tier, lint, CI |
+| `tests` | `full` | uv, Python 3.12–3.14, nox, unixODBC, IBM i Access ODBC Driver | all test sets, probes |
+| `offline` | `offline` | the same without the IBM driver | offline test sets, lint, CI |
 
-- **Apple Silicon:** IBM publishes the Linux ODBC driver for amd64, i386 and
-  ppc64el, not arm64. The `tests` service sets `platform: linux/amd64`, so it
-  runs under emulation on arm64 hosts.
-- **Licensing:** the `full` image contains the IBM i Access ODBC Driver.
-  Build it locally or in private CI only, and **never push it to a public
-  registry**. The `offline` image contains no IBM software.
-- The devcontainer (`.devcontainer/`) attaches to the `tests` service.
+On Apple Silicon the `tests` service runs as `linux/amd64` under emulation:
+IBM publishes the Linux driver for amd64, i386 and ppc64el, not arm64. The
+devcontainer (`.devcontainer/`) attaches to the `tests` service.
+
+## Contributing
+
+Contributions are welcome under the project's license; see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, the test sets, golden
+files and changelog fragments.
 
 ## License
 
-[BSD 3-Clause](LICENSE), the same license as Django. See
-[CONTRIBUTING.md](CONTRIBUTING.md) for contribution terms.
+[BSD 3-Clause](LICENSE), the same license as Django.
+
+**The IBM i Access ODBC Driver** is IBM software under IBM's license terms. It
+is not part of this project and is never redistributed. The development
+container installs it from IBM's repository at build time; container images
+that contain it are built locally or in private CI and **never published** to
+a public registry.

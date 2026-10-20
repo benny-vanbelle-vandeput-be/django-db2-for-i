@@ -131,7 +131,9 @@ Standard Django backend layout: `base.py`, `features.py`, `operations.py`, `sche
   with a short reason per entry. Build them per Django version where needed.
   **Shrinking these lists is the measure of progress.**
 - Each enabled feature comes with: the flag change, the implementation, the related Django
-  tests passing, offline tests, and a changelog fragment (`changelog.d/`, see CONTRIBUTING.md).
+  tests passing, offline tests, a regenerated `docs/FEATURES.md` (`nox -s features`; one-line
+  description in `docs/features.toml`), and a changelog fragment (`changelog.d/`, see
+  CONTRIBUTING.md).
 
 ### Known IBM i specifics to handle deliberately
 - No `RETURNING`: use `SELECT ... FROM FINAL TABLE (INSERT ...)` for returning columns.
@@ -149,7 +151,19 @@ Standard Django backend layout: `base.py`, `features.py`, `operations.py`, `sche
 
 Three tiers, selectable via pytest markers / nox sessions.
 
-### Tier 1 — `offline` (no IBM i needed; every commit, in CI)
+**Test set names.** README, TEST_STATUS, CONTRIBUTING and this file use four
+user-facing names. Code (nox sessions, `tests/pub400/`, markers, the
+`needs-full-tier` label) keeps the old names until one mechanical rename PR,
+made when no other PRs are open.
+
+| Test set | Old name |
+|---|---|
+| Offline · own tests | offline tier (`nox -s offline`) |
+| IBM i · own tests | pub400 tier (`nox -s pub400`) |
+| IBM i · Django test suite | Django modules on PUB400 (`scripts/runtests.sh`, `release_run`) |
+| Offline · Django test suite (replay) | offline query corpus (`nox -s corpus`) |
+
+### Tier 1 — `offline` = "Offline · own tests" (no IBM i needed; every commit, in CI)
 - Compile querysets with `query.get_compiler(using).as_sql()` and compare SQL + params
   to golden files in `tests/offline/golden/`.
 - Collect DDL with `connection.schema_editor(collect_sql=True)` for model and migration operations.
@@ -162,14 +176,14 @@ Three tiers, selectable via pytest markers / nox sessions.
   parallel jobs (one per Python × Django combination). The aggregating `offline` job stays
   a required check on `main`.
 
-### Tier 2 — `pub400` (small curated smoke set for a shared, restricted system)
+### Tier 2 — `pub400` = "IBM i · own tests" (small curated smoke set for a shared, restricted system)
 - Works in **pre-existing libraries**: `creation.py` supports a "use existing schema,
   never CREATE/DROP SCHEMA" mode and cleans up its own tables.
 - Multi-database tests are skipped if no second library is configured.
 - Includes a job that executes all golden-file SQL to verify it.
 - Keep the load light. Check PUB400's terms of use and ODBC availability.
 
-### Tier 3 — `full` (Django's `runtests.py` against a dedicated IBM i)
+### Tier 3 — `full` = "IBM i · Django test suite" (Django's `runtests.py` against a dedicated IBM i)
 - Source of truth for feature flags and `docs/TEST_STATUS.md`.
 - Django checkouts in `vendor/django-<version>` (gitignored), on the `stable/<version>.x` branch.
 - Settings in `tests/django_settings/settings_full.py`: `default` + `other` databases
