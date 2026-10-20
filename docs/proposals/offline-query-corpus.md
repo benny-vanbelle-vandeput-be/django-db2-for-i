@@ -188,6 +188,15 @@ compiled (a test that expects a FieldError); 208 KB of JSONL, **18 KB gzip
 3.12, 3.13 and 3.14. At that ratio about 4,000 entries per version come to
 about 0.6 MB per version, not 7 MB.
 
+**Next five modules (2026-10-20, same commit, one PUB400 run each):** basic,
+transactions, lookup, aggregation and expressions: 1,757 statements kept,
+1,273 unique, 334 KB gzip in all (aggregation 132 KB, expressions 105 KB,
+lookup 71 KB, basic 22 KB, transactions 5 KB); all replay identically on
+Python 3.12, 3.13 and 3.14. `queries` follows separately: 4 of its entries
+depend on state at capture time (an `auto_now` timestamp, a model `ordering`
+the test changes). A capture fix comes first: it compiles every kept record
+again at the end of the run and drops (and counts) the ones that change.
+
 The extrapolation before the first capture:
 - The modules in [TEST_STATUS.md](../TEST_STATUS.md) have about 1,250 tests.
   At `ordering`'s rate (about 3.7 statements per test, 84% unique), that is
