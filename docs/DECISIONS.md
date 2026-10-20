@@ -1137,3 +1137,27 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   runners, image loads); installing Django from PyPI for the replay (a patch
   release could change the SQL); including expected failures (their results
   are known to be wrong).
+
+## 2026-10-20: Numeric filter values that do not fit the column get their own DECIMAL type
+- **Decision (project owner approved):** a filter value that does not fit the
+  marker the driver sizes by the column (an integer out of SMALLINT /
+  INTEGER / BIGINT range, a Decimal with more integer digits or decimals than
+  DECIMAL(p, s)) is sent as `CAST(? AS DECIMAL(p', s'))`, with p' and s' from
+  the value's own digits and exponent; values that fit keep their untyped
+  markers. It covers `exact`, comparisons, `in` and `range` (the #65 hook,
+  generalized to numbers). For an expression as left-hand side Decimals are
+  always typed, integers only outside the INTEGER range. Python ints beyond
+  64 bits are bound as Decimals (drivers/pyodbc.py).
+- **Why:** untyped markers made `__in` / `__range` with out-of-range integers
+  and Decimals with more digits fail in the driver (issue #69); Django settles
+  out-of-range integers itself only for exact / gt / gte / lt / lte. The typed
+  form compares exactly on Db2 for i (probe `numeric_params`), so nothing is
+  ever rounded or truncated, and `NOT IN` / `range` stay correct.
+- **Limits:** DECIMAL holds at most 63 digits (DECIMAL(64, 0) is SQL0604):
+  more raises NotSupportedError; trailing zeros are dropped only to stay within
+  the limit (exact). NaN and infinities raise NotSupportedError (Django's
+  DecimalField already refuses them).
+- **Alternatives:** dropping out-of-range integers from IN lists in Python
+  (Django's approach for single values; needs clamping for ranges and does not
+  help Decimals); typing every numeric value (changes the SQL of every query).
+

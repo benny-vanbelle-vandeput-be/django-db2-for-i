@@ -568,3 +568,25 @@ def test_guard_reaches_django_as_not_supported_error() -> None:
         connection.wrap_database_errors,
     ):
         wrap(RecordingRawCursor()).execute("VALUES ?", ["x" * (LIMIT + 1)])
+
+
+def test_ints_beyond_64_bits_are_bound_as_decimals() -> None:
+    """pyodbc refuses a Python int beyond 64 bits (OverflowError); a Decimal binds
+    exactly (probe numeric_params)."""
+    from decimal import Decimal
+
+    from django_db2_for_i.drivers.pyodbc import bindable_params
+
+    params = (1, 2**63 - 1, 2**63, -(2**63), -(2**63) - 1, True, "x", Decimal("1.5"))
+    assert bindable_params(params) == [
+        1,
+        2**63 - 1,
+        Decimal(2**63),
+        -(2**63),
+        Decimal(-(2**63) - 1),
+        True,
+        "x",
+        Decimal("1.5"),
+    ]
+    unchanged = (1, "x", None)
+    assert bindable_params(unchanged) is unchanged

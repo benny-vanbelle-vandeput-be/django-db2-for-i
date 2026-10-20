@@ -12,6 +12,7 @@ from tests.golden_cases.base import (
     BOOK,
     CONTACT,
     DEFAULTS,
+    MEASURE,
     NODE,
     SCHEDULE,
     SWITCH,
@@ -27,6 +28,7 @@ from tests.testapp.models import (
     Defaults,
     Document,
     Link,
+    Measure,
     Node,
     Profile,
     Schedule,
@@ -91,6 +93,8 @@ CASES: tuple[Case, ...] = (
     Case(CONTACT, "create", _ddl(Contact)),
     # A nullable BOOLEAN column.
     Case(SWITCH, "create", _ddl(Switch)),
+    # SMALLINT, DECIMAL(5, 2) and BIGINT columns (issue #69).
+    Case(MEASURE, "create", _ddl(Measure)),
     Case(
         "ddl/add_field_not_null_default",
         "create",

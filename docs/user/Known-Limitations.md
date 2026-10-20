@@ -222,14 +222,17 @@ Unicode) regular expressions; see IBM's "REGEXP_LIKE predicate" and
 or data mapping error") instead of being truncated. `StringAgg(...,
 distinct=True)` is not supported yet (Django raises NotSupportedError).
 
-## Numeric filter values that do not fit the column
+## Numbers with more than 63 digits
 
-An integer outside the column's range inside an `__in` list (e.g. `100000`
-for a `SmallIntegerField`), or a `Decimal` with more digits than the
-column's `max_digits` / `decimal_places`, raises a driver error ("Numeric
-value out of range", "Character data right truncation") instead of matching
-nothing; it is never rounded or truncated. Planned fix:
-[#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69).
+A filter value that does not fit its column (an integer out of a
+`SmallIntegerField`'s range in an `__in` list or a `__range`, a `Decimal` with
+more digits than `max_digits` / `decimal_places`) works and is compared
+exactly: it matches what exact arithmetic says, and is never rounded or
+truncated. Db2 for i's `DECIMAL` holds at most 63 digits, so a value that
+needs more (for example `Decimal(10**63)`, or `Decimal("1E-70")` with 70
+decimal places) cannot be compared and raises `NotSupportedError`. Trailing
+zeros do not count against the limit. `Decimal("NaN")` and infinities are
+refused by Django's `DecimalField` itself.
 
 ## Conversion errors in selected values give NULL
 

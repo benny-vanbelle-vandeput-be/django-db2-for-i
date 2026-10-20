@@ -176,12 +176,16 @@ from django.db.models.lookups import (
     LessThan,
     LessThanOrEqual,
     Lookup,
+    Range,
 )
 from django.db.models.sql.query import Query
 from django.db.models.sql.where import WhereNode
 
+SMALLINT_RANGE = (-(2**15), 2**15 - 1)
 INTEGER_RANGE = (-(2**31), 2**31 - 1)
 BIGINT_RANGE = (-(2**63), 2**63 - 1)
+# DECIMAL(64, 0) fails with SQL0604 on Db2 for i 7.5 (probe numeric_params).
+DECIMAL_MAX_PRECISION = 63
 # Largest NVARCHAR(n) a cast accepts with a value of that length (probe
 # string_limits: NVARCHAR(16382) and up fail with SQL0901).
 NVARCHAR_MAX = 16370
@@ -228,13 +232,54 @@ def string_type(length: int) -> str:
 
 
 def decimal_type(value: Decimal) -> str:
-    """``DECIMAL(precision, scale)`` that holds ``value`` exactly."""
+    """``DECIMAL(precision, scale)`` that holds ``value`` exactly (never rounded)."""
+    precision, scale = decimal_digits(value)
+    return f"DECIMAL({precision}, {scale})"
+
+
+def decimal_digits(value: Decimal) -> tuple[int, int]:
+    """(precision, scale) that hold ``value`` exactly, from its digits and exponent.
+
+    Trailing zeros count as given (``1.50`` has scale 2); only when that needs
+    more than DECIMAL_MAX_PRECISION digits are they dropped (exact, the same
+    number). NaN, infinities and values that need more digits raise
+    NotSupportedError: never rounded or truncated.
+    """
+    if not value.is_finite():
+        raise NotSupportedError(
+            f"Db2 for i backend: Decimal('{value}') is not a number DECIMAL can hold; "
+            "NaN and infinities cannot be stored or compared."
+        )
     _sign, digits, exponent = value.as_tuple()
-    if not isinstance(exponent, int):  # NaN / Infinity: let Db2 reject them
-        return "DECIMAL(31, 0)"
+    precision, scale = _digits_and_scale(digits, exponent)
+    if precision > DECIMAL_MAX_PRECISION:
+        digits = digits[: len(digits) - _trailing_zeros(digits)] or (0,)
+        exponent = exponent + (len(value.as_tuple().digits) - len(digits))
+        precision, scale = _digits_and_scale(digits, exponent)
+    if precision > DECIMAL_MAX_PRECISION:
+        raise NotSupportedError(
+            f"Db2 for i backend: the value {value} needs {precision} digits; DECIMAL holds at "
+            f"most {DECIMAL_MAX_PRECISION}. It is never rounded or truncated "
+            "(docs/user/Known-Limitations.md, 'Numbers with more than 63 digits')."
+        )
+    return precision, scale
+
+
+def _digits_and_scale(digits: tuple[int, ...], exponent: int) -> tuple[int, int]:
+    if not any(digits):  # zero, also 0E-70 or -0.0: one digit holds it
+        return 1, 0
     scale = max(-exponent, 0)
     integer_digits = max(len(digits) + exponent, 0)
-    return f"DECIMAL({max(integer_digits + scale, 1)}, {scale})"
+    return max(integer_digits + scale, 1), scale
+
+
+def _trailing_zeros(digits: tuple[int, ...]) -> int:
+    count = 0
+    for digit in reversed(digits):
+        if digit:
+            break
+        count += 1
+    return count
 
 
 def _concrete_field(output_field):
@@ -290,7 +335,7 @@ def value_cast_type(
             return "INTEGER"
         if BIGINT_RANGE[0] <= value <= BIGINT_RANGE[1]:
             return "BIGINT"
-        return f"DECIMAL({len(str(abs(value)))}, 0)"
+        return decimal_type(Decimal(value))
     return output_field.cast_db_type(connection)
 
 
@@ -402,7 +447,7 @@ def _as_operand(operand):
 # other side: a longer value fails on the client with CWB0111 ("Input data is
 # too big to fit into field"), it is never truncated (probe long_string_params).
 # LIKE and UPPER(...) = UPPER(?) are not affected.
-SIZED_COMPARISONS = (Exact, In, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual)
+SIZED_COMPARISONS = (Exact, In, Range, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual)
 _STRING_COLUMN = re.compile(
     r"^(?P<kind>NVARCHAR|NCHAR|VARGRAPHIC|GRAPHIC|VARCHAR|CHAR)\((?P<size>\d+)\)", re.IGNORECASE
 )
@@ -429,49 +474,130 @@ def _length(value: str, unit: str) -> int:
     return len(value.encode("utf-8")) if unit == "bytes" else utf16_length(value)
 
 
-def with_typed_long_strings(lookup, connection):
-    """A copy of ``lookup`` that types its too-long string values, or None.
+_NUMERIC_COLUMN = re.compile(
+    r"^(?P<kind>SMALLINT|INTEGER|BIGINT|DECIMAL|NUMERIC)"
+    r"(?:\((?P<precision>\d+)(?:,\s*(?P<scale>\d+))?\))?",
+    re.IGNORECASE,
+)
+_INTEGER_COLUMN_RANGES = {
+    "SMALLINT": SMALLINT_RANGE,
+    "INTEGER": INTEGER_RANGE,
+    "BIGINT": BIGINT_RANGE,
+}
 
-    A value is too long when it exceeds the column in the column's unit (UTF-16
-    code units for NVARCHAR, so an emoji counts twice; bytes for VARCHAR), or
-    when the left-hand side is not a plain column (size unknown). Only the
-    markers of those values become ``CAST(? AS NVARCHAR(<bucket>))``; values
-    that fit, also the other elements of an IN list, keep their untyped markers
-    and SQL. (Value objects in an IN list would make Django type every element.)
+
+def _is_number(value) -> bool:
+    return isinstance(value, Decimal) or (isinstance(value, int) and not isinstance(value, bool))
+
+
+def _numeric_fits(lhs, connection):
+    """A function telling whether a number fits the left-hand side's marker, or
+    None for a column whose numbers always fit (DOUBLE, REAL, ...).
+
+    The driver sizes an untyped marker by the column (probe numeric_params):
+    SMALLINT / INTEGER / BIGINT by their range, DECIMAL(p, s) by p - s integer
+    digits and s decimals (a value with more decimals, trailing zeros included,
+    does not fit). For an expression the size is not known: Decimals never
+    count as fitting, integers only within the INTEGER range.
+    """
+    if not isinstance(lhs, Col):
+        return lambda value: (
+            not isinstance(value, Decimal) and INTEGER_RANGE[0] <= value <= INTEGER_RANGE[1]
+        )
+    match = _NUMERIC_COLUMN.match(lhs.output_field.db_type(connection) or "")
+    if not match:
+        return None
+    kind = match["kind"].upper()
+    if kind in _INTEGER_COLUMN_RANGES:
+        low, high = _INTEGER_COLUMN_RANGES[kind]
+
+        def fits_integer(value) -> bool:
+            if isinstance(value, Decimal) and value != value.to_integral_value():
+                return False
+            return low <= value <= high
+
+        return fits_integer
+    precision = int(match["precision"] or 5)
+    scale = int(match["scale"] or 0)
+
+    def fits(value) -> bool:
+        number = Decimal(value)
+        if not number.is_finite():
+            return False
+        digits, value_scale = decimal_digits(number)
+        return value_scale <= scale and digits - value_scale <= precision - scale
+
+    return fits
+
+
+def _oversized_type(value, string_capacity, numeric_fits) -> str | None:
+    """The SQL type for a comparison value that does not fit its marker, or None."""
+    if isinstance(value, str):
+        if string_capacity is None or _length(value, string_capacity[1]) > string_capacity[0]:
+            if utf16_length(value) > NVARCHAR_MAX:
+                raise NotSupportedError(
+                    f"Db2 for i backend: a comparison value of {utf16_length(value)} UTF-16 "
+                    "units is longer than the largest supported comparison value "
+                    f"({NVARCHAR_MAX}); it is never truncated (docs/user/Known-Limitations.md, "
+                    "'Comparison values longer than 16370 characters')."
+                )
+            return string_type(utf16_length(value))
+        return None
+    if _is_number(value) and numeric_fits is not None:
+        if isinstance(value, Decimal) and not value.is_finite():
+            decimal_digits(value)  # raises a clear error
+        if not numeric_fits(value):
+            return decimal_type(Decimal(value))  # raises beyond 63 digits
+    return None
+
+
+def with_typed_oversized_values(lookup, connection):
+    """A copy of ``lookup`` that types its values that do not fit, or None.
+
+    The driver sizes an untyped marker by the column, so a longer string
+    (CWB0111), an integer out of the column's range or a Decimal with more
+    digits than DECIMAL(p, s) fails (30018, 30160, 30126; probes
+    long_string_params, numeric_params). Only the markers of those values get a
+    type of their own: ``CAST(? AS NVARCHAR(<bucket>))`` for a string,
+    ``CAST(? AS DECIMAL(p, s))`` with the value's own digits for a number, so
+    Db2 for i compares exactly (never rounded or truncated). Values that fit,
+    also the other elements of an IN list or a range, keep their untyped
+    markers and SQL. (Value objects in an IN list would make Django type every
+    element.) A string counts as too long in the column's unit (UTF-16 code
+    units for NVARCHAR, bytes for VARCHAR) or when the left-hand side is not a
+    plain column (size unknown).
     """
     if not isinstance(lookup, SIZED_COMPARISONS) or not lookup.rhs_is_direct_value():
         return None
-    values = list(lookup.rhs) if isinstance(lookup, In) else [lookup.rhs]
-    capacity = _column_capacity(lookup.lhs, connection)
+    values = list(lookup.rhs) if isinstance(lookup, (In, Range)) else [lookup.rhs]
+    string_capacity = _column_capacity(lookup.lhs, connection)
+    numeric_fits = _numeric_fits(lookup.lhs, connection)
 
-    def too_long(value) -> bool:
-        if not isinstance(value, str):
-            return False
-        return capacity is None or _length(value, capacity[1]) > capacity[0]
+    def oversized(value) -> str | None:
+        return _oversized_type(value, string_capacity, numeric_fits)
 
-    if not any(too_long(value) for value in values):
+    if not any(oversized(value) for value in values):
         return None
-    for value in values:
-        if too_long(value) and utf16_length(value) > NVARCHAR_MAX:
-            raise NotSupportedError(
-                f"Db2 for i backend: a comparison value of {utf16_length(value)} UTF-16 units "
-                f"is longer than the largest supported comparison value ({NVARCHAR_MAX}); "
-                "it is never truncated (docs/user/Known-Limitations.md, 'Comparison values "
-                "longer than 16370 characters')."
-            )
     process_rhs = lookup.process_rhs
+
+    def typed(marker: str, param) -> str:
+        sql_type = oversized(param)
+        return f"CAST({marker} AS {sql_type})" if sql_type and marker == "%s" else marker
 
     def typed_process_rhs(compiler, connection):
         sql, params = process_rhs(compiler, connection)
         params = list(params)
+        if isinstance(sql, (list, tuple)):  # range: one marker per bound
+            if len(sql) != len(params):
+                return sql, params
+            return [typed(marker, param) for marker, param in zip(sql, params, strict=True)], params
         parts = sql.split("%s")
         if len(parts) - 1 != len(params):  # not one marker per value: leave it
             return sql, params
-        typed = parts[0]
+        result = parts[0]
         for param, rest in zip(params, parts[1:], strict=True):
-            marker = f"CAST(%s AS {string_type(utf16_length(param))})" if too_long(param) else "%s"
-            typed += marker + rest
-        return typed, params
+            result += typed("%s", param) + rest
+        return result, params
 
     clone = copy.copy(lookup)
     clone.process_rhs = typed_process_rhs
@@ -507,7 +633,7 @@ def boolean_value_condition(lookup, compiler):
 def lookup_as_db2_for_i(self, compiler, connection):
     if _is_boolean_value_condition(self):
         return boolean_value_condition(self, compiler)
-    typed = with_typed_long_strings(self, connection)
+    typed = with_typed_oversized_values(self, connection)
     if typed is not None:
         return typed.as_sql(compiler, connection)
     if getattr(self.lhs, "conditional", False) and getattr(self.rhs, "conditional", False):

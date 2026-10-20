@@ -100,4 +100,4 @@ version's runs (one row while only one version has runs).
 
 ## Golden files
 
-150 goldens, 0 unverified.
+154 goldens, 4 unverified.

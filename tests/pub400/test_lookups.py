@@ -237,3 +237,66 @@ def test_values_longer_than_their_column(live, empty) -> None:
     field = Account._meta.get_field("company")
     selected = Contact.objects.annotate(v=Value("abc\U0001f600", output_field=field))
     assert list(selected.values_list("v", flat=True)) == ["abc\U0001f600"]
+
+
+def test_numeric_values_that_do_not_fit_the_column(live, empty) -> None:
+    """Issue #69: integers out of the column's range in IN lists and ranges, and
+    Decimals with more digits than DECIMAL(5, 2), match exactly the rows of exact
+    arithmetic. The rows hold the truncated (1.00) and the rounded (1.01) value of
+    1.005, which must never match; values are never rounded or truncated."""
+    from decimal import Decimal
+
+    from django.db import NotSupportedError
+
+    from tests.testapp.models import Measure
+
+    rows = {
+        "truncated": (1, Decimal("1.00"), 1),
+        "rounded": (32767, Decimal("1.01"), 2**62),
+        "high": (-32768, Decimal("999.99"), None),
+        "negative": (0, Decimal("-1.00"), -1),
+        "null": (None, None, None),
+        "zero": (2, Decimal("0.00"), 0),
+    }
+    pk = {}
+    for name, (small, amount, big) in rows.items():
+        pk[Measure.objects.create(small=small, amount=amount, big=big).pk] = name
+
+    def names(queryset) -> list[str]:
+        return sorted(pk[key] for key in queryset.values_list("pk", flat=True))
+
+    measures = Measure.objects
+    d = Decimal
+    # Integers out of the SMALLINT range.
+    assert names(measures.filter(small__in=[1, 100000])) == ["truncated"]
+    assert names(measures.filter(small__in=[100000, -100000])) == []
+    assert names(measures.exclude(small__in=[1, 100000])) == [
+        "high", "negative", "null", "rounded", "zero",
+    ]  # fmt: skip
+    assert names(measures.filter(small__range=(0, 100000))) == [
+        "negative", "rounded", "truncated", "zero",
+    ]  # fmt: skip
+    assert names(measures.filter(small__range=(-100000, 0))) == ["high", "negative"]
+    # An integer beyond BIGINT (sent as a Decimal).
+    assert names(measures.filter(big__in=[2**62, 10**20])) == ["rounded"]
+    # Decimals with more digits than DECIMAL(5, 2): never rounded or truncated.
+    assert names(measures.filter(amount=d("1.005"))) == []
+    assert names(measures.filter(amount__gt=d("1.005"))) == ["high", "rounded"]
+    assert names(measures.filter(amount__lt=d("1.005"))) == ["negative", "truncated", "zero"]
+    assert names(measures.filter(amount__in=[d("0.00"), d("1.005")])) == ["zero"]
+    assert names(measures.exclude(amount__in=[d("0.00"), d("1.005")])) == [
+        "high", "negative", "null", "rounded", "truncated",
+    ]  # fmt: skip
+    assert names(measures.filter(amount__range=(d("0.995"), d("1.005")))) == ["truncated"]
+    assert names(measures.filter(amount=d("123456.789"))) == []
+    assert names(measures.filter(amount__lt=d("123456.789"))) == [
+        "high", "negative", "rounded", "truncated", "zero",
+    ]  # fmt: skip
+    assert names(measures.filter(amount=d("1E+5"))) == []
+    assert names(measures.filter(amount=d("1.500"))) == []
+    # Values that fit stay as they are.
+    assert names(measures.filter(amount=d("1.00"))) == ["truncated"]
+    assert names(measures.filter(small__in=[1, 32767])) == ["rounded", "truncated"]
+    # More than 63 digits: a clear error, never truncated.
+    with pytest.raises(NotSupportedError, match="at most 63"):
+        list(measures.filter(amount=d(10**63)))

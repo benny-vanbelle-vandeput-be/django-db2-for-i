@@ -10,6 +10,7 @@ from tests.testapp.models import (
     Defaults,
     Document,
     Link,
+    Measure,
     Node,
     Profile,
     Schedule,
@@ -31,5 +32,6 @@ MODELS = (
     Account,
     Contact,
     Switch,
+    Measure,
 )
 TABLES = {model._meta.db_table for model in MODELS}

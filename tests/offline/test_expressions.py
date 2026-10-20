@@ -5,12 +5,13 @@ import uuid
 from decimal import Decimal
 
 import pytest
-from django.db import NotSupportedError
+from django.db import NotSupportedError, connection
 from django.db.models import (
     BigIntegerField,
     BooleanField,
     CharField,
     DecimalField,
+    F,
     FloatField,
     IntegerField,
     JSONField,
@@ -246,6 +247,157 @@ def test_values_longer_than_the_largest_bucket_are_refused() -> None:
 
     with pytest.raises(NotSupportedError, match="never truncated"):
         where_of(Author.objects.filter(name="x" * 16371))
+
+
+# --- Numeric values that do not fit the column (issue #69) ------------------------------
+
+
+@pytest.mark.parametrize(
+    ("value", "digits"),
+    [
+        ("1.005", (4, 3)),
+        ("123456.789", (9, 3)),
+        ("1E+5", (6, 0)),  # exponent form: 100000
+        ("1.50", (3, 2)),  # trailing zeros count
+        ("-1.50", (3, 2)),
+        ("0.005", (3, 3)),
+        ("-0", (1, 0)),
+        ("-0.0", (1, 0)),
+        ("0E-70", (1, 0)),
+        (str(10**62), (63, 0)),  # the largest precision
+        ("1." + "0" * 70, (1, 0)),  # trailing zeros dropped only beyond 63 digits
+    ],
+)
+def test_decimal_digits_hold_the_value_exactly(value, digits) -> None:
+    from django_db2_for_i.expressions import decimal_digits
+
+    assert decimal_digits(Decimal(value)) == digits
+
+
+def test_decimal_type_from_an_exponent_form() -> None:
+    from django_db2_for_i.expressions import decimal_type
+
+    assert decimal_type(Decimal("1E+5")) == "DECIMAL(6, 0)"
+
+
+@pytest.mark.parametrize("value", ["NaN", "-NaN", "sNaN", "Infinity", "-Infinity"])
+def test_non_finite_decimals_are_refused(value) -> None:
+    from django_db2_for_i.expressions import decimal_digits
+
+    with pytest.raises(NotSupportedError, match="NaN and infinities"):
+        decimal_digits(Decimal(value))
+
+
+@pytest.mark.parametrize("value", [str(10**63), "1E-70", "0." + "1234567890" * 7])
+def test_decimals_beyond_63_digits_are_refused(value) -> None:
+    from django_db2_for_i.expressions import decimal_digits
+
+    with pytest.raises(NotSupportedError, match="at most 63"):
+        decimal_digits(Decimal(value))
+
+
+def test_integer_values_beyond_bigint_are_decimals_with_the_same_limit() -> None:
+    from django_db2_for_i.expressions import value_cast_type
+
+    field = IntegerField()
+    assert value_cast_type(10**20, field, connection, explicit=False) == "DECIMAL(21, 0)"
+    assert value_cast_type(-(10**20), field, connection, explicit=False) == "DECIMAL(21, 0)"
+    with pytest.raises(NotSupportedError, match="at most 63"):
+        value_cast_type(10**63, field, connection, explicit=False)
+
+
+def test_a_non_finite_decimal_value_is_refused_clearly() -> None:
+    """Django's DecimalField refuses NaN / infinities itself (a ValidationError, before
+    the backend); decimal_digits refuses them too, for any other path."""
+    from django.core.exceptions import ValidationError
+
+    from tests.testapp.models import Measure
+
+    for value in ("NaN", "Infinity", "-Infinity"):
+        with pytest.raises(ValidationError):
+            where_of(Measure.objects.filter(amount=Decimal(value)))
+        queryset = Author.objects.annotate(x=Value(Decimal(value), output_field=DecimalField()))
+        with pytest.raises(ValidationError):
+            queryset.values("x").query.get_compiler("default").as_sql()
+
+
+def test_integers_out_of_the_column_range_are_typed_in_in_lists_and_ranges() -> None:
+    from tests.testapp.models import Measure
+
+    small = '"TESTAPP_MEASURE"."SMALL"'
+    assert where_of(Measure.objects.filter(small__in=[1, 100000])) == (
+        f"{small} IN (%s, CAST(%s AS DECIMAL(6, 0)))",
+        (1, 100000),
+    )
+    assert where_of(Measure.objects.exclude(small__in=[1, 100000]))[0] == (
+        f"NOT ({small} IN (%s, CAST(%s AS DECIMAL(6, 0))) AND {small} IS NOT NULL)"
+    )
+    assert where_of(Measure.objects.filter(small__range=(0, 100000)))[0] == (
+        f"{small} BETWEEN %s AND CAST(%s AS DECIMAL(6, 0))"
+    )
+    assert where_of(Measure.objects.filter(small__range=(-100000, 0)))[0] == (
+        f"{small} BETWEEN CAST(%s AS DECIMAL(6, 0)) AND %s"
+    )
+    # Values that fit keep their untyped markers and SQL.
+    assert where_of(Measure.objects.filter(small__in=[1, 32767, -32768]))[0] == (
+        f"{small} IN (%s, %s, %s)"
+    )
+    big = '"TESTAPP_MEASURE"."BIG"'
+    assert where_of(Measure.objects.filter(big__in=[1, 10**20])) == (
+        f"{big} IN (%s, CAST(%s AS DECIMAL(21, 0)))",
+        (1, 10**20),
+    )
+
+
+def test_decimals_with_more_digits_than_the_column_are_typed() -> None:
+    from tests.testapp.models import Measure
+
+    amount = '"TESTAPP_MEASURE"."AMOUNT"'
+    cases = [
+        (Measure.objects.filter(amount=Decimal("1.005")), f"{amount} = CAST(%s AS DECIMAL(4, 3))"),
+        (
+            Measure.objects.filter(amount__gt=Decimal("123456.789")),
+            f"{amount} > CAST(%s AS DECIMAL(9, 3))",
+        ),
+        (
+            Measure.objects.filter(amount__lt=Decimal("1E+5")),
+            f"{amount} < CAST(%s AS DECIMAL(6, 0))",
+        ),
+        (Measure.objects.filter(amount=Decimal("1.500")), f"{amount} = CAST(%s AS DECIMAL(4, 3))"),
+        (
+            Measure.objects.filter(amount__in=[Decimal("0.00"), Decimal("1.005")]),
+            f"{amount} IN (%s, CAST(%s AS DECIMAL(4, 3)))",
+        ),
+        (
+            Measure.objects.filter(amount__range=(Decimal("0.995"), Decimal("1.005"))),
+            f"{amount} BETWEEN CAST(%s AS DECIMAL(3, 3)) AND CAST(%s AS DECIMAL(4, 3))",
+        ),
+        # Fits DECIMAL(5, 2): untyped.
+        (Measure.objects.filter(amount=Decimal("1.50")), f"{amount} = %s"),
+        (Measure.objects.filter(amount=Decimal("-999.99")), f"{amount} = %s"),
+    ]
+    for queryset, expected in cases:
+        assert where_of(queryset)[0] == expected
+
+
+def test_comparison_numbers_beyond_63_digits_are_refused() -> None:
+    from tests.testapp.models import Measure
+
+    with pytest.raises(NotSupportedError, match="never rounded or truncated"):
+        where_of(Measure.objects.filter(amount=Decimal(10**63)))
+
+
+def test_numbers_against_an_expression_of_unknown_size() -> None:
+    """Decimals are typed; integers only outside the INTEGER range."""
+    from tests.testapp.models import Measure
+
+    annotated = Measure.objects.annotate(x=F("small") + 1)
+    assert where_of(annotated.filter(x__in=[1, 2]))[0].endswith("IN (%s, %s)")
+    assert where_of(annotated.filter(x__in=[1, 3000000000]))[0].endswith(
+        "IN (%s, CAST(%s AS DECIMAL(10, 0)))"
+    )
+    sums = Measure.objects.annotate(x=F("amount") + F("amount"))
+    assert where_of(sums.filter(x=Decimal("1.5")))[0].endswith("= CAST(%s AS DECIMAL(2, 1))")
 
 
 # --- Values of relations and IP addresses -------------------------------------------
