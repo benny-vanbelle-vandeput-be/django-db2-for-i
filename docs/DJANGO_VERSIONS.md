@@ -118,7 +118,10 @@ These come on top of the 6.0 table.
 
 `django_db2_for_i/compat.py` is the only module with `django.VERSION` checks
 ([DECISIONS](DECISIONS.md#2026-10-19-compatpy-in-three-sections-60-only-52-only-before-61)).
-Today it only defines `DJANGO_SERIES`. It is planned in three sections:
+It defines `DJANGO_SERIES` and has three sections, each with its removal rule
+in its heading; an offline test (`tests/offline/test_axes.py`) fails on a
+Django version check anywhere else in the package. The sections fill as the
+steps of phase 3 find real differences:
 
 | Section | Holds | Deleted when |
 |---|---|---|
