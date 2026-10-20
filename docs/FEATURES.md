@@ -54,7 +54,7 @@ Off on purpose, with the reason.
 | `supports_tuple_comparison_against_subquery` | Composite fields compared with `>`, `<` against a subquery. | – | ❌ | ❌ | Db2 for i rejects row-value comparisons with a subquery (SQL0115). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (28)
+## Planned (30)
 
 Off for now; planned for the phase shown.
 
@@ -65,12 +65,14 @@ Off for now; planned for the phase shown.
 | `can_introspect_check_constraints` | `inspectdb` and introspection find CHECK constraints. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `can_introspect_default` | Introspection reads column defaults. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `can_introspect_foreign_keys` | Introspection finds foreign keys. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
+| `can_rename_index` | `RenameIndex` renames an index in place instead of dropping and recreating it. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `can_return_columns_from_insert` | Inserted rows return their primary key and defaults in one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `can_return_rows_from_bulk_insert` | `bulk_create()` sets the primary keys of the created objects. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `has_bulk_insert` | `bulk_create()` inserts many rows in one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `has_json_object_function` | JSON objects can be built in SQL (`JSONObject`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `indexes_foreign_keys` | Foreign key columns get an index. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
+| `supports_comments` | `db_comment` and `db_table_comment` are stored as column and table comments. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_expression_indexes` | Indexes on expressions (`Index(Lower('name'))`). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_foreign_keys` | Foreign keys are enforced by the database. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_ignore_conflicts` | `bulk_create(ignore_conflicts=True)`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
@@ -89,7 +91,7 @@ Off for now; planned for the phase shown.
 | `supports_table_check_constraints` | Model `CheckConstraint`s are enforced by the database. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_update_conflicts` | `bulk_create(update_conflicts=True)` (upsert). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 
-## Not yet evaluated (86)
+## Not yet evaluated (84)
 
 Off: Django's default or not looked at yet.
 
@@ -100,15 +102,14 @@ Off: Django's default or not looked at yet.
 | `allows_group_by_select_index` |  | ❌ | ❌ | ❌ |
 | `allows_group_by_selected_pks` |  | ❌ | ❌ | ❌ |
 | `can_clone_databases` |  | ❌ | ❌ | ❌ |
-| `can_defer_constraint_checks` |  | ❌ | ❌ | ❌ |
+| `can_defer_constraint_checks` | Constraint checks can be deferred to the end of the transaction. | ❌ | ❌ | ❌ |
 | `can_distinct_on_fields` |  | ❌ | ❌ | ❌ |
 | `can_introspect_json_field` |  | ❌ | ❌ | ❌ |
-| `can_introspect_materialized_views` |  | ❌ | ❌ | ❌ |
-| `can_rename_index` |  | ❌ | ❌ | ❌ |
+| `can_introspect_materialized_views` | `inspectdb --include-views` also finds materialized views. | ❌ | ❌ | ❌ |
 | `can_return_rows_from_update` |  | – | ❌ | ❌ |
 | `can_use_chunked_reads` |  | ❌ | ❌ | ❌ |
 | `collate_as_index_expression` |  | ❌ | ❌ | ❌ |
-| `connection_persists_old_columns` |  | ❌ | ❌ | ❌ |
+| `connection_persists_old_columns` | A connection must be reset after a schema change to see the new columns. | ❌ | ❌ | ❌ |
 | `delete_can_self_reference_subquery` |  | ❌ | ❌ | ❌ |
 | `for_update_after_from` |  | ❌ | ❌ | ❌ |
 | `gis_enabled` |  | ❌ | ❌ | ❌ |
@@ -118,19 +119,19 @@ Off: Django's default or not looked at yet.
 | `has_native_duration_field` |  | ❌ | ❌ | ❌ |
 | `has_native_json_field` |  | ❌ | ❌ | ❌ |
 | `has_native_uuid_field` |  | ❌ | ❌ | ❌ |
-| `has_real_datatype` |  | ❌ | ❌ | ❌ |
+| `has_real_datatype` | The database has a single-precision `REAL` type besides `DOUBLE`. | ❌ | ❌ | ❌ |
 | `has_select_for_no_key_update` |  | ❌ | ❌ | ❌ |
 | `has_select_for_update` |  | ❌ | ❌ | ❌ |
 | `has_select_for_update_nowait` |  | ❌ | ❌ | ❌ |
 | `has_select_for_update_of` |  | ❌ | ❌ | ❌ |
 | `has_select_for_update_skip_locked` |  | ❌ | ❌ | ❌ |
-| `ignores_table_name_case` |  | ❌ | ❌ | ❌ |
+| `ignores_table_name_case` | Table names that differ only in case are the same table. | ❌ | ❌ | ❌ |
 | `ignores_unnecessary_order_by_in_subqueries` |  | ❌ | ❌ | ❌ |
 | `interprets_empty_strings_as_nulls` |  | ❌ | ❌ | ❌ |
 | `json_key_contains_list_matching_requires_list` |  | ❌ | ❌ | ❌ |
 | `only_supports_unbounded_with_preceding_and_following` |  | ❌ | ❌ | ❌ |
 | `order_by_nulls_first` |  | ❌ | ❌ | ❌ |
-| `related_fields_match_type` |  | ❌ | ❌ | ❌ |
+| `related_fields_match_type` | A foreign key column must have exactly the type of the column it references. | ❌ | ❌ | ❌ |
 | `requires_casted_case_in_updates` |  | ❌ | ❌ | ❌ |
 | `requires_explicit_null_ordering_when_grouping` |  | ❌ | ❌ | ❌ |
 | `rounds_to_even` |  | ❌ | ❌ | ❌ |
@@ -138,15 +139,14 @@ Off: Django's default or not looked at yet.
 | `select_for_update_of_column` |  | ❌ | ❌ | ❌ |
 | `supports_aggregate_distinct_multiple_argument` |  | – | ❌ | ❌ |
 | `supports_aggregate_filter_clause` |  | ❌ | ❌ | ❌ |
-| `supports_alter_generated_column_data_type` |  | – | – | ❌ |
+| `supports_alter_generated_column_data_type` | The type of a `GeneratedField` column can be changed in place (Django 6.1+). | – | – | ❌ |
 | `supports_bit_aggregations` |  | – | – | ❌ |
 | `supports_callproc_kwargs` |  | ❌ | ❌ | ❌ |
 | `supports_cast_with_precision` |  | ❌ | ❌ | ❌ |
-| `supports_collation_on_charfield` |  | ❌ | ❌ | ❌ |
-| `supports_collation_on_textfield` |  | ❌ | ❌ | ❌ |
-| `supports_combined_alters` |  | ❌ | ❌ | ❌ |
-| `supports_comments` |  | ❌ | ❌ | ❌ |
-| `supports_comments_inline` |  | ❌ | ❌ | ❌ |
+| `supports_collation_on_charfield` | `CharField(db_collation=...)`. | ❌ | ❌ | ❌ |
+| `supports_collation_on_textfield` | `TextField(db_collation=...)`. | ❌ | ❌ | ❌ |
+| `supports_combined_alters` | Several column changes are written as one `ALTER TABLE` statement. | ❌ | ❌ | ❌ |
+| `supports_comments_inline` | Column comments are written in the `ADD COLUMN` statement itself. | ❌ | ❌ | ❌ |
 | `supports_comparing_boolean_expr` |  | ❌ | ❌ | ❌ |
 | `supports_covering_indexes` |  | ❌ | ❌ | ❌ |
 | `supports_date_lookup_using_string` |  | ❌ | ❌ | ❌ |
@@ -156,28 +156,28 @@ Off: Django's default or not looked at yet.
 | `supports_default_keyword_in_insert` |  | ❌ | ❌ | ❌ |
 | `supports_deferrable_unique_constraints` |  | ❌ | ❌ | ❌ |
 | `supports_explaining_query_execution` |  | ❌ | ❌ | ❌ |
-| `supports_expression_defaults` |  | ❌ | ❌ | ❌ |
+| `supports_expression_defaults` | `db_default` can be an expression, not only a constant. | ❌ | ❌ | ❌ |
 | `supports_frame_exclusion` |  | ❌ | ❌ | ❌ |
 | `supports_frame_range_fixed_distance` |  | ❌ | ❌ | ❌ |
 | `supports_functions_in_partial_indexes` |  | ❌ | ❌ | ❌ |
 | `supports_json_negative_indexing` |  | – | ❌ | ❌ |
 | `supports_logical_xor` |  | ❌ | ❌ | ❌ |
-| `supports_no_precision_decimalfield` |  | – | – | ❌ |
+| `supports_no_precision_decimalfield` | `DecimalField` without `max_digits` and `decimal_places` (Django 6.1+). | – | – | ❌ |
 | `supports_non_deterministic_collations` |  | ❌ | ❌ | ❌ |
 | `supports_nulls_distinct_unique_constraints` |  | ❌ | ❌ | ❌ |
 | `supports_on_delete_db_default` |  | – | – | ❌ |
 | `supports_order_by_nulls_modifier` |  | ❌ | ❌ | ❌ |
 | `supports_primitives_in_json_field` |  | ❌ | ❌ | ❌ |
 | `supports_select_for_update_with_limit` |  | ❌ | ❌ | ❌ |
-| `supports_stored_generated_columns` |  | ❌ | ❌ | ❌ |
+| `supports_stored_generated_columns` | `GeneratedField(db_persist=True)`, stored generated columns. | ❌ | ❌ | ❌ |
 | `supports_tablespaces` |  | ❌ | ❌ | ❌ |
-| `supports_unlimited_charfield` |  | ❌ | ❌ | ❌ |
+| `supports_unlimited_charfield` | `CharField` without `max_length`. | ❌ | ❌ | ❌ |
 | `supports_unspecified_pk` |  | ❌ | ❌ | ❌ |
 | `supports_update_conflicts_with_target` |  | ❌ | ❌ | ❌ |
 | `supports_uuid4_function` |  | – | – | ❌ |
 | `supports_uuid4_function_in_default` |  | – | – | ❌ |
 | `supports_uuid7_function` |  | – | – | ❌ |
 | `supports_uuid7_function_shift` |  | – | – | ❌ |
-| `supports_virtual_generated_columns` |  | ❌ | ❌ | ❌ |
+| `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ |
 | `truncates_names` |  | ❌ | ❌ | ❌ |
 | `update_can_self_select` |  | ❌ | ❌ | ❌ |

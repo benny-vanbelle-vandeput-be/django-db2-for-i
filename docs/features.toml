@@ -87,6 +87,28 @@ supports_sequence_reset.description = "`sqlsequencereset` resets identity values
 supports_sequence_reset.planned = "phase 4"
 supports_table_check_constraints.description = "Model `CheckConstraint`s are enforced by the database."
 supports_table_check_constraints.planned = "phase 4"
+can_rename_index.description = "`RenameIndex` renames an index in place instead of dropping and recreating it."
+can_rename_index.planned = "phase 4"
+supports_comments.description = "`db_comment` and `db_table_comment` are stored as column and table comments."
+supports_comments.planned = "phase 4"
+
+# Looked at in phase 4; decided by a probe or by the tests (docs/phases/phase-4.md).
+can_defer_constraint_checks.description = "Constraint checks can be deferred to the end of the transaction."
+can_introspect_materialized_views.description = "`inspectdb --include-views` also finds materialized views."
+connection_persists_old_columns.description = "A connection must be reset after a schema change to see the new columns."
+has_real_datatype.description = "The database has a single-precision `REAL` type besides `DOUBLE`."
+ignores_table_name_case.description = "Table names that differ only in case are the same table."
+related_fields_match_type.description = "A foreign key column must have exactly the type of the column it references."
+supports_alter_generated_column_data_type.description = "The type of a `GeneratedField` column can be changed in place (Django 6.1+)."
+supports_collation_on_charfield.description = "`CharField(db_collation=...)`."
+supports_collation_on_textfield.description = "`TextField(db_collation=...)`."
+supports_combined_alters.description = "Several column changes are written as one `ALTER TABLE` statement."
+supports_comments_inline.description = "Column comments are written in the `ADD COLUMN` statement itself."
+supports_expression_defaults.description = "`db_default` can be an expression, not only a constant."
+supports_no_precision_decimalfield.description = "`DecimalField` without `max_digits` and `decimal_places` (Django 6.1+)."
+supports_stored_generated_columns.description = "`GeneratedField(db_persist=True)`, stored generated columns."
+supports_unlimited_charfield.description = "`CharField` without `max_length`."
+supports_virtual_generated_columns.description = "`GeneratedField(db_persist=False)`, virtual generated columns."
 
 # Phase 5: returning columns, bulk operations, constraints, indexes.
 can_return_columns_from_insert.description = "Inserted rows return their primary key and defaults in one statement."
