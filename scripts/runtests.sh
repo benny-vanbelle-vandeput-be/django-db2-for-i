@@ -43,5 +43,5 @@ if [ "$labels" -gt 3 ]; then
     exit 2
 fi
 
-cd "$(dirname "$0")/.."
-exec docker compose run --rm tests nox -s django_tests -- "$version" "$@"
+# Through scripts/pub400.sh: on macOS, the Mac does not sleep during the run.
+exec "$(dirname "$0")/pub400.sh" django_tests "$version" "$@"
