@@ -157,6 +157,13 @@ docker compose run --rm tests nox -s "corpus(3.14-django6.1)"   # replay offline
 Releases are alpha releases on GitHub only (no PyPI). **Contributors and
 Claude never create release tags; the maintainer creates and signs them.**
 
+0. **Release run**, for every supported Django version (newest Python), one
+   after another: `scripts/pub400.sh release_run <django>`.
+   It checks that PUB400's database port answers (otherwise it stops at
+   once), runs every supported Django test module (the `[[modules]]` of
+   `docs/status.toml`, `queries` as its labels), each with `--clean` in its own
+   run, then the pub400 tier with `--create-db`; logs in
+   `test-results/<django>/`. Report the results in the release PR.
 1. **Release PR** (prepared like any other PR): set `__version__` in
    `django_db2_for_i/__init__.py` (the single source of the version) and run
    `python scripts/assemble_changelog.py release <version>`: it writes the

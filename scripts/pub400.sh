@@ -5,6 +5,7 @@
 #   scripts/pub400.sh pub400
 #   scripts/pub400.sh pub400 -k goldens --record-verification
 #   scripts/pub400.sh probe constraint_errors
+#   scripts/pub400.sh release_run 6.1
 #
 # On macOS the run is wrapped in caffeinate (no idle or system sleep while it
 # runs): a Mac that sleeps during a long run breaks the TLS connection, and
@@ -20,7 +21,7 @@ fi
 session=$1
 shift
 case $session in
-    pub400|django_tests|probe|probe_*) ;;
+    pub400|django_tests|release_run|probe|probe_*) ;;
     *)
         echo "refused: $session does not connect to PUB400; run: docker compose run --rm tests nox -s $session" >&2
         exit 2
