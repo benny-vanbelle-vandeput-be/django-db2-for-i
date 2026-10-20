@@ -8,7 +8,7 @@
 
 [versions]
 # Static badges and the TEST_STATUS.md header.
-django = "6.1 | 6.0, 5.2 planned"
+django = "6.1 | 6.0 | 5.2 planned"
 python = "3.12 | 3.13 | 3.14"
 ibmi = "7.5"
 # The system the recorded Django test runs used.
@@ -46,8 +46,8 @@ status = "done"
 
 [[phases]]
 phase = "3"
-content = "Django 6.0 and 5.2 support (plan approved: docs/phases/phase-3.md)"
-status = "planned"
+content = "Django 6.0 and 5.2 support (plan approved: docs/phases/phase-3.md); step A (6.0) done, step B (5.2) in progress"
+status = "in progress"
 
 [[phases]]
 phase = "4"
@@ -84,31 +84,31 @@ django = ["6.1", "6.0", "5.2"]
 
 [[modules]]
 module = "basic"
-status = "planned"
+status = "in progress"
 
 [[modules]]
 module = "transactions"
-status = "planned"
+status = "in progress"
 
 [[modules]]
 module = "ordering"
-status = "planned"
+status = "in progress"
 
 [[modules]]
 module = "lookup"
-status = "planned"
+status = "in progress"
 
 [[modules]]
 module = "aggregation"
-status = "planned"
+status = "in progress"
 
 [[modules]]
 module = "expressions"
-status = "planned"
+status = "in progress"
 
 [[modules]]
 module = "queries"
-status = "planned"
+status = "in progress"
 # Run as these labels (Q1-Q5); the module row sums their logs.
 labels = [
     "queries.test_q",
@@ -125,7 +125,7 @@ labels = [
 note = "split into labels Q1–Q5 because of its size"
 
 [[tracks]]
-text = "Offline query corpus from the PUB400 runs (approved: docs/proposals/offline-query-corpus.md), for Django 6.1 before phase 3 step A."
+text = "Offline query corpus: Django 6.1 done (7 modules, 2533 entries, replayed in every offline CI job); 6.0 and 5.2 corpora follow with the release run."
 
 [[tracks]]
 text = "Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82))."
