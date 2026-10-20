@@ -34,7 +34,7 @@ state = "supported"
 
 [[django]]
 version = "5.2"
-state = "development"
+state = "supported"
 eol = "2028-04"
 
 [[django]]
@@ -84,7 +84,7 @@ status = "done"
 [[phases]]
 phase = "3"
 content = "Django 6.0 and 5.2 support"
-status = "in progress"
+status = "done"
 
 [[phases.steps]]
 step = "A: Django 6.1 → 6.0"
@@ -98,8 +98,8 @@ prs = [113, 115, 117, 118]
 
 [[phases.steps]]
 step = "Close-out: phase record, user docs, changelog"
-status = "planned"
-prs = []
+status = "done"
+prs = [119, 120]
 
 [[phases]]
 phase = "4"

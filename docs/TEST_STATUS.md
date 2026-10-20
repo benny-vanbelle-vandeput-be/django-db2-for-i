@@ -12,7 +12,7 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2232 | 2 | 0 | 0 | 2026-10-20 22:13:09 UTC |
+| Offline · own tests | 2232 | 2 | 0 | 0 | 2026-10-20 22:48:19 UTC |
 | IBM i · own tests | 245 | 0 | 1 | 0 | 2026-10-20 17:04:47 UTC |
 | IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-20 16:21:24 UTC |
 | Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-20 22:01:16 UTC |
@@ -26,12 +26,12 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2234 | 0 | 0 | 0 | 2026-10-20 22:12:21 UTC |
+| Offline · own tests | 2234 | 0 | 0 | 0 | 2026-10-20 22:47:38 UTC |
 | IBM i · own tests | 245 | 0 | 1 | 0 | 2026-10-20 16:03:26 UTC |
 | IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-20 15:22:20 UTC |
 | Offline · Django test suite (replay) | – | – | – | – | no corpus yet |
 
-## Django 5.2 🚧
+## Django 5.2 ✅
 
 [![passed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/passed.json)](#django-test-modules)
 [![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/skipped.json)](#django-test-modules)
@@ -40,7 +40,7 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2232 | 0 | 0 | 0 | 2026-10-20 22:11:40 UTC |
+| Offline · own tests | 2232 | 0 | 0 | 0 | 2026-10-20 22:46:56 UTC |
 | IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-20 21:39:31 UTC |
 | IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 20:42:25 UTC |
 | Offline · Django test suite (replay) | – | – | – | – | no corpus yet |

@@ -14,7 +14,7 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 On in at least one supported Django version.
 
-| Flag | Description | Django 5.2 🚧 | Django 6.0 | Django 6.1 |
+| Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 |
 |---|---|---|---|---|
 | `allow_sliced_subqueries_with_in` | A sliced queryset (`qs[:n]`, also with an offset) can be used in `__in`. | ✅ | ✅ | ✅ |
 | `can_release_savepoints` | Savepoints are released after a nested `atomic()` block that succeeded. | ✅ | ✅ | ✅ |
@@ -43,7 +43,7 @@ On in at least one supported Django version.
 
 Off on purpose, with the reason.
 
-| Flag | Description | Django 5.2 🚧 | Django 6.0 | Django 6.1 | Reason |
+| Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Reason |
 |---|---|---|---|---|---|
 | `atomic_transactions` | An error inside a transaction aborts the whole transaction. | ❌ | ❌ | ❌ | Db2 for i keeps the transaction usable after a failed statement (unlike PostgreSQL). |
 | `can_rollback_ddl` | Schema changes inside a transaction are rolled back with it. | ❌ | ❌ | ❌ | Not relied on until a probe shows DDL is rolled back on Db2 for i. |
@@ -58,7 +58,7 @@ Off on purpose, with the reason.
 
 Off for now; planned for the phase shown.
 
-| Flag | Description | Django 5.2 🚧 | Django 6.0 | Django 6.1 | Phase |
+| Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Phase |
 |---|---|---|---|---|---|
 | `allows_multiple_constraints_on_same_fields` | Several constraints on the same columns. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `can_create_inline_fk` | Foreign keys are created inline in `CREATE TABLE`. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
@@ -93,7 +93,7 @@ Off for now; planned for the phase shown.
 
 Off: Django's default or not looked at yet.
 
-| Flag | Description | Django 5.2 🚧 | Django 6.0 | Django 6.1 |
+| Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 |
 |---|---|---|---|---|
 | `allows_auto_pk_0` |  | ❌ | ❌ | ❌ |
 | `allows_group_by_lob` |  | ❌ | ❌ | ❌ |
