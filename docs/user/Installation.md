@@ -6,8 +6,8 @@
 ## Requirements
 
 - Python 3.12, 3.13 or 3.14
-- Django 6.0 (6.0.3 or later) or 6.1; always use the latest security release
-  of your Django version
+- Django 5.2 LTS (5.2.12 or later), 6.0 (6.0.3 or later) or 6.1; always use
+  the latest security release of your Django version
 - [pyodbc](https://pypi.org/project/pyodbc/) 5.3 or later (installed
   automatically)
 - unixODBC (Linux) and the IBM i Access ODBC Driver, see

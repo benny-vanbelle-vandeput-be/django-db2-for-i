@@ -5,18 +5,19 @@ tested with each, and the impact of each version's "Database backend API"
 changes on this backend. The plan and the reasoning are in
 [phases/phase-3.md](phases/phase-3.md) (phase 3, "Django 6.0 and 5.2 support").
 
-Status of 2026-10-20: the backend runs on Django 6.1 and, from phase 3 step
-A, on 6.0 (offline tier on every Python; the pub400 tier and the Django
-modules on 6.0 follow). Support for 5.2 (step B) is planned; nothing in this
-file marked "planned" is implemented yet.
+Status of 2026-10-20: the backend runs on Django 6.1 and 6.0 (step A done:
+offline tier, pub400 tier, the supported Django modules and the release run
+on both) and, from phase 3 step B, on 5.2 (offline tier on every Python; the
+pub400 tier, the 5.2 golden verification and the Django modules on 5.2
+follow). Nothing in this file marked "planned" is implemented yet.
 
 ## Supported versions and the drop rule
 
 | Django | End of security support | Status in this backend |
 |---|---|---|
 | 6.1 | December 2027 | supported |
-| 6.0 | April 2027 | phase 3 step A, in progress |
-| 5.2 LTS | April 2028 | planned, phase 3 step B |
+| 6.0 | April 2027 | supported (phase 3 step A) |
+| 5.2 LTS | April 2028 | phase 3 step B, in progress |
 
 - **Source** for the dates: djangoproject.com/download, the "Supported
   versions" table (column "End of extended support"), fetched 2026-10-19.
@@ -32,7 +33,7 @@ file marked "planned" is implemented yet.
 |---|---|---|---|
 | 6.1 | 3.12, 3.13, 3.14 | 3.12, 3.13, 3.14 | 6.1.0 |
 | 6.0 | 3.12, 3.13, 3.14 | 3.12, 3.13, 3.14 | 6.0.3 (pyproject floor) |
-| 5.2 LTS | 3.10–3.14 (3.14 from 5.2.8) | 3.12, 3.13, 3.14 | 5.2.12 (planned, step B PR 9) |
+| 5.2 LTS | 3.10–3.14 (3.14 from 5.2.8) | 3.12, 3.13, 3.14 | 5.2.12 (pyproject floor) |
 
 **Why these floors**
 ([DECISIONS](DECISIONS.md#2026-10-19-minimum-django-patch-releases-5212-603-and-610)):

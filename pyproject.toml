@@ -14,13 +14,15 @@ requires-python = ">=3.12"
 # pyodbc is required while it is the only driver; it becomes an extra once a
 # second driver exists (see docs/DECISIONS.md).
 dependencies = [
-    # 6.0.3 has the latest Python 3.14 fixes (docs/DJANGO_VERSIONS.md).
-    "Django>=6.0.3,<6.2",
+    # 5.2.12 and 6.0.3 have the latest Python 3.14 fixes (docs/DJANGO_VERSIONS.md);
+    # there is no 5.3, so the range skips 6.0.0-6.0.2 explicitly.
+    "Django>=5.2.12,!=6.0.0,!=6.0.1,!=6.0.2,<6.2",
     "pyodbc>=5.3",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Framework :: Django",
+    "Framework :: Django :: 5.2",
     "Framework :: Django :: 6.0",
     "Framework :: Django :: 6.1",
     "Intended Audience :: Developers",
