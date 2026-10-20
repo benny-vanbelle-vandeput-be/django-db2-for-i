@@ -152,6 +152,17 @@ def test_pub400_script_accepts_only_pub400_sessions_and_keeps_the_mac_awake() ->
     assert 'exec "$(dirname "$0")/pub400.sh" django_tests "$version" "$@"' in runtests
 
 
+def test_the_backend_commit_comes_from_the_host_when_given(monkeypatch) -> None:
+    monkeypatch.setenv("DB2I_BACKEND_COMMIT", "abc1234 2026-10-20")
+    assert runner.backend_commit() == "abc1234 2026-10-20"
+    monkeypatch.delenv("DB2I_BACKEND_COMMIT")
+    monkeypatch.setattr(runner, "git_commit", lambda path: f"read {path.name}")
+    assert runner.backend_commit() == f"read {runner.ROOT.name}"
+    script = (SCRIPTS / "pub400.sh").read_text()
+    assert "commit=$(git log -1 --format='%h %cs'" in script
+    assert '-e DB2I_BACKEND_COMMIT="$commit" tests nox' in script
+
+
 def test_scrubber_removes_the_password() -> None:
     scrub = runner.make_scrubber(["S3cret!pw", ""])
     assert scrub("error: S3cret!pw rejected, S3cret!pw") == "error: *** rejected, ***"
