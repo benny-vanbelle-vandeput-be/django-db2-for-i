@@ -158,6 +158,33 @@ views and foreign keys that depend on its table**, including objects created
 outside Django. Check for dependent objects before deleting a model whose
 table is used by other applications.
 
+## Dropping or narrowing a column needs a reply list entry
+
+`RemoveField` (`ALTER TABLE ... DROP COLUMN`) and changes that narrow a column
+(a shorter `max_length`, a smaller integer type) make Db2 for i send inquiry
+message CPA32B2 ("Change of file may cause data to be lost"), also on an empty
+table. Its default reply cancels the change, and the backend raises
+`OperationalError` with an explanation. To allow such changes, an
+administrator adds a system reply list entry and the database settings set
+`OPTIONS["inquiry_message_reply"] = "*SYSRPYL"`, see
+[IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data).
+
+The backend writes `DROP COLUMN` without `CASCADE` or `RESTRICT` on every
+Django version (Django 5.2's own text adds `CASCADE`). What Db2 for i does
+with views or indexes that depend on the column is not verified yet: on a
+system without the reply list entry the statement is always cancelled first.
+
+## Differences between the supported Django versions
+
+The backend behaves the same on Django 5.2, 6.0 and 6.1, except:
+
+- `StringAgg` requires Django 6.0 or later (see "StringAgg results are limited
+  to 1M characters"). `AnyValue` and ordered aggregates
+  (`Aggregate(order_by=...)`) are Django 6.0 features as well.
+- Database-level `on_delete` (Django 6.1) is not supported yet on any version.
+- Generated SQL differs in small ways between versions (Django 5.2 and 6.0
+  leave subquery aliases unquoted, which Db2 for i reads the same way).
+
 ## Tables must be in the library given as NAME
 
 Unqualified constraint names (such as the names of foreign key constraints

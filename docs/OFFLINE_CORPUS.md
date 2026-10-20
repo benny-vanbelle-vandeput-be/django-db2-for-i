@@ -35,23 +35,50 @@ This page is the reference. The design was approved on 2026-10-19
 
 ## Numbers
 
-**Django 6.1** (commit `1e01021`, profile 7.5, captured 2026-10-20 on PUB400):
+**Django 6.1** (commit `1e01021`, profile 7.5, captured 2026-10-21 on PUB400):
 
 | Module | Recorded | Unique | Unpicklable | Needs database | No SQL | Not compiled | Volatile | Pickle format | gzip |
 |---|---|---|---|---|---|---|---|---|---|
 | aggregation | 367 | 347 | 5 | 0 | 6 | 6 | 0 | 2 | 129 KB |
-| basic | 237 | 187 | 0 | 0 | 0 | 4 | 0 | 1 | 22 KB |
-| expressions | 590 | 423 | 3 | 1 | 0 | 6 | 0 | 1 | 102 KB |
+| basic | 237 | 187 | 0 | 0 | 4 | 0 | 0 | 2 | 21 KB |
+| expressions | 590 | 423 | 3 | 1 | 0 | 6 | 0 | 2 | 102 KB |
 | lookup | 354 | 296 | 1 | 0 | 10 | 5 | 0 | 2 | 70 KB |
-| ordering | 138 | 115 | 0 | 0 | 0 | 1 | 0 | 1 | 18 KB |
-| queries | 1455 | 1145 | 1 | 3 | 49 | 11 | 4 | 2 | 414 KB |
-| transactions | 209 | 20 | 0 | 0 | 0 | 1 | 0 | 1 | 4 KB |
-| **Total** | **3350** | **2533** | **10** | **4** | **65** | **34** | **4** | | **759 KB** |
+| ordering | 138 | 115 | 0 | 0 | 0 | 1 | 0 | 2 | 18 KB |
+| queries | 1454 | 1145 | 1 | 3 | 49 | 12 | 4 | 2 | 414 KB |
+| transactions | 209 | 20 | 0 | 0 | 0 | 1 | 0 | 2 | 4 KB |
+| **Total** | **3349** | **2533** | **10** | **4** | **69** | **31** | **4** | | **758 KB** |
 
-All 2533 entries replay identically on Python 3.12, 3.13 and 3.14 (0 not
-loadable, 0 not replayable, 0 different). **Django 6.0 and 5.2** have no corpus
-yet: the phase 3 release runs on them did not capture (`release_run` lacked
-`--capture`); every release run captures now, starting with the end of phase 3.
+**Django 6.0** (commit `52e5ba1`, profile 7.5, captured 2026-10-21 on PUB400):
+
+| Module | Recorded | Unique | Unpicklable | Needs database | No SQL | Not compiled | Volatile | Pickle format | gzip |
+|---|---|---|---|---|---|---|---|---|---|
+| aggregation | 367 | 347 | 5 | 0 | 6 | 3 | 0 | 2 | 128 KB |
+| basic | 217 | 172 | 0 | 0 | 4 | 0 | 0 | 2 | 20 KB |
+| expressions | 588 | 422 | 3 | 1 | 0 | 6 | 0 | 2 | 101 KB |
+| lookup | 314 | 272 | 1 | 0 | 10 | 5 | 0 | 2 | 66 KB |
+| ordering | 138 | 115 | 0 | 0 | 0 | 1 | 0 | 2 | 17 KB |
+| queries | 1430 | 1125 | 1 | 3 | 49 | 8 | 4 | 2 | 407 KB |
+| transactions | 209 | 20 | 0 | 0 | 0 | 4 | 0 | 2 | 4 KB |
+| **Total** | **3263** | **2473** | **10** | **4** | **69** | **27** | **4** | | **744 KB** |
+
+**Django 5.2** (commit `cae7247`, profile 7.5, captured on PUB400 in one run across midnight UTC, 2026-10-20 and 2026-10-21):
+
+| Module | Recorded | Unique | Unpicklable | Needs database | No SQL | Not compiled | Volatile | Pickle format | gzip |
+|---|---|---|---|---|---|---|---|---|---|
+| aggregation | 347 | 329 | 5 | 0 | 6 | 2 | 0 | 2 | 114 KB |
+| basic | 226 | 174 | 0 | 0 | 4 | 0 | 0 | 2 | 20 KB |
+| expressions | 547 | 400 | 1 | 1 | 0 | 6 | 0 | 2 | 98 KB |
+| lookup | 308 | 268 | 1 | 0 | 10 | 5 | 0 | 2 | 65 KB |
+| ordering | 137 | 114 | 0 | 0 | 0 | 1 | 0 | 2 | 17 KB |
+| queries | 1429 | 1124 | 1 | 3 | 49 | 8 | 4 | 2 | 406 KB |
+| transactions | 209 | 20 | 0 | 0 | 0 | 4 | 0 | 2 | 4 KB |
+| **Total** | **3203** | **2429** | **8** | **4** | **69** | **26** | **4** | | **725 KB** |
+
+Every entry of the three corpora replays identically on Python 3.12, 3.13 and
+3.14 (0 not loadable, 0 not replayable, 0 different). All three were captured
+by the release runs at the end of phase 3 (backend `4cf4e0e`, every release
+run captures since #122); the counts differ per version because each
+version's test suite differs.
 
 ## What the counts mean
 
@@ -77,8 +104,9 @@ yet: the phase 3 release runs on them did not capture (`release_run` lacked
 
 The manifest records each module's `pickle_format`; the replay loads both.
 
-- **1:** a plain pickle (the first captures: ordering, basic, transactions,
-  expressions).
+- **1:** a plain pickle (the first 6.1 captures of ordering, basic,
+  transactions and expressions; no corpus uses it since the end of phase 3,
+  but the replay still loads it).
 - **2:** a private Pickler stores model classes as persistent ids
   `("model", app_label, model_name)`, resolved through the app registry on
   load; everything else stays a plain pickle. Plain pickle stores a class by
