@@ -110,7 +110,10 @@ def corpus(session: nox.Session, django: str) -> None:
         for dependency in PYPROJECT["project"]["dependencies"]
         if not dependency.lower().startswith("django")
     ]
-    session.install(*others, checkout)
+    # Editable, as the django_tests session installs it for the capture, so the
+    # version string (with the git date) matches the pickles' exactly.
+    session.install(*others)
+    session.install("-e", checkout)
     session.run(
         "pytest",
         "tests/corpus",
