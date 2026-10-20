@@ -157,6 +157,20 @@ change.
   are `setUpTestData` inserts and repeated lookups.
 
 ### Unpicklable queries
+*Measured (2026-10-20):* nearly all unpicklable statements were queries on an
+auto-created many-to-many through model itself (the INSERTs of
+`author.friends.add()` in `setUpTestData`): plain pickle stores a class by its
+module path, and `aggregation.models.Author_friends` does not exist there
+(aggregation 74 of 79, lookup 27 of 28, queries.tests about 30). Since then
+the capture uses **pickle format 2**: model classes are stored as persistent
+ids (app label, model name) and resolved through the app registry on load;
+everything else stays a plain pickle. Each module's manifest records its
+`pickle_format` (1 for the first captures: ordering, basic, transactions), and
+the replay loads both. What stays unpicklable is a class defined inside a
+test (a custom aggregate, an expression), which cannot be loaded again anyway.
+Queries that match nothing (`EmptyResultSet`) are counted as "no SQL": Django
+sends nothing for them.
+
 Skip and count them, never fail the capture:
 - at capture: `pickle.dumps` errors;
 - at replay: unpickle errors (for example a model defined inside a test with

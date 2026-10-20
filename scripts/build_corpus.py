@@ -70,10 +70,11 @@ def build(version: str, paths: Sequence[Path], profile: str = "7.5") -> dict[str
     skipped: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     level_of: dict[str, str] = {}
     date_of: dict[str, str] = {}
+    format_of: dict[str, set[int]] = {}
     for _path, header, records in captures:
         modules_here = {store.module_of(record["tests"][0]) for record in records}
         for module in modules_here or {header.get("label", "").split(".")[0]}:
-            for key in ("unpicklable", "not_compiled", "needs_database", "unencodable"):
+            for key in ("unpicklable", "not_compiled", "needs_database", "no_sql", "unencodable"):
                 skipped[module][key] += header["counts"].get(key, 0)
         for record in records:
             module = store.module_of(record["tests"][0])
@@ -88,6 +89,7 @@ def build(version: str, paths: Sequence[Path], profile: str = "7.5") -> dict[str
             )
             level_of[module] = header["level"]
             date_of[module] = header["date"]
+            format_of.setdefault(module, set()).add(header.get("pickle_format", 1))
 
     directory = store.corpus_dir(version, profile)
     manifest = store.read_manifest(directory)
@@ -98,6 +100,9 @@ def build(version: str, paths: Sequence[Path], profile: str = "7.5") -> dict[str
             f"({', '.join(sorted(others))}); recapture them too, or drop them"
         )
 
+    for module, formats in format_of.items():
+        if len(formats) != 1 or not formats <= set(store.PICKLE_FORMATS):
+            raise BuildRefused(f"{module}: captures with pickle formats {sorted(formats)}")
     counts = {}
     for module, records in sorted(by_module.items()):
         entries = store.dedup(records)
@@ -111,6 +116,7 @@ def build(version: str, paths: Sequence[Path], profile: str = "7.5") -> dict[str
             **dict(skipped[module]),
             "level": level_of[module],
             "captured": date_of[module],
+            "pickle_format": next(iter(format_of[module])),
         }
         print(
             f"{module}: {len(records)} recorded, {len(entries)} unique"

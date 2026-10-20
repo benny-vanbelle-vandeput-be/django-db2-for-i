@@ -30,12 +30,13 @@ import contextlib
 import datetime as dt
 import json
 import os
-import pickle
 import unittest
 from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+
+from tests.corpus.store import PICKLE_FORMAT
 
 ENV = "DB2I_CORPUS_CAPTURE"
 COMMIT_ENV = "DB2I_DJANGO_COMMIT"
@@ -66,6 +67,7 @@ class Recorder:
             "unpicklable": 0,
             "not_compiled": 0,
             "needs_database": 0,
+            "no_sql": 0,
             "unencodable": 0,
         }
         # Why statements were not recorded: "<count kind>: <exception>" -> count.
@@ -89,21 +91,25 @@ class Recorder:
 
     def _record(self, compiler: Any) -> None:
         from django.conf import settings
+        from django.core.exceptions import EmptyResultSet
 
-        from tests.corpus.store import encode_query, encode_statements
+        from tests.corpus.store import dumps, encode_query, encode_statements, loads
 
         try:
-            pickled = pickle.dumps(compiler.query, protocol=PICKLE_PROTOCOL)
+            pickled = dumps(compiler.query)
         except Exception as exc:
             self._skip("unpicklable", exc)
             return
         self.compiling = True
         try:
-            copy = pickle.loads(pickled)
+            copy = loads(pickled, PICKLE_FORMAT)
             fresh = copy.get_compiler(using=compiler.using, connection=compiler.connection)
             compiled = fresh.as_sql()
         except NeedsDatabase as exc:
             self._skip("needs_database", exc)
+            return
+        except EmptyResultSet as exc:  # matches nothing: Django sends no SQL
+            self._skip("no_sql", exc)
             return
         except Exception as exc:
             self._skip("not_compiled", exc)
@@ -160,6 +166,7 @@ class Recorder:
             "label": os.environ.get(LABEL_ENV, ""),
             "level": self.level,
             "date": f"{dt.datetime.now(dt.UTC):%Y-%m-%d}",
+            "pickle_format": PICKLE_FORMAT,
             "counts": dict(self.counts, kept=len(self.kept)),
             "reasons": dict(sorted(self.reasons.items())),
         }
