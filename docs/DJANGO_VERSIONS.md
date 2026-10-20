@@ -5,11 +5,10 @@ tested with each, and the impact of each version's "Database backend API"
 changes on this backend. The plan and the reasoning are in
 [phases/phase-3.md](phases/phase-3.md) (phase 3, "Django 6.0 and 5.2 support").
 
-Status of 2026-10-20: the backend runs on Django 6.1 and 6.0 (step A done:
-offline tier, pub400 tier, the supported Django modules and the release run
-on both) and, from phase 3 step B, on 5.2 (offline tier on every Python; the
-pub400 tier, the 5.2 golden verification and the Django modules on 5.2
-follow). Nothing in this file marked "planned" is implemented yet.
+Status of 2026-10-21 (phase 3 done): the backend supports Django 5.2, 6.0 and
+6.1, each with the four test sets on every Python, the goldens verified on
+PUB400 and a release run (see [phase-3.md](phases/phase-3.md)). Nothing in
+this file marked "planned" is implemented yet.
 
 ## Supported versions and the drop rule
 
@@ -17,7 +16,7 @@ follow). Nothing in this file marked "planned" is implemented yet.
 |---|---|---|
 | 6.1 | December 2027 | supported |
 | 6.0 | April 2027 | supported (phase 3 step A) |
-| 5.2 LTS | April 2028 | phase 3 step B, in progress |
+| 5.2 LTS | April 2028 | supported (phase 3 step B) |
 
 - **Source** for the dates: djangoproject.com/download, the "Supported
   versions" table (column "End of extended support"), fetched 2026-10-19.

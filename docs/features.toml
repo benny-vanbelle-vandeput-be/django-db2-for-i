@@ -10,7 +10,7 @@
 # docs/features/<django>.json, never from this file.
 
 # Django versions still in development in this backend (🚧 in the column header).
-development = ["5.2"]
+development = []
 
 [flags]
 

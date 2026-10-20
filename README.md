@@ -13,7 +13,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 ![Python 3.13 ✅](https://img.shields.io/badge/Python-3.13%20%E2%9C%85-brightgreen)
 ![Python 3.14 ✅](https://img.shields.io/badge/Python-3.14%20%E2%9C%85-brightgreen)
 
-[![Django 5.2 🚧](https://img.shields.io/badge/Django-5.2%20%F0%9F%9A%A7-yellow)](docs/DJANGO_VERSIONS.md)
+[![Django 5.2 ✅](https://img.shields.io/badge/Django-5.2%20%E2%9C%85-brightgreen)](docs/DJANGO_VERSIONS.md)
 [![Django 6.0 ✅](https://img.shields.io/badge/Django-6.0%20%E2%9C%85-brightgreen)](docs/DJANGO_VERSIONS.md)
 [![Django 6.1 ✅](https://img.shields.io/badge/Django-6.1%20%E2%9C%85-brightgreen)](docs/DJANGO_VERSIONS.md)
 [![Django 6.2 🗓️](https://img.shields.io/badge/Django-6.2%20%F0%9F%97%93%EF%B8%8F-blue)](docs/DJANGO_VERSIONS.md)
@@ -33,7 +33,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2232 | 2 | 0 | 0 | 2026-10-20 22:13:09 UTC |
+| Offline · own tests | 2232 | 2 | 0 | 0 | 2026-10-20 22:48:19 UTC |
 | IBM i · own tests | 245 | 0 | 1 | 0 | 2026-10-20 17:04:47 UTC |
 | IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-20 16:21:24 UTC |
 | Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-20 22:01:16 UTC |
@@ -47,12 +47,12 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2234 | 0 | 0 | 0 | 2026-10-20 22:12:21 UTC |
+| Offline · own tests | 2234 | 0 | 0 | 0 | 2026-10-20 22:47:38 UTC |
 | IBM i · own tests | 245 | 0 | 1 | 0 | 2026-10-20 16:03:26 UTC |
 | IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-20 15:22:20 UTC |
 | Offline · Django test suite (replay) | – | – | – | – | no corpus yet |
 
-### Django 5.2 🚧
+### Django 5.2 ✅
 
 [![passed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/passed.json)](docs/TEST_STATUS.md)
 [![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/skipped.json)](docs/TEST_STATUS.md)
@@ -61,7 +61,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2232 | 0 | 0 | 0 | 2026-10-20 22:11:40 UTC |
+| Offline · own tests | 2232 | 0 | 0 | 0 | 2026-10-20 22:46:56 UTC |
 | IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-20 21:39:31 UTC |
 | IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 20:42:25 UTC |
 | Offline · Django test suite (replay) | – | – | – | – | no corpus yet |
@@ -94,20 +94,12 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (22 enabled on Django 6.1) �
 <!-- status:start -->
 ## Project status
 
-**Phase 3: Django 6.0 and 5.2 support** (in progress)
-
-| Step | State | Pull requests |
-|---|---|---|
-| A: Django 6.1 → 6.0 | done | [#107](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/107), [#110](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/110), [#111](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/111), [#114](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/114) |
-| B: Django 6.0 → 5.2 | done | [#113](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/113), [#115](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/115), [#117](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/117), [#118](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/118) |
-| Close-out: phase record, user docs, changelog | planned |  |
-
 | Phase | Content | Status |
 |---|---|---|
 | [0](docs/phases/phase-0.md) | Skeleton & environment | done |
 | [1](docs/phases/phase-1.md) | Minimal backend | done |
 | [2](docs/phases/phase-2.md) | Queries & pagination (ordering, lookup, aggregation, expressions, queries) | done |
-| [3](docs/phases/phase-3.md) | Django 6.0 and 5.2 support | in progress |
+| [3](docs/phases/phase-3.md) | Django 6.0 and 5.2 support | done |
 | 4 | Schema editor completeness | planned |
 | 5 | Returning & bulk | planned |
 | 6 | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
