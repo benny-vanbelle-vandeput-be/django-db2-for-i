@@ -223,6 +223,29 @@ def django_tests(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
+def release_run(session: nox.Session) -> None:
+    """Before a release, per Django version: all supported Django modules, then the
+    pub400 tier (scripts/release_run.py; sequential, one connection at a time).
+
+    nox -s release_run -- <django-version>
+    """
+    if len(session.posargs) != 1:
+        session.error("usage: nox -s release_run -- <django-version>")
+    # Django from the vendor checkout, as in django_tests, for the modules and the tier.
+    session.install(*nox.project.dependency_groups(PYPROJECT, "test"))
+    session.install("-e", f"vendor/django-{session.posargs[0]}")
+    session.install("--no-deps", "-e", ".")
+    session.install(
+        *[
+            dependency
+            for dependency in PYPROJECT["project"]["dependencies"]
+            if not dependency.lower().startswith("django")
+        ]
+    )
+    session.run("python", "scripts/release_run.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
 def test_status(session: nox.Session) -> None:
     """Regenerate docs/TEST_STATUS.md from the logs in test-results/."""
     install(session, NEWEST_DJANGO)

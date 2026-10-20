@@ -735,3 +735,72 @@ def test_readme_states_what_is_counted() -> None:
     text = _flat(readme.read_text(encoding="utf-8"))
     for statement in REQUIRED_STATEMENTS:
         assert statement in text
+
+
+# --- release run -------------------------------------------------------------------------
+
+release = load("release_run")
+
+
+def test_release_run_labels_come_from_status_toml() -> None:
+    import tomllib
+
+    run = release.labels()
+    modules = tomllib.loads(release.STATUS_DATA.read_text())["modules"]
+    assert run[: len(modules) - 1] == [module["module"] for module in modules[:-1]]
+    assert "queries" not in run  # run as its labels
+    assert "queries.tests" in run and "queries.test_bulk_update" in run
+    assert len(run) == len(set(run))
+    for label in run:
+        runner.validate("6.1", [label])  # one label per call, each a valid label
+
+
+def test_release_run_refuses_before_connecting(monkeypatch, tmp_path, capsys) -> None:
+    calls = []
+    monkeypatch.setattr(release.run_django_tests, "main", lambda argv: calls.append(argv) or 0)
+    monkeypatch.setattr(release, "run_tier", lambda version: calls.append(version) or 0)
+    assert release.main([]) == 2
+    assert release.main(["six"]) == 2
+    assert "invalid Django version" in capsys.readouterr().err
+    monkeypatch.setattr(release, "ROOT", tmp_path)
+    assert release.main(["6.1"]) == 2
+    assert "vendor/django-6.1 is missing" in capsys.readouterr().err
+    (tmp_path / "vendor" / "django-6.1" / "tests").mkdir(parents=True)
+    (tmp_path / "vendor" / "django-6.1" / "tests" / "runtests.py").touch()
+    monkeypatch.setattr(release, "reachable", lambda: "port 9471 not reachable: timed out")
+    assert release.main(["6.1"]) == 2
+    assert "PUB400 is not reachable, nothing was run" in capsys.readouterr().err
+    assert calls == []
+
+
+def test_release_run_runs_every_label_then_the_tier_and_reports_failures(
+    monkeypatch, tmp_path, capsys
+) -> None:
+    calls = []
+    (tmp_path / "vendor" / "django-6.1" / "tests").mkdir(parents=True)
+    (tmp_path / "vendor" / "django-6.1" / "tests" / "runtests.py").touch()
+    monkeypatch.setattr(release, "ROOT", tmp_path)
+    monkeypatch.setattr(release, "reachable", lambda: None)
+    monkeypatch.setattr(
+        release.run_django_tests,
+        "main",
+        lambda argv: calls.append(argv) or (1 if argv[-1] == "lookup" else 0),
+    )
+    monkeypatch.setattr(release, "run_tier", lambda version: calls.append(["tier", version]) or 0)
+    assert release.main(["6.1"]) == 1
+    run = release.labels()
+    assert calls == [["6.1", "--clean", label] for label in run] + [["tier", "6.1"]]
+    assert f"{len(run) + 1} runs, failed: lookup" in capsys.readouterr().out
+
+
+def test_release_run_reachability_needs_no_credentials(monkeypatch) -> None:
+    for name in ("DB2I_HOST", "DB2I_USER", "DB2I_PASSWORD", "DB2I_SSL"):
+        monkeypatch.delenv(name, raising=False)
+    assert "DB2I_HOST" in release.reachable()
+    monkeypatch.setenv("DB2I_HOST", "example.invalid")
+    monkeypatch.setattr(release, "tcp_check", lambda host, port: {"open": True, "port": port})
+    assert release.reachable() is None
+    monkeypatch.setattr(
+        release, "tcp_check", lambda host, port: {"open": False, "error": "timeout", "port": port}
+    )
+    assert release.reachable() == "port 9471 not reachable: timeout"
