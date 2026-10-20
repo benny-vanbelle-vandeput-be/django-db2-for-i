@@ -1,7 +1,7 @@
 # django-db2-for-i
 
 <!-- badges:start -->
-[![Django](https://img.shields.io/badge/Django-6.1%20%7C%206.0%20%7C%205.2%20planned-0C4B33)](https://www.djangoproject.com/)
+[![Django](https://img.shields.io/badge/Django-6.1%20%7C%206.0%20%7C%205.2-0C4B33)](https://www.djangoproject.com/)
 ![Python](https://img.shields.io/badge/Python-3.12%20%7C%203.13%20%7C%203.14-3776AB)
 ![IBM i](https://img.shields.io/badge/IBM%20i-7.5-054ADA)
 [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue)](LICENSE)
@@ -19,6 +19,12 @@
 [![failed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/failed.json)](docs/TEST_STATUS.md)
 [![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/skipped.json)](docs/TEST_STATUS.md)
 [![expected failures](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/6.0/xfail.json)](docs/TEST_STATUS.md)
+
+[![Django modules](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/modules.json)](docs/TEST_STATUS.md)
+[![passed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/passed.json)](docs/TEST_STATUS.md)
+[![failed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/failed.json)](docs/TEST_STATUS.md)
+[![skipped](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/skipped.json)](docs/TEST_STATUS.md)
+[![expected failures](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/benny-vanbelle-vandeput-be/django-db2-for-i/main/docs/badges/5.2/xfail.json)](docs/TEST_STATUS.md)
 <!-- badges:end -->
 
 A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
@@ -82,7 +88,7 @@ Details per module: [docs/TEST_STATUS.md](docs/TEST_STATUS.md).
 | 0 | Skeleton & environment | done |
 | 1 | Minimal backend | done |
 | 2 | Queries & pagination (ordering, lookup, aggregation, expressions, queries) | done |
-| 3 | Django 6.0 and 5.2 support (plan approved: docs/phases/phase-3.md); step A (6.0) done, step B (5.2) in progress | in progress |
+| 3 | Django 6.0 and 5.2 support (plan approved: docs/phases/phase-3.md); steps A (6.0) and B (5.2) done; close-out (phase record, user docs) next | in progress |
 | 4 | Schema editor completeness | planned |
 | 5 | Returning & bulk | planned |
 | 6 | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
@@ -95,17 +101,17 @@ Tests and results from the last recorded run, see [TEST_STATUS](docs/TEST_STATUS
 
 | Module | Django 6.1 | Django 6.0 | Django 5.2 | Status |
 |---|---|---|---|---|
-| basic | 83 tests, OK (3 skipped) | 74 tests, OK (3 skipped) | planned | in progress |
-| transactions | 88 tests, OK (3 skipped) | 87 tests, OK (2 skipped) | planned | in progress |
-| ordering | 43 tests, OK | 35 tests, OK | planned | in progress |
-| lookup | 148 tests, OK (5 skipped, 2 expected failures) | 100 tests, OK (5 skipped, 2 expected failures) | planned | in progress |
-| aggregation | 168 tests, OK (16 skipped) | 156 tests, OK (5 skipped) | planned | in progress |
-| expressions | 213 tests, OK (5 skipped, 2 expected failures) | 212 tests, OK (5 skipped, 2 expected failures) | planned | in progress |
-| queries | 506 tests, OK (21 skipped, 3 expected failures) | 495 tests, OK (21 skipped, 4 expected failures) | planned | in progress (split into labels Q1–Q5 because of its size) |
+| basic | 83 tests, OK (3 skipped) | 74 tests, OK (3 skipped) | 82 tests, OK (3 skipped) | done |
+| transactions | 88 tests, OK (3 skipped) | 87 tests, OK (2 skipped) | 87 tests, OK (2 skipped) | done |
+| ordering | 43 tests, OK | 35 tests, OK | 34 tests, OK | done |
+| lookup | 148 tests, OK (5 skipped, 2 expected failures) | 100 tests, OK (5 skipped, 2 expected failures) | 100 tests, OK (7 skipped, 2 expected failures) | done |
+| aggregation | 168 tests, OK (16 skipped) | 156 tests, OK (5 skipped) | 140 tests, OK (1 skipped) | done |
+| expressions | 213 tests, OK (5 skipped, 2 expected failures) | 212 tests, OK (5 skipped, 2 expected failures) | 208 tests, OK (5 skipped, 2 expected failures) | done |
+| queries | 506 tests, OK (21 skipped, 3 expected failures) | 495 tests, OK (21 skipped, 4 expected failures) | 493 tests, OK (20 skipped, 4 expected failures) | done (split into labels Q1–Q5 because of its size) |
 
 ### Open tracks and notes
 
-- Offline query corpus: Django 6.1 done (7 modules, 2533 entries, replayed in every offline CI job); 6.0 and 5.2 corpora follow with the release run.
+- Offline query corpus: Django 6.1 done (7 modules, 2533 entries, replayed in every offline CI job); 6.0 and 5.2 corpora are still to be captured.
 - Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82)).
 - Verify the column order of created tables (phase 4, [#23](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/23)).
 - `DROP COLUMN` on a table with rows is cancelled by CPA32B2 (`HY008`), which raises the question of table rebuilds in phase 4 (see [IBMI_NOTES](docs/IBMI_NOTES.md)).
