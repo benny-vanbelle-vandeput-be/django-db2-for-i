@@ -16,6 +16,18 @@ unencodable = 0
 unique = 187
 unpicklable = 0
 
+[modules.lookup]
+captured = "2026-10-20"
+level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.1.3.dev20261012092145"
+needs_database = 0
+no_sql = 10
+not_compiled = 5
+pickle_format = 2
+recorded = 354
+unencodable = 0
+unique = 296
+unpicklable = 1
+
 [modules.ordering]
 captured = "2026-10-20"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.1.3.dev20261012092145"
