@@ -1161,3 +1161,21 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   (Django's approach for single values; needs clamping for ranges and does not
   help Decimals); typing every numeric value (changes the SQL of every query).
 
+## 2026-10-20: Offline query corpus: capture from an unpickled copy, settings per entry
+- **Decision:** the capture hook (`tests/corpus/capture.py`, enabled by
+  `scripts/runtests.sh --capture` through `TEST_RUNNER` in the runner
+  settings) pickles the query before execution and records the SQL of a fresh
+  compiler on the unpickled copy, the same steps as the offline replay. It
+  records the `USE_TZ` / `TIME_ZONE` in effect with each entry, and the replay
+  applies them with `override_settings`; they are part of the dedup key.
+  `setUpTestData` statements count for their class and are kept if a test of
+  that class passed.
+- **Why:** calling `as_sql()` on the live compiler before Django does can
+  change the query (an update compiler's `pre_sql_setup` adds the related-update
+  filter), so the capture could alter a test; compiling a copy cannot, and the
+  capture and the replay then agree by construction. Tests that override
+  USE_TZ / TIME_ZONE produce different SQL or params; without the settings the
+  replay would report false mismatches.
+- **Alternatives:** recording the executed SQL at the cursor (no pickle to
+  replay); one corpus per settings combination (more files for few tests).
+

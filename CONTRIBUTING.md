@@ -123,6 +123,29 @@ docker compose run --rm tests nox -s test_status   # regenerate docs/TEST_STATUS
 - Known failures go into `DatabaseFeatures.expected_failures` /
   `django_test_skips` under one of the fixed `REASON_*` strings.
 
+## Offline query corpus
+
+Statements that passing Django tests sent to Db2 for i become offline
+regression checks (design: `docs/proposals/offline-query-corpus.md`):
+
+```sh
+scripts/runtests.sh 6.1 --clean --capture ordering     # PUB400: record the passing tests' statements
+docker compose run --rm tests sh -c 'uv run --no-project --python 3.14 python scripts/build_corpus.py 6.1'
+docker compose run --rm tests nox -s "corpus(3.14-django6.1)"   # replay offline, no IBM i
+```
+
+- `--capture` writes `test-results/<version>/corpus/<label>.jsonl`; only tests
+  that passed count (`tests/corpus/capture.py`).
+- `scripts/build_corpus.py` turns the captures into
+  `tests/offline/corpus/<django>/<profile>/` (gzip JSONL per module, a plain SQL
+  index for review, a manifest with the Django commit). Build a module only
+  from captures of all of its labels; unchanged modules stay byte-identical.
+- `nox -s corpus` installs Django from exactly the manifest's commit (library
+  and test suite) and compares the SQL and params the backend writes now. A
+  mismatch means "no longer the SQL that passed on IBM i"; `--update-corpus`
+  (never in CI) rewrites it and clears the stamp. CI runs it as a step of each
+  offline job.
+
 ## Releases
 
 Releases are alpha releases on GitHub only (no PyPI). **Contributors and

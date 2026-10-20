@@ -128,7 +128,7 @@ def test_debug_sql_option_is_accepted() -> None:
 
     script = Path(__file__).resolve().parents[2] / "scripts" / "runtests.sh"
     text = script.read_text()
-    assert "--clean|--debug-sql) ;;" in text
+    assert "--clean|--debug-sql|--capture) ;;" in text
     result = sp.run(["sh", str(script), "6.1", "--debug-sql"], capture_output=True, text=True)
     assert result.returncode == 2
     assert "name the test modules" in result.stderr

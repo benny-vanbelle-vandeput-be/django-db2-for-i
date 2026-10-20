@@ -195,6 +195,11 @@ after the first capture:
 - It wraps `SQLCompiler.execute_sql` (and the insert compiler's) as in the
   check above. It records before executing, and catches every exception of
   its own, so it can never change a test's outcome.
+  - *Implemented (2026-10-20):* the recorded SQL comes from a fresh compiler on
+    the **unpickled** copy of the query, exactly as the replay compiles it,
+    never from `as_sql()` on the live compiler (which can have side effects,
+    e.g. an update's related-update filter). Each entry also records the
+    `USE_TZ` / `TIME_ZONE` the test ran with; the replay applies them again.
 - A custom test result keeps an entry only if the test **passed**. Entries
   from failures, errors, skips and expected failures are dropped (decision 2).
 - For A (second PR), the hook also records the DDL that the test database setup executes
