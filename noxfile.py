@@ -14,6 +14,7 @@ PYPROJECT = nox.project.load_toml("pyproject.toml")
 # Python versions supported by each Django version, taken from Django's
 # release notes (see docs/DJANGO_VERSIONS.md), oldest first.
 DJANGO_PYTHONS = {
+    "5.2": ["3.12", "3.13", "3.14"],
     "6.0": ["3.12", "3.13", "3.14"],
     "6.1": ["3.12", "3.13", "3.14"],
 }

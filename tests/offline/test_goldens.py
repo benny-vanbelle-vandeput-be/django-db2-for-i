@@ -86,9 +86,13 @@ def test_golden(profile, case, request) -> None:
 
 
 def test_every_golden_has_a_case() -> None:
+    """Per Django series: the cases can differ between series (StringAgg is a
+    6.0+ case), so each series checks its own goldens."""
     orphans = []
     for path in all_golden_paths():
-        _django, profile, *rest = path.relative_to(GOLDEN_ROOT).with_suffix("").parts
+        series, profile, *rest = path.relative_to(GOLDEN_ROOT).with_suffix("").parts
+        if series != DJANGO_SERIES:
+            continue
         if "/".join(rest) not in CASES_BY_NAME or profile not in PROFILES:
             orphans.append(str(path.relative_to(GOLDEN_ROOT)))
     assert not orphans, f"goldens without a case (remove them): {orphans}"
