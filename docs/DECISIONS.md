@@ -697,7 +697,6 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   custom transform with the template `NULL` (`WHERE NULL IS NULL`, SQL0206)
   and is an expected failure (`REASON_UNTYPED_NULL`).
 
-
 ## 2026-10-18: Avg of an integer: cast the argument to DOUBLE
 - **Decision (project owner approved):** when `Avg`'s output is a FloatField
   (an integer argument) and its argument is not a FloatField, the argument is
@@ -1236,3 +1235,28 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   normalizing datetime params in the replay (hides real param changes);
   excluding the tests by name (a list to maintain); checking at replay time
   (a mismatch must stay a failure).
+
+## 2026-10-20: The duration range check before Django 6.1
+- **Decision (project owner approved):** on Django before 6.1,
+  `compat.install_duration_adapter()` (the "before 6.1" section of
+  `compat.py`, called once when `base.py` is imported) replaces
+  `DurationField.get_db_prep_value` with a wrapper that calls
+  `connection.ops.adapt_durationfield_value(value)` for this backend's
+  connections (`vendor == "db2_for_i"`), as Django 6.1 does, and the original
+  method unchanged for every other connection. It never wraps twice. The
+  backend's `adapt_durationfield_value` no longer calls `super()` (Django's
+  method exists only from 6.1) and computes the microseconds itself. Removed
+  together with the 6.0 and 5.2 sections.
+- **Why:** decision "The duration range check on every supported Django
+  version" (2026-10-19) assumed a hook; Django 6.0's
+  `DurationField.get_db_prep_value` returns `duration_microseconds(value)`
+  itself and calls no backend method. Every path that prepares a duration
+  goes through that method (insert, update, `save()`, `bulk_update()`'s
+  Case/When, lookups, `Value()`), so one wrapper covers them all; offline tests
+  check each path, that SQLite gives the same results as Django's own method,
+  and that a second install changes nothing; a pub400 test runs every path on
+  each supported version.
+- **Alternatives:** accepting the server's error before 6.1 (revises the
+  earlier decision); checking durations in the backend's insert/update
+  compilers, lookups and `Value()` (several code paths, easy to miss one).
+

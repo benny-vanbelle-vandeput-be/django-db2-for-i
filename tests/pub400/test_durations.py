@@ -145,3 +145,27 @@ def test_temporal_subtraction(live, empty) -> None:
     assert set(Schedule.objects.values_list(F("start") - F("start"), flat=True)) == {
         dt.timedelta(0)
     }
+
+
+def test_out_of_range_durations_are_refused_on_every_path(live, empty) -> None:
+    """A duration beyond BIGINT microseconds raises the backend's ValueError before
+    anything is sent, on every path that prepares a DurationField value: create,
+    update(), save(), bulk_update() (Case/When), a filter and Value(). On Django
+    before 6.1 through compat.install_duration_adapter(); the rows stay unchanged."""
+    too_long = dt.timedelta(microseconds=2**63)
+    fits = Schedule.objects.create(length=LENGTHS[0])
+    refused = "does not fit a DurationField"
+    with pytest.raises(ValueError, match=refused):
+        Schedule.objects.create(length=too_long)
+    with pytest.raises(ValueError, match=refused):
+        Schedule.objects.filter(pk=fits.pk).update(length=too_long)
+    fits.length = too_long
+    with pytest.raises(ValueError, match=refused):
+        fits.save()
+    with pytest.raises(ValueError, match=refused):
+        Schedule.objects.bulk_update([fits], ["length"])
+    with pytest.raises(ValueError, match=refused):
+        list(Schedule.objects.filter(length__lt=too_long))
+    with pytest.raises(ValueError, match=refused):
+        list(Schedule.objects.annotate(x=Value(too_long, output_field=DurationField())))
+    assert list(Schedule.objects.values_list("length", flat=True)) == [LENGTHS[0]]

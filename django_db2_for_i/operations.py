@@ -42,6 +42,7 @@ from django.db import NotSupportedError
 from django.db.backends.base.operations import BaseDatabaseOperations
 from django.db.backends.utils import truncate_name
 from django.utils import timezone
+from django.utils.duration import duration_microseconds
 
 from .expressions import DAY_MICROSECONDS, NVARCHAR_MAX
 from .schema import default_literal
@@ -130,8 +131,12 @@ class DatabaseOperations(BaseDatabaseOperations):
         only 2**63 - 1 (106,751,991 days); the driver would fail with an
         unclear OverflowError.
         """
-        microseconds = super().adapt_durationfield_value(value)
-        if microseconds is not None and not BIGINT_MIN <= microseconds <= BIGINT_MAX:
+        if value is None:
+            return None
+        # Not super(): Django's own method only exists from 6.1 (compat.py
+        # routes the values here before 6.1).
+        microseconds = duration_microseconds(value)
+        if not BIGINT_MIN <= microseconds <= BIGINT_MAX:
             raise ValueError(
                 f"Db2 for i backend: the duration {value} does not fit a DurationField "
                 f"(BIGINT microseconds: at most {dt.timedelta(microseconds=BIGINT_MAX)}, "
