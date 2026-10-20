@@ -50,7 +50,8 @@ This page is the reference. The design was approved on 2026-10-19
 
 All 2533 entries replay identically on Python 3.12, 3.13 and 3.14 (0 not
 loadable, 0 not replayable, 0 different). **Django 6.0 and 5.2** have no corpus
-yet; they are captured with a later release run.
+yet: the phase 3 release runs on them did not capture (`release_run` lacked
+`--capture`); every release run captures now, starting with the end of phase 3.
 
 ## What the counts mean
 

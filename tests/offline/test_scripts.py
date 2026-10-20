@@ -729,7 +729,8 @@ def test_release_run_runs_every_label_then_the_tier_and_reports_failures(
     monkeypatch.setattr(release, "run_tier", lambda version: calls.append(["tier", version]) or 0)
     assert release.main(["6.1"]) == 1
     run = release.labels()
-    assert calls == [["6.1", "--clean", label] for label in run] + [["tier", "6.1"]]
+    # Every label captures: the release run refreshes the offline query corpus.
+    assert calls == [["6.1", "--clean", "--capture", label] for label in run] + [["tier", "6.1"]]
     assert f"{len(run) + 1} runs, failed: lookup" in capsys.readouterr().out
 
 
