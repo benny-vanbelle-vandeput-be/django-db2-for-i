@@ -13,7 +13,7 @@ Django suite. A plain TCP check of the database host server port comes first,
 so an unreachable system fails within seconds and nothing else runs; a label
 that fails does not stop the run, the summary lists it and the exit code is
 non-zero. Logs: test-results/<version>/ (runtests.py, by
-scripts/run_django_tests.py) and test-results/<version>/pub400.log (the tier).
+scripts/run_django_tests.py) and test-results/<version>/tiers/pub400.log (the tier).
 """
 
 from __future__ import annotations
@@ -53,8 +53,12 @@ def reachable() -> str | None:
 
 
 def run_tier(version: str) -> int:
-    """The pub400 tier, fully clean, its output also in test-results/<version>/pub400.log."""
-    log = ROOT / "test-results" / version / "pub400.log"
+    """The pub400 tier, fully clean, its output also in test-results/<version>/tiers/.
+
+    Not next to the module logs: scripts/update_test_status.py reads every
+    test-results/<version>/*.log as a Django test module's log.
+    """
+    log = ROOT / "test-results" / version / "tiers" / "pub400.log"
     log.parent.mkdir(parents=True, exist_ok=True)
     scrub = run_django_tests.make_scrubber([os.environ.get("DB2I_PASSWORD", "")])
     command = [

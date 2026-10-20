@@ -815,3 +815,25 @@ def test_release_run_reachability_needs_no_credentials(monkeypatch) -> None:
         release, "tcp_check", lambda host, port: {"open": False, "error": "timeout", "port": port}
     )
     assert release.reachable() == "port 9471 not reachable: timeout"
+
+
+def test_release_run_tier_log_is_not_read_as_a_module_log(monkeypatch, tmp_path, capsys) -> None:
+    """scripts/update_test_status.py reads test-results/<version>/*.log as module
+    logs; the tier's log goes to tiers/, with the password scrubbed."""
+    import io
+
+    class FakeProcess:
+        def __init__(self, command, **kwargs):
+            self.stdout = io.StringIO("collected 2 items\npassword S3cret!pw\n2 passed\n")
+
+        def wait(self):
+            return 0
+
+    monkeypatch.setattr(release, "ROOT", tmp_path)
+    monkeypatch.setenv("DB2I_PASSWORD", "S3cret!pw")
+    monkeypatch.setattr(release.subprocess, "Popen", FakeProcess)
+    assert release.run_tier("6.0") == 0
+    log = tmp_path / "test-results" / "6.0" / "tiers" / "pub400.log"
+    assert log.read_text() == "collected 2 items\npassword ***\n2 passed\n"
+    assert list((tmp_path / "test-results").glob("*/*.log")) == []
+    assert "S3cret!pw" not in capsys.readouterr().out
