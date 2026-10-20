@@ -59,6 +59,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 # error. Tests that need time zones enable USE_TZ themselves.
 USE_TZ = False
 
+# The offline query corpus capture (scripts/run_django_tests.py --capture sets
+# DB2I_CORPUS_CAPTURE): Django's runner with a result that records the
+# statements of passing tests (tests/corpus/capture.py).
+if os.environ.get("DB2I_CORPUS_CAPTURE"):
+    TEST_RUNNER = "tests.corpus.capture.CaptureRunner"
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

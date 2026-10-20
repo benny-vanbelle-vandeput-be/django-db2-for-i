@@ -51,6 +51,81 @@ def offline(session: nox.Session, django: str) -> None:
     session.run("pytest", "-m", "offline", *session.posargs)
 
 
+def django_checkout(session: nox.Session, django: str, commit: str) -> str:
+    """A Django checkout at exactly ``commit``: vendor/django-<django> when it is
+    there, otherwise a shallow fetch of that one commit into .nox/_django/<commit>."""
+    import pathlib
+
+    def head(path: pathlib.Path) -> str:
+        if not (path / ".git").exists():
+            return ""
+        return session.run(
+            "git", "-c", "safe.directory=*", "-C", str(path), "rev-parse", "HEAD",
+            external=True, silent=True,
+        ).strip()  # fmt: skip
+
+    vendor = pathlib.Path(f"vendor/django-{django}")
+    if head(vendor) == commit:
+        return str(vendor.resolve())
+    cache = pathlib.Path(".nox/_django") / commit
+    if head(cache) != commit:
+        cache.mkdir(parents=True, exist_ok=True)
+        git = ["git", "-c", "safe.directory=*", "-C", str(cache)]
+        if not (cache / ".git").exists():
+            session.run(*git, "init", "-q", external=True)
+            session.run(
+                *git, "remote", "add", "origin", "https://github.com/django/django.git",
+                external=True,
+            )  # fmt: skip
+        session.run(*git, "fetch", "-q", "--depth", "1", "origin", commit, external=True)
+        session.run(*git, "checkout", "-q", "FETCH_HEAD", external=True)
+    return str(cache.resolve())
+
+
+@nox.session
+@nox.parametrize(
+    "python,django",
+    OFFLINE_MATRIX,
+    ids=[f"{python}-django{django}" for python, django in OFFLINE_MATRIX],
+)
+def corpus(session: nox.Session, django: str) -> None:
+    """Replay the offline query corpus of this Django version (no IBM i).
+
+    Django, library and test suite, comes from exactly the commit the corpus was
+    captured with (docs/proposals/offline-query-corpus.md), never from PyPI.
+    """
+    import pathlib
+    import tomllib
+
+    manifests = sorted(pathlib.Path("tests/offline/corpus", django).glob("*/manifest.toml"))
+    if not manifests:
+        session.log(f"no offline query corpus for Django {django}: nothing to replay")
+        return
+    manifest = tomllib.loads(manifests[0].read_text())
+    checkout = django_checkout(session, django, manifest["django_commit"])
+    session.install(*nox.project.dependency_groups(PYPROJECT, "test"))
+    session.install("--no-deps", "-e", ".")
+    others = [
+        dependency
+        for dependency in PYPROJECT["project"]["dependencies"]
+        if not dependency.lower().startswith("django")
+    ]
+    session.install(*others, checkout)
+    session.run(
+        "pytest",
+        "tests/corpus",
+        "-m",
+        "corpus",
+        "--ds=tests.django_settings.settings_corpus",
+        *session.posargs,
+        env={
+            "DB2I_DJANGO_TESTS": f"{checkout}/tests",
+            "DB2I_CORPUS_MODULES": ",".join(manifest.get("modules", {})),
+            "DB2I_CORPUS_DJANGO": django,
+        },
+    )
+
+
 @nox.session(python=NEWEST_PYTHON)
 def wheel(session: nox.Session) -> None:
     """Build sdist + wheel into dist/ and run the offline tier against the installed wheel.

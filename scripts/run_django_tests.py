@@ -10,6 +10,10 @@ Called by the ``django_tests`` nox session (see scripts/runtests.sh):
   unless ``--clean`` is given, ``--keepdb`` (the test library is reused; the
   marker table records the top-level module, so labels of the same module
   reuse its tables and another module's tables are dropped).
+- ``--capture`` records the statements of passing tests for the offline query
+  corpus (tests/corpus/capture.py) into
+  test-results/<version>/corpus/<label>.jsonl, with the Django checkout's
+  commit; ``scripts/build_corpus.py`` turns those into corpus files.
 - ``--debug-sql`` passes runtests.py's ``--debug-sql``: for each failing
   test the log shows the SQL it ran (``last_executed_query()``, with the
   parameter values), to see the exact failing statement when rerunning
@@ -129,13 +133,42 @@ def runtests_command(
     return [*command, label]
 
 
+def capture_path(version: str, label: str) -> Path:
+    return ROOT / "test-results" / version / "corpus" / f"{label}.jsonl"
+
+
+def git_full_commit(path: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "-c", f"safe.directory={path}", "-C", str(path), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+    return result.stdout.strip() or "unknown"
+
+
 def run_label(
-    version: str, label: str, keepdb: bool, verbosity: int, scrub, debug_sql: bool = False
+    version: str,
+    label: str,
+    keepdb: bool,
+    verbosity: int,
+    scrub,
+    debug_sql: bool = False,
+    capture: bool = False,
 ) -> int:
     django_dir = ROOT / "vendor" / f"django-{version}"
     path = log_path(version, label)
     path.parent.mkdir(parents=True, exist_ok=True)
     environment = os.environ | {"PYTHONPATH": str(ROOT), "DB2I_TEST_MODULES": top_module(label)}
+    if capture:
+        environment |= {
+            "DB2I_CORPUS_CAPTURE": str(capture_path(version, label)),
+            "DB2I_DJANGO_COMMIT": git_full_commit(django_dir),
+            "DB2I_CORPUS_LABEL": label,
+        }
     now = dt.datetime.now(dt.UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
     header = [
         f"# module: {label}",
@@ -146,6 +179,7 @@ def run_label(
         f"# python: {platform.python_version()}",
         f"# keepdb: {'yes' if keepdb else 'no'}",
         f"# debug-sql: {'yes' if debug_sql else 'no'}",
+        f"# capture: {'yes' if capture else 'no'}",
         f"# started: {now}",
     ]
     with path.open("w") as log:
@@ -182,6 +216,9 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument(
         "--debug-sql", action="store_true", help="log the SQL of failing tests (runtests.py)"
     )
+    parser.add_argument(
+        "--capture", action="store_true", help="record statements for the offline query corpus"
+    )
     parser.add_argument("-v", "--verbosity", type=int, default=2)
     args = parser.parse_args(argv)
     try:
@@ -200,7 +237,15 @@ def main(argv: Sequence[str]) -> int:
         return 2
     scrub = make_scrubber([os.environ.get("DB2I_PASSWORD", "")])
     codes = [
-        run_label(args.version, label, not args.clean, args.verbosity, scrub, args.debug_sql)
+        run_label(
+            args.version,
+            label,
+            not args.clean,
+            args.verbosity,
+            scrub,
+            args.debug_sql,
+            args.capture,
+        )
         for label in args.labels
     ]
     return max(codes, default=0)

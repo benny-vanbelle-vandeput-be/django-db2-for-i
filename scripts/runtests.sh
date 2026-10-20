@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run modules of Django's own test suite against IBM i, in the tests container.
 #
-#   scripts/runtests.sh <django-version> [--clean] [--debug-sql] <label> [<label> ...]
+#   scripts/runtests.sh <django-version> [--clean] [--debug-sql] [--capture] <label> [<label> ...]
 #   scripts/runtests.sh 6.1 basic transactions
 #   scripts/runtests.sh 6.1 basic.tests.ModelTest.test_x
 #   scripts/runtests.sh 6.1 --clean --debug-sql basic.tests.ModelTest.test_x
@@ -11,13 +11,15 @@
 # test-results/<version>/<module>.log (dotted labels: labels/<label>.log) with
 # the password scrubbed. --debug-sql passes runtests.py's --debug-sql: the
 # log shows the SQL of each failing test (with its parameter values, scrubbed
-# like the rest of the output), for rerunning failing labels. Refuses to run without labels (the full suite) or
+# like the rest of the output), for rerunning failing labels. --capture records
+# the statements of passing tests for the offline query corpus
+# (test-results/<version>/corpus/<label>.jsonl; scripts/build_corpus.py). Refuses to run without labels (the full suite) or
 # with more than three labels: the system is shared (CLAUDE.md, PUB400 rules).
 # The checks are repeated inside the container (scripts/run_django_tests.py).
 set -eu
 
 usage() {
-    echo "usage: $0 <django-version> [--clean] [--debug-sql] <label> [<label> ...]" >&2
+    echo "usage: $0 <django-version> [--clean] [--debug-sql] [--capture] <label> [<label> ...]" >&2
     exit 2
 }
 
@@ -27,7 +29,7 @@ shift
 labels=0
 for arg in "$@"; do
     case $arg in
-        --clean|--debug-sql) ;;
+        --clean|--debug-sql|--capture) ;;
         -*) echo "refused: unknown option $arg" >&2; exit 2 ;;
         *) labels=$((labels + 1)) ;;
     esac
