@@ -8,7 +8,7 @@ The tests.testapp tables are created for this module and dropped again
 import datetime as dt
 
 import pytest
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.db.models import (
     BooleanField,
     Case,
@@ -610,3 +610,18 @@ def test_selected_predicates_are_three_valued(live, empty) -> None:
         assert selected == expected, name
         matching = sorted(Contact.objects.filter(predicate).values_list("company", flat=True))
         assert matching == sorted(c for c, v in expected.items() if v is True), name
+
+
+def test_check_constraint_violations_raise_integrity_error(live, empty) -> None:
+    """A PositiveIntegerField's CHECK constraint: SQL0545 comes with SQLSTATE HY000,
+    and still raises IntegrityError, on an insert and on an F() update (the case of
+    Django's PositiveIntegerFieldTests.test_negative_values); the atomic block rolls
+    back and the connection stays usable (#96)."""
+    author = Author.objects.create(name="a")
+    book = Book.objects.create(author=author, title="t", pages=0)
+    with pytest.raises(IntegrityError, match="SQL0545"), transaction.atomic():
+        Book.objects.create(author=author, title="negative", pages=-1)
+    book.pages = F("pages") - 1
+    with pytest.raises(IntegrityError, match="SQL0545"), transaction.atomic():
+        book.save()
+    assert list(Book.objects.values_list("title", "pages")) == [("t", 0)]

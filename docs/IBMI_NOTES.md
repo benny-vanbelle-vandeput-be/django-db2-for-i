@@ -716,14 +716,15 @@ attributes; a QTEMP table with `NAME NVARCHAR(10)`, `SMALL SMALLINT`,
 |---|---|---|---|
 | duplicate key (unique index) | `23000` | -803 | IntegrityError |
 | NOT NULL | `23000` | -407 | IntegrityError |
-| CHECK (Django's `model_fields.test_integerfield`, issue #96) | **`HY000`** | -545 | DatabaseError |
+| CHECK (Django's `model_fields.test_integerfield`, issue #96) | **`HY000`** | -545 | IntegrityError (by SQLCODE) |
 
 - **QTEMP tables take no constraints:** `PRIMARY KEY`, `UNIQUE`, `CHECK` and
   `REFERENCES` all fail with SQL7008 ("not valid for operation"; constraints
   need a journal). A `UNIQUE INDEX` and `NOT NULL` work, so duplicate keys and
   NOT NULL can be probed there, CHECK and foreign keys cannot.
 - The driver reports SQL0545 with SQLSTATE `HY000` instead of `23513`, so the
-  SQLSTATE class mapping (`23` -> IntegrityError) misses it (#96).
+  SQLSTATE class mapping (`23` -> IntegrityError) misses it; the driver layer
+  maps SQLCODE -545 to IntegrityError (#96).
 - Foreign key violations (SQL0530 / SQL0531 / SQL0532) are not probed: the
   backend creates no database-level foreign keys yet (`supports_foreign_keys`
   is False). Foreign key constraints are schema-editor work (phase 4/5): when

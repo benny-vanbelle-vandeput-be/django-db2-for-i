@@ -151,6 +151,10 @@ TOO_BIG = (
     "[22001] [IBM][System i Access ODBC Driver]Column 2: CWB0111 - "
     "Input data is too big to fit into field (30207) (SQLExecDirectW)"
 )
+CHECK_VIOLATED = (
+    "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0545 - "
+    "INSERT, UPDATE, or MERGE not allowed by CHECK constraint. (-545) (SQLExecDirectW)"
+)
 SYNTAX = (
     "[42000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0104 - "
     "Token ISOLATION was not valid. (-104) (SQLExecDirectW)"
@@ -162,6 +166,7 @@ SYNTAX = (
     [
         (pyodbc.IntegrityError("23000", DUPLICATE_KEY), base.IntegrityError, "23000", -803),
         (pyodbc.Error("HY000", NOT_JOURNALED), base.OperationalError, "HY000", -7008),
+        (pyodbc.Error("HY000", CHECK_VIOLATED), base.IntegrityError, "HY000", -545),
         (pyodbc.DataError("22001", TOO_BIG), base.DataError, "22001", None),
         (pyodbc.ProgrammingError("42000", SYNTAX), base.ProgrammingError, "42000", -104),
         (
