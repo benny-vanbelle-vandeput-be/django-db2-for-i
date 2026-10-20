@@ -726,7 +726,9 @@ attributes; a QTEMP table with `NAME NVARCHAR(10)`, `SMALL SMALLINT`,
   SQLSTATE class mapping (`23` -> IntegrityError) misses it (#96).
 - Foreign key violations (SQL0530 / SQL0531 / SQL0532) are not probed: the
   backend creates no database-level foreign keys yet (`supports_foreign_keys`
-  is False). To probe when they are enabled (phase 6).
+  is False). Foreign key constraints are schema-editor work (phase 4/5): when
+  they are created, check how SQL0530 / SQL0531 / SQL0532 arrive and map them
+  to IntegrityError (#96).
 
 ### IN (subquery) inside CASE WHEN (`probe -- in_subquery`, `probe -- queries`)
 2026-10-19, read-only, PUB400 (IBM i 7.5). **`x IN (subquery)` and `x = ANY
