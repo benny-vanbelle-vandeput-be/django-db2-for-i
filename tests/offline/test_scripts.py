@@ -752,7 +752,14 @@ def test_readme_states_what_is_counted() -> None:
 
 release = load("release_run")
 
+# The wheel session tests a copy without docs/ (the release run reads docs/status.toml).
+needs_status_data = pytest.mark.skipif(
+    not (SCRIPTS.parent / "docs" / "status.toml").exists(),
+    reason="docs/status.toml is not part of this copy of the tests",
+)
 
+
+@needs_status_data
 def test_release_run_labels_come_from_status_toml() -> None:
     import tomllib
 
@@ -766,6 +773,7 @@ def test_release_run_labels_come_from_status_toml() -> None:
         runner.validate("6.1", [label])  # one label per call, each a valid label
 
 
+@needs_status_data
 def test_release_run_refuses_before_connecting(monkeypatch, tmp_path, capsys) -> None:
     calls = []
     monkeypatch.setattr(release.run_django_tests, "main", lambda argv: calls.append(argv) or 0)
@@ -784,6 +792,7 @@ def test_release_run_refuses_before_connecting(monkeypatch, tmp_path, capsys) ->
     assert calls == []
 
 
+@needs_status_data
 def test_release_run_runs_every_label_then_the_tier_and_reports_failures(
     monkeypatch, tmp_path, capsys
 ) -> None:
