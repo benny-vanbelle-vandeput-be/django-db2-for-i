@@ -709,6 +709,27 @@ attributes; a QTEMP table with `NAME NVARCHAR(10)`, `SMALL SMALLINT`,
   ?)` and `SELECT CAST(? AS NVARCHAR(10))` with `nonexistent` give CWB0111
   (2026-10-19); never a truncated match.
 
+### Constraint violations: SQLSTATE and SQLCODE (`nox -s probe -- constraint_errors`)
+2026-10-20, PUB400 (IBM i 7.5), the backend's connection attributes, QTEMP.
+
+| Violation | SQLSTATE | SQLCODE | Backend class |
+|---|---|---|---|
+| duplicate key (unique index) | `23000` | -803 | IntegrityError |
+| NOT NULL | `23000` | -407 | IntegrityError |
+| CHECK (Django's `model_fields.test_integerfield`, issue #96) | **`HY000`** | -545 | DatabaseError |
+
+- **QTEMP tables take no constraints:** `PRIMARY KEY`, `UNIQUE`, `CHECK` and
+  `REFERENCES` all fail with SQL7008 ("not valid for operation"; constraints
+  need a journal). A `UNIQUE INDEX` and `NOT NULL` work, so duplicate keys and
+  NOT NULL can be probed there, CHECK and foreign keys cannot.
+- The driver reports SQL0545 with SQLSTATE `HY000` instead of `23513`, so the
+  SQLSTATE class mapping (`23` -> IntegrityError) misses it (#96).
+- Foreign key violations (SQL0530 / SQL0531 / SQL0532) are not probed: the
+  backend creates no database-level foreign keys yet (`supports_foreign_keys`
+  is False). Foreign key constraints are schema-editor work (phase 4/5): when
+  they are created, check how SQL0530 / SQL0531 / SQL0532 arrive and map them
+  to IntegrityError (#96).
+
 ### IN (subquery) inside CASE WHEN (`probe -- in_subquery`, `probe -- queries`)
 2026-10-19, read-only, PUB400 (IBM i 7.5). **`x IN (subquery)` and `x = ANY
 (subquery)` are rejected inside CASE WHEN** with SQL0115 ("Comparison operator

@@ -120,6 +120,10 @@ policy; every module log records that commit ([TEST_STATUS](../TEST_STATUS.md)):
 - `annotations` / `expressions_case` errors outside the phase 2 modules: issue [#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82).
 - Comparison operands (`PredicateValue`) still give `FALSE` for UNKNOWN; a separate decision ([DECISIONS](../DECISIONS.md#2026-10-19-selected-predicates-are-three-valued-issue-75)).
 - Column order of created tables: issue [#23](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/23) (phase 4).
+- Constraint errors, issue [#96](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/96): SQL0545 (CHECK) arrives as SQLSTATE `HY000` and must map to
+  `IntegrityError` (after the offline query corpus). When the schema editor creates foreign key
+  constraints (phase 4/5), check how SQL0530 / SQL0531 / SQL0532 arrive and map them to
+  `IntegrityError` too. QTEMP tables take no constraints (SQL7008), so these need a journaled library.
 - Phase 3, Django 6.0 and 5.2 support: approved plan in [phase-3.md](phase-3.md); before it, issue
   [#69](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/69) and the offline query corpus for 6.1.
 
