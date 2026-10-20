@@ -53,6 +53,12 @@ them with `pytestmark = pytest.mark.usefixtures("testapp_tables")`
 drops them again. Put a test in the module of its area (`test_schema.py`,
 `test_queries.py`, `test_aggregates.py`, ...).
 
+Run sessions that connect to PUB400 from the host with `scripts/pub400.sh`
+(`scripts/pub400.sh pub400`, `scripts/pub400.sh probe <name>`). It is
+`docker compose run --rm tests nox -s <session>`, wrapped in `caffeinate` on
+macOS: a Mac that sleeps during a long run breaks the connection (08S01,
+CWBCO1034). `scripts/runtests.sh` goes through it too.
+
 ## Golden files
 
 `tests/offline/golden/<django>/<profile>/<group>/<name>.sql` hold the SQL the

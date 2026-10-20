@@ -134,6 +134,24 @@ def test_debug_sql_option_is_accepted() -> None:
     assert "name the test modules" in result.stderr
 
 
+def test_pub400_script_accepts_only_pub400_sessions_and_keeps_the_mac_awake() -> None:
+    import subprocess as sp
+
+    script = Path(__file__).resolve().parents[2] / "scripts" / "pub400.sh"
+    for session in ("offline", "lint", "corpus"):
+        result = sp.run(["sh", str(script), session], capture_output=True, text=True)
+        assert result.returncode == 2
+        assert f"refused: {session} does not connect to PUB400" in result.stderr
+    result = sp.run(["sh", str(script)], capture_output=True, text=True)
+    assert result.returncode == 2
+    assert "usage:" in result.stderr
+    text = script.read_text()
+    assert "pub400|django_tests|probe|probe_*) ;;" in text
+    assert "caffeinate -i -s" in text
+    runtests = (script.parent / "runtests.sh").read_text()
+    assert 'exec "$(dirname "$0")/pub400.sh" django_tests "$version" "$@"' in runtests
+
+
 def test_scrubber_removes_the_password() -> None:
     scrub = runner.make_scrubber(["S3cret!pw", ""])
     assert scrub("error: S3cret!pw rejected, S3cret!pw") == "error: *** rejected, ***"
