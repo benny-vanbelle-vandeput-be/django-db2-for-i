@@ -197,6 +197,12 @@ depend on state at capture time (an `auto_now` timestamp, a model `ordering`
 the test changes). A capture fix comes first: it compiles every kept record
 again at the end of the run and drops (and counts) the ones that change.
 
+**`queries` (2026-10-20, same commit; `queries.tests` recaptured with that
+fix):** 1,455 statements kept, 1,145 unique, 4 volatile (exactly the four
+above), 414 KB gzip plus a 736 KB SQL index; all replay identically. All seven
+modules: 3,348 statements kept, 2,533 unique, about 0.77 MB gzip for Django
+6.1.
+
 The extrapolation before the first capture:
 - The modules in [TEST_STATUS.md](../TEST_STATUS.md) have about 1,250 tests.
   At `ordering`'s rate (about 3.7 statements per test, 84% unique), that is
