@@ -245,10 +245,11 @@ Three tiers, selectable via pytest markers / nox sessions.
   push (a rebase, a fix, a changelog fragment rename) puts the label back until a fresh
   run on the new latest commit is posted. The maintainer does not merge PRs that still
   carry the label.
-  - **Exception:** a commit that only contains the golden verification stamps written by
-    the full-tier run (`--record-verification`) on the previous commit needs no new run.
-    The PR comment then states the SHA the tier ran on and that the latest commit only
-    adds those stamps.
+  - **Exception:** a commit that only contains the verification stamps written by the
+    full-tier run (`--record-verification`) on the previous commit, and files generated
+    solely from them (e.g. the golden count in `docs/TEST_STATUS.md` via
+    `nox -s test_status`), needs no new run. The PR comment then states the SHA the tier
+    ran on and that the latest commit only adds those stamps and generated files.
 - Before review, and whenever a PR branch is behind `main`, Claude rebases it
   onto `main` and pushes it itself (`git push --force-with-lease`, PR branches
   only), so every PR is up to date and its commits stay signed. The maintainer
