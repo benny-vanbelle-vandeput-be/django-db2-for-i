@@ -7,6 +7,14 @@ One corpus per Django version and capability profile::
         queries/<module>.jsonl.gz # one JSON object per unique statement (gzip)
         queries/<module>.sql      # the unique SQL, one statement per line, for review
 
+Pickle formats (``pickle_format`` per module in the manifest): 1 is a plain
+pickle (the first captures: ordering, basic, transactions); 2 stores model
+classes as persistent ids, ``("model", app_label, model_name)``, resolved
+through the app registry on load, and everything else as a plain pickle.
+Plain pickle stores a class by its module path, which fails for the
+auto-created through models of many-to-many fields (``Author_friends`` is no
+attribute of ``aggregation.models``). The replay loads both formats.
+
 An entry is one statement a passing Django test sent to Db2 for i:
 ``tests`` (the test ids), ``compiler`` (class name), ``sql`` ([sql, params]
 pairs, params tagged as in the golden files), ``query`` (base64 pickle,
@@ -25,6 +33,7 @@ import base64
 import gzip
 import io
 import json
+import pickle
 import re
 import tomllib
 from collections.abc import Iterable
@@ -36,6 +45,50 @@ from tests.golden import UNVERIFIED, encode_param, new_stamp
 
 CORPUS_ROOT = Path(__file__).resolve().parents[1] / "offline" / "corpus"
 PICKLE_PROTOCOL = 5
+# 1: plain pickle; 2: model classes as persistent ids (see the module docstring).
+PICKLE_FORMAT = 2
+PICKLE_FORMATS = (1, 2)
+
+
+class ModelPickler(pickle.Pickler):
+    """A plain pickle, except that model classes are stored by app label and model name."""
+
+    def persistent_id(self, obj: Any) -> tuple[str, str, str] | None:
+        from django.db.models.base import ModelBase
+
+        if isinstance(obj, ModelBase):
+            return ("model", obj._meta.app_label, obj._meta.model_name)
+        return None
+
+
+class ModelUnpickler(pickle.Unpickler):
+    """Loads format 2: model classes come from the app registry."""
+
+    def persistent_load(self, pid: Any) -> Any:
+        from django.apps import apps
+
+        kind, app_label, model_name = pid
+        if kind != "model":
+            raise pickle.UnpicklingError(f"unknown persistent id {pid!r}")
+        return apps.get_model(app_label, model_name)
+
+
+def dumps(obj: Any) -> bytes:
+    """Pickle ``obj`` in the current format (PICKLE_FORMAT)."""
+    buffer = io.BytesIO()
+    ModelPickler(buffer, protocol=PICKLE_PROTOCOL).dump(obj)
+    return buffer.getvalue()
+
+
+def loads(data: bytes, pickle_format: int) -> Any:
+    """Load a pickle of the given format (1 plain, 2 with model persistent ids)."""
+    if pickle_format == 1:
+        return pickle.loads(data)
+    if pickle_format == 2:
+        return ModelUnpickler(io.BytesIO(data)).load()
+    raise ValueError(f"unknown pickle format {pickle_format!r}")
+
+
 _WHITESPACE = re.compile(r"\s+")
 
 

@@ -100,7 +100,7 @@ def test_the_recorder_compiles_a_fresh_copy_and_never_touches_the_compiler(tmp_p
     from django.conf import settings
 
     assert record["settings"] == {"USE_TZ": settings.USE_TZ, "TIME_ZONE": settings.TIME_ZONE}
-    query = pickle.loads(store.decode_query(record["query"]))
+    query = store.loads(store.decode_query(record["query"]), store.PICKLE_FORMAT)
     assert str(query) == str(compiler.query)
 
 
@@ -311,6 +311,56 @@ def test_an_entry_recorded_from_the_backend_replays_identically() -> None:
                           raw["settings"])  # fmt: skip
     assert replay(changed) != changed.sql
     assert changed.verified == UNVERIFIED
+
+
+def test_both_pickle_formats_load_and_replay() -> None:
+    """Format 1 (plain pickle, the first captures) and format 2 (model classes as
+    persistent ids, resolved through the app registry) both load and replay. A
+    query on an auto-created M2M through model itself (Dish_places, as the INSERTs
+    of related_manager.add() in setUpTestData) cannot be stored as a plain pickle;
+    format 2 stores it."""
+    from django.conf import settings
+    from django.test.utils import override_settings
+
+    from tests.corpus.test_replay import replay
+
+    apps_with_corpus_app = [*settings.INSTALLED_APPS, "tests.offline.corpus_app"]
+    with override_settings(INSTALLED_APPS=apps_with_corpus_app):
+        from django.db.models.sql import InsertQuery
+
+        from tests.offline.corpus_app.models import Dish
+
+        through = Dish.places.through
+        plain_query = Author.objects.filter(name="a").order_by("id").query
+        through_query = through.objects.filter(dish_id=1).query
+        insert = InsertQuery(through)
+        insert.insert_values(
+            [through._meta.get_field("dish"), through._meta.get_field("place")],
+            [through(dish_id=1, place_id=2)],
+        )
+        with pytest.raises(pickle.PicklingError, match="Dish_places"):
+            pickle.dumps(through_query, protocol=store.PICKLE_PROTOCOL)
+        cases = [
+            (1, pickle.dumps(plain_query, protocol=store.PICKLE_PROTOCOL), plain_query),
+            (2, store.dumps(plain_query), plain_query),
+            (2, store.dumps(through_query), through_query),
+            (2, store.dumps(insert), insert),
+        ]
+        for pickle_format, data, query in cases:
+            loaded = store.loads(data, pickle_format)
+            assert loaded.model is query.model
+            compiled = query.get_compiler("default").as_sql()
+            statements = compiled if isinstance(compiled, list) else [compiled]
+            expected = store.encode_statements(statements)
+            active = {"USE_TZ": settings.USE_TZ, "TIME_ZONE": settings.TIME_ZONE}
+            entry = store.Entry("C", expected, store.encode_query(data), ["m.t.T.t"], active)
+            assert replay(entry, pickle_format) == expected
+        # Format 2 stores no model class by module path (that is what failed); the
+        # rest stays a plain pickle (fields by name, as Django pickles them).
+        assert b"tests.offline.corpus_app.models" not in store.dumps(through_query)
+        assert b"django.db.models.sql.query" in store.dumps(through_query)
+        with pytest.raises(ValueError, match="unknown pickle format"):
+            store.loads(cases[0][1], 3)
 
 
 def test_the_runner_passes_the_capture_settings(monkeypatch, tmp_path) -> None:

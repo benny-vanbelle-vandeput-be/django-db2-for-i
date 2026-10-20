@@ -30,9 +30,9 @@ DIRECTORY = store.corpus_dir(DJANGO)
 COVERAGE: dict[str, dict[str, int]] = {}
 
 
-def replay(entry: store.Entry) -> list[list]:
+def replay(entry: store.Entry, pickle_format: int = store.PICKLE_FORMAT) -> list[list]:
     """The [sql, params] pairs the backend writes now for the entry's query."""
-    query = pickle.loads(store.decode_query(entry.query))
+    query = store.loads(store.decode_query(entry.query), pickle_format)
     with override_settings(**entry.settings):
         # With an alias too: nested compilers (subqueries) call get_compiler(self.using).
         compiled = query.get_compiler(using=connection.alias, connection=connection).as_sql()
@@ -45,10 +45,12 @@ def test_corpus_module_replays(module, request) -> None:
     if module == "(none)":
         pytest.skip(f"no corpus for Django {DJANGO}")
     entries = store.read_module(DIRECTORY, module)
+    manifest = store.read_manifest(DIRECTORY).get("modules", {}).get(module, {})
+    pickle_format = manifest.get("pickle_format", 1)  # 1 for the first captures
     mismatches, not_loadable, not_replayable, updated = [], 0, 0, False
     for entry in entries:
         try:
-            current = replay(entry)
+            current = replay(entry, pickle_format)
         except (pickle.UnpicklingError, AttributeError, ImportError, LookupError):
             not_loadable += 1
             continue

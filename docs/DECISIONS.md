@@ -1198,3 +1198,23 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   then changed by pre_sql_setup); skipping all update compilers (loses the
   ordinary updates, which never execute while compiling).
 
+## 2026-10-20: Corpus pickles store model classes by app label and model name
+- **Decision (project owner approved):** the capture hook pickles queries with
+  a private Pickler (`tests/corpus/store.py`, format 2) whose `persistent_id`
+  replaces model classes by `("model", app_label, model_name)`; the replay
+  resolves them through the app registry (`apps.get_model`). Everything else
+  stays a plain pickle. Each module's manifest records `pickle_format`; format
+  1 (plain pickles: ordering, basic, transactions) stays as captured and the
+  replay loads both. A query that matches nothing (`EmptyResultSet`) is counted
+  as "no SQL" instead of "not compiled".
+- **Why:** plain pickle stores a class by its module path; an auto-created
+  M2M through model (`Author_friends`) is not a module attribute, so every
+  query on it failed: 74 of aggregation's 79 unpicklable statements (about
+  21 % of its statements), 27 of lookup's 28, about 30 in queries.tests. The
+  private Pickler has no global effect (tests that pickle are unaffected, unlike
+  a copyreg reducer for ModelBase).
+- **Alternatives:** a global copyreg reducer for model classes (changes what
+  every pickle in the test run produces); adding the through models as module
+  attributes (patches Django's test apps); accepting the gap (a fifth of
+  aggregation's statements unchecked).
+
