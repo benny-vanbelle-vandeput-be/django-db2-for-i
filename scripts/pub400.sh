@@ -29,7 +29,9 @@ case $session in
 esac
 
 cd "$(dirname "$0")/.."
-set -- docker compose run --rm tests nox -s "$session" -- "$@"
+# Read on the host: in a git worktree the container cannot read the repository.
+commit=$(git log -1 --format='%h %cs' 2>/dev/null || echo unknown)
+set -- docker compose run --rm -e DB2I_BACKEND_COMMIT="$commit" tests nox -s "$session" -- "$@"
 if command -v caffeinate >/dev/null 2>&1; then
     set -- caffeinate -i -s "$@"
 fi

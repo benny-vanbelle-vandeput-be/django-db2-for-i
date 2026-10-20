@@ -115,6 +115,13 @@ def git_commit(path: Path) -> str:
     return result.stdout.strip() or "unknown"
 
 
+def backend_commit() -> str:
+    """The backend's commit: from the host (scripts/pub400.sh sets DB2I_BACKEND_COMMIT)
+    when given, since in a git worktree the container cannot read the repository
+    (its .git file points outside the mount); otherwise read here."""
+    return os.environ.get("DB2I_BACKEND_COMMIT", "").strip() or git_commit(ROOT)
+
+
 def runtests_command(
     label: str, keepdb: bool, verbosity: int, debug_sql: bool = False
 ) -> list[str]:
@@ -173,7 +180,7 @@ def run_label(
     header = [
         f"# module: {label}",
         f"# django: {version} ({git_commit(django_dir)})",
-        f"# backend: {git_commit(ROOT)}",
+        f"# backend: {backend_commit()}",
         # runtests.py is started with sys.executable (runtests_command), so this
         # interpreter's version is the one the tests ran on.
         f"# python: {platform.python_version()}",
