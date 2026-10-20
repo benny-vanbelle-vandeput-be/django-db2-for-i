@@ -206,6 +206,13 @@ The extrapolation before the first capture:
     never from `as_sql()` on the live compiler (which can have side effects,
     e.g. an update's related-update filter). Each entry also records the
     `USE_TZ` / `TIME_ZONE` the test ran with; the replay applies them again.
+  - *Fixed (2026-10-20):* compiling the copy can itself **execute** SQL (an
+    update over a join pre-selects its pks when `update_can_self_select` is
+    False, and so does an update with related updates). The hook blocks every
+    execution during its own compile; such statements are counted as
+    `needs_database` and not recorded, so the hook never adds a statement to
+    a test. An offline test runs a workload with and without the hook on a real
+    (in-memory SQLite) connection and requires identical executed statements.
 - A custom test result keeps an entry only if the test **passed**. Entries
   from failures, errors, skips and expected failures are dropped (decision 2).
 - For A (second PR), the hook also records the DDL that the test database setup executes
