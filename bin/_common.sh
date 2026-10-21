@@ -8,7 +8,9 @@
 # - nox_combinations lists the Python x Django combinations of the noxfile
 #   (DJANGO_PYTHONS), so the scripts keep no second list.
 # - pub400 runs a PUB400 nox session through scripts/pub400.sh, which holds
-#   the PUB400 lock (one PUB400 job at a time on this machine).
+#   the PUB400 lock (one PUB400 job at a time on this machine); --wait
+#   (DB2I_LOCK_WAIT=1) queues behind a running job instead of stopping.
+# - newest_django is the newest Django version of the noxfile.
 #
 # No secrets: the scripts never read, source or print .env; docker compose
 # loads it into the container itself. Written for bash 3.2 (macOS).
@@ -35,6 +37,7 @@ common_args() {
                 exit 0
                 ;;
             --dry-run) DRY_RUN=1 ;;
+            --wait) export DB2I_LOCK_WAIT=1 ;;
             *) ARGS+=("$arg") ;;
         esac
     done
@@ -78,6 +81,10 @@ for node in tree.body:
             for python in pythons:
                 print(python, django)
 PY
+}
+
+newest_django() {
+    nox_combinations | awk '{ print $2 }' | sort -t. -k1,1n -k2,2n | tail -n 1
 }
 
 pub400() {

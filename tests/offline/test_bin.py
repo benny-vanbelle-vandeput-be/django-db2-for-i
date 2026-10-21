@@ -120,6 +120,26 @@ def test_pub400_sh_runs_every_job_under_the_lock() -> None:
     text = (ROOT / "scripts" / "pub400.sh").read_text()
     assert 'exec python3 scripts/pub400_lock.py $wait -- "$@"' in text
     assert 'if [ "${1:-}" = --wait ]; then' in text
+    assert 'if [ "${DB2I_LOCK_WAIT:-}" = 1 ]; then' in text
+
+
+def test_pub400_sh_gives_runs_the_cleanup_list_outside_the_checkout() -> None:
+    text = (ROOT / "scripts" / "pub400.sh").read_text()
+    assert "state=$(python3 scripts/pub400_lock.py --dir)" in text
+    assert '-v "$state:/db2i-state" -e DB2I_TABLE_LIST=/db2i-state/created-objects.txt' in text
+
+
+def test_the_state_directory(monkeypatch, capsys) -> None:
+    monkeypatch.setenv("DB2I_LOCK_DIR", "/somewhere")
+    assert lock.main(["--dir"]) == 0
+    assert capsys.readouterr().out == "/somewhere\n"
+
+
+# Reading .env (or printing the environment): checking that it exists is fine.
+READS_ENV = re.compile(
+    r"(\bsource\b|^\s*\.\s|\bcat\b|<\s*\S*|\bgrep\b|\bsed\b|\bawk\b|\bhead\b|\btail\b"
+    r"|dotenv|open\()[^\n]*\.env\b|printenv"
+)
 
 
 # --- The bin/ scripts --------------------------------------------------------------------
@@ -135,6 +155,10 @@ def run_bin(*args: str, tmp_path: Path) -> subprocess.CompletedProcess:
     return subprocess.run(["bash", *args], capture_output=True, text=True, env=env, cwd=ROOT)
 
 
+# The arguments a dry run of each script needs (none: the script's default action).
+DRY_RUN_ARGS = {"probe": ["reachability"], "ibmi-test": ["--full-tier"]}
+
+
 @needs_bin
 @pytest.mark.parametrize("script", SCRIPTS, ids=lambda p: p.name)
 def test_every_script_has_help_and_dry_run(script, tmp_path) -> None:
@@ -142,7 +166,7 @@ def test_every_script_has_help_and_dry_run(script, tmp_path) -> None:
     assert helped.returncode == 0
     assert helped.stdout.startswith(f"bin/{script.name}: ")
     assert "--dry-run" in helped.stdout
-    dry = run_bin(str(script), "--dry-run", tmp_path=tmp_path)
+    dry = run_bin(str(script), "--dry-run", *DRY_RUN_ARGS.get(script.name, []), tmp_path=tmp_path)
     assert dry.returncode == 0, dry.stderr
     assert not (tmp_path / "docker-called").exists()
     assert os.access(script, os.X_OK)
@@ -188,4 +212,70 @@ def test_the_scripts_never_read_the_env_file() -> None:
     texts += [(ROOT / "scripts" / name).read_text() for name in ("pub400.sh", "pub400_lock.py")]
     for text in texts:
         code = [line for line in text.splitlines() if not line.lstrip().startswith("#")]
-        assert not [line for line in code if re.search(r"\.env\b|printenv", line)]
+        assert not [line for line in code if READS_ENV.search(line)]
+
+
+@needs_bin
+def test_the_ibmi_scripts_go_through_pub400_sh(tmp_path) -> None:
+    def dry(*args):
+        result = run_bin(*args, tmp_path=tmp_path)
+        assert result.returncode == 0, result.stderr
+        return result.stdout.splitlines()
+
+    pub400 = f"{ROOT}/scripts/pub400.sh"
+    assert dry(str(BIN / "probe"), "--dry-run", "sysinfo", "libraries") == [
+        f"+ {pub400} probe sysinfo libraries"
+    ]
+    assert dry(str(BIN / "ibmi-test"), "--dry-run", "own", "-k", "goldens") == [
+        f"+ {pub400} pub400 6.1 --create-db -k goldens"
+    ]
+    assert dry(
+        str(BIN / "ibmi-test"), "--dry-run", "--django", "6.0", "django", "basic", "lookup"
+    ) == [
+        f"+ {ROOT}/scripts/runtests.sh 6.0 --clean basic",
+        f"+ {ROOT}/scripts/runtests.sh 6.0 --clean lookup",
+    ]
+    assert dry(str(BIN / "ibmi-cleanup"), "--dry-run") == [f"+ {pub400} ibmi_cleanup"]
+    assert dry(str(BIN / "ibmi-cleanup"), "--dry-run", "--yes") == [
+        f"+ {pub400} ibmi_cleanup --yes"
+    ]
+    assert dry(str(BIN / "doctor"), "--dry-run")[-1] == f"+ {pub400} probe connect"
+    assert dry(str(BIN / "doctor"), "--dry-run", "--offline")[-1].endswith("tests odbcinst -q -d")
+
+
+@needs_bin
+def test_the_ibmi_scripts_refuse_what_is_not_allowed(tmp_path) -> None:
+    cases = [
+        ((str(BIN / "probe"), "nope"), "unknown probe: nope"),
+        ((str(BIN / "probe"),), "name a probe"),
+        ((str(BIN / "ibmi-test"), "django"), "never the full suite"),
+        ((str(BIN / "ibmi-test"), "--django", "9.9", "own", "x"), "Django 9.9 is not supported"),
+        ((str(BIN / "ibmi-test"), "--full-tier", "own", "x"), "no own/django selection"),
+        ((str(BIN / "ibmi-cleanup"), "--force"), "unknown argument: --force"),
+    ]
+    for args, message in cases:
+        result = run_bin(*args, tmp_path=tmp_path)
+        assert result.returncode == 2 and message in result.stderr, (args, result.stderr)
+    assert not (tmp_path / "docker-called").exists()
+
+
+@needs_bin
+def test_wait_reaches_pub400_sh(tmp_path) -> None:
+    script = tmp_path / "show.sh"
+    script.write_text(
+        f'source "{BIN}/_common.sh"\ncommon_args "$@"\necho "wait=${{DB2I_LOCK_WAIT:-}}"\n'
+    )
+    assert run_bin(str(script), "--wait", tmp_path=tmp_path).stdout == "wait=1\n"
+
+
+def test_the_env_check_itself() -> None:
+    for line in (
+        "source .env",
+        ". .env",
+        "cat .env",
+        'x=$(sed -n p "$ROOT/.env")',
+        "load_dotenv('.env')",
+        "printenv",
+    ):
+        assert READS_ENV.search(line), line
+    assert not READS_ENV.search('if [ -e "$ROOT/.env" ]; then')

@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# bin/probe: run read-only IBM i probes by name, through the PUB400 lock.
+#
+#   bin/probe --list             the probes of probes/run.py (no connection)
+#   bin/probe <name> [<name>]    e.g. bin/probe reachability, bin/probe sysinfo libraries
+#   bin/probe --wait <name>      queue behind a running PUB400 job
+#   bin/probe --dry-run <name>   print the command, run nothing
+#   bin/probe --help
+#
+# Probes are read-only, or change only QTEMP (CLAUDE.md). The write probes
+# (nox sessions probe_*, outside QTEMP) need the maintainer's approval first
+# and are not run by this script. Results: test-results/probes/.
+
+source "$(dirname "$0")/_common.sh"
+common_args "$@"
+
+probes() {
+    python3 - "$ROOT/probes/run.py" <<'PY'
+import ast
+import sys
+
+for node in ast.parse(open(sys.argv[1]).read()).body:
+    if isinstance(node, ast.Assign) and any(
+        isinstance(t, ast.Name) and t.id == "PROBES" for t in node.targets
+    ):
+        for key in node.value.keys:
+            print(ast.literal_eval(key))
+PY
+    echo all
+}
+
+names=()
+for arg in ${ARGS[@]+"${ARGS[@]}"}; do
+    case $arg in
+        --list)
+            probes
+            exit 0
+            ;;
+        -*) die "unknown argument: $arg (see --help)" ;;
+        *) names+=("$arg") ;;
+    esac
+done
+[ "${#names[@]}" -gt 0 ] || die "name a probe (bin/probe --list)"
+known=$(probes)
+for name in "${names[@]}"; do
+    printf '%s\n' "$known" | grep -qx "$name" || die "unknown probe: $name (bin/probe --list)"
+done
+pub400 probe "${names[@]}"
