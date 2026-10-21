@@ -37,7 +37,7 @@ Four test sets, named the same everywhere (README, TEST_STATUS, this file):
 | Test set | What and where | Called before (code keeps these names for now) |
 |---|---|---|
 | Offline · own tests | this project's unit tests and golden SQL checks, `tests/offline/`; CI on every commit | offline tier, `nox -s offline` |
-| IBM i · own tests | this project's tests against a real Db2 for i, `tests/pub400/`; for every backend change | pub400 tier, `nox -s pub400` |
+| IBM i · own tests | this project's tests against a real Db2 for i, `tests/pub400/`; when the pull request's classification asks for it | pub400 tier, `nox -s pub400` |
 | IBM i · Django test suite | Django's own test modules against Db2 for i; before every release | Django modules on PUB400, `scripts/runtests.sh`, `release_run` |
 | Offline · Django test suite (replay) | the recorded SQL of passing Django tests, compiled again offline; CI on every commit | offline query corpus, `nox -s corpus` |
 
@@ -46,6 +46,35 @@ The nox sessions, `tests/pub400/`, the pytest markers and the
 Each run of the nox sessions writes its counts to
 `test-results/<django>/sets/` (`--results-summary`); `nox -s test_status`
 turns them, with the Django test logs, into README's "Test status".
+
+## Pull requests and IBM i runs
+
+Every pull request is classified from its changed files
+(`scripts/classify_pr.py`; run it yourself with
+`python scripts/classify_pr.py --base origin/main`). The CI job `classify`
+runs it on every push, keeps one comment on the pull request up to date and
+adds the labels; for a pull request from a fork it only writes the job
+summary.
+
+| Class | What changed | IBM i run | Label |
+|---|---|---|---|
+| needs full tier | `django_db2_for_i/drivers/`, `base.py`, `creation.py`, `capabilities.py`, the container image (`docker/`, `compose.yaml`), the pinned Django commit, the supported Django versions, and any path the script does not list | the full own IBM i tests | `needs-full-tier` |
+| SQL-affecting | other backend code; goldens or corpus entries without a verification stamp | the affected tests | `run-ibmi` |
+| docs/tests only | the paths the script lists as such | only for changes that run on IBM i (own IBM i tests, test models, IBM i settings, the IBM i run tooling such as `scripts/pub400.sh`, the nox sessions, the supported Django test modules) | `run-ibmi` for those |
+
+- The script fails closed: a new file or directory is "needs full tier" until
+  it is added to the script's lists, in the same pull request (an offline test
+  checks that every tracked file is listed).
+- Anyone may add `run-ibmi` by hand to request a run.
+- The labels are removed only after the run on the pull request's latest
+  commit has passed and its result (the commit, the counts) is posted on the
+  pull request. A pull request with either label is not merged.
+- A later push brings the labels back, except a push that only adds the
+  verification stamps written by the run (and files generated from them), and
+  a conflict-free rebase whose own changes are identical (`git range-diff`)
+  onto docs/tests-only commits of `main`.
+- Pull requests are rebased onto `main` whenever they are behind it (the
+  `main` ruleset requires the `offline` check on an up-to-date branch).
 
 ## Changelog
 
