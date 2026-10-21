@@ -1260,3 +1260,62 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   earlier decision); checking durations in the backend's insert/update
   compilers, lookups and `Value()` (several code paths, easy to miss one).
 
+## 2026-10-21: Phase 4 and phase 5: schema needs first, constraint and index variants later
+- **Decision (project owner):** phase 4 is what Django's `schema`,
+  `migrations`, `introspection` and `inspectdb` modules need: foreign keys,
+  check constraints, introspection of every constraint, index ordering and
+  text-field indexes. Phase 5 is unique constraint variants, partial,
+  expression and covering indexes, and the `constraints`, `indexes` and
+  `model_indexes` modules. CLAUDE.md section 9 is worded accordingly.
+- **Why:** CLAUDE.md listed "constraints, indexes" under phase 5 while the
+  schema editor cannot be completed without foreign keys, check constraints
+  and `get_constraints()`; the split follows what each module needs.
+- **Alternatives:** all constraints and indexes in phase 4 (a much larger
+  phase); none of them in phase 4 (`schema` and `migrations` cannot pass).
+
+## 2026-10-21: CPA32B2 in phase 4: opt-in reply list, affected tests as expected failures
+- **Decision (project owner):** `DROP COLUMN` and narrowing `ALTER COLUMN`
+  keep needing the opt-in system reply list (`inquiry_message_reply =
+  "*SYSRPYL"` plus an entry, see IBM-i-Requirements); the Django tests that
+  hit CPA32B2 on a system without the entry are expected failures with one
+  fixed reason. Whether to build an opt-in table rebuild is decided at the end
+  of phase 4 step C, from the number of those expected failures.
+- **Why:** a table rebuild is a large, risky schema editor feature (data copy,
+  dependent objects, journaling); its value depends on how many real
+  operations need it, which the step C runs will show.
+- **Alternatives:** an opt-in table rebuild now (option 2); a rebuild only in
+  Django's test runs (option 3, rejected: tests would not test the real path).
+
+## 2026-10-21: Probe w13 in the journaled default library
+- **Decision (project owner):** write probe w13 (constraints) is approved in
+  the journaled `default` test library, under these conditions: its own
+  prefixed tables only, always cleaned up (also on failure), nothing else read
+  or changed, one connection, nothing else on PUB400 at the same time. It
+  checks foreign key violations (SQL0530 / SQL0531 / SQL0532), foreign key
+  indexes, several constraints on the same columns, CHECK constraints and
+  whether DDL is rolled back (`can_rollback_ddl`).
+- **Why:** QTEMP takes no constraints (SQL7008, probe 22), so these
+  behaviours can only be seen in a journaled library.
+- **Alternatives:** the same checks as pub400 tests on the tier's own tables
+  (less isolated; a failing check leaves tier tables behind).
+
+## 2026-10-21: Foreign keys: separate statements, own index kept
+- **Decision (project owner):** `can_create_inline_fk` stays off: foreign keys
+  stay separate `ALTER TABLE ... ADD CONSTRAINT` statements, which work for
+  tables that reference each other (verified). `indexes_foreign_keys` is set
+  to what probe w13 shows, but the DDL does not change: the backend keeps
+  creating Django's own index for foreign key columns.
+- **Why:** inline foreign keys fail for tables that reference each other
+  (one does not exist yet); changing the index DDL would change new
+  migrations of existing projects.
+- **Alternatives:** inline foreign keys in `CREATE TABLE`; dropping Django's
+  index when Db2 for i creates or shares one.
+
+## 2026-10-21: supports_comments only if Unicode text works
+- **Decision (project owner):** `COMMENT ON ... IS UX'...'` (the Unicode
+  literal used for defaults) is probed first. If it stores any Unicode text,
+  `supports_comments` is switched on; otherwise it stays off.
+- **Why:** comment text that must fit the job CCSID would be a surprising
+  limitation (SQL0104 for other characters).
+- **Alternatives:** on with a documented CCSID limitation; off.
+

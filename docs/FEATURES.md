@@ -39,29 +39,31 @@ On in at least one supported Django version.
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (8)
+## Intentionally off (11)
 
 Off on purpose, with the reason.
 
 | Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Reason |
 |---|---|---|---|---|---|
 | `atomic_transactions` | An error inside a transaction aborts the whole transaction. | ❌ | ❌ | ❌ | Db2 for i keeps the transaction usable after a failed statement (unlike PostgreSQL). |
+| `can_create_inline_fk` | Foreign keys are created inline in `CREATE TABLE`. | ❌ | ❌ | ❌ | Foreign keys are separate `ALTER TABLE ... ADD CONSTRAINT` statements, which also work for tables that reference each other. |
+| `can_defer_constraint_checks` | Constraint checks can be deferred to the end of the transaction. | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `can_rollback_ddl` | Schema changes inside a transaction are rolled back with it. | ❌ | ❌ | ❌ | Not relied on until a probe shows DDL is rolled back on Db2 for i. |
 | `has_zoneinfo_database` | The database has its own time zone database. | ❌ | ❌ | ❌ | Db2 for i has no time zone names; conversions happen in Python. |
+| `supports_expression_defaults` | `db_default` can be an expression, not only a constant. | ❌ | ❌ | ❌ | A column `DEFAULT` on Db2 for i takes only a constant or a special register. |
 | `supports_forward_references` | Rows may reference rows inserted later in the same transaction (deferred constraints). | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `supports_paramstyle_pyformat` | Raw SQL may use `%(name)s` parameters with a dict. | ❌ | ❌ | ❌ | The driver takes positional `?` markers only. |
 | `supports_timezones` | Datetimes are stored with their time zone. | ❌ | ❌ | ❌ | Db2 for i has no `TIMESTAMP WITH TIME ZONE`; datetimes are stored in UTC without zone. |
 | `supports_tuple_comparison_against_subquery` | Composite fields compared with `>`, `<` against a subquery. | – | ❌ | ❌ | Db2 for i rejects row-value comparisons with a subquery (SQL0115). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (30)
+## Planned (29)
 
 Off for now; planned for the phase shown.
 
 | Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Phase |
 |---|---|---|---|---|---|
 | `allows_multiple_constraints_on_same_fields` | Several constraints on the same columns. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
-| `can_create_inline_fk` | Foreign keys are created inline in `CREATE TABLE`. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `can_introspect_check_constraints` | `inspectdb` and introspection find CHECK constraints. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `can_introspect_default` | Introspection reads column defaults. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `can_introspect_foreign_keys` | Introspection finds foreign keys. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
@@ -91,7 +93,7 @@ Off for now; planned for the phase shown.
 | `supports_table_check_constraints` | Model `CheckConstraint`s are enforced by the database. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_update_conflicts` | `bulk_create(update_conflicts=True)` (upsert). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 
-## Not yet evaluated (84)
+## Not yet evaluated (82)
 
 Off: Django's default or not looked at yet.
 
@@ -102,7 +104,6 @@ Off: Django's default or not looked at yet.
 | `allows_group_by_select_index` |  | ❌ | ❌ | ❌ |
 | `allows_group_by_selected_pks` |  | ❌ | ❌ | ❌ |
 | `can_clone_databases` |  | ❌ | ❌ | ❌ |
-| `can_defer_constraint_checks` | Constraint checks can be deferred to the end of the transaction. | ❌ | ❌ | ❌ |
 | `can_distinct_on_fields` |  | ❌ | ❌ | ❌ |
 | `can_introspect_json_field` |  | ❌ | ❌ | ❌ |
 | `can_introspect_materialized_views` | `inspectdb --include-views` also finds materialized views. | ❌ | ❌ | ❌ |
@@ -156,7 +157,6 @@ Off: Django's default or not looked at yet.
 | `supports_default_keyword_in_insert` |  | ❌ | ❌ | ❌ |
 | `supports_deferrable_unique_constraints` |  | ❌ | ❌ | ❌ |
 | `supports_explaining_query_execution` |  | ❌ | ❌ | ❌ |
-| `supports_expression_defaults` | `db_default` can be an expression, not only a constant. | ❌ | ❌ | ❌ |
 | `supports_frame_exclusion` |  | ❌ | ❌ | ❌ |
 | `supports_frame_range_fixed_distance` |  | ❌ | ❌ | ❌ |
 | `supports_functions_in_partial_indexes` |  | ❌ | ❌ | ❌ |

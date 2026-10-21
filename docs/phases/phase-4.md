@@ -1,14 +1,17 @@
 # Phase 4: Schema editor completeness
 
-> Status: Proposed, not yet approved
+> Status: Approved, 2026-10-21
 
-This is a proposal, not yet a record. It follows the phase template in
+This is the approved plan, not yet a record. It follows the phase template in
 [README.md](README.md) and the layout of the approved phase 3 plan (commit
-`650b508`, before [phase-3.md](phase-3.md) became the record). The open questions for the maintainer are at the
-end; nothing in this plan is implemented before it is approved.
+`650b508`, before [phase-3.md](phase-3.md) became the record). The
+maintainer's answers to the open questions are in "Decisions" at the end.
+**Phase 4 starts only after the phase 3 close-out (PR B) is merged and
+0.1.0a4 is tagged.**
 
 The analysis reads three Django checkouts (shallow clones of the stable
-branches):
+branches; only for the test counts below; test runs and the corpus use the
+pinned checkouts `1e01021` / `52e5ba1` / `cae7247` until a bump is decided):
 
 | Branch | Commit | Version |
 |---|---|---|
@@ -415,8 +418,8 @@ wherever Db2 for i behaviour is unknown.
     status (main session), and the new modules in the release run.
 
 ## Key decisions
-None yet. The decisions taken on the open questions will be recorded in
-[DECISIONS.md](../DECISIONS.md) and linked here.
+Approved on 2026-10-21; see "Decisions" at the end. Each one is linked to its
+[DECISIONS.md](../DECISIONS.md) entry.
 
 ## IBM i findings
 None yet. Probes 24 and 25 (QTEMP and read-only) and, if approved, w13 will
@@ -448,7 +451,63 @@ To be filled at the end of the phase. Known candidates:
   SQL catalog views in a library.
 - Django release notes: `docs/releases/6.1.txt` ("Database backend API").
 
-## Open questions
+## Decisions
+The maintainer approved this plan on 2026-10-21 and answered its open
+questions as follows:
+
+1. **Phase 4 / phase 5 boundary: agreed.** Phase 4 is what `schema`,
+   `migrations`, `introspection` and `inspectdb` need (foreign keys, check
+   constraints, introspection of every constraint, index ordering and
+   text-field indexes); phase 5 is unique constraint variants, partial /
+   expression / covering indexes, and the `constraints`, `indexes` and
+   `model_indexes` modules. CLAUDE.md section 9 says so.
+   ([DECISIONS](../DECISIONS.md#2026-10-21-phase-4-and-phase-5-schema-needs-first-constraint-and-index-variants-later))
+2. **CPA32B2: option 1.** The opt-in reply list stays; the affected Django
+   tests are expected failures with one fixed reason. Option 2 (an opt-in
+   table rebuild) is decided at the end of step C, from the number of
+   expected failures.
+   ([DECISIONS](../DECISIONS.md#2026-10-21-cpa32b2-in-phase-4-opt-in-reply-list-affected-tests-as-expected-failures))
+3. **Probe w13 approved in the journaled `default` library**: own prefixed
+   tables, always cleaned up (also on failure), nothing else read or
+   changed, one connection, nothing else on PUB400 at the same time. It
+   includes the `can_rollback_ddl` check.
+   ([DECISIONS](../DECISIONS.md#2026-10-21-probe-w13-in-the-journaled-default-library))
+4. **`can_create_inline_fk` stays off**: foreign keys stay separate
+   `ALTER TABLE ... ADD CONSTRAINT` statements (verified; this works for
+   tables that reference each other).
+   ([DECISIONS](../DECISIONS.md#2026-10-21-foreign-keys-separate-statements-own-index-kept))
+5. **`indexes_foreign_keys`**: the flag is set to what w13 shows, but the DDL
+   does not change; the backend keeps creating Django's own index for foreign
+   key columns.
+   ([DECISIONS](../DECISIONS.md#2026-10-21-foreign-keys-separate-statements-own-index-kept))
+6. **Supported modules and the release run: agreed list**, once they pass:
+   `introspection`, `inspectdb`, `schema`, `migrate_signals`,
+   `migration_test_data_persistence`, and `migrations` as its five database
+   labels. **Estimated release run duration per Django version:** today's
+   runs took 58 min (6.0), 60 min (6.1) and 81 min (5.2), first test to the
+   end of the pub400 tier (the 5.2 run included a slow `queries.tests`).
+   `schema` (about 225 tests, DDL in every test) and the `migrations`
+   labels are expected to add 45 to 75 min, so about **1¾ to 2½ hours per
+   version**, 5½ to 7 hours for three. To be measured with the baseline runs
+   (answer 10) and updated here.
+7. **`supports_comments`: probe first.** `COMMENT ON ... IS UX'...'` (as for
+   defaults); if it works for any Unicode text, the flag is switched on,
+   otherwise it stays off.
+   ([DECISIONS](../DECISIONS.md#2026-10-21-supports_comments-only-if-unicode-text-works))
+8. **Tables in another library than `NAME`: out of phase 4**, issue
+   [#124](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/124);
+   Known Limitations says "planned, see #124".
+9. **Agreed:** goldens for all three Django series in each PR; the Django
+   modules on 6.0 and 5.2 at the end of each step group.
+10. **Baseline runs approved**: `introspection` and `schema` on 6.1, once,
+    before step B, sequential, through `scripts/pub400.sh`, not while the
+    phase 3 release runs are going.
+
+Also decided: the two flags this plan argues should stay off
+(`supports_expression_defaults`, `can_defer_constraint_checks`) are
+"intentionally off" in `features.toml` now, with their reason.
+
+## Open questions (answered, see "Decisions")
 1. **Phase 4 or phase 5 for constraints and indexes?** CLAUDE.md lists
    "constraints, indexes" under phase 5, while `features.toml` plans the check
    constraint and index flags for phase 4. Proposal: phase 4 does what
