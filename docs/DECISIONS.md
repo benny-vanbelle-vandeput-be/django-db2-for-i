@@ -1349,3 +1349,24 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   description (relies on discipline, misses pushes by others); a required
   CI check (an API hiccup would block merging); `pull_request_target`
   (would give fork code a write token).
+
+## 2026-10-21: The verification gate is its own nox session, with a shared allow-list
+- **Decision:** the CI gate on goldens and corpus entries without a
+  verification stamp (`tests/verification_gate.py`) runs as `nox -s gate`, a
+  step of the CI `lint` job and so of the required `offline` check, not as an
+  offline test. Its allow-list, `tests/offline/golden/unverifiable.toml`, is
+  shared with the IBM i golden check (the expected failures there); each entry
+  has a reason and the condition under which it becomes verifiable, an entry
+  that is no longer needed fails the gate, and TEST_STATUS shows the count.
+  The allow-list and its rules are the maintainer's (phase 4 decision 15);
+  running the gate as its own session follows from the push rule below.
+- **Why:** CLAUDE.md requires `nox -s lint offline` to pass before every push,
+  and a pull request with new SQL is pushed before its IBM i run (the run is
+  on its latest commit). Inside the offline tier the gate would block that
+  push; as its own session it keeps the pull request red until the stamps
+  are committed, which is what the maintainer asked for. One allow-list read
+  by both the gate and the IBM i test cannot disagree with itself.
+- **Alternatives:** the gate as an offline test (blocks pushing a pull request
+  before its run); importing `REJECTED` from the IBM i test module (the
+  offline CI would depend on an IBM i test module); a separate list for the
+  gate (two lists to keep in sync).

@@ -135,8 +135,18 @@ SQL and params with them on every run.
   another level (release, TR, PTF Group or Django version); a run on the same
   level leaves the goldens alone and only writes its date and counts to
   `tests/offline/golden/last-verification.txt`. Commit the changes in a PR.
-  Goldens that Db2 for i rejects are listed in `tests/pub400/test_goldens.py`
-  (`REJECTED`) with the reason until the backend is fixed.
+- **The verification gate** (`nox -s gate`, run by CI as part of the
+  required `offline` check): every golden and every corpus entry must carry a
+  verification stamp. A pull request with new or changed SQL stays red until
+  the stamps of its IBM i run are committed. The gate is not part of
+  `nox -s offline`, so the pull request can be pushed before its run.
+- **Unverifiable goldens:** goldens that cannot be verified on the test
+  system are listed in `tests/offline/golden/unverifiable.toml`, each with its
+  reason and the condition under which it becomes verifiable (for example "a
+  dedicated IBM i with a CPA32B2 system reply list entry"). The gate accepts
+  them, the IBM i golden check expects them to fail, and TEST_STATUS shows
+  their count. An entry that is no longer needed (the golden is verified or
+  gone) fails the gate.
 - **Completeness:** every case has a golden and every golden has a case;
   `depends:` names the create goldens a golden needs, so it is skipped (with
   the reason) when one of them fails on IBM i.
