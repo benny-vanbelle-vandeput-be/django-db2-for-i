@@ -72,6 +72,8 @@ IBMI_RUN_PATHS = {
     "tests/conftest.py": "the shared test fixtures",
     "tests/golden.py": "the golden format (executed on IBM i)",
     "tests/golden_cases/": "the golden cases (executed on IBM i)",
+    "tests/offline/golden/unverifiable.toml": "the expected failures of the IBM i golden check",
+    "tests/verification_gate.py": "the unverifiable list (read by the IBM i golden check)",
     "tests/results_summary.py": "the results summary plugin",
     "tests/redaction.py": "the log redaction",
     "tests/boolean_condition_scenarios.py": "scenarios of the IBM i tests",
