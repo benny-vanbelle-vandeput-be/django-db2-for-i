@@ -263,6 +263,19 @@ def test_render_and_collect(tmp_path) -> None:
     assert "`uses_savepoints`" in text
     assert "identity restart deferred in TestCase (SQL0910)" in text
     assert "goldens," in text
+    assert "unverifiable on PUB400: 3" in text
+
+
+def test_collect_ignores_logs_outside_the_run_set(tmp_path, capsys) -> None:
+    (tmp_path / "6.1").mkdir()
+    (tmp_path / "6.1" / "basic.log").write_text(OK_LOG)
+    (tmp_path / "6.1" / "pub400.log").write_text("an old tier log without a header")
+    (tmp_path / "6.1" / "schema.log").write_text(OK_LOG.replace("basic", "schema"))
+    status_toml = {"modules": [{"module": "basic"}, {"module": "queries", "labels": ["q.a"]}]}
+    assert status.run_set(status_toml) == {"basic"}
+    results = status.collect(tmp_path, modules=status.run_set(status_toml))
+    assert [r.module for r in results] == ["basic"]
+    assert "ignored (not in the run set): 6.1/pub400.log, 6.1/schema.log" in capsys.readouterr().err
 
 
 def test_render_without_runs() -> None:
@@ -339,7 +352,7 @@ def _redirect(monkeypatch, tmp_path, collected):
     monkeypatch.setattr(status, "BADGES_DIR", tmp_path / "badges")
     monkeypatch.setattr(status, "RESULTS", tmp_path / "results")
     monkeypatch.setattr(status, "load_status", lambda: STATUS)
-    monkeypatch.setattr(status, "collect", lambda: collected)
+    monkeypatch.setattr(status, "collect", lambda modules=None: collected)
     return readme
 
 
