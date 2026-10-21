@@ -45,6 +45,7 @@ import shutil
 import sys
 import tomllib
 import urllib.parse
+from collections.abc import Collection
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -131,13 +132,31 @@ def parse_log(text: str, module: str, django: str) -> ModuleResult:
     return result
 
 
-def collect(results_dir: Path = RESULTS) -> list[ModuleResult]:
-    found = []
+def collect(
+    results_dir: Path = RESULTS, modules: Collection[str] | None = None
+) -> list[ModuleResult]:
+    """The module logs ``<version>/<module>.log``.
+
+    With ``modules`` (the current run set: the supported modules run as a whole
+    module), any other log is ignored and named on stderr: a day-to-day run of
+    a module that is not supported yet, or a leftover of an older layout.
+    """
+    found, ignored = [], []
     for log in sorted(results_dir.glob("*/*.log")):
         if log.parent.name == "probes":
             continue
+        if modules is not None and log.stem not in modules:
+            ignored.append(f"{log.parent.name}/{log.name}")
+            continue
         found.append(parse_log(log.read_text(errors="replace"), log.stem, log.parent.name))
+    if ignored:
+        print(f"ignored (not in the run set): {', '.join(ignored)}", file=sys.stderr)
     return sorted(found, key=lambda r: (r.module, r.django))
+
+
+def run_set(status: dict) -> set[str]:
+    """The supported modules run as one log each (modules with ``labels`` are summed)."""
+    return {m["module"] for m in status.get("modules", []) if not m.get("labels")}
 
 
 def collect_label_groups(status: dict, results_dir: Path = RESULTS) -> list[ModuleResult]:
@@ -231,10 +250,18 @@ def feature_section() -> list[str]:
 def golden_section() -> list[str]:
     sys.path.insert(0, str(ROOT))
     from tests.golden import UNVERIFIED, all_golden_paths, read
+    from tests.verification_gate import UNVERIFIABLE, summary
 
     goldens = [read(path) for path in all_golden_paths()]
     unverified = sum(golden.verified == UNVERIFIED for golden in goldens)
-    return ["## Golden files", "", f"{len(goldens)} goldens, {unverified} unverified."]
+    allowed = summary() if UNVERIFIABLE.exists() else 0
+    return [
+        "## Golden files",
+        "",
+        f"{len(goldens)} goldens, {unverified} unverified; unverifiable on PUB400: {allowed}"
+        " (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each"
+        " verifiable).",
+    ]
 
 
 def _version_key(version: str) -> tuple[int, ...]:
@@ -837,7 +864,10 @@ def render(
 
 def main() -> int:
     status = load_status()
-    results = sorted(collect() + collect_label_groups(status), key=lambda r: (r.module, r.django))
+    results = sorted(
+        collect(modules=run_set(status)) + collect_label_groups(status),
+        key=lambda r: (r.module, r.django),
+    )
     try:
         readme = render_readme(README.read_text(), status, results)
     except MarkerError as error:

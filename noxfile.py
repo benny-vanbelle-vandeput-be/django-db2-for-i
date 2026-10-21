@@ -56,6 +56,16 @@ def lint(session: nox.Session) -> None:
     session.run("ruff", "format", "--check", ".")
 
 
+@nox.session(python=NEWEST_PYTHON)
+def gate(session: nox.Session) -> None:
+    """The verification gate (CI): every golden and corpus entry carries a stamp.
+
+    Not part of the offline session: a pull request with new SQL is pushed
+    before its IBM i run. The allow-list is tests/offline/golden/unverifiable.toml.
+    """
+    session.run("python", "-m", "tests.verification_gate")
+
+
 @nox.session
 @nox.parametrize(
     "python,django",

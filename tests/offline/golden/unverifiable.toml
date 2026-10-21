@@ -1,0 +1,19 @@
+# Goldens that cannot be verified on the test system (PUB400), with the reason
+# and the condition under which they become verifiable. Read by
+# tests/verification_gate.py (the CI gate, nox -s gate: every other golden or
+# corpus entry must carry a verification stamp) and by
+# tests/pub400/test_goldens.py (these goldens are expected failures there).
+# The gate also fails on an entry that is no longer needed (the golden is
+# verified or gone), so this list cannot go stale. Phase 4 decision 15.
+#
+# Per entry:
+#   name            = "<group>/<name>" of the golden
+#   django          = the Django series it applies to
+#   reason          = why it cannot be verified (shown by the IBM i test)
+#   verifiable_when = what makes it verifiable
+
+[[golden]]
+name = "ddl/remove_field"
+django = ["5.2", "6.0", "6.1"]
+reason = "DROP COLUMN is cancelled by inquiry message CPA32B2 (HY008): PUB400's system reply list has no CPA32B2 entry (probe 23, IBMI_NOTES)"
+verifiable_when = "a dedicated IBM i with a CPA32B2 system reply list entry"

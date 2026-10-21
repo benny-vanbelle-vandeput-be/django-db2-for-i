@@ -38,18 +38,14 @@ from tests.golden import (
 )
 from tests.golden_cases import FLUSH_METADATA, TESTAPP_TABLES, ordered_cases
 from tests.pub400.connection_guard import replace_if_unusable
+from tests.verification_gate import reasons as unverifiable_reasons
 
 RESULTS: dict[str, str] = {}  # golden name -> "passed" | "failed" | "skipped"
 
-# Goldens Db2 for i currently rejects (backend bugs found by this check) or
-# cannot execute on the test system, with the reason. strict: once the SQL is
-# accepted, the test reports it.
-REJECTED: dict[str, str] = {
-    "ddl/remove_field": (
-        "DROP COLUMN is cancelled by inquiry message CPA32B2 (HY008): PUB400's "
-        "system reply list has no CPA32B2 entry (probe 23, IBMI_NOTES)"
-    ),
-}
+# Goldens Db2 for i cannot execute on the test system, with the reason:
+# tests/offline/golden/unverifiable.toml, shared with the CI gate
+# (nox -s gate). strict: once the SQL is accepted, the test reports it.
+REJECTED: dict[str, str] = unverifiable_reasons(DJANGO_SERIES)
 
 CASES = [
     pytest.param(

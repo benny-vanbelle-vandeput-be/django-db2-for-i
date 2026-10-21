@@ -192,7 +192,10 @@ made when no other PRs are open.
 - Unit-test pure `DatabaseOperations` methods.
 - Run for every capability profile (initially only 7.5).
 - Each golden file records whether it has been **verified** against a real IBM i
-  (version + date). Unverified goldens are listed in a report.
+  (version + date). Unverified goldens are listed in a report. The verification gate
+  (`nox -s gate`, part of the required `offline` check in CI, not of the local offline
+  tier) fails on any golden or corpus entry without a stamp, except the allow-listed
+  goldens in `tests/offline/golden/unverifiable.toml` (reason and condition per entry).
 - The `DatabaseWrapper` must never open a connection in this tier; a fixture fails loudly if it tries.
 - CI never connects to PUB400 or any IBM i: it runs only lint and the offline tier, as
   parallel jobs (one per Python × Django combination). The aggregating `offline` job stays
