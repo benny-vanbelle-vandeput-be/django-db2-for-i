@@ -102,11 +102,12 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
     dropping it needs approval.
 - PUB400 limits connections per IP: one connection per run, `--parallel=1`, no retry storms.
 - **One PUB400 job at a time on this machine**, whatever the worktree: no probe, tier
-  or Django run starts while another one runs; it queues instead. From phase 4 step 0
-  on, `scripts/pub400.sh` enforces this with a per-user lock outside every checkout
-  (`~/.local/state/django-db2-for-i/pub400.lock`, an OS file lock released when the
-  process dies; "PUB400 busy: <holder>", or `--wait`). It covers one machine only:
-  two machines behind the same IP are not covered.
+  or Django run starts while another one runs; it queues instead. `scripts/pub400.sh`
+  enforces this with a per-user lock outside every checkout
+  (`scripts/pub400_lock.py`: `~/.local/state/django-db2-for-i/pub400.lock`, an OS file
+  lock released when the process dies; "PUB400 busy: <holder>", or `--wait`;
+  `bin/status` shows the holder). Every PUB400 run goes through `scripts/pub400.sh`.
+  It covers one machine only: two machines behind the same IP are not covered.
 - No uptime guarantee: test runs must fail fast and clearly when the system is unreachable.
 - Allowed on PUB400: single, small Django test modules (e.g. `basic`, `transactions`) and the
   curated `pub400` tier. **Never** the full Django suite or the full matrix.
@@ -278,7 +279,8 @@ made when no other PRs are open.
   committer is the machine account (noreply address), every commit and tag is
   signed with the machine account's SSH signing key (all set in the
   repository's local git config). Never commit with a personal email address.
-- Before every push: `nox -s lint offline` passes locally.
+- Before every push: `nox -s lint offline` passes locally (`bin/check` runs it, with the
+  corpus replay, the verification gate and the classification).
 - **Every PR is classified** from its changed files by `scripts/classify_pr.py`:
   **needs full tier** (the driver layer, `base.py`, `creation.py`, the capabilities, the
   container image, the pinned Django commit, the supported Django versions, and every

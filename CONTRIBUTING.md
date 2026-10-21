@@ -30,6 +30,19 @@ other form), you agree that it is licensed under the same BSD 3-Clause License.
 All development and test runs happen in a container. See [README.md](README.md)
 for setup instructions.
 
+The routine tasks have scripts in `bin/`, run from the host. Each has `--help`
+and `--dry-run` (print the commands, run nothing), and none prints secrets:
+- `bin/check`: what CI does, locally (lint, offline tier, corpus replay, the
+  verification gate, the classification), for every combination or a chosen
+  one (`--python`, `--django`).
+- `bin/status`: regenerates TEST_STATUS, the badges, README's generated
+  sections and FEATURES.md, then shows who holds the PUB400 lock and the open
+  pull requests with `needs-full-tier` or `run-ibmi`.
+
+Every run against PUB400 goes through `scripts/pub400.sh`, which holds the
+PUB400 lock: one PUB400 job at a time on the machine. A second job stops with
+"PUB400 busy: <holder>", or waits with `scripts/pub400.sh --wait ...`.
+
 ## Test sets
 
 Four test sets, named the same everywhere (README, TEST_STATUS, this file):

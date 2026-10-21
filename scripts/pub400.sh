@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run a nox session that connects to PUB400, from the host, in the tests container:
 #
-#   scripts/pub400.sh <session> [<arg> ...]
+#   scripts/pub400.sh [--wait] <session> [<arg> ...]
 #   scripts/pub400.sh pub400
 #   scripts/pub400.sh pub400 -k goldens --record-verification
 #   scripts/pub400.sh probe constraint_errors
@@ -12,10 +12,19 @@
 # the run fails with 08S01 "Communication link failure" (CWBCO1034). Only
 # sessions that connect to PUB400 are accepted; scripts/runtests.sh uses this
 # script for django_tests.
+#
+# Every run holds the PUB400 lock (scripts/pub400_lock.py, outside every
+# checkout): one PUB400 job at a time on this machine, whatever the worktree.
+# A second run stops with "PUB400 busy: <holder>", or waits with --wait.
 set -eu
 
+wait=
+if [ "${1:-}" = --wait ]; then
+    wait=--wait
+    shift
+fi
 if [ $# -lt 1 ]; then
-    echo "usage: $0 <nox-session> [<arg> ...]" >&2
+    echo "usage: $0 [--wait] <nox-session> [<arg> ...]" >&2
     exit 2
 fi
 session=$1
@@ -35,4 +44,4 @@ set -- docker compose run --rm -e DB2I_BACKEND_COMMIT="$commit" tests nox -s "$s
 if command -v caffeinate >/dev/null 2>&1; then
     set -- caffeinate -i -s "$@"
 fi
-exec "$@"
+exec python3 scripts/pub400_lock.py $wait -- "$@"

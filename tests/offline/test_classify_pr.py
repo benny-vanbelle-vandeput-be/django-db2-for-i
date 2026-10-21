@@ -68,7 +68,7 @@ def test_class_by_path(path, expected) -> None:
 @pytest.mark.parametrize(
     "path",
     [
-        "bin/check",
+        "bin/new-tool",
         "newdir/module.py",
         "tests/newsuite/test_x.py",
         "tests/django_settings/settings_other.py",
