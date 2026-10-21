@@ -19,6 +19,8 @@ import os
 
 from django.core.exceptions import ImproperlyConfigured
 
+from tests import table_registry
+
 
 def env(name: str, default: str | None = None) -> str:
     value = os.environ.get(name, default)
@@ -72,3 +74,7 @@ LOGGING = {
     "handlers": {"stderr": {"class": "logging.StreamHandler", "formatter": "backend"}},
     "loggers": {"django_db2_for_i": {"handlers": ["stderr"], "level": "DEBUG", "propagate": False}},
 }
+
+# Every object a run creates goes on the cleanup list first (bin/ibmi-cleanup,
+# tests/table_registry.py; DB2I_TABLE_LIST is set by scripts/pub400.sh).
+table_registry.install()

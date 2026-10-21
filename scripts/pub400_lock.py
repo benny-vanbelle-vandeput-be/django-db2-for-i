@@ -2,6 +2,7 @@
 
     python3 scripts/pub400_lock.py [--wait] -- <command> [<arg> ...]
     python3 scripts/pub400_lock.py --status
+    python3 scripts/pub400_lock.py --dir      (the state directory, for scripts/pub400.sh)
 
 An OS file lock (``fcntl.flock``) on ``pub400.lock`` in
 ``~/.local/state/django-db2-for-i/`` (``DB2I_LOCK_DIR`` overrides the
@@ -108,11 +109,15 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--wait", action="store_true", help="wait while another job holds it")
     parser.add_argument("--status", action="store_true", help="print who holds the lock")
+    parser.add_argument("--dir", action="store_true", help="print the state directory")
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
     if args.status:
         print(status(lock_dir()))
+        return 0
+    if args.dir:
+        print(lock_dir())
         return 0
     if not command:
         parser.error("no command given")
