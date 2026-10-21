@@ -1370,3 +1370,25 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   before its run); importing `REJECTED` from the IBM i test module (the
   offline CI would depend on an IBM i test module); a separate list for the
   gate (two lists to keep in sync).
+
+## 2026-10-21: bin/ scripts in bash 3.2, the PUB400 lock in the host's Python
+- **Decision:** the `bin/` scripts are bash scripts that run on the host and
+  call the container (`docker compose run`), written for bash 3.2, the
+  version macOS ships; their shared part is `bin/_common.sh` (`--help`,
+  `--dry-run`, the container call, the noxfile's combinations). The PUB400
+  lock is `scripts/pub400_lock.py`, standard library only and Python 3.9
+  compatible, run with the host's `python3` by `scripts/pub400.sh` before the
+  container starts.
+- **Why:** the lock must be taken on the host, before the container starts,
+  and must hold across worktrees (phase 4 decision 17); macOS has no `flock`
+  command, but its Python has `fcntl.flock`, and the OS releases that lock
+  when the process dies. Bash 3.2 and Python 3.9 are what a stock Mac has,
+  so `bin/setup` (PR 0.6) needs to install nothing on the host. The scripts
+  read the Python × Django combinations from the noxfile, so there is no
+  second list. In a git worktree the container also gets the repository's
+  shared git directory, so git (the classification, the tracked-files test)
+  works inside it.
+- **Alternatives:** Python scripts for `bin/` (the host's Python is too old
+  for the project's code and `tomllib`); a lock inside the container (taken
+  too late, and not shared between containers); `mkdir` as a lock (stale
+  after a crash); a newer bash from Homebrew (an extra host dependency).
