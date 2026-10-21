@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# bin/status: regenerate the status pages from the logs, and show what is waiting.
+#
+#   bin/status              regenerate, then show the PUB400 lock and the labelled PRs
+#   bin/status --no-write   only show the PUB400 lock and the labelled PRs
+#   bin/status --dry-run    print the commands, run nothing
+#   bin/status --help
+#
+# Regenerates docs/TEST_STATUS.md, docs/badges/, README's generated sections
+# (nox -s test_status, from test-results/) and docs/FEATURES.md (nox -s
+# features), in the container; never connects to an IBM i. Then shows who
+# holds the PUB400 lock (scripts/pub400_lock.py --status) and the open pull
+# requests that carry needs-full-tier or run-ibmi (gh, read-only; skipped
+# when gh is not installed).
+
+source "$(dirname "$0")/_common.sh"
+common_args "$@"
+
+write=1
+for arg in ${ARGS[@]+"${ARGS[@]}"}; do
+    case $arg in
+        --no-write) write=0 ;;
+        *) die "unknown argument: $arg (see --help)" ;;
+    esac
+done
+
+if [ "$write" = 1 ]; then
+    container nox -s test_status features
+fi
+run python3 "$ROOT/scripts/pub400_lock.py" --status
+if command -v gh >/dev/null 2>&1; then
+    # REST, not gh pr list (GraphQL needs scopes the machine account lacks).
+    run gh api "repos/{owner}/{repo}/pulls?state=open&per_page=100" \
+        --jq '.[] | select(any(.labels[]; .name == "needs-full-tier" or .name == "run-ibmi"))
+              | "PR #\(.number) [\([.labels[].name | select(. == "needs-full-tier" or . == "run-ibmi")] | join(", "))] \(.title)"' ||
+        echo "could not list the pull requests (gh)"
+else
+    echo "gh not installed: labelled pull requests not shown"
+fi
