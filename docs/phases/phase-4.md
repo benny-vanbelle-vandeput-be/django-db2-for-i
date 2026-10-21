@@ -391,7 +391,7 @@ What step 0 delivers, as the maintainer stated it:
   it can be spread over several nights.
 - Every PR is classified automatically from its changed files: **docs/tests
   only**, **SQL-affecting**, or **needs full tier**. The scripts use the
-  classification, and it is shown in the PR description.
+  classification, and CI shows it in a comment on the PR (decision 14).
 
 *CI gate*: the offline CI fails if a PR contains goldens or corpus entries
 without a verification stamp.
@@ -428,7 +428,8 @@ by step, with the exact commands. Topics at least:
 - `commit`: signed commits, conventional commit messages, staging by
   explicit path, changelog fragments (`changelog.d/<PR>.<type>.md`);
 - `pr`: opening a PR, the labels (`needs-full-tier`, `run-ibmi`), when a
-  full tier is needed, rebase only on conflict, never merge your own PR;
+  full tier is needed, rebase when the PR is behind `main` (with the
+  exception of decision 12), never merge your own PR;
 - `review`: what a maintainer checks before merging (CI, labels, stamps,
   backend diff);
 - `ibmi`: the PUB400 rules (one connection at a time, the lock, a shared
@@ -463,30 +464,15 @@ plan):
 - the `bin/` scripts are named where the rules refer to nox sessions and
   `scripts/` today.
 
-*Open points for step 0* (to settle in PR 0.1, not decided by this plan):
-- "Rebase only on conflict" (topic `pr`) differs from CLAUDE.md ("whenever
-  a PR branch is behind `main`, Claude rebases it") and from the `main`
-  ruleset, which requires the `offline` check on an up-to-date branch.
-- What the `run-ibmi` label does (a request for a targeted run by the main
-  session, or something CI reacts to) is not described yet.
-- Where the classification appears in the PR description (pasted from the
-  script's output, or written by CI) and how a PR with only new tests is
-  classified ("docs/tests only", but new tests still need an IBM i run).
-- The CI gate fails on `main` as it is today (3 unverified goldens in
-  TEST_STATUS); they are verified before PR 0.2, or the gate needs an
-  allow-list with a reason per entry.
-- `bin/ibmi-cleanup` drops tables in the user libraries, which CLAUDE.md
-  allows only with approval: whether one standing approval covers it
-  (restricted to tables the test runner created) or each run is approved.
-- The PUB400 lock must hold across worktrees (one PUB400 job at a time on
-  this machine), so it lives outside the worktree.
+*Open points for step 0*: all six were settled by the maintainer on
+2026-10-21, see decisions 12 to 17.
 
 PR boundaries, in this order:
 - 0.1 `docs` + `build`: the rules in CLAUDE.md and CONTRIBUTING.md, and the
   classification (a script under `scripts/` that maps the changed files of a
-  branch against `origin/main` to the three classes, and the place in the
-  PR description that shows it), with offline tests of the classification
-  on sample file lists.
+  branch against `origin/main` to the three classes and the two labels,
+  and the CI job that comments it on the PR, decision 14), with offline
+  tests of the classification on sample file lists.
 - 0.2 `ci`: the gate on goldens and corpus entries without a verification
   stamp, with an offline test of the check.
 - 0.3 `build(bin)`: the shared part (the lock, `--help` / `--dry-run`,
@@ -665,6 +651,61 @@ questions as follows:
     `docs/WORKFLOW.md`, printed by `bin/help`. The CLAUDE.md and
     CONTRIBUTING.md rule changes belong to step 0's first PR, not to this
     plan. Section 7 has the details, the open points and the PR boundaries.
+
+The open points of step 0, answered by the maintainer on 2026-10-21 (they
+go into CLAUDE.md and CONTRIBUTING.md with PR 0.1):
+
+12. **Rebasing: the current rule stays.** A PR is rebased whenever it is
+    behind `main` (the ruleset needs `offline` on an up-to-date branch).
+    Exception: after a conflict-free rebase no new IBM i run is needed if
+    the PR's own changes are identical (`git range-diff`) and the new
+    commits on `main` touch nothing the classification marks as
+    SQL-affecting or needs full tier.
+13. **Two labels, set by the classification.** `run-ibmi` when a PR needs a
+    targeted IBM i run (changed SQL, new or changed tests that run on
+    IBM i), `needs-full-tier` when it needs the full tier; anyone may add
+    `run-ibmi` by hand to request a run. For both: the main session queues
+    the run behind any other PUB400 job, posts the result on the PR and
+    only then removes the label; no merge while either label is on;
+    `bin/status` lists the PRs carrying them. Nothing in CI reacts to the
+    labels.
+14. **The classification runs in CI on every PR push** (`pull_request`,
+    never `pull_request_target`; permissions `contents: read` and
+    `pull-requests: write`, no secrets). It keeps one comment on the PR up
+    to date, only adds labels (the main session removes them after a
+    run), and is not a required check. For a fork it only writes the job
+    summary and the maintainer runs `bin/check`, which runs the same
+    script.
+15. **The CI gate's allow-list is a shared data file**,
+    `tests/offline/golden/unverifiable.toml`, read by the IBM i test (the
+    expected failures) and the gate. Each entry has a reason and the
+    condition under which it becomes verifiable (for example "a dedicated
+    IBM i with a CPA32B2 system reply list entry"). The gate's failure
+    message names the entry and the fix ("run `bin/verify` or request
+    `run-ibmi`"), it also fails on an entry that is no longer needed, and
+    TEST_STATUS shows the count ("unverifiable on PUB400: 3").
+16. **`bin/ibmi-cleanup`: one standing approval, recorded in CLAUDE.md.**
+    It drops only tables (with their indexes and views) in the two `.env`
+    libraries that a test run created: each run records a table in a local
+    list *before* its `CREATE TABLE`, so a crash during the create still
+    leaves it on the list; tables on the list that do not exist are
+    skipped. It refuses to touch a library without the
+    `DJDB2I_TEST_MARKER` table, never drops a table of the marker's
+    snapshot, never touches libraries, journals, receivers or system
+    objects, only lists without `--yes`, takes the PUB400 lock, and writes
+    what it dropped to `test-results/cleanup/`. Anything not on the list is
+    reported, never dropped. The marker exists since phase 1
+    (`creation.py`): each run creates it and teardown drops it, so it is
+    there exactly when a run left tables behind; `bin/setup` creates
+    nothing.
+17. **The PUB400 lock is per user, outside every checkout**:
+    `~/.local/state/django-db2-for-i/pub400.lock` (`DB2I_LOCK_DIR`
+    overrides the directory), an OS file lock (`fcntl.flock`, released when
+    the process dies) taken by `scripts/pub400.sh` on the host before the
+    container starts, with a holder file (PID, command, worktree, start
+    time) that `bin/status` shows. A second job stops with "PUB400 busy:
+    <holder>", or waits with `--wait`. It covers one machine only: two
+    machines behind the same IP (PUB400's per-IP limit) are not covered.
 
 Also decided: the two flags this plan argues should stay off
 (`supports_expression_defaults`, `can_defer_constraint_checks`) are

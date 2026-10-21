@@ -1,0 +1,76 @@
+# Classifies every pull request from its changed files (scripts/classify_pr.py)
+# and keeps one comment on the PR up to date with the result. CLAUDE.md,
+# "Git workflow": the labels needs-full-tier and run-ibmi are only ever ADDED
+# here; the main session removes them after the IBM i run and its result are
+# posted. Nothing reacts to the labels in CI, and this job is not a required
+# check, so a hiccup of the GitHub API never blocks a merge.
+#
+# pull_request, never pull_request_target: a fork's code never runs with a
+# write token. For a fork the token is read-only, so the job only writes the
+# job summary and the maintainer runs bin/check. No secrets, no IBM i.
+name: classify
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  classify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      # On a push (synchronize) the previous head is checked too: a push of
+      # only verification stamps, or a rebase with identical changes onto
+      # docs/tests-only commits, needs no new IBM i run. A previous head that
+      # cannot be fetched counts as "new run needed".
+      - name: Classify
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BEFORE: ${{ github.event.action == 'synchronize' && github.event.before || '' }}
+        run: |
+          git fetch --quiet origin "$BASE_REF"
+          args=(--base "origin/$BASE_REF" --head HEAD)
+          if [ -n "$BEFORE" ]; then
+            git fetch --quiet origin "$BEFORE" || true
+            args+=(--before "$BEFORE")
+          fi
+          python3 scripts/classify_pr.py "${args[@]}" --format json > classification.json
+          python3 scripts/classify_pr.py "${args[@]}" --format markdown > comment.md
+          cat comment.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment and labels
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          marker='<!-- classify-pr -->'
+          id=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id" | head -n 1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@comment.md > /dev/null
+          else
+            gh api "repos/$REPO/issues/$PR/comments" -F body=@comment.md > /dev/null
+          fi
+          if [ "$(jq -r '.push == null or .push.new_run_needed' classification.json)" = true ]; then
+            for label in $(jq -r '.labels[]' classification.json); do
+              gh api "repos/$REPO/issues/$PR/labels" -f "labels[]=$label" > /dev/null
+              echo "added label $label"
+            done
+          else
+            echo "no new IBM i run needed: labels unchanged"
+          fi

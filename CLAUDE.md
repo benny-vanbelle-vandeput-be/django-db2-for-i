@@ -33,8 +33,16 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
 - **Respect shared systems.** Never run the full Django suite against PUB400 or any shared system
   (see "Initial test system: PUB400" for what is allowed).
 - Record non-obvious design decisions in `docs/DECISIONS.md` (date, decision, why, alternatives).
-- Before opening a PR that touches backend code (`django_db2_for_i/`), run the **full**
-  pub400 tier (`nox -s pub400`), not a subset, and report the result in the PR.
+- **IBM i runs follow the PR's classification** (`scripts/classify_pr.py`, see "Git
+  workflow"), and the result is reported in the PR:
+  - a **targeted run** (the affected own IBM i tests and Django test modules or ids)
+    for new or changed tests that run on IBM i, for changed SQL (a golden or corpus
+    entry without a verification stamp) and on request;
+  - the **full** pub400 tier (`nox -s pub400`), not a subset, when the driver layer,
+    `base.py`, `creation.py`, the capabilities, the container image, the pinned Django
+    commit or the supported Django versions change, or a file the classification does
+    not list (it fails closed);
+  - nothing for docs/tests-only changes that do not run on IBM i.
 - When a feature flag is enabled, add an own pub400 test for the common real-world usage
   pattern of that feature (e.g. full querysets with model instances, not only `values()`);
   Django's own tests do not cover every pattern.
@@ -84,7 +92,21 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
     everything in it vanishes when the job ends.
   - Nothing outside QTEMP (a library, a table in a user library, a journal, a
     system value, a reply list entry) may be created or changed without approval.
+  - **Standing approval (2026-10-21): `bin/ibmi-cleanup`** (phase 4 step 0) may drop
+    leftover test tables, with their indexes and views, in the two `.env` libraries,
+    and nothing else: only tables on the local list that test runs write *before*
+    each `CREATE TABLE`, only in a library that contains the `DJDB2I_TEST_MARKER`
+    table, never a table of the marker's snapshot, never a library, journal,
+    receiver or system object. Without `--yes` it only lists; it writes what it
+    dropped to `test-results/cleanup/`. A table not on the list is reported, and
+    dropping it needs approval.
 - PUB400 limits connections per IP: one connection per run, `--parallel=1`, no retry storms.
+- **One PUB400 job at a time on this machine**, whatever the worktree: no probe, tier
+  or Django run starts while another one runs; it queues instead. From phase 4 step 0
+  on, `scripts/pub400.sh` enforces this with a per-user lock outside every checkout
+  (`~/.local/state/django-db2-for-i/pub400.lock`, an OS file lock released when the
+  process dies; "PUB400 busy: <holder>", or `--wait`). It covers one machine only:
+  two machines behind the same IP are not covered.
 - No uptime guarantee: test runs must fail fast and clearly when the system is unreachable.
 - Allowed on PUB400: single, small Django test modules (e.g. `basic`, `transactions`) and the
   curated `pub400` tier. **Never** the full Django suite or the full matrix.
@@ -198,8 +220,9 @@ made when no other PRs are open.
 - Before every release: one run of all Django test modules we support (the modules in
   `docs/TEST_STATUS.md`) plus our own pub400 tier, for every supported Django version,
   newest Python. Sequential, one connection at a time, preferably off-peak. Never the full
-  Django suite. During development nothing changes: single modules/labels, a full pub400
-  tier per backend PR.
+  Django suite. The release run stays complete, but may be spread over several nights:
+  it is resumable per Django version. During development: single modules/labels, and
+  IBM i runs as the PR's classification requires (section 2).
 
 ### Version matrix
 - offline: every Python × every Django version.
@@ -253,20 +276,34 @@ made when no other PRs are open.
   signed with the machine account's SSH signing key (all set in the
   repository's local git config). Never commit with a personal email address.
 - Before every push: `nox -s lint offline` passes locally.
-- Every backend PR (touching `django_db2_for_i/`) gets the label `needs-full-tier` when it
-  is opened. Remove it only after the full pub400 tier on the PR's **latest** commit has
-  passed and the result is posted on the PR (the SHA it ran on, the counts). Any later
-  push (a rebase, a fix, a changelog fragment rename) puts the label back until a fresh
-  run on the new latest commit is posted. The maintainer does not merge PRs that still
-  carry the label.
-  - **Exception:** a commit that only contains the verification stamps written by the
-    full-tier run (`--record-verification`) on the previous commit, and files generated
-    solely from them (e.g. the golden count in `docs/TEST_STATUS.md` via
-    `nox -s test_status`), needs no new run. The PR comment then states the SHA the tier
-    ran on and that the latest commit only adds those stamps and generated files.
+- **Every PR is classified** from its changed files by `scripts/classify_pr.py`:
+  **needs full tier** (the driver layer, `base.py`, `creation.py`, the capabilities, the
+  container image, the pinned Django commit, the supported Django versions, and every
+  path it does not list: it fails closed), **SQL-affecting** (other backend code, goldens
+  or corpus entries without a verification stamp) or **docs/tests only** (the paths it
+  lists as such; a new file or directory is added to its lists in the same PR).
+  The CI job `classify` runs it on every push and keeps one comment on the PR up to date.
+- **Labels:** `needs-full-tier` for "needs full tier"; `run-ibmi` for SQL-affecting PRs
+  and for changes that run on IBM i (new or changed own IBM i tests, the test models, the
+  IBM i settings, the IBM i run tooling, the nox sessions, the supported Django test
+  modules). CI only **adds** them; anyone may
+  add `run-ibmi` by hand to request a run. The main session queues the run behind any
+  other PUB400 job, posts the result on the PR (the SHA it ran on, the counts) and only
+  then removes the label; the run must be on the PR's **latest** commit. The maintainer
+  does not merge a PR that carries either label. Nothing in CI reacts to the labels.
+- **A later push puts the labels back** (CI adds them again), with two exceptions that
+  need no new run:
+  - a push that only contains the verification stamps written by the run
+    (`--record-verification`) on the previous commit, and files generated solely from
+    them (e.g. the golden count in `docs/TEST_STATUS.md` via `nox -s test_status`). The
+    PR comment then states the SHA the run was on and that the latest commit only adds
+    those stamps and generated files;
+  - a conflict-free rebase whose own changes are identical (`git range-diff`) onto new
+    `main` commits that the classification marks as docs/tests only.
 - Before review, and whenever a PR branch is behind `main`, Claude rebases it
   onto `main` and pushes it itself (`git push --force-with-lease`, PR branches
-  only), so every PR is up to date and its commits stay signed. The maintainer
+  only), so every PR is up to date and its commits stay signed (whether the
+  rebase needs a new IBM i run: see the labels above). The maintainer
   never uses GitHub's "Update branch" button: with "approval of the most recent
   push" that would make the maintainer the last pusher, so nobody could approve
   the PR anymore.

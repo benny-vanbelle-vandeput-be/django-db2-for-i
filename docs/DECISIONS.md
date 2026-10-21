@@ -1319,3 +1319,33 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   limitation (SQL0104 for other characters).
 - **Alternatives:** on with a documented CCSID limitation; off.
 
+
+## 2026-10-21: IBM i runs follow an automatic pull request classification
+- **Decision (project owner):** every pull request is classified from its
+  changed files (`scripts/classify_pr.py`): **needs full tier** (the driver
+  layer, `base.py`, `creation.py`, the capabilities, the container image,
+  the pinned Django commit, the supported Django versions), **SQL-affecting**
+  (other backend code, goldens or corpus entries without a verification
+  stamp) or **docs/tests only** (explicitly listed paths). It fails closed:
+  a path it does not list is "needs full tier", and an offline test checks
+  that every tracked file is listed. The full own IBM i tier is required only for the
+  first; SQL-affecting changes and changes that run on IBM i (new or changed
+  own IBM i tests, test models, IBM i settings, supported Django test
+  modules) get a targeted run. The CI job `classify` (`pull_request` only,
+  no secrets) comments the result and only adds the labels `needs-full-tier`
+  and `run-ibmi`; the main session removes them after the run on the latest
+  commit is posted. A stamps-only push, or a conflict-free rebase with
+  identical changes (`git range-diff`) onto docs/tests-only commits, needs
+  no new run. Phase 4 decisions 12 to 14
+  ([phase-4.md](phases/phase-4.md#decisions)).
+- **Why:** a full tier for every backend PR spent PUB400 time (and the
+  maintainer's waiting time) on changes whose SQL was already verified, while
+  a PR that only added IBM i tests needed no run at all under the old rule.
+  The stamps on goldens and corpus entries say exactly which SQL is new.
+  A script in CI cannot be forgotten, and only adding labels keeps the
+  removal tied to a posted run.
+- **Alternatives:** the old rule (a full tier per backend PR, no rule for
+  test-only PRs); the classification only locally, pasted into the PR
+  description (relies on discipline, misses pushes by others); a required
+  CI check (an API hiccup would block merging); `pull_request_target`
+  (would give fork code a write token).
