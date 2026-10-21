@@ -105,7 +105,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (22 enabled on Django 6.1) Â
 | 6 | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
 | 7 | PUB400 tier & release prep | planned |
 
-Latest release: **`v0.1.0a3`** (2026-10-20): Phase 2: queries & pagination (release run: 7 Django modules, 1249 tests, 0 failed). ([CHANGELOG](CHANGELOG.md))
+Latest release: **`v0.1.0a4`** (2026-10-21): Phase 3: Django 6.0 and 5.2 support (release runs on 5.2, 6.0 and 6.1, 17 runs each, 0 failed; offline query corpora for all three). ([CHANGELOG](CHANGELOG.md))
 
 Open tracks:
 

@@ -52,6 +52,11 @@ version = "6.2"
 state = "planned"
 
 [[releases]]
+tag = "v0.1.0a4"
+date = "2026-10-21"
+summary = "Phase 3: Django 6.0 and 5.2 support (release runs on 5.2, 6.0 and 6.1, 17 runs each, 0 failed; offline query corpora for all three)."
+
+[[releases]]
 tag = "v0.1.0a3"
 date = "2026-10-20"
 summary = "Phase 2: queries & pagination (release run: 7 Django modules, 1249 tests, 0 failed)."
