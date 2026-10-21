@@ -351,9 +351,12 @@ django-db2-for-i/
 3. **Django 6.0 and 5.2 support.** Worked backwards in two steps: 6.1 → 6.0 first, then
    6.0 → 5.2. Build `compat.py` from real differences, extend nox matrix,
    fill `DJANGO_VERSIONS.md`.
-4. **Schema editor completeness.** `schema`, `migrations`, `introspection`, `inspectdb`.
+4. **Schema editor completeness.** `schema`, `migrations`, `introspection`, `inspectdb`, and what
+   they need: foreign keys, check constraints, introspection of every constraint, index ordering
+   and text-field indexes.
    Also: verify the column order of created tables (issue #23).
-5. **Returning & bulk.** `FINAL TABLE` returning columns, `bulk_create`, constraints, indexes.
+5. **Returning & bulk.** `FINAL TABLE` returning columns, `bulk_create`, unique constraint variants,
+   partial / expression / covering indexes; the `constraints`, `indexes` and `model_indexes` modules.
 6. **Advanced.** Window functions, `JSONField`, db functions, DB-level `on_delete` (6.1+).
 7. **PUB400 tier & release prep.** Curated smoke set, golden verification job, README, packaging.
 
