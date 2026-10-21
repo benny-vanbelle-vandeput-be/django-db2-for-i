@@ -7,7 +7,8 @@ This is the approved plan, not yet a record. It follows the phase template in
 `650b508`, before [phase-3.md](phase-3.md) became the record). The
 maintainer's answers to the open questions are in "Decisions" at the end.
 **Phase 4 starts only after the phase 3 close-out (PR B) is merged and
-0.1.0a4 is tagged.**
+0.1.0a4 is tagged.** Its first step is step 0 (tooling, section 7), added and
+approved on 2026-10-21 (decision 11); steps A to D follow.
 
 The analysis reads three Django checkouts (shallow clones of the stable
 branches; only for the test counts below; test runs and the corpus use the
@@ -37,7 +38,15 @@ Carried into this phase:
   tables in another library than `NAME` "planned for phase 4" (open
   question 8).
 
+Added to this phase (step 0, decision 11): **tooling** before the schema
+work: new rules for when an IBM i run is needed, an automatic classification
+of every PR, a CI gate on unverified goldens and corpus entries, `bin/`
+scripts for the routine tasks, and `docs/WORKFLOW.md` with `bin/help`.
+
 Proposed "done when":
+- step 0 is done: the new rules are in CLAUDE.md and CONTRIBUTING.md, the CI
+  gate is active, every `bin/` script exists with offline tests, and
+  `docs/WORKFLOW.md` documents them;
 - the Django modules `introspection`, `inspectdb` and `schema`, and the
   database parts of `migrations`, run on 6.1, 6.0 and 5.2 against PUB400
   without failures or errors: every remaining failure is a skip or expected
@@ -336,7 +345,9 @@ characters (SQL0104; IBMI_NOTES, encoding investigation). Switching on
   - Every golden is verified on PUB400 by the pub400 tier's golden job.
 - **pub400 tier**: the full tier on every backend PR (newest Python, newest
   Django during development, as CLAUDE.md says; the PR states the SHA and
-  counts). Each enabled flag gets its own test of the real-world pattern, for
+  counts) until step 0 changes the rule; from then on, the full tier only
+  where step 0's rules require it, targeted runs (`bin/verify`,
+  `bin/ibmi-test`) otherwise. Each enabled flag gets its own test of the real-world pattern, for
   example: with `supports_foreign_keys`, deleting a referenced `Author`
   through the ORM with `on_delete=PROTECT` and through raw SQL, and creating a
   `Book` for a missing author, both raising `IntegrityError`; with
@@ -355,8 +366,143 @@ characters (SQL0104; IBMI_NOTES, encoding investigation). Switching on
 
 ### 7. Plan with PR boundaries
 Each PR is small and reviewable; backend PRs carry `needs-full-tier` until
-the full pub400 tier on their latest commit is posted. Probes come first
-wherever Db2 for i behaviour is unknown.
+the full pub400 tier on their latest commit is posted (once step 0's rules
+PR is merged: until the IBM i run that the PR's classification requires is
+posted). Probes come first wherever Db2 for i behaviour is unknown.
+
+**Step 0: tooling** (decision 11)
+
+Its implementation follows in its own PRs after this plan (#123) is merged,
+the phase 3 close-out (PR B) is merged and 0.1.0a4 is tagged; steps A to D
+start after it. Every PR of this step comes with offline tests (in
+`tests/offline/`, no IBM i needed) and a changelog fragment; none of them
+touches `django_db2_for_i/`. Once the rules PR (0.1) is merged, the later
+PRs of this step follow its rules.
+
+What step 0 delivers, as the maintainer stated it:
+
+*Rules* (CLAUDE.md, CONTRIBUTING.md):
+- An IBM i run is required for: new tests; SQL that changed (a golden or
+  corpus entry lost its verification stamp); a manual request.
+- The full own IBM i tier stays required when `drivers/`, `base.py`,
+  `creation.py`, the capabilities or the `vendor/` Django checkout change, or
+  a Django version is added. Otherwise targeted runs are enough.
+- The release run stays complete (all modules, all versions), resumable so
+  it can be spread over several nights.
+- Every PR is classified automatically from its changed files: **docs/tests
+  only**, **SQL-affecting**, or **needs full tier**. The scripts use the
+  classification, and it is shown in the PR description.
+
+*CI gate*: the offline CI fails if a PR contains goldens or corpus entries
+without a verification stamp.
+
+*`bin/` scripts*: thin wrappers around the existing nox sessions, run in the
+container; Claude uses the same scripts. Each has `--help` and `--dry-run`,
+never prints secrets, and takes a PUB400 lock (a second PUB400 job waits or
+stops with a clear message). `caffeinate` on macOS through
+`scripts/pub400.sh`. `scripts/` stays for internals.
+
+| Script | What it does |
+|---|---|
+| `bin/setup` | build the images, create `.env` from `.env.example` (asks for the values interactively), pin the `vendor/` Django checkouts |
+| `bin/doctor` | check Docker, the ODBC driver in the image, the vendor commits, and one test connection to PUB400 |
+| `bin/check` | what CI does, locally (lint, offline, corpus replay), for all combinations or a chosen one |
+| `bin/verify` | run the offline tests and the replay; for every test that fails because its SQL changed, and for every new test, run exactly those tests on IBM i (own tests and Django test ids); if they pass, write the new SQL to the goldens / corpus with stamps; if they fail, report them. If an offline test fails for any other reason, stop without touching PUB400. Results land in the working tree for review, never committed automatically |
+| `bin/ibmi-test` | the manual request: run chosen own tests, Django modules or test ids on IBM i for a given Django version; options `--affected` (the same selection as `bin/verify`) and `--full-tier` |
+| `bin/probe` | run a probe by name; `--list` |
+| `bin/status` | regenerate TEST_STATUS, the badges, the README sections and FEATURES.md from the logs |
+| `bin/release-run` | the full release run for every Django version, with corpus capture, resumable per version |
+| `bin/release-prepare` | offline: check the preconditions (clean `main`, CI green, no unverified entries, release runs present, backend unchanged since the runs), then bump the version, assemble the CHANGELOG, regenerate status and docs, and open the release PR. It never tags: it prints the exact `git tag` commands for the maintainer |
+| `bin/ibmi-cleanup` | remove leftover test tables from our own test libraries after a crashed run |
+
+Offline tests cover the argument parsing and `--dry-run` of every script.
+
+*Workflow guide*: `docs/WORKFLOW.md` is the single source; `bin/help` prints
+it (`bin/help` lists the topics, `bin/help <topic>` shows one). Short, step
+by step, with the exact commands. Topics at least:
+- `setup`: first-time installation (`bin/setup`, `bin/doctor`);
+- `branch`: starting work (branch naming, from an up-to-date `main`,
+  worktrees for parallel work);
+- `change`: the daily loop (edit, `bin/check`, `bin/verify`, what the
+  classification means);
+- `commit`: signed commits, conventional commit messages, staging by
+  explicit path, changelog fragments (`changelog.d/<PR>.<type>.md`);
+- `pr`: opening a PR, the labels (`needs-full-tier`, `run-ibmi`), when a
+  full tier is needed, rebase only on conflict, never merge your own PR;
+- `review`: what a maintainer checks before merging (CI, labels, stamps,
+  backend diff);
+- `ibmi`: the PUB400 rules (one connection at a time, the lock, a shared
+  system, never the full Django suite), `bin/ibmi-test`, `bin/probe`
+  (read-only by default, QTEMP, approval for anything else),
+  `bin/ibmi-cleanup`;
+- `release`: `bin/release-run`, `bin/release-prepare`, merging the release
+  PR, signing and pushing the tag yourself (only the tag; the workflow
+  creates the GitHub release; `RELEASE_SIGNING_KEY` must be set), checking
+  the workflow;
+- `troubleshooting`: PUB400 unreachable, Mac sleep, CPA32B2, a stuck lock,
+  an unverified golden.
+
+It is linked from README (Development) and CONTRIBUTING.md, which list all
+scripts in a table. An offline test checks that every topic of `bin/help`
+exists in WORKFLOW.md and that every `bin/` script is documented.
+
+*Existing CLAUDE.md rules that step 0 changes* (in PR 0.1, not in this
+plan):
+- section 2, "Before opening a PR that touches backend code ... run the
+  full pub400 tier": replaced by the rules above (the full tier only for
+  changes to `drivers/`, `base.py`, `creation.py`, the capabilities, the
+  `vendor/` checkout or a new Django version; an IBM i run for new tests,
+  changed SQL or a manual request; targeted runs otherwise);
+- Git workflow, "Every backend PR gets the label `needs-full-tier` when it
+  is opened": the label follows the classification (only on "needs full
+  tier" PRs); the removal rules (a run on the latest commit, the SHA and
+  counts posted, the exception for a commit that only adds verification
+  stamps) stay. The new `run-ibmi` label is described next to it;
+- section 6, "Before every release": the release run stays complete and
+  becomes resumable per Django version;
+- the `bin/` scripts are named where the rules refer to nox sessions and
+  `scripts/` today.
+
+*Open points for step 0* (to settle in PR 0.1, not decided by this plan):
+- "Rebase only on conflict" (topic `pr`) differs from CLAUDE.md ("whenever
+  a PR branch is behind `main`, Claude rebases it") and from the `main`
+  ruleset, which requires the `offline` check on an up-to-date branch.
+- What the `run-ibmi` label does (a request for a targeted run by the main
+  session, or something CI reacts to) is not described yet.
+- Where the classification appears in the PR description (pasted from the
+  script's output, or written by CI) and how a PR with only new tests is
+  classified ("docs/tests only", but new tests still need an IBM i run).
+- The CI gate fails on `main` as it is today (3 unverified goldens in
+  TEST_STATUS); they are verified before PR 0.2, or the gate needs an
+  allow-list with a reason per entry.
+- `bin/ibmi-cleanup` drops tables in the user libraries, which CLAUDE.md
+  allows only with approval: whether one standing approval covers it
+  (restricted to tables the test runner created) or each run is approved.
+- The PUB400 lock must hold across worktrees (one PUB400 job at a time on
+  this machine), so it lives outside the worktree.
+
+PR boundaries, in this order:
+- 0.1 `docs` + `build`: the rules in CLAUDE.md and CONTRIBUTING.md, and the
+  classification (a script under `scripts/` that maps the changed files of a
+  branch against `origin/main` to the three classes, and the place in the
+  PR description that shows it), with offline tests of the classification
+  on sample file lists.
+- 0.2 `ci`: the gate on goldens and corpus entries without a verification
+  stamp, with an offline test of the check.
+- 0.3 `build(bin)`: the shared part (the lock, `--help` / `--dry-run`,
+  secret-free output, running in the container) and the offline scripts
+  `bin/check` and `bin/status`.
+- 0.4 `build(bin)`: the IBM i scripts `bin/doctor`, `bin/probe`,
+  `bin/ibmi-test` and `bin/ibmi-cleanup`, all through `scripts/pub400.sh`
+  and the lock.
+- 0.5 `build(bin)`: `bin/verify` (the offline run, the selection of
+  affected and new tests, the targeted IBM i run, the stamps written into
+  the working tree).
+- 0.6 `build(bin)`: `bin/setup`, `bin/release-run` (resumable per version)
+  and `bin/release-prepare`.
+- 0.7 `docs`: `docs/WORKFLOW.md`, `bin/help`, the links and script tables in
+  README (Development) and CONTRIBUTING.md, and the offline test that every
+  topic and every script is documented.
 
 **Step A: facts first**
 1. `test(probes)`: probe 24 `alter_table` (QTEMP) and probe 25 `catalog`
@@ -502,6 +648,23 @@ questions as follows:
 10. **Baseline runs approved**: `introspection` and `schema` on 6.1, once,
     before step B, sequential, through `scripts/pub400.sh`, not while the
     phase 3 release runs are going.
+
+11. **Step 0, tooling: added and approved on 2026-10-21.** Phase 4 starts
+    with a tooling step before step A, implemented in its own PRs after
+    this plan is merged, the phase 3 close-out (PR B) is merged and 0.1.0a4
+    is tagged. It narrows when an IBM i run is needed (new tests, changed
+    SQL, a manual request; the full own tier only for changes to
+    `drivers/`, `base.py`, `creation.py`, the capabilities, the `vendor/`
+    checkout or a new Django version), keeps the release run complete but
+    resumable over several nights, classifies every PR from its changed
+    files, makes the offline CI fail on goldens or corpus entries without a
+    verification stamp, wraps the routine tasks (setup, checks, targeted
+    IBM i runs with stamping, probes, status, release run and release
+    preparation, cleanup) in `bin/` scripts with `--help`, `--dry-run`, no
+    secrets in the output and a PUB400 lock, and documents the workflow in
+    `docs/WORKFLOW.md`, printed by `bin/help`. The CLAUDE.md and
+    CONTRIBUTING.md rule changes belong to step 0's first PR, not to this
+    plan. Section 7 has the details, the open points and the PR boundaries.
 
 Also decided: the two flags this plan argues should stay off
 (`supports_expression_defaults`, `can_defer_constraint_checks`) are
