@@ -95,7 +95,8 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
   - **Standing approval (2026-10-21): `bin/ibmi-cleanup`** (phase 4 step 0) may drop
     leftover test tables, with their indexes and views, in the two `.env` libraries,
     and nothing else: only tables on the local list that test runs write *before*
-    each `CREATE TABLE`, only in a library that contains the `DJDB2I_TEST_MARKER`
+    each `CREATE TABLE` (`tests/table_registry.py`, in the state directory next to the
+    PUB400 lock), only in a library that contains the `DJDB2I_TEST_MARKER`
     table, never a table of the marker's snapshot, never a library, journal,
     receiver or system object. Without `--yes` it only lists; it writes what it
     dropped to `test-results/cleanup/`. A table not on the list is reported, and

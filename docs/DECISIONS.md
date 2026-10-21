@@ -1392,3 +1392,25 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   for the project's code and `tomllib`); a lock inside the container (taken
   too late, and not shared between containers); `mkdir` as a lock (stale
   after a crash); a newer bash from Homebrew (an extra host dependency).
+
+## 2026-10-21: The cleanup list is written by the test settings, next to the PUB400 lock
+- **Decision:** the list of objects test runs create (`tests/table_registry.py`,
+  read by `bin/ibmi-cleanup`) is written by an execute wrapper that both IBM i
+  test settings modules install on every connection of this backend: before
+  a `CREATE TABLE`, `CREATE VIEW` or `CREATE ALIAS` runs, its object is
+  appended and the line fsynced. The file lives in the state directory of the
+  PUB400 lock (outside every checkout), which `scripts/pub400.sh` mounts into
+  the container (`DB2I_TABLE_LIST`). `bin/ibmi-cleanup` drops through the
+  backend's own catalog and drop helpers (`creation.py`), the same statements
+  every test teardown runs.
+- **Why:** phase 4 decision 16 requires the entry before the `CREATE`, so a
+  crash mid-create still leaves it listed. A wrapper in the test settings
+  covers every path that creates objects (the test database setup, the
+  schema editor, the golden check's raw DDL, Django's own tests) without a
+  line in `django_db2_for_i/`. One list per machine matches the one lock per
+  machine: a run from any worktree can be cleaned up from any other. Reusing
+  `creation.py`'s drop means no new IBM i behaviour to probe.
+- **Alternatives:** a hook in the backend's schema editor (backend code for a
+  test concern, and it misses raw DDL); a list per checkout in
+  `test-results/` (a crashed run in one worktree could not be cleaned up from
+  another); dropping by name pattern (could hit a table we did not create).
