@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2232 | 2 | 0 | 0 | 2026-10-20 22:48:19 UTC |
-| IBM i · own tests | 245 | 0 | 1 | 0 | 2026-10-20 17:04:47 UTC |
-| IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-20 16:21:24 UTC |
-| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-20 22:01:16 UTC |
+| Offline · own tests | 2232 | 2 | 0 | 0 | 2026-10-21 04:52:51 UTC |
+| IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 03:02:59 UTC |
+| IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-21 02:16:34 UTC |
+| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-21 04:45:41 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2234 | 0 | 0 | 0 | 2026-10-20 22:47:38 UTC |
-| IBM i · own tests | 245 | 0 | 1 | 0 | 2026-10-20 16:03:26 UTC |
-| IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-20 15:22:20 UTC |
-| Offline · Django test suite (replay) | – | – | – | – | no corpus yet |
+| Offline · own tests | 2234 | 0 | 0 | 0 | 2026-10-21 04:51:57 UTC |
+| IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 01:55:40 UTC |
+| IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-21 01:03:38 UTC |
+| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-21 04:45:07 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2232 | 0 | 0 | 0 | 2026-10-20 22:46:56 UTC |
-| IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-20 21:39:31 UTC |
-| IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 20:42:25 UTC |
-| Offline · Django test suite (replay) | – | – | – | – | no corpus yet |
+| Offline · own tests | 2232 | 0 | 0 | 0 | 2026-10-21 04:51:01 UTC |
+| IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-21 00:42:24 UTC |
+| IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 23:51:07 UTC |
+| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-21 04:44:20 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,10 +73,10 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-10-20 15:05:35 UTC to 2026-10-20 20:42:25 UTC
+- **Runs:** 2026-10-20 23:30:50 UTC to 2026-10-21 02:16:34 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
 - **Python:** 3.14.8
-- **Backend commits:** 1117fb5 2026-10-20, 218bfca 2026-10-20 (per module in the table)
+- **Backend commits:** 4cf4e0e 2026-10-21 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
@@ -85,27 +85,27 @@ The IBM i · Django test suite per module and Django version.
 
 | Module | Django | Tests | Passed | Failures | Errors | Skipped | Expected failures | Unexpected successes | Result | Run | Backend commit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| aggregation | 5.2 | 140 | 139 | 0 | 0 | 1 | 0 | 0 | OK | 2026-10-20 20:35:48 UTC | 1117fb5 2026-10-20 |
-| aggregation | 6.0 | 156 | 151 | 0 | 0 | 5 | 0 | 0 | OK | 2026-10-20 15:17:41 UTC | 218bfca 2026-10-20 |
-| aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-10-20 16:16:53 UTC | 218bfca 2026-10-20 |
-| basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-20 20:18:48 UTC | 1117fb5 2026-10-20 |
-| basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-20 15:05:35 UTC | 218bfca 2026-10-20 |
-| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-20 16:04:38 UTC | 218bfca 2026-10-20 |
-| expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-20 20:38:34 UTC | 1117fb5 2026-10-20 |
-| expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-20 15:19:38 UTC | 218bfca 2026-10-20 |
-| expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-20 16:18:46 UTC | 218bfca 2026-10-20 |
-| lookup | 5.2 | 100 | 91 | 0 | 0 | 7 | 2 | 0 | OK | 2026-10-20 20:28:41 UTC | 1117fb5 2026-10-20 |
-| lookup | 6.0 | 100 | 93 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-20 15:12:48 UTC | 218bfca 2026-10-20 |
-| lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-20 16:11:41 UTC | 218bfca 2026-10-20 |
-| ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-20 20:27:25 UTC | 1117fb5 2026-10-20 |
-| ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-20 15:11:53 UTC | 218bfca 2026-10-20 |
-| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-20 16:10:44 UTC | 218bfca 2026-10-20 |
-| queries | 5.2 | 493 | 469 | 0 | 0 | 20 | 4 | 0 | OK | 2026-10-20 20:42:25 UTC | 1117fb5 2026-10-20 |
-| queries | 6.0 | 495 | 470 | 0 | 0 | 21 | 4 | 0 | OK | 2026-10-20 15:22:20 UTC | 218bfca 2026-10-20 |
-| queries | 6.1 | 506 | 482 | 0 | 0 | 21 | 3 | 0 | OK | 2026-10-20 16:21:24 UTC | 218bfca 2026-10-20 |
-| transactions | 5.2 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-20 20:21:14 UTC | 1117fb5 2026-10-20 |
-| transactions | 6.0 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-20 15:07:00 UTC | 218bfca 2026-10-20 |
-| transactions | 6.1 | 88 | 85 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-20 16:06:12 UTC | 218bfca 2026-10-20 |
+| aggregation | 5.2 | 140 | 139 | 0 | 0 | 1 | 0 | 0 | OK | 2026-10-20 23:45:50 UTC | 4cf4e0e 2026-10-21 |
+| aggregation | 6.0 | 156 | 151 | 0 | 0 | 5 | 0 | 0 | OK | 2026-10-21 00:58:00 UTC | 4cf4e0e 2026-10-21 |
+| aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-10-21 02:11:00 UTC | 4cf4e0e 2026-10-21 |
+| basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-20 23:30:50 UTC | 4cf4e0e 2026-10-21 |
+| basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-21 00:43:23 UTC | 4cf4e0e 2026-10-21 |
+| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-21 01:56:45 UTC | 4cf4e0e 2026-10-21 |
+| expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-20 23:48:00 UTC | 4cf4e0e 2026-10-21 |
+| expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-21 01:00:22 UTC | 4cf4e0e 2026-10-21 |
+| expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-21 02:13:24 UTC | 4cf4e0e 2026-10-21 |
+| lookup | 5.2 | 100 | 91 | 0 | 0 | 7 | 2 | 0 | OK | 2026-10-20 23:39:06 UTC | 4cf4e0e 2026-10-21 |
+| lookup | 6.0 | 100 | 93 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-21 00:51:38 UTC | 4cf4e0e 2026-10-21 |
+| lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-21 02:04:49 UTC | 4cf4e0e 2026-10-21 |
+| ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-20 23:37:53 UTC | 4cf4e0e 2026-10-21 |
+| ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-21 00:50:20 UTC | 4cf4e0e 2026-10-21 |
+| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-21 02:03:38 UTC | 4cf4e0e 2026-10-21 |
+| queries | 5.2 | 493 | 469 | 0 | 0 | 20 | 4 | 0 | OK | 2026-10-20 23:51:07 UTC | 4cf4e0e 2026-10-21 |
+| queries | 6.0 | 495 | 470 | 0 | 0 | 21 | 4 | 0 | OK | 2026-10-21 01:03:38 UTC | 4cf4e0e 2026-10-21 |
+| queries | 6.1 | 506 | 482 | 0 | 0 | 21 | 3 | 0 | OK | 2026-10-21 02:16:34 UTC | 4cf4e0e 2026-10-21 |
+| transactions | 5.2 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-20 23:32:45 UTC | 4cf4e0e 2026-10-21 |
+| transactions | 6.0 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-21 00:45:07 UTC | 4cf4e0e 2026-10-21 |
+| transactions | 6.1 | 88 | 85 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-21 01:58:35 UTC | 4cf4e0e 2026-10-21 |
 
 ## Feature flags set to True by the backend
 

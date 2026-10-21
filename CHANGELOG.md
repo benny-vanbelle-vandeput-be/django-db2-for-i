@@ -10,6 +10,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Changes since the last release are in [changelog.d/](changelog.d/), one
 fragment per pull request; they are assembled here at release time.
 
+## [0.1.0a4] - 2026-10-21
+
+### Added
+- Django 6.0 support (6.0.3 or later), next to 6.1. Out-of-range
+  `DurationField` values raise the same `ValueError` on both versions. (#110)
+- Django 5.2 LTS support (5.2.12 or later), next to 6.0 and 6.1. `StringAgg`
+  requires Django 6.0 or later (see Known limitations). (#117)
+
+### Changed
+- README redesign: one badge per IBM i, Python and Django version with its
+  state, a "Test status" section per Django version over four named test sets
+  (Offline · own tests, IBM i · own tests, IBM i · Django test suite,
+  Offline · Django test suite (replay)), and the project status with the
+  current phase's steps. New reference pages: `docs/FEATURES.md` (the feature
+  flags per Django version) and `docs/OFFLINE_CORPUS.md`. (#120)
+
+### Fixed
+- A filter value that does not fit its column raised a driver error ("Numeric
+  value out of range", "Character data right truncation"): an integer out of a
+  `SmallIntegerField`'s (or `IntegerField`'s, `BigIntegerField`'s) range in
+  `__in` or `__range`, or a `Decimal` with more digits than `max_digits` /
+  `decimal_places` in any lookup. Such values now get a `DECIMAL` type of their
+  own and are compared exactly, never rounded or truncated; values that fit
+  keep their SQL. Values needing more than 63 digits raise `NotSupportedError`. (#97)
+- A CHECK constraint violation (SQL0545, e.g. a negative value in a
+  `PositiveIntegerField`) raised `DatabaseError` because the driver reports
+  the generic SQLSTATE `HY000`; it now raises `IntegrityError`, like the other
+  constraint violations. (#106)
+
 ## [0.1.0a3] - 2026-10-20
 
 ### Added
@@ -342,7 +371,8 @@ The tag is not moved or recreated.
   escaped quotes in DEFAULT constants wrongly. Unsupported values raise
   `NotSupportedError`.
 
-[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a3...HEAD
+[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a4...HEAD
+[0.1.0a4]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a3...v0.1.0a4
 [0.1.0a3]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a2...v0.1.0a3
 [0.1.0a2]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a1...v0.1.0a2
 [0.1.0a1]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases/tag/v0.1.0a1

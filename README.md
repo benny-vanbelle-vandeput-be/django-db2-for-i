@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2232 | 2 | 0 | 0 | 2026-10-20 22:48:19 UTC |
-| IBM i · own tests | 245 | 0 | 1 | 0 | 2026-10-20 17:04:47 UTC |
-| IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-20 16:21:24 UTC |
-| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-20 22:01:16 UTC |
+| Offline · own tests | 2232 | 2 | 0 | 0 | 2026-10-21 04:52:51 UTC |
+| IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 03:02:59 UTC |
+| IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-21 02:16:34 UTC |
+| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-21 04:45:41 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2234 | 0 | 0 | 0 | 2026-10-20 22:47:38 UTC |
-| IBM i · own tests | 245 | 0 | 1 | 0 | 2026-10-20 16:03:26 UTC |
-| IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-20 15:22:20 UTC |
-| Offline · Django test suite (replay) | – | – | – | – | no corpus yet |
+| Offline · own tests | 2234 | 0 | 0 | 0 | 2026-10-21 04:51:57 UTC |
+| IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 01:55:40 UTC |
+| IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-21 01:03:38 UTC |
+| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-21 04:45:07 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2232 | 0 | 0 | 0 | 2026-10-20 22:46:56 UTC |
-| IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-20 21:39:31 UTC |
-| IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 20:42:25 UTC |
-| Offline · Django test suite (replay) | – | – | – | – | no corpus yet |
+| Offline · own tests | 2232 | 0 | 0 | 0 | 2026-10-21 04:51:01 UTC |
+| IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-21 00:42:24 UTC |
+| IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 23:51:07 UTC |
+| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-21 04:44:20 UTC |
 
 ### About the tests
 
@@ -100,12 +100,12 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (22 enabled on Django 6.1) �
 | [1](docs/phases/phase-1.md) | Minimal backend | done |
 | [2](docs/phases/phase-2.md) | Queries & pagination (ordering, lookup, aggregation, expressions, queries) | done |
 | [3](docs/phases/phase-3.md) | Django 6.0 and 5.2 support | done |
-| 4 | Schema editor completeness | planned |
+| [4](docs/phases/phase-4.md) | Schema editor completeness | planned |
 | 5 | Returning & bulk | planned |
 | 6 | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
 | 7 | PUB400 tier & release prep | planned |
 
-Latest release: **`v0.1.0a3`** (2026-10-20): Phase 2: queries & pagination (release run: 7 Django modules, 1249 tests, 0 failed). ([CHANGELOG](CHANGELOG.md))
+Latest release: **`v0.1.0a4`** (2026-10-21): Phase 3: Django 6.0 and 5.2 support (release runs on 5.2, 6.0 and 6.1, 17 runs each, 0 failed; offline query corpora for all three). ([CHANGELOG](CHANGELOG.md))
 
 Open tracks:
 

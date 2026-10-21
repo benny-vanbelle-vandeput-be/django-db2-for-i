@@ -61,6 +61,12 @@ is in this file's history (#86); the per-version impact is kept up to date in
   `docs/FEATURES.md` and `docs/OFFLINE_CORPUS.md`. [#120](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/120)
 - The wheel session (run by the release workflow) works again. [#119](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/119)
 - This record, the user docs on supported versions, 5.2 marked supported.
+  [#121](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/121)
+- Every release run captures the offline query corpus: the phase 3 release
+  runs had not (`release_run` lacked `--capture`, although the corpus decision
+  says release runs refresh it). [#122](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/122)
+- The closing release runs with capture; the 5.2 and 6.0 corpora, the 6.1
+  corpus refreshed (same SQL), the status, the docs and release 0.1.0a4.
 
 ## Key decisions
 The plan's decisions (approved 2026-10-19) and those made during the phase:
@@ -87,29 +93,28 @@ The plan's decisions (approved 2026-10-19) and those made during the phase:
   one left is the `DROP COLUMN` golden, cancelled on PUB400.
 
 ## Test status at the end of the phase
-Release runs on PUB400 (IBM i 7.5), Python 3.14, one connection at a time:
-6.0 and 6.1 at `218bfca`, 5.2 at `1117fb5` (the same backend code plus #115's
-`DROP COLUMN` pin), 17 runs each, all passed ([TEST_STATUS](../TEST_STATUS.md)):
+The release runs that close the phase, with capture, on PUB400 (IBM i 7.5),
+Python 3.14, one connection at a time, all from `main` at `4cf4e0e`: 5.2, 6.0
+and 6.1, 17 runs each, all passed ([TEST_STATUS](../TEST_STATUS.md)). The
+earlier runs (6.0 and 6.1 at `218bfca`, 5.2 at `1117fb5`) gave the same counts
+for the Django test suite.
 
 | Test set | Django 6.1 | Django 6.0 | Django 5.2 |
 |---|---|---|---|
 | Offline · own tests | 2232 passed, 2 skipped | 2234 passed | 2232 passed |
-| IBM i · own tests | 245 passed, 1 expected failure | 245 passed, 1 expected failure | 240 passed, 3 skipped, 2 expected failures |
+| IBM i · own tests | 245 passed, 2 expected failures | 245 passed, 2 expected failures | 240 passed, 3 skipped, 2 expected failures |
 | IBM i · Django test suite | 1249 tests: 1189 passed, 53 skipped, 7 expected failures | 1159 tests: 1110 passed, 41 skipped, 8 expected failures | 1144 tests: 1098 passed, 38 skipped, 8 expected failures |
-| Offline · Django test suite (replay) | 2533 entries identical | no corpus yet | no corpus yet |
+| Offline · Django test suite (replay) | 2533 entries identical | 2473 entries identical | 2429 entries identical |
 
 - No version needed its own skip or expected failure; the test counts differ
   because each version's test suite differs. The three skips of the IBM i ·
-  own tests on 5.2 are `StringAgg` and `AnyValue` (Django 6.0+).
+  own tests on 5.2 are `StringAgg` and `AnyValue` (Django 6.0+); the two
+  expected failures on every version are the `DROP COLUMN` golden and the
+  `DROP COLUMN` inquiry test (CPA32B2, no reply list entry on PUB400).
 - Goldens: 463, 3 unverified (the `DROP COLUMN` golden of each series).
 - 0 failed anywhere.
 
 ## Carried forward
-- 6.0 and 5.2 query corpora: the phase 3 release runs did not capture, because
-  `release_run` (#111) did not pass `--capture`, although the corpus decision
-  says release runs refresh it. Fixed so every release run captures; the 6.0
-  and 5.2 corpora (and a 6.1 refresh) come from the release runs that close
-  phase 3, not later.
 - Db2 for i's `DROP COLUMN` default (CASCADE or RESTRICT): needs a system
   reply list entry for CPA32B2, so a system other than PUB400 and the
   maintainer's approval.

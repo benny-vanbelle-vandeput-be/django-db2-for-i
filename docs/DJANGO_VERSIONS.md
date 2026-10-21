@@ -64,10 +64,14 @@ Base: Django 6.1. Each item is from the "Database backend API" section of the
 release notes, plus closely related "Models" items where they change the SQL
 or the backend hooks. The analysis compared `stable/6.1.x` (`1e01021`),
 `stable/6.0.x` (`52e5ba1`) and `stable/5.2.x` (`cae7247`) with the backend;
-details are in [phase-3.md](phases/phase-3.md), sections 2 and 3.
+details are in the approved phase 3 plan (sections 2 and 3 of
+[phase-3.md](phases/phase-3.md) at the merge of #86; the file is the phase
+record now).
 
 Status values:
 - **done**: in the backend today;
+- **checked**: no backend change needed, shown by the goldens and the test
+  runs of that version;
 - **n/a**: needs nothing;
 - **planned (step A PR n / step B PR n)**: the PR numbers refer to the
   phase 3 step plan;
@@ -95,9 +99,9 @@ All of these also apply to 5.2.
 | Difference | Impact on the backend | Status |
 |---|---|---|
 | `adapt_durationfield_value()` is never called; `DurationField` converts itself | Values still arrive as microseconds, but the range check is skipped, so the driver would raise an unclear error. Kept through `compat.py` ([DECISIONS](DECISIONS.md#2026-10-19-the-duration-range-check-on-every-supported-django-version)), with a pub400 test per version. `compat.install_duration_adapter()` routes the values through it ([DECISIONS](DECISIONS.md#2026-10-20-the-duration-range-check-before-django-61)). | done (step A PR 3) |
-| Aliases are not quoted (`quote_name_unless_alias()`) | Different SQL text, so 6.0 needs its own goldens. Unquoted aliases fold to uppercase like our quoted ones; the 154 6.0 goldens differ from 6.1's only in that quoting; PUB400 verifies them. | goldens added (step A PR 3), verification pending |
-| Combined querysets ignore the default model ordering | Different SQL and results: goldens per series. The pub400 tests must not depend on it. | planned (step A PR 4) |
-| `mark_expected_failures_and_skips` has no `ImportError` fallback | A skip or expected-failure name that 6.0's suite lacks breaks every run, so the lists must be per Django version. All names in today's lists exist in 6.0's suite; per-version lists come only if the 6.0 runs need them. | not needed yet |
+| Aliases are not quoted (`quote_name_unless_alias()`) | Different SQL text, so 6.0 needs its own goldens. Unquoted aliases fold to uppercase like our quoted ones; the 154 6.0 goldens differ from 6.1's only in that quoting, and all 154 were accepted on PUB400 ([#110](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/110)). | done |
+| Combined querysets ignore the default model ordering | Different SQL and results: goldens per series. The compound-query goldens of 6.0 and 5.2 equal 6.1's (apart from alias quoting), and the `queries` labels pass on all three versions. | checked |
+| `mark_expected_failures_and_skips` has no `ImportError` fallback | A skip or expected-failure name that 6.0's suite lacks breaks every run, so the lists must be per Django version. All names in today's lists exist in the 6.0 and 5.2 suites, and no version needed its own entries. | checked |
 | No `has_native_boolean_field` / `pattern_lookup_needs_param_pattern` base flags | Same behaviour as our values (`conditional_expression_supported_in_where_clause()` is always True; the pattern is always applied) | n/a |
 | No `supports_inspectdb`, `supports_bit_aggregations`, `supports_on_delete_db_*` | Our False values are ignored; no tests in the supported modules depend on them | n/a |
 
@@ -111,8 +115,8 @@ These come on top of the 6.0 table.
 | No `supports_tuple_comparison_against_subquery` check | 5.2 writes a row-value `>`/`<` comparison against a subquery, which Db2 for i rejects (SQL0115, probe `tuple_lookups`). The tuple hook raises the same `NotSupportedError` as 6.0+ (`compat.DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON`), with an offline test on every version. | done (step B PR 7) |
 | `sql_delete_column` ends in `CASCADE` | How Db2 for i handles `DROP COLUMN ... CASCADE` **can only be verified on IBM i**. A QTEMP probe comes first; then the same SQL is pinned for all versions ([DECISIONS](DECISIONS.md#2026-10-19-drop-column-sql-pinned-for-every-version-after-a-qtemp-probe)). Probe 23: all forms are valid and cancelled by CPA32B2 before any dependency handling; the default is not determinable on PUB400 (IBMI_NOTES). `schema.py` pins 6.0+'s text without a keyword; golden `ddl/remove_field`. | done (step B PR 8) |
 | `return_insert_columns()` / `fetch_returned_insert_rows()` / `fetch_returned_insert_columns()` instead of `returning_columns()` / `fetch_returned_rows()` | No RETURNING support yet; compat provides both names when it comes | later (phase 5) |
-| A collapsed `Case` does not cast its `Value` default | Our `Case` hook also casts 5.2's plain `NULL`; goldens per series | planned (step B PR 10) |
-| `IExact` / `PatternLookup.process_rhs` assign to `params[0]` (lists) | Check that no backend hook passes tuple params into those paths | planned (step B PR 7) |
+| A collapsed `Case` does not cast its `Value` default | Our `Case` hook also casts 5.2's plain `NULL`; the 5.2 goldens equal 6.0's ([#117](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/117)) | checked |
+| `IExact` / `PatternLookup.process_rhs` assign to `params[0]` (lists) | No backend hook passes tuple params into those paths: `lookup` passes on 5.2 (100 tests, the release run), the pattern and `iexact` goldens equal 6.0's | checked |
 | No `AnyValue`, `Aggregate(order_by=...)`, `can_return_rows_from_update` | Our flags (`supports_any_value`, `supports_aggregate_order_by_clause`) are ignored on 5.2 | n/a |
 
 ## compat.py
@@ -128,7 +132,7 @@ steps of phase 3 find real differences:
 |---|---|---|
 | Django 6.0 only | nothing known yet | 6.0 is dropped |
 | Django 5.2 only | `StringAgg` (None on 5.2), `DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON` | 5.2 is dropped |
-| Before 6.1 (6.0 and 5.2) | `install_duration_adapter()` (the duration range check, [DECISIONS](DECISIONS.md#2026-10-20-the-duration-range-check-before-django-61)); per-version test lists if the 6.0 runs need them | both are dropped |
+| Before 6.1 (6.0 and 5.2) | `install_duration_adapter()` (the duration range check, [DECISIONS](DECISIONS.md#2026-10-20-the-duration-range-check-before-django-61)); no per-version test lists were needed | both are dropped |
 
 **Dropping a version** means deleting its section, its entries in the
 per-version lists, `tests/offline/golden/<version>/`, its line in
@@ -136,9 +140,12 @@ per-version lists, `tests/offline/golden/<version>/`, its line in
 this file.
 
 ## Testing per version
-The details are in phase-3.md, section 5.
-- **Offline tier:** every Python × every supported Django version, in CI.
-- **pub400 tier:** runs on each version a step touches.
-- **Release run:** one nox session per Django version, `nox -s release_run --
-  <django>` ([DECISIONS](DECISIONS.md#2026-10-19-the-release-run-as-one-nox-session)).
-- **Goldens:** all 6.0 and 5.2 goldens are verified on PUB400.
+The four test sets are described in [CONTRIBUTING.md](../CONTRIBUTING.md#test-sets).
+- **Offline · own tests:** every Python × every supported Django version, in CI.
+- **IBM i · own tests:** for every backend change, on each Django version the change touches.
+- **IBM i · Django test suite:** before every release, the release run per Django version
+  (`scripts/pub400.sh release_run <django>`, [DECISIONS](DECISIONS.md#2026-10-19-the-release-run-as-one-nox-session));
+  it also captures the offline query corpus.
+- **Offline · Django test suite (replay):** the corpus of every supported version, in CI.
+- **Goldens:** all goldens of every series are verified on PUB400 (the `DROP COLUMN`
+  golden stays unverified there: CPA32B2).
