@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# bin/doctor: check the development environment, then one test connection to PUB400.
+#
+#   bin/doctor              every check, ending with one connection (through the PUB400 lock)
+#   bin/doctor --offline    every check except the connection
+#   bin/doctor --wait       queue the connection behind a running PUB400 job
+#   bin/doctor --dry-run    print the commands, run nothing
+#   bin/doctor --help
+#
+# Checks: Docker answers; the tests image has the IBM i Access ODBC Driver;
+# .env exists (it is never read or printed here); the vendor/django-<version>
+# checkouts are at the commits of the corpus manifests; then one connection
+# (scripts/pub400.sh probe connect). Exit code 1 if a check failed.
+
+source "$(dirname "$0")/_common.sh"
+common_args "$@"
+
+offline=0
+for arg in ${ARGS[@]+"${ARGS[@]}"}; do
+    case $arg in
+        --offline) offline=1 ;;
+        *) die "unknown argument: $arg (see --help)" ;;
+    esac
+done
+
+failed=0
+result() { # <ok|FAIL> <what>; a dry run shows the commands only
+    [ "$DRY_RUN" = 0 ] || return 0
+    printf '%-4s %s\n' "$1" "$2"
+    [ "$1" = ok ] || failed=1
+}
+
+if run docker info >/dev/null 2>&1; then result ok "Docker answers"; else result FAIL "Docker does not answer: start Docker Desktop"; fi
+
+if [ "$DRY_RUN" = 1 ]; then
+    container odbcinst -q -d
+elif container odbcinst -q -d 2>/dev/null | grep -q "IBM i Access ODBC Driver"; then
+    result ok "the tests image has the IBM i Access ODBC Driver"
+else
+    result FAIL "no IBM i Access ODBC Driver in the tests image: docker compose build tests"
+fi
+
+if [ -e "$ROOT/.env" ]; then
+    result ok ".env exists (not read here)"
+else
+    result FAIL ".env is missing: copy .env.example to .env and fill it in"
+fi
+
+for manifest in "$ROOT"/tests/offline/corpus/*/*/manifest.toml; do
+    [ -f "$manifest" ] || continue
+    version=$(basename "$(dirname "$(dirname "$manifest")")")
+    pinned=$(sed -n 's/^django_commit = "\(.*\)"$/\1/p' "$manifest")
+    checkout="$ROOT/vendor/django-$version"
+    head=$(git -C "$checkout" rev-parse HEAD 2>/dev/null || true)
+    if [ -z "$head" ]; then
+        result FAIL "vendor/django-$version is missing (pinned commit ${pinned:0:7})"
+    elif [ "$head" = "$pinned" ]; then
+        result ok "vendor/django-$version at the pinned commit ${pinned:0:7}"
+    else
+        result FAIL "vendor/django-$version is at ${head:0:7}, pinned ${pinned:0:7} (corpus manifest)"
+    fi
+done
+
+if [ "$offline" = 0 ]; then
+    if pub400 probe connect; then result ok "one connection to PUB400"; else result FAIL "no connection to PUB400 (see above)"; fi
+fi
+exit "$failed"

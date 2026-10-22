@@ -15,10 +15,14 @@
 #
 # Every run holds the PUB400 lock (scripts/pub400_lock.py, outside every
 # checkout): one PUB400 job at a time on this machine, whatever the worktree.
-# A second run stops with "PUB400 busy: <holder>", or waits with --wait.
+# A second run stops with "PUB400 busy: <holder>", or waits with --wait (or
+# DB2I_LOCK_WAIT=1, which also reaches runs started by scripts/runtests.sh).
 set -eu
 
 wait=
+if [ "${DB2I_LOCK_WAIT:-}" = 1 ]; then
+    wait=--wait
+fi
 if [ "${1:-}" = --wait ]; then
     wait=--wait
     shift
@@ -30,7 +34,7 @@ fi
 session=$1
 shift
 case $session in
-    pub400|django_tests|release_run|probe|probe_*) ;;
+    pub400|django_tests|release_run|probe|probe_*|ibmi_cleanup) ;;
     *)
         echo "refused: $session does not connect to PUB400; run: docker compose run --rm tests nox -s $session" >&2
         exit 2
@@ -40,7 +44,13 @@ esac
 cd "$(dirname "$0")/.."
 # Read on the host: in a git worktree the container cannot read the repository.
 commit=$(git log -1 --format='%h %cs' 2>/dev/null || echo unknown)
-set -- docker compose run --rm -e DB2I_BACKEND_COMMIT="$commit" tests nox -s "$session" -- "$@"
+# The state directory of the lock, outside every checkout, also holds the list
+# of objects test runs create (tests/table_registry.py, bin/ibmi-cleanup).
+state=$(python3 scripts/pub400_lock.py --dir)
+mkdir -p "$state"
+set -- docker compose run --rm -e DB2I_BACKEND_COMMIT="$commit" \
+    -v "$state:/db2i-state" -e DB2I_TABLE_LIST=/db2i-state/created-objects.txt \
+    tests nox -s "$session" -- "$@"
 if command -v caffeinate >/dev/null 2>&1; then
     set -- caffeinate -i -s "$@"
 fi

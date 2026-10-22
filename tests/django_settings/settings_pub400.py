@@ -10,6 +10,8 @@ import os
 
 from django.core.exceptions import ImproperlyConfigured
 
+from tests import table_registry
+
 
 def env(name: str, default: str | None = None) -> str:
     value = os.environ.get(name, default)
@@ -39,3 +41,7 @@ DATABASES = {
         "TEST": {"NAME": env("DB2I_DEFAULT_LIBRARY"), "CREATE_DB": False},
     }
 }
+
+# Every object a run creates goes on the cleanup list first (bin/ibmi-cleanup,
+# tests/table_registry.py; DB2I_TABLE_LIST is set by scripts/pub400.sh).
+table_registry.install()

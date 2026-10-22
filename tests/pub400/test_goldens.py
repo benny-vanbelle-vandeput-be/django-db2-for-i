@@ -27,7 +27,6 @@ from django.db import connection, transaction
 
 from django_db2_for_i import capabilities
 from django_db2_for_i.compat import DJANGO_SERIES
-from django_db2_for_i.creation import MARKER_TABLE
 from tests.golden import (
     LAST_VERIFICATION,
     golden_path,
@@ -37,7 +36,7 @@ from tests.golden import (
     verification_level,
 )
 from tests.golden_cases import FLUSH_METADATA, TESTAPP_TABLES, ordered_cases
-from tests.pub400.connection_guard import replace_if_unusable
+from tests.pub400.marked_library import marked_library
 from tests.verification_gate import reasons as unverifiable_reasons
 
 RESULTS: dict[str, str] = {}  # golden name -> "passed" | "failed" | "skipped"
@@ -57,34 +56,10 @@ CASES = [
 ]
 
 
-def library() -> str:
-    return connection.settings_dict["TEST"]["NAME"].upper()
-
-
-def tables() -> set[str]:
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT TABLE_NAME FROM QSYS2.SYSTABLES "
-            "WHERE SYSTEM_TABLE_SCHEMA = %s AND SYSTEM_TABLE = 'N'",
-            [library()],
-        )
-        return {name.rstrip() for (name,) in cursor.fetchall()}
-
-
 @pytest.fixture(scope="module", autouse=True)
-def marked_empty_library(django_db_blocker):
-    with django_db_blocker.unblock():
-        creation = connection.creation
-        creation._create_test_db(verbosity=0, autoclobber=True, keepdb=False)
-        try:
-            leftover = tables() - {MARKER_TABLE}
-            if leftover:
-                pytest.fail(f"{library()} is not empty after setup: {sorted(leftover)}")
-            yield
-        finally:
-            replace_if_unusable()
-            creation._destroy_test_db(library(), 0)
-            assert tables() == set(), f"tables left in {library()}: {sorted(tables())}"
+def marked_empty_library(django_db_blocker, request):
+    with django_db_blocker.unblock(), marked_library(request.node.nodeid):
+        yield
 
 
 @pytest.fixture

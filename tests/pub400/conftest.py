@@ -2,11 +2,14 @@
 
 ``testapp_tables`` creates the tests.testapp tables in the default library
 (journaled) for one test module and drops them again; a module uses it with
-``pytestmark = pytest.mark.usefixtures("testapp_tables")``. It refuses to
-start if any of these tables already exist, and never drops tables it did
-not create. Foreign keys are enabled while the tables are created, to execute
-the NO ACTION foreign key DDL and the DELETE path of sql_flush(); the feature
-flag itself stays off until Django's test suite backs it.
+``pytestmark = pytest.mark.usefixtures("testapp_tables")``. Like the golden
+check, it works in a marked library (marked_library.py): the creation safety
+gate and the DJDB2I_TEST_MARKER table come first, so a crashed module leaves
+tables that bin/ibmi-cleanup may drop, and teardown leaves the library without
+tables, marker included. Foreign keys are enabled while the tables are
+created, to execute the NO ACTION foreign key DDL and the DELETE path of
+sql_flush(); the feature flag itself stays off until Django's test suite
+backs it.
 """
 
 import pytest
@@ -14,6 +17,7 @@ from django.core.management.color import no_style
 from django.db import connection, connections
 
 from tests.pub400.connection_guard import replace_if_unusable
+from tests.pub400.marked_library import marked_library
 from tests.pub400.testapp_tables import MODELS, TABLES
 
 
@@ -25,29 +29,14 @@ def _close_connections_at_end(django_db_blocker):
 
 
 @pytest.fixture(scope="module")
-def testapp_tables(django_db_blocker):
-    with django_db_blocker.unblock(), pytest.MonkeyPatch.context() as patch:
-        existing = TABLES & set(connection.introspection.table_names())
-        if existing:
-            pytest.fail(f"tables already exist, remove them first: {sorted(existing)}")
-        patch.setattr(connection.features, "supports_foreign_keys", True)
-        created = []
-        try:
+def testapp_tables(django_db_blocker, request):
+    with django_db_blocker.unblock(), marked_library(request.node.nodeid):
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setattr(connection.features, "supports_foreign_keys", True)
             with connection.schema_editor() as editor:
                 for model in MODELS:
                     editor.create_model(model)
-                    created.append(model)
-            yield
-        finally:
-            replace_if_unusable()
-            errors = []
-            for model in reversed(created):
-                try:
-                    with connection.schema_editor() as editor:
-                        editor.delete_model(model)
-                except Exception as exc:  # report every leftover table
-                    errors.append(f"{model._meta.db_table}: {exc}")
-            assert not errors, f"tables NOT dropped, remove manually: {errors}"
+        yield
 
 
 @pytest.fixture

@@ -288,6 +288,16 @@ def test_status(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
+def ibmi_cleanup(session: nox.Session) -> None:
+    """CHANGES THE IBM i (standing approval): drop listed leftovers; lists only without --yes.
+
+    Through scripts/pub400.sh (bin/ibmi-cleanup), which sets DB2I_TABLE_LIST.
+    """
+    install(session, NEWEST_DJANGO)
+    session.run("python", "scripts/ibmi_cleanup.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
 def probe(session: nox.Session) -> None:
     """Read-only IBM i probes: nox -s probe -- [reachability|connect|sysinfo|libraries|all]."""
     session.install("-e", ".")

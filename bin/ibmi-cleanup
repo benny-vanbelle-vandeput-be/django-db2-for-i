@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# bin/ibmi-cleanup: drop leftover test objects of crashed runs from our own test libraries.
+#
+#   bin/ibmi-cleanup            list what would be dropped; changes nothing
+#   bin/ibmi-cleanup --yes      drop it
+#   bin/ibmi-cleanup --wait     queue behind a running PUB400 job
+#   bin/ibmi-cleanup --dry-run  print the command, run nothing
+#   bin/ibmi-cleanup --help
+#
+# Covered by the standing approval in CLAUDE.md (phase 4 decision 16), and
+# only this: objects on the cleanup list (written by test runs before each
+# CREATE) that still exist, in the two .env libraries, only in a library with
+# the DJDB2I_TEST_MARKER table, never one in the marker's snapshot. Anything
+# else is reported, not dropped. What was dropped: test-results/cleanup/.
+# One connection per library, through the PUB400 lock (scripts/ibmi_cleanup.py).
+
+source "$(dirname "$0")/_common.sh"
+common_args "$@"
+
+yes=()
+for arg in ${ARGS[@]+"${ARGS[@]}"}; do
+    case $arg in
+        --yes) yes=(--yes) ;;
+        *) die "unknown argument: $arg (see --help)" ;;
+    esac
+done
+pub400 ibmi_cleanup ${yes[@]+"${yes[@]}"}

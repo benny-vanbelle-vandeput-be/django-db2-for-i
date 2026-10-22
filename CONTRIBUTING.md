@@ -38,6 +38,20 @@ and `--dry-run` (print the commands, run nothing), and none prints secrets:
 - `bin/status`: regenerates TEST_STATUS, the badges, README's generated
   sections and FEATURES.md, then shows who holds the PUB400 lock and the open
   pull requests with `needs-full-tier` or `run-ibmi`.
+- `bin/doctor`: checks Docker, the ODBC driver in the image, `.env` (exists;
+  never read), the `vendor/` checkouts against the pinned commits, then one
+  connection to PUB400 (`--offline` skips it).
+- `bin/probe`: runs read-only probes by name (`--list`). Write probes need
+  the maintainer's approval and are not run by it.
+- `bin/ibmi-test`: the manual IBM i run: own IBM i tests (`own <test ids or
+  pytest options>`), Django test labels (`django <label>...`, one run each,
+  `--clean`), or `--full-tier`; `--django` for another version.
+- `bin/ibmi-cleanup`: drops the leftover test objects of a crashed run from
+  our own test libraries, under the standing approval in CLAUDE.md: only
+  objects on the list that test runs write before each `CREATE`, only in a
+  library with the `DJDB2I_TEST_MARKER` table. It lists only, unless `--yes`.
+
+The IBM i scripts take `--wait` to queue behind a running PUB400 job.
 
 Every run against PUB400 goes through `scripts/pub400.sh`, which holds the
 PUB400 lock: one PUB400 job at a time on the machine. A second job stops with
@@ -109,7 +123,10 @@ Offline · own tests run the same check) and `draft` shows the resulting section
 Tests that write to the IBM i use the tests.testapp tables: a module asks for
 them with `pytestmark = pytest.mark.usefixtures("testapp_tables")`
 (`tests/pub400/conftest.py`), which creates the tables for that module and
-drops them again. Put a test in the module of its area (`test_schema.py`,
+drops them again. It works in a marked library (`tests/pub400/marked_library.py`):
+the `DJDB2I_TEST_MARKER` table is written first, so `bin/ibmi-cleanup` can drop
+what a crashed module left, and teardown leaves the library without tables,
+marker included. Put a test in the module of its area (`test_schema.py`,
 `test_queries.py`, `test_aggregates.py`, ...).
 
 Run sessions that connect to PUB400 from the host with `scripts/pub400.sh`
