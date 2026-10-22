@@ -122,6 +122,8 @@ DOCS_PATHS = {
     "bin/check": "offline tooling (what CI does)",
     "bin/status": "offline tooling (status pages)",
     "bin/setup": "first-time setup (images, .env template, vendor/ checkouts)",
+    "bin/release-prepare": "offline tooling (the release pull request)",
+    "scripts/release_prepare.py": "offline tooling (the release pull request)",
     ".github/": "CI (never connects to an IBM i)",
     ".devcontainer/": "editor setup",
     ".claude/": "editor setup",
