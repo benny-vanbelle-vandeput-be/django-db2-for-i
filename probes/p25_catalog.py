@@ -3,8 +3,9 @@
 Read-only outside QTEMP. It reads:
 
 - the columns of QSYS2.SYSINDEXES, SYSKEYS, SYSCST, SYSKEYCST, SYSCHKCST,
-  SYSREFCST and SYSCOLUMNS from the views' own SYSCOLUMNS rows (name, type,
-  length, scale, nullable, column text), so get_constraints(),
+  SYSREFCST, SYSCOLUMNS and SYSCSTCOL from the views' own SYSCOLUMNS rows
+  (name, type, length, scale, nullable, and the column text Db2 for i gives,
+  which describes the coded values), so get_constraints(),
   get_relations() and can_introspect_default are built from what is there;
 - the values of the coded columns (constraint types, rules, index ordering,
   uniqueness, default and identity columns) as they occur in the two .env
@@ -24,7 +25,17 @@ from _common import Settings
 
 NEEDS_CONNECTION = True
 
-VIEWS = ("SYSINDEXES", "SYSKEYS", "SYSCST", "SYSKEYCST", "SYSCHKCST", "SYSREFCST", "SYSCOLUMNS")
+VIEWS = (
+    "SYSINDEXES",
+    "SYSKEYS",
+    "SYSCST",
+    "SYSKEYCST",
+    "SYSCHKCST",
+    "SYSREFCST",
+    "SYSCOLUMNS",
+    # The columns a CHECK constraint references (step B item 4), if the view exists.
+    "SYSCSTCOL",
+)
 # Coded columns whose values introspection maps: (view, column, library column).
 CODED = (
     ("SYSCST", "CONSTRAINT_TYPE", "TABLE_SCHEMA"),
