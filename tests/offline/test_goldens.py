@@ -29,6 +29,7 @@ from tests.golden import (
 from tests.golden_cases import CASES, CASES_BY_NAME, GROUPS, build_case
 from tests.testapp.models import (
     Account,
+    Article,
     Author,
     Book,
     Code,
@@ -170,6 +171,7 @@ def allowed_identifiers() -> set[str]:
     }
     models = (
         Account,
+        Article,
         Author,
         Book,
         Code,

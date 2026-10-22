@@ -8,7 +8,7 @@ from django.apps import apps
 from django.db import NotSupportedError, connection, models
 from django.db.models.functions import Now
 
-from tests.testapp.models import Author, Book, Node, Tag
+from tests.testapp.models import Article, Author, Book, Node, Tag
 
 
 def collect(*actions) -> list[str]:
@@ -210,3 +210,20 @@ def test_db_default_none_writes_no_default() -> None:
 def test_db_default_expression_is_not_supported() -> None:
     with pytest.raises(NotSupportedError, match="only constants"):
         _create_sql(n=models.DateTimeField(db_default=Now()))
+
+
+def test_create_table_follows_local_fields_with_inherited_fields() -> None:
+    """Issue #23: the columns of CREATE TABLE are _meta.local_fields, in order.
+
+    Fields from an abstract mixin and an abstract base keep their
+    creation_counter, so they come before the model's own fields, in the
+    order they were defined, not in the order of the bases.
+    """
+    import re
+
+    (create,) = collect(("create_model", Article))
+    body = create.split("(", 1)[1]
+    columns = re.findall(r'(?:^|, )"([A-Z0-9_]+)" ', body)
+    expected = [field.column.upper() for field in Article._meta.local_fields]
+    assert columns == expected
+    assert expected == ["ID", "CREATED", "TITLE", "SUBTITLE", "BODY", "RANK"]

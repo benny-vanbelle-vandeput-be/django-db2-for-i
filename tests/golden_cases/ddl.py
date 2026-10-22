@@ -21,6 +21,7 @@ from tests.golden_cases.base import (
 )
 from tests.testapp.models import (
     Account,
+    Article,
     Author,
     Book,
     Code,
@@ -106,6 +107,8 @@ CASES: tuple[Case, ...] = (
     Case(SWITCH, "create", _ddl(Switch)),
     # SMALLINT, DECIMAL(5, 2) and BIGINT columns (issue #69).
     Case(MEASURE, "create", _ddl(Measure)),
+    # Fields from an abstract mixin and an abstract base: column order (#23).
+    Case("ddl/create_article", "create", _ddl(Article)),
     Case(
         "ddl/add_field_not_null_default",
         "create",

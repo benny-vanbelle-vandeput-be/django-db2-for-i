@@ -531,6 +531,15 @@ PR boundaries, in this order:
     `allows_multiple_constraints_on_same_fields` if w13 allows it. Each with a
     pub400 test (a `PositiveIntegerField` going negative; a model
     `CheckConstraint` violated through `save()`).
+11a. `feat(schema)`: `can_rollback_ddl` (candidate; added 2026-10-22 after
+    probe w13 showed `CREATE TABLE` and `ALTER TABLE ... ADD COLUMN` rolled
+    back under commitment control). First a check of which DDL statements,
+    if any, commit implicitly (the `RENAME`, `CREATE INDEX`, `DROP`,
+    constraint and `COMMENT ON` / `LABEL ON` forms the schema editor writes),
+    recorded in IBMI_NOTES; the flag goes on only if the forms Django uses
+    in a migration are all rolled back. With its own pub400 test: a
+    migration that fails halfway leaves no partial schema (no table, column,
+    index or constraint of it).
 12. `feat(schema)`: indexes from probe 24: `supports_index_column_ordering`,
     `supports_index_on_text_field` where possible.
 13. `feat(schema)`: `supports_comments` if approved (open question 7).

@@ -3,6 +3,7 @@
 
 from tests.testapp.models import (
     Account,
+    Article,
     Author,
     Book,
     Code,
@@ -33,5 +34,6 @@ MODELS = (
     Contact,
     Switch,
     Measure,
+    Article,
 )
 TABLES = {model._meta.db_table for model in MODELS}
