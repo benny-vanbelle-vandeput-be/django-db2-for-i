@@ -14,7 +14,7 @@ from django.db import models
 
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
 from tests.pub400.testapp_tables import MODELS, TABLES
-from tests.testapp.models import Author, Book, Defaults, Document, Node, Tag
+from tests.testapp.models import Article, Author, Book, Defaults, Document, Node, Tag
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")
 
@@ -44,6 +44,23 @@ def test_table_description(live) -> None:
     ]
     assert columns["published"].null_ok is True
     assert columns["title"].null_ok is False
+
+
+def test_column_order_follows_field_creation_order(live) -> None:
+    """Issue #23: the table's columns are _meta.local_fields, in order, for a model
+    with fields from an abstract mixin and an abstract base, in the catalog and
+    in introspection."""
+    expected = [field.column for field in Article._meta.local_fields]
+    with live.cursor() as cursor:
+        cursor.execute(
+            "SELECT COLUMN_NAME FROM QSYS2.SYSCOLUMNS "
+            "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s ORDER BY ORDINAL_POSITION",
+            [Article._meta.db_table.upper()],
+        )
+        catalog = [row[0].rstrip() for row in cursor.fetchall()]
+        description = live.introspection.get_table_description(cursor, Article._meta.db_table)
+    assert catalog == [column.upper() for column in expected]
+    assert [info.name for info in description] == expected
 
 
 def test_sequences(live) -> None:

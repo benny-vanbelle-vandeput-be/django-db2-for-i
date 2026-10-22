@@ -124,3 +124,28 @@ class Measure(models.Model):
     small = models.SmallIntegerField(null=True)
     amount = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     big = models.BigIntegerField(null=True)
+
+
+# Issue #23: a model with an abstract base used as a mixin and an abstract
+# base class. Django orders a model's fields by Field.creation_counter (the
+# order the field objects were created in), not by the order of the bases:
+# the inherited fields are copies that keep their counters. CREATE TABLE
+# must follow _meta.local_fields exactly.
+class TimestampedMixin(models.Model):
+    created = models.DateTimeField(null=True)
+
+    class Meta:
+        abstract = True
+
+
+class TitledBase(models.Model):
+    title = models.CharField(max_length=50)
+    subtitle = models.CharField(max_length=50, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class Article(TimestampedMixin, TitledBase):
+    body = models.CharField(max_length=100)
+    rank = models.IntegerField(default=0)
