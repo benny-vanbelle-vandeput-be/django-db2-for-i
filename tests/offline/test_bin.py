@@ -161,6 +161,9 @@ DRY_RUN_ARGS = {
     "ibmi-test": ["--full-tier"],
     "release-prepare": ["0.1.0a5"],
 }
+# Scripts whose dry run needs a real fixture; their own tests run it:
+# worktree-remove needs a git worktree (tests/offline/test_probe_results.py).
+DRY_RUN_ELSEWHERE = {"worktree-remove"}
 
 
 @needs_bin
@@ -170,6 +173,9 @@ def test_every_script_has_help_and_dry_run(script, tmp_path) -> None:
     assert helped.returncode == 0
     assert helped.stdout.startswith(f"bin/{script.name}: ")
     assert "--dry-run" in helped.stdout
+    if script.name in DRY_RUN_ELSEWHERE:
+        assert os.access(script, os.X_OK)
+        return
     dry = run_bin(str(script), "--dry-run", *DRY_RUN_ARGS.get(script.name, []), tmp_path=tmp_path)
     assert dry.returncode == 0, dry.stderr
     assert not (tmp_path / "docker-called").exists()
@@ -445,3 +451,17 @@ def test_ibmi_test_runs_every_django_label_after_a_failure(tmp_path) -> None:
         "6.1 --clean bad",
         "6.1 --clean c",
     ]
+
+
+@needs_bin
+def test_probe_publish_runs_the_cleaner_in_the_container(tmp_path) -> None:
+    result = run_bin(
+        str(BIN / "probe"), "--dry-run", "--publish",
+        f"{ROOT}/test-results/probes/catalog-20261022T203029Z.json", tmp_path=tmp_path,
+    )  # fmt: skip
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip().endswith(
+        "scripts/publish_probe_result.py test-results/probes/catalog-20261022T203029Z.json"
+    )
+    refused = run_bin(str(BIN / "probe"), "--publish", tmp_path=tmp_path)
+    assert refused.returncode == 2 and "--publish needs one result file" in refused.stderr
