@@ -30,6 +30,10 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
 - **No credentials in the repo or the image.** Use environment variables / `.env` (gitignored).
   Never read, print, log or echo `.env` or its values; scripts load it themselves.
   Error messages and logs must never contain the password or full connection string.
+- **`bin/setup` is for humans in their own terminal.** It asks for the `.env` values;
+  Claude never runs it interactively and never enters values. Claude runs it only
+  without a terminal (then `.env` is just a copy of `.env.example`) or when `.env`
+  already exists.
 - **Respect shared systems.** Never run the full Django suite against PUB400 or any shared system
   (see "Initial test system: PUB400" for what is allowed).
 - Record non-obvious design decisions in `docs/DECISIONS.md` (date, decision, why, alternatives).

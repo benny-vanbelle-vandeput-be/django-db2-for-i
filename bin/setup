@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# bin/setup: first-time setup: the images, .env and the vendor/ Django checkouts.
+#
+#   bin/setup              everything, then bin/doctor --offline
+#   bin/setup --no-build   skip building the images
+#   bin/setup --dry-run    print the commands, run nothing (asks nothing)
+#   bin/setup --help
+#
+# For humans, in their own terminal: it asks for the .env values, the password
+# hidden. Claude never runs it interactively and never enters values; Claude
+# may run it only without a terminal (then .env is just a copy of
+# .env.example) or when .env already exists.
+#
+# 1. docker compose build tests offline.
+# 2. .env, only when there is none: a copy of .env.example; in a terminal it
+#    asks for the user, password, the two libraries and the host, and writes
+#    them into that copy (mode 600, nothing printed). An existing .env is never
+#    read, overwritten or changed.
+# 3. vendor/django-<version> for every corpus manifest: a clone of
+#    stable/<version>.x at the commit the manifest pins. A checkout already at
+#    that commit is left alone; a clean one at another commit is switched; one
+#    with local changes or commits is refused, never reset.
+# 4. bin/doctor --offline.
+
+source "$(dirname "$0")/_common.sh"
+common_args "$@"
+
+build=1
+for arg in ${ARGS[@]+"${ARGS[@]}"}; do
+    case $arg in
+        --no-build) build=0 ;;
+        *) die "unknown argument: $arg (see --help)" ;;
+    esac
+done
+DJANGO_REPOSITORY=https://github.com/django/django.git
+
+# --- 1. images ---------------------------------------------------------------------------
+if [ "$build" = 1 ]; then
+    run docker compose --project-directory "$ROOT" build tests offline || die "building the images failed"
+fi
+
+# --- 2. .env -----------------------------------------------------------------------------
+# Writes .env from .env.example with the values in DB2I_SETUP_<KEY> (environment,
+# never arguments); refuses to replace an existing file. Prints nothing.
+write_env() {
+    python3 - "$ROOT/.env.example" "$ROOT/.env" <<'PY'
+import os
+import sys
+
+template, target = sys.argv[1:]
+lines = []
+for line in open(template, encoding="utf-8").read().splitlines():
+    key, sep, value = line.partition("=")
+    if sep and not line.startswith("#"):
+        value = os.environ.get(f"DB2I_SETUP_{key}", value)
+        line = f"{key}={value}"
+    lines.append(line)
+fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(fd, "w", encoding="utf-8") as out:
+    out.write("\n".join(lines) + "\n")
+PY
+}
+
+ask() { # ask <variable> <prompt> [<default>]: one line from the terminal
+    local answer
+    read -r -p "$2${3:+ [$3]}: " answer
+    printf -v "$1" '%s' "${answer:-${3:-}}"
+}
+
+if [ -e "$ROOT/.env" ] || [ -L "$ROOT/.env" ]; then
+    echo "setup: .env exists; left as it is (never read here)"
+elif [ "$DRY_RUN" = 1 ]; then
+    echo "+ (copy .env.example to .env; in a terminal, ask for the values and write them into it)"
+elif [ ! -t 0 ]; then
+    run cp "$ROOT/.env.example" "$ROOT/.env"
+    chmod 600 "$ROOT/.env"
+    echo "setup: no terminal: .env is a copy of .env.example; fill in the values in your own editor"
+else
+    echo "setup: .env does not exist; the values go into a new .env (mode 600), never printed."
+    ask user "IBM i user (DB2I_USER)"
+    read -r -s -p "IBM i password (DB2I_PASSWORD, hidden): " password
+    echo
+    ask default_library "library for the default database (DB2I_DEFAULT_LIBRARY, max 10)"
+    ask other_library "library for the other database (DB2I_OTHER_LIBRARY, max 10)"
+    ask host "IBM i host (DB2I_HOST)" pub400.com
+    for library in "$default_library" "$other_library"; do
+        [ "${#library}" -le 10 ] || die "library names have at most 10 characters; nothing was written"
+    done
+    DB2I_SETUP_DB2I_USER=$user DB2I_SETUP_DB2I_PASSWORD=$password \
+        DB2I_SETUP_DB2I_DEFAULT_LIBRARY=$default_library \
+        DB2I_SETUP_DB2I_OTHER_LIBRARY=$other_library DB2I_SETUP_DB2I_HOST=$host \
+        write_env || die "writing .env failed; nothing was written"
+    unset password
+    echo "setup: .env written (mode 600)"
+fi
+
+# --- 3. vendor/ Django checkouts ---------------------------------------------------------
+vendor_failed=0
+for manifest in "$ROOT"/tests/offline/corpus/*/*/manifest.toml; do
+    [ -f "$manifest" ] || continue
+    version=$(basename "$(dirname "$(dirname "$manifest")")")
+    pinned=$(sed -n 's/^django_commit = "\(.*\)"$/\1/p' "$manifest")
+    [ -n "$pinned" ] || die "no django_commit in ${manifest#"$ROOT"/}"
+    branch=stable/$version.x
+    checkout=$ROOT/vendor/django-$version
+    if [ ! -d "$checkout/.git" ]; then
+        run git clone --quiet --branch "$branch" --single-branch "$DJANGO_REPOSITORY" "$checkout" \
+            || die "cloning Django $branch failed"
+        run git -C "$checkout" checkout --quiet -B "$branch" "$pinned" \
+            || die "commit ${pinned:0:7} is not on $branch"
+        continue
+    fi
+    head=$(git -C "$checkout" rev-parse HEAD 2>/dev/null || true)
+    if [ "$head" = "$pinned" ]; then
+        echo "setup: vendor/django-$version is at the pinned commit ${pinned:0:7}"
+        continue
+    fi
+    if [ -n "$(git -C "$checkout" status --porcelain 2>/dev/null)" ]; then
+        echo "setup: vendor/django-$version has local changes; not switched to ${pinned:0:7}" >&2
+        vendor_failed=1
+        continue
+    fi
+    run git -C "$checkout" fetch --quiet origin "$branch" || die "fetching Django $branch failed"
+    if [ "$DRY_RUN" = 0 ] && ! git -C "$checkout" merge-base --is-ancestor HEAD "origin/$branch"; then
+        echo "setup: vendor/django-$version has local commits; not switched to ${pinned:0:7}" >&2
+        vendor_failed=1
+        continue
+    fi
+    run git -C "$checkout" checkout --quiet -B "$branch" "$pinned" \
+        || die "commit ${pinned:0:7} is not on $branch"
+done
+
+# --- 4. check ----------------------------------------------------------------------------
+run "$ROOT/bin/doctor" --offline || exit 1
+exit "$vendor_failed"

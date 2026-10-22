@@ -5,6 +5,7 @@ import importlib.util
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -780,3 +781,82 @@ def test_release_run_tier_log_is_not_read_as_a_module_log(monkeypatch, tmp_path,
     assert log.read_text() == "collected 2 items\npassword ***\n2 passed\n"
     assert list((tmp_path / "test-results").glob("*/*.log")) == []
     assert "S3cret!pw" not in capsys.readouterr().out
+
+
+# --- release run: resuming (bin/release-run) ---------------------------------------------
+
+
+@pytest.fixture
+def resumable(monkeypatch, tmp_path):
+    """release_run.main() with fake runs: labels a, b, c; results in tmp_path."""
+    (tmp_path / "vendor" / "django-6.1" / "tests").mkdir(parents=True)
+    (tmp_path / "vendor" / "django-6.1" / "tests" / "runtests.py").touch()
+    monkeypatch.setattr(release, "ROOT", tmp_path)
+    monkeypatch.setattr(release, "reachable", lambda: None)
+    monkeypatch.setattr(release, "labels", lambda: ["basic", "transactions", "ordering"])
+    commits = {"backend": "abc1234 2026-10-22"}
+    monkeypatch.setattr(release.run_django_tests, "backend_commit", lambda: commits["backend"])
+    monkeypatch.setattr(release.run_django_tests, "git_full_commit", lambda path: "d" * 40)
+    calls, failing = [], set()
+
+    def fake_label(argv):
+        calls.append(argv[-1])
+        return 1 if argv[-1] in failing else 0
+
+    monkeypatch.setattr(release.run_django_tests, "main", fake_label)
+    monkeypatch.setattr(release, "run_tier", lambda version: calls.append("tier") or 0)
+    return SimpleNamespace(root=tmp_path, calls=calls, failing=failing, commits=commits)
+
+
+def test_a_limited_run_stops_and_the_next_start_skips_what_passed(resumable, capsys) -> None:
+    assert release.main(["6.1", "--limit", "1"]) == 1
+    assert resumable.calls == ["basic"]
+    out = capsys.readouterr().out
+    assert "started over (first run)" in out
+    assert "stopped by --limit 1; the next start continues here (transactions)" in out
+    assert "not run yet: 3" in out
+    state = json.loads(release.state_path("6.1").read_text())
+    assert state == {
+        "backend": "abc1234 2026-10-22",
+        "django": "d" * 40,
+        "results": {"basic": "passed"},
+    }
+    assert release.main(["6.1"]) == 0
+    assert resumable.calls == ["basic", "transactions", "ordering", "tier"]
+    out = capsys.readouterr().out
+    assert "resumed" in out and "skipped, passed before on the same commits: basic" in out
+    assert "4 runs, all passed" in out
+
+
+def test_failed_runs_run_again_on_the_next_start(resumable, capsys) -> None:
+    resumable.failing.add("transactions")
+    assert release.main(["6.1"]) == 1
+    assert "failed: transactions" in capsys.readouterr().out
+    resumable.failing.clear()
+    resumable.calls.clear()
+    assert release.main(["6.1"]) == 0
+    assert resumable.calls == ["transactions"]
+
+
+def test_new_commits_or_restart_start_over_and_clear_old_captures(resumable, capsys) -> None:
+    captures = resumable.root / "test-results" / "6.1" / "corpus"
+    captures.mkdir(parents=True)
+    assert release.main(["6.1", "--limit", "1"]) == 1
+    (captures / "queries.tests.A.test_x.jsonl").write_text("{}\n")  # e.g. from bin/verify
+    assert release.main(["6.1", "--limit", "0"]) == 1
+    assert (captures / "queries.tests.A.test_x.jsonl").exists()  # resumed: kept
+    resumable.commits["backend"] = "def5678 2026-10-23"
+    resumable.calls.clear()
+    assert release.main(["6.1", "--limit", "1"]) == 1
+    assert "started over (new commits)" in capsys.readouterr().out
+    assert resumable.calls == ["basic"]
+    assert list(captures.glob("*.jsonl")) == []
+    assert release.main(["6.1", "--restart", "--limit", "0"]) == 1
+    assert "started over (--restart)" in capsys.readouterr().out
+    assert json.loads(release.state_path("6.1").read_text())["results"] == {}
+
+
+def test_release_run_usage(resumable, capsys) -> None:
+    assert release.main(["6.1", "--limit"]) == 2
+    assert release.main(["6.1", "--bogus"]) == 2
+    assert "usage: nox -s release_run" in capsys.readouterr().err

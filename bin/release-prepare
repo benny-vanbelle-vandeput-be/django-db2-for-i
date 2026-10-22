@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# bin/release-prepare: prepare a release pull request; never tags, never releases.
+#
+#   bin/release-prepare <version>            e.g. bin/release-prepare 0.1.0a5
+#   bin/release-prepare --dry-run <version>  print the commands, change nothing
+#   bin/release-prepare --help
+#
+# Preconditions, all checked before anything is written:
+# - not a subagent worktree (.claude/worktrees/): only the main session prepares releases;
+# - HEAD is origin/main after a fetch; the only local changes are the corpus
+#   files the release runs wrote (bin/release-run);
+# - CI passed on main's head (GitHub check runs);
+# - the verification gate passes (no golden or corpus entry without a stamp);
+# - scripts/release_prepare.py check: the version is newer than __version__,
+#   there are changelog fragments, every supported Django version has a
+#   complete release run that passed, and the backend is unchanged since.
+# Then, on a new branch chore/release-<version>: commits the corpus, sets
+# __version__, assembles the CHANGELOG (scripts/assemble_changelog.py),
+# regenerates the status pages and FEATURES.md (nox -s test_status features),
+# runs bin/check, commits, pushes the branch and opens the release pull
+# request. Needs no .env and never connects to an IBM i.
+#
+# It never creates, pushes or deletes tags, never creates or edits GitHub
+# releases and never touches the release workflow. At the end it prints what
+# the maintainer does by hand: merge, sign and push the tag, then create the
+# GitHub release.
+
+source "$(dirname "$0")/_common.sh"
+common_args "$@"
+
+[ "${#ARGS[@]}" = 1 ] || die "name the version (see --help)"
+version=${ARGS[0]}
+case $version in
+    -*) die "unknown argument: $version (see --help)" ;;
+esac
+case $ROOT in
+    */.claude/worktrees/*) die "refused in a subagent worktree ($ROOT): only the main session prepares releases" ;;
+esac
+branch=chore/release-$version
+corpus=tests/offline/corpus
+
+# --- preconditions -----------------------------------------------------------------------
+run git -C "$ROOT" fetch --quiet origin
+if [ "$DRY_RUN" = 0 ]; then
+    [ "$(git -C "$ROOT" rev-parse HEAD)" = "$(git -C "$ROOT" rev-parse origin/main)" ] \
+        || die "HEAD is not origin/main (git switch main && git pull --ff-only)"
+    changed=$(git -C "$ROOT" status --porcelain | grep -v "^.. $corpus/" || true)
+    [ -z "$changed" ] || die "local changes other than the release runs' corpus:
+$changed"
+    ! git -C "$ROOT" rev-parse --verify --quiet "refs/heads/$branch" >/dev/null \
+        || die "the branch $branch exists already"
+    sha=$(git -C "$ROOT" rev-parse origin/main)
+    # Every check run on main's head completed, with success (or skipped / neutral).
+    pending=$(gh api "repos/{owner}/{repo}/commits/$sha/check-runs?per_page=100" --jq \
+        '[.check_runs[] | select(.status != "completed" or (.conclusion | IN("success", "skipped", "neutral") | not)) | .name] | join(", ")') \
+        || die "could not read the CI results of main ($sha)"
+    [ -z "$pending" ] || die "CI has not passed on main (${sha:0:7}): $pending"
+else
+    echo "+ (check: HEAD is origin/main, only corpus changes, no branch $branch, CI passed on main)"
+fi
+container nox -s gate || die "the verification gate failed: every golden and corpus entry needs a stamp"
+container uv run --no-project python scripts/release_prepare.py check "$version" \
+    || die "the preconditions do not hold (see above); nothing was changed"
+
+# --- the release pull request ------------------------------------------------------------
+run git -C "$ROOT" switch --quiet -c "$branch"
+if [ "$DRY_RUN" = 1 ] || [ -n "$(git -C "$ROOT" status --porcelain -- "$corpus")" ]; then
+    run git -C "$ROOT" add -- "$corpus"
+    run git -C "$ROOT" commit --quiet -m "test(corpus): the offline query corpus of the release runs"
+fi
+run sed -i.bak "s/^__version__ = \".*\"$/__version__ = \"$version\"/" "$ROOT/django_db2_for_i/__init__.py"
+run rm -f "$ROOT/django_db2_for_i/__init__.py.bak"
+container uv run --no-project python scripts/assemble_changelog.py release "$version" \
+    || die "assembling the CHANGELOG failed; branch $branch is left for inspection"
+container nox -s test_status features || die "regenerating the status pages failed; branch $branch left"
+run git -C "$ROOT" add -- django_db2_for_i/__init__.py CHANGELOG.md changelog.d README.md docs
+if [ "$DRY_RUN" = 0 ]; then
+    unexpected=$(git -C "$ROOT" status --porcelain)
+    [ -z "$unexpected" ] || die "unexpected changes; branch $branch is left for inspection:
+$unexpected"
+fi
+run git -C "$ROOT" commit --quiet -m "chore(release): $version"
+run "$ROOT/bin/check" || die "bin/check failed on $branch; nothing was pushed"
+run git -C "$ROOT" push --quiet -u origin "$branch"
+body=$ROOT/test-results/release-prepare-$version.md
+if [ "$DRY_RUN" = 0 ]; then
+    container uv run --no-project python scripts/release_prepare.py body "$version" >"$body"
+fi
+run gh pr create --base main --head "$branch" --title "Release $version" --body-file "$body"
+
+# --- what the maintainer does by hand ----------------------------------------------------
+cat <<EOF
+
+What the maintainer does by hand (bin/release-prepare never tags and never creates releases):
+1. Review and merge the release pull request.
+2. In the release clone, sign and push the tag on the merge commit:
+     git switch main && git pull --ff-only
+     git log -1 --show-signature
+     git tag -s v$version -m "v$version"
+     git tag -v v$version
+     git push origin v$version
+3. Create the GitHub release yourself (the release workflow is parked, see #94).
+EOF

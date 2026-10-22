@@ -96,6 +96,7 @@ IBMI_RUN_PATHS = {
     "scripts/runtests.sh": "the Django test runner on IBM i",
     "scripts/run_django_tests.py": "the Django test runner on IBM i",
     "scripts/release_run.py": "the release run",
+    "bin/release-run": "the release run",
 }
 # docs/tests only: nothing here runs on IBM i. Everything matched by no rule in
 # judge() is "needs full tier" (fails closed): a new file or directory is never
@@ -120,6 +121,9 @@ DOCS_PATHS = {
     "scripts/verify_release_tag.py": "offline tooling",
     "bin/check": "offline tooling (what CI does)",
     "bin/status": "offline tooling (status pages)",
+    "bin/setup": "first-time setup (images, .env template, vendor/ checkouts)",
+    "bin/release-prepare": "offline tooling (the release pull request)",
+    "scripts/release_prepare.py": "offline tooling (the release pull request)",
     ".github/": "CI (never connects to an IBM i)",
     ".devcontainer/": "editor setup",
     ".claude/": "editor setup",

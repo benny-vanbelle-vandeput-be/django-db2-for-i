@@ -285,6 +285,7 @@ def selecting(tmp_path, results_dir, monkeypatch):
     monkeypatch.setattr(verify, "text_at", lambda commit, path: "")
     monkeypatch.setattr(verify, "current_text", lambda path: "def test_a():\n    pass\n")
     monkeypatch.setattr(verify, "unverified_goldens", lambda django, skip: state.goldens)
+    monkeypatch.setattr(verify, "is_unverified", lambda django, name: name.startswith("queries/"))
     monkeypatch.setattr(verify, "corpus_test_ids", lambda django: state.corpus)
     monkeypatch.setattr(verify, "unlisted_test_ids", lambda *args: state.unlisted)
     results_dir.relative_to(tmp_path)  # the runs file names paths relative to ROOT
@@ -310,6 +311,7 @@ def test_select_writes_one_run_per_line(selecting, results_dir) -> None:
     assert (results_dir / "goldens.txt").read_text() == "ddl/create_author\nqueries/new\n"
     selection = json.loads((results_dir / "selection.json").read_text())
     assert selection["merge_base"] == "abc123" and selection["own_full"] is None
+    assert selection["unverified_goldens"] == ["queries/new"]
 
 
 def test_select_runs_the_full_own_tier_for_shared_code(selecting, results_dir, capsys) -> None:
@@ -399,7 +401,20 @@ def test_finish_reports_success(finishing, capsys) -> None:
     assert "IBM i runs: 2 of 2, 0 failed" in report
     assert "goldens: 1 of 1 verified" in report
     assert "WARNING" not in report
-    assert "bin/verify never commits" in report
+    assert "The new stamps are in the working tree" in report
+
+
+def test_finish_says_when_no_stamp_was_written(finishing) -> None:
+    # Only already verified goldens ran (none was unverified when selected).
+    selection = {"goldens": ["queries/new"], "unverified_goldens": []}
+    (finishing / "selection.json").write_text(json.dumps(selection))
+    (finishing / "results.txt").write_text(
+        "goldens\tverify/goldens.txt\t0\ndjango\ta.tests.A.test_1\t0\n"
+    )
+    assert verify.finish("6.1", updated=False) == 0
+    report = (finishing / "report.txt").read_text()
+    assert "No stamps were written; nothing was committed." in report
+    assert "The new stamps" not in report
 
 
 def test_finish_warns_when_new_sql_is_not_verified(finishing, tmp_path) -> None:

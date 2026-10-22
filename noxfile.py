@@ -93,7 +93,7 @@ def django_checkout(session: nox.Session, django: str, commit: str) -> str:
         if not (path / ".git").exists():
             return ""
         return session.run(
-            "git", "-c", "safe.directory=*", "-C", str(path), "rev-parse", "HEAD",
+            "git", "-c", f"safe.directory={path.resolve()}", "-C", str(path), "rev-parse", "HEAD",
             external=True, silent=True,
         ).strip()  # fmt: skip
 
@@ -103,7 +103,8 @@ def django_checkout(session: nox.Session, django: str, commit: str) -> str:
     cache = pathlib.Path(".nox/_django") / commit
     if head(cache) != commit:
         cache.mkdir(parents=True, exist_ok=True)
-        git = ["git", "-c", "safe.directory=*", "-C", str(cache)]
+        # Only this checkout is trusted by git, never every directory.
+        git = ["git", "-c", f"safe.directory={cache.resolve()}", "-C", str(cache)]
         if not (cache / ".git").exists():
             session.run(*git, "init", "-q", external=True)
             session.run(
@@ -252,10 +253,10 @@ def release_run(session: nox.Session) -> None:
     """Before a release, per Django version: all supported Django modules, then the
     pub400 tier (scripts/release_run.py; sequential, one connection at a time).
 
-    nox -s release_run -- <django-version>
+    nox -s release_run -- <django-version> [--restart] [--limit N]
     """
-    if len(session.posargs) != 1:
-        session.error("usage: nox -s release_run -- <django-version>")
+    if not session.posargs or session.posargs[0].startswith("-"):
+        session.error("usage: nox -s release_run -- <django-version> [--restart] [--limit N]")
     # Django from the vendor checkout, as in django_tests, for the modules and the tier.
     session.install(*nox.project.dependency_groups(PYPROJECT, "test"))
     session.install("-e", f"vendor/django-{session.posargs[0]}")

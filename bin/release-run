@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# bin/release-run: the release run on IBM i, per Django version, resumable.
+#
+#   bin/release-run                    every supported Django version, one after another
+#   bin/release-run --django 6.1       one version (repeat --django for more)
+#   bin/release-run --restart ...      start the version(s) over
+#   bin/release-run --limit 1 ...      stop after that many runs (the rest stays for the next start)
+#   bin/release-run --wait ...         queue behind a running PUB400 job
+#   bin/release-run --dry-run ...      print the commands, run nothing
+#   bin/release-run --help
+#
+# Per version (scripts/release_run.py, through scripts/pub400.sh and the
+# lock, one lock per version): every supported Django test module (the
+# [[modules]] of docs/status.toml), each with --clean and --capture in its own
+# run, then the own IBM i tier with --create-db. Each result is recorded as
+# soon as it is known (test-results/<version>/release-run/state.json): a later
+# start on the same backend and Django commits skips what passed, so the run
+# can be spread over several nights. When every run of a version passed, its
+# offline query corpus is rebuilt from the captures (scripts/build_corpus.py),
+# in the working tree, for bin/release-prepare.
+#
+# IBM i only: nothing on GitHub. Refuses a working tree with changes other
+# than the corpus files the release run writes, and vendor/django-<version>
+# not at the commit its corpus manifest pins (bin/setup). Exit code 1 when a
+# version is not complete and passed.
+
+source "$(dirname "$0")/_common.sh"
+common_args "$@"
+
+versions=() options=()
+set -- ${ARGS[@]+"${ARGS[@]}"}
+while [ $# -gt 0 ]; do
+    case $1 in
+        --django) versions+=("${2:?--django needs a version}"); shift 2 ;;
+        --restart) options+=(--restart); shift ;;
+        --limit)
+            case ${2:-} in '' | *[!0-9]*) die "--limit needs a number" ;; esac
+            options+=(--limit "$2")
+            shift 2
+            ;;
+        *) die "unknown argument: $1 (see --help)" ;;
+    esac
+done
+supported=$(nox_combinations | awk '{ print $2 }' | uniq)
+if [ "${#versions[@]}" = 0 ]; then
+    while read -r version; do versions+=("$version"); done <<<"$supported"
+fi
+for version in "${versions[@]}"; do
+    printf '%s\n' "$supported" | grep -qx "$version" || die "Django $version is not supported (noxfile.py)"
+done
+
+refuse() { # a dry run only reports what a real run would refuse
+    if [ "$DRY_RUN" = 1 ]; then
+        echo "release-run: a real run would refuse: $*" >&2
+    else
+        die "$@"
+    fi
+}
+
+# Only the corpus files the release run itself writes may differ from HEAD.
+changed=$(git -C "$ROOT" status --porcelain | grep -v '^.. tests/offline/corpus/' || true)
+[ -z "$changed" ] || refuse "the working tree has changes (commit or stash them first):
+$changed"
+
+failed=0
+for version in "${versions[@]}"; do
+    manifest=$(ls "$ROOT"/tests/offline/corpus/"$version"/*/manifest.toml 2>/dev/null | head -n 1 || true)
+    pinned=$([ -n "$manifest" ] && sed -n 's/^django_commit = "\(.*\)"$/\1/p' "$manifest" || true)
+    head=
+    if [ -e "$ROOT/vendor/django-$version/.git" ]; then # not the project's own repository
+        head=$(git -C "$ROOT/vendor/django-$version" rev-parse HEAD 2>/dev/null || true)
+    fi
+    if [ -n "$pinned" ] && [ "$head" != "$pinned" ]; then
+        refuse "vendor/django-$version is ${head:+at ${head:0:7}, }not at the pinned ${pinned:0:7} (bin/setup)"
+    fi
+    status=0
+    pub400 release_run "$version" ${options[@]+"${options[@]}"} || status=$?
+    if [ "$status" = 0 ]; then
+        container uv run --no-project python scripts/build_corpus.py "$version" \
+            || { echo "release-run: building the corpus of Django $version failed" >&2; failed=1; }
+    else
+        echo "release-run: Django $version is not complete; start again to continue" >&2
+        failed=1
+    fi
+done
+exit "$failed"
