@@ -33,6 +33,24 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
         for marker, directory in TIER_DIRS.items():
             if item.path.is_relative_to(directory):
                 item.add_marker(marker)
+    _select_goldens(config, items)
+
+
+def _select_goldens(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """--goldens-from: run only the named goldens of the IBM i golden check (bin/verify),
+    in the check's own order; other tests are not affected."""
+    path = config.getoption("--goldens-from")
+    if not path:
+        return
+    names = set(Path(path).read_text().split())
+    deselected = [
+        item
+        for item in items
+        if item.originalname == "test_golden_is_accepted" and item.callspec.id not in names
+    ]
+    if deselected:
+        config.hook.pytest_deselected(items=deselected)
+        items[:] = [item for item in items if item not in deselected]
 
 
 @pytest.fixture(autouse=True)
@@ -71,6 +89,11 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         "--record-verification",
         action="store_true",
         help="mark goldens accepted by IBM i as verified (pub400 tier)",
+    )
+    group.addoption(
+        "--goldens-from",
+        metavar="PATH",
+        help="run only the goldens named in PATH (one per line) in the IBM i golden check",
     )
     parser.getgroup("results").addoption(
         "--results-summary",

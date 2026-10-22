@@ -88,6 +88,8 @@ IBMI_RUN_PATHS = {
     "bin/doctor": "the environment check (one PUB400 connection)",
     "bin/probe": "the probe runner",
     "bin/ibmi-test": "targeted IBM i runs",
+    "bin/verify": "targeted IBM i runs and the stamps they write",
+    "scripts/verify.py": "the selection of targeted IBM i runs (bin/verify)",
     "bin/ibmi-cleanup": "the cleanup of leftover test objects",
     "scripts/ibmi_cleanup.py": "the cleanup of leftover test objects",
     "tests/table_registry.py": "the list of objects test runs create",
