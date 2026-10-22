@@ -31,52 +31,36 @@ All development and test runs happen in a container. See [README.md](README.md)
 for setup instructions.
 
 The routine tasks have scripts in `bin/`, run from the host. Each has `--help`
-and `--dry-run` (print the commands, run nothing), and none prints secrets:
-- `bin/setup`: first-time setup: builds the images, creates `.env` from
-  `.env.example` when there is none (in a terminal it asks for the values, the
-  password hidden, and writes them with mode 600; an existing `.env` is never
-  read or changed), puts `vendor/django-<version>` at the commit the corpus
-  manifest pins, then runs `bin/doctor --offline`. It is for humans in their
-  own terminal: Claude never runs it interactively and never enters values,
-  only without a terminal (then `.env` is just the template) or when `.env`
-  exists.
-- `bin/check`: what CI does, locally (lint, offline tier, corpus replay, the
-  verification gate, the classification), for every combination or a chosen
-  one (`--python`, `--django`).
-- `bin/status`: regenerates TEST_STATUS, the badges, README's generated
-  sections and FEATURES.md, then shows who holds the PUB400 lock and the open
-  pull requests with `needs-full-tier` or `run-ibmi`.
-- `bin/doctor`: checks Docker, the ODBC driver in the image, `.env` (exists;
-  never read), the `vendor/` checkouts against the pinned commits, then one
-  connection to PUB400 (`--offline` skips it).
-- `bin/probe`: runs read-only probes by name (`--list`). Write probes need
-  the maintainer's approval and are not run by it.
-- `bin/verify`: verifies changed SQL and new tests on IBM i and writes the
-  stamps. It runs the offline tests and the corpus replay; a failure that is
-  not changed SQL stops it before PUB400. Changed SQL is written to the
-  goldens and corpus, then exactly what needs IBM i runs there: the unverified
-  goldens (with the create goldens they need), the own IBM i tests that are
-  new or changed against `origin/main` (the full own tier when shared own-test
-  code changed), one Django test per unverified corpus entry and the tests
-  that left the skip lists. Passing goldens and corpus entries get their
-  stamps in the working tree, never committed; the report is in
-  `test-results/verify/<django>/report.txt`, and says plainly when new SQL was
-  written but not verified. Many Django test ids of one class, test module or
-  app run as one label; more than 60 labels or 20 runs are refused
-  (`--max-labels`, `--max-runs`).
-- `bin/ibmi-test`: the manual IBM i run: own IBM i tests (`own <test ids or
-  pytest options>`), Django test labels (`django <label>...`, one run each,
-  `--clean`), `--full-tier`, or `--affected` (what `bin/verify` would run,
-  without writing stamps); `--django` for another version.
-- `bin/release-run`: the release run on IBM i (see "Releases"), per Django
-  version, resumable; nothing on GitHub.
-- `bin/release-prepare <version>`: checks the release preconditions and opens
-  the release pull request (see "Releases"); it never tags and never creates
-  releases.
-- `bin/ibmi-cleanup`: drops the leftover test objects of a crashed run from
-  our own test libraries, under the standing approval in CLAUDE.md: only
-  objects on the list that test runs write before each `CREATE`, only in a
-  library with the `DJDB2I_TEST_MARKER` table. It lists only, unless `--yes`.
+and `--dry-run` (print the commands, run nothing), and none prints secrets.
+The workflow, step by step, is in [docs/WORKFLOW.md](docs/WORKFLOW.md)
+(`bin/help`, `bin/help <topic>`).
+
+| Script | What it does |
+|---|---|
+| `bin/help` | the workflow guide: the quick start and the topics (`bin/help <topic>`) |
+| `bin/setup` | first-time setup: images, `.env` (asked in your own terminal), `vendor/` checkouts |
+| `bin/doctor` | checks the environment, then one connection to PUB400 |
+| `bin/check` | what CI does, locally: lint, offline tests, corpus replay, gate, classification |
+| `bin/verify` | verifies changed SQL and new tests on IBM i and writes the stamps |
+| `bin/ibmi-test` | chosen own IBM i tests, Django test labels, `--affected` or `--full-tier` on IBM i |
+| `bin/probe` | read-only IBM i probes by name |
+| `bin/status` | regenerates the status pages; shows the PUB400 lock and labelled pull requests |
+| `bin/ibmi-cleanup` | lists (`--yes`: drops) the leftover test tables of a crashed run |
+| `bin/release-run` | the release run on IBM i, per Django version, resumable |
+| `bin/release-prepare` | checks the release preconditions and opens the release pull request |
+
+`bin/setup` is for humans in their own terminal: it asks for the `.env`
+values (the password hidden) and writes them with mode 600; an existing
+`.env` is never read or changed. Claude never runs it interactively and never
+enters values, only without a terminal (then `.env` is just the template) or
+when `.env` exists. `bin/verify` stops before PUB400 when an offline failure
+is not changed SQL, never commits, and its report
+(`test-results/verify/<django>/report.txt`) says plainly when new SQL was
+written but not verified; more than 60 Django test labels or 20 runs are
+refused (`--max-labels`, `--max-runs`). `bin/ibmi-cleanup` works under the
+standing approval in CLAUDE.md: only objects on the list that test runs
+write before each `CREATE`, only in a library with the `DJDB2I_TEST_MARKER`
+table; it lists only, unless `--yes`.
 
 The IBM i scripts take `--wait` to queue behind a running PUB400 job.
 
