@@ -1435,3 +1435,49 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   the rule that protects libraries that may not be test libraries); one
   session-wide marker (the golden check needs an empty library of its own,
   so the modules would still have to hand the marker over).
+
+## 2026-10-22: bin/verify runs exactly what needs IBM i, within fixed limits
+- **Decision (project owner approved the plan and chose the limits):**
+  `bin/verify` (phase 4 step 0.5) runs the offline tests and the corpus
+  replay first and stops before PUB400 on any failure that is not changed
+  SQL. Changed SQL is written with `--update-goldens` / `--update-corpus`
+  (clearing its stamps), then `scripts/verify.py select` chooses the IBM i
+  runs:
+  - the unverified goldens and the create goldens they depend on, run with
+    `--goldens-from` so only they run, in the golden check's order; such a
+    run stamps them but leaves `last-verification.txt` to full runs;
+  - own IBM i tests that are new or changed against the merge base with
+    `origin/main` (working tree included), compared per test function with
+    Python's `ast`; a change to module-level code selects the module, to a
+    class body the class. A change to shared own-test code (the fixtures and
+    helpers in `tests/pub400/`, `tests/conftest.py`, the test models, the IBM i
+    settings) or to what needs the full tier cannot be mapped to single
+    tests: then the full own IBM i tier runs;
+  - one Django test per unverified corpus entry (a test that covers the most
+    entries first) and the test ids that left the skip / expected-failure
+    lists (string literals of `features.py` and `compat.py`, kept only when
+    they exist in that version's `vendor/` checkout).
+  More than three Django test ids under one class, test module or app become
+  that label (the deepest first, repeatedly). The selection is refused above
+  **60 labels** or **20 `scripts/runtests.sh` runs** (three labels each),
+  `--max-labels` / `--max-runs` to change them. Each IBM i run takes the
+  PUB400 lock on its own; a failed run does not stop the others. A corpus
+  entry is stamped only when a passing test of this run sent exactly its
+  statement (compiler, SQL, params, settings). Results stay in the working
+  tree; the report says plainly when new SQL was written but not verified.
+- **Why:** phase 4 decision 11 and the step 0 rules ask for targeted runs
+  instead of the full tier where the change can be mapped to tests. The
+  limits keep a large refactor from turning into hundreds of runs on a
+  shared system: 60 labels are 20 runs at three labels per run, and
+  collapsing keeps a change that touches many tests of one class or module
+  at one label instead of refusing it. A lock per run is enough for "one
+  PUB400 job at a time" and lets a waiting job in between long runs.
+  Exact-statement stamping keeps the corpus rule: a stamp means "this exact
+  SQL passed on IBM i".
+- **Alternatives:** the full own tier and whole Django modules on every
+  change (far more load on PUB400); one lock for all of `bin/verify` (simpler
+  to reason about, but holds the system for the whole selection); rebuilding
+  a corpus module from the targeted captures (`scripts/build_corpus.py`
+  replaces a module, so entries of tests that did not run would be lost);
+  selecting own tests by running pytest's collection on both revisions
+  (needs a second checkout of the base in the container).
