@@ -285,6 +285,11 @@ made when no other PRs are open.
   main session uses for IBM i runs. **Never** link or copy it into a subagent's
   worktree (`.claude/worktrees/`): subagents are offline only, and a missing `.env`
   is an extra safeguard there.
+- **Results never vanish with a worktree.** Remove a merged worktree with
+  `bin/worktree-remove <path>`: it copies its `test-results/` to the main checkout's
+  `test-results/archive/<worktree>/` first. Raw probe output that a decision rests on
+  goes into the repository with `bin/probe --publish <result>` (`probes/results/<probe>.json`,
+  host, user and library names replaced, no credentials).
 - Commits: conventional messages; author is the maintainer (noreply address),
   committer is the machine account (noreply address), every commit and tag is
   signed with the machine account's SSH signing key (all set in the
