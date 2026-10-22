@@ -118,13 +118,17 @@ order the bases were defined in their modules. For example:
 ```python
 class TimestampedMixin(models.Model):
     created = models.DateTimeField(null=True)
+
     class Meta:
         abstract = True
 
+
 class TitledBase(models.Model):
     title = models.CharField(max_length=50)
+
     class Meta:
         abstract = True
+
 
 class Article(TimestampedMixin, TitledBase):
     body = models.CharField(max_length=100)
