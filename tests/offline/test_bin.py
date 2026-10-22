@@ -422,3 +422,26 @@ def test_release_run_runs_each_version_under_the_lock_then_builds_its_corpus(tmp
         refused = run_bin(str(BIN / "release-run"), *args, tmp_path=tmp_path)
         assert refused.returncode == 2 and message in refused.stderr
     assert not (tmp_path / "docker-called").exists()
+
+
+@needs_bin
+def test_ibmi_test_runs_every_django_label_after_a_failure(tmp_path) -> None:
+    root = tmp_path / "repo"
+    (root / "bin").mkdir(parents=True)
+    (root / "scripts").mkdir()
+    for name in ("_common.sh", "ibmi-test"):
+        (root / "bin" / name).write_text((BIN / name).read_text())
+    (root / "noxfile.py").write_text((ROOT / "noxfile.py").read_text())
+    # A fake runner: the label "bad" fails, every call is recorded.
+    (root / "scripts" / "runtests.sh").write_text(
+        f'#!/bin/sh\necho "$@" >> "{tmp_path}/runs"\nfor last; do :; done\n[ "$last" != bad ]\n'
+    )
+    (root / "scripts" / "runtests.sh").chmod(0o755)
+    result = run_bin(str(root / "bin" / "ibmi-test"), "django", "a", "bad", "c", tmp_path=tmp_path)
+    assert result.returncode == 1
+    assert "ibmi-test: failed: bad" in result.stderr
+    assert (tmp_path / "runs").read_text().splitlines() == [
+        "6.1 --clean a",
+        "6.1 --clean bad",
+        "6.1 --clean c",
+    ]
