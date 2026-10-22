@@ -394,3 +394,11 @@ def probe_locale(session: nox.Session) -> None:
     """Write probe 12 (QTEMP only, one connection per locale): non-UTF-8 locale."""
     install(session, NEWEST_DJANGO)
     session.run("python", "probes/w12_locale.py", *session.posargs, env={"PYTHONPATH": "."})
+
+
+@nox.session(python=NEWEST_PYTHON)
+def probe_constraints(session: nox.Session) -> None:
+    """CHANGES THE IBM i: write probe w13 (DJW13 tables in the default library,
+    dropped at the end). Dry run unless -- --execute."""
+    session.install("-e", ".")
+    session.run("python", "probes/w13_constraints.py", *session.posargs)

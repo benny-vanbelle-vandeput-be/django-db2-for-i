@@ -725,11 +725,56 @@ attributes; a QTEMP table with `NAME NVARCHAR(10)`, `SMALL SMALLINT`,
 - The driver reports SQL0545 with SQLSTATE `HY000` instead of `23513`, so the
   SQLSTATE class mapping (`23` -> IntegrityError) misses it; the driver layer
   maps SQLCODE -545 to IntegrityError (#96).
-- Foreign key violations (SQL0530 / SQL0531 / SQL0532) are not probed: the
-  backend creates no database-level foreign keys yet (`supports_foreign_keys`
-  is False). Foreign key constraints are schema-editor work (phase 4/5): when
-  they are created, check how SQL0530 / SQL0531 / SQL0532 arrive and map them
-  to IntegrityError (#96).
+- Foreign key violations (SQL0530 / SQL0531 / SQL0532) cannot be probed in
+  QTEMP; probe w13 did it in the journaled library: they arrive with `HY000`
+  too (see "Foreign keys, unique and check constraints").
+
+### Foreign keys, unique and check constraints (`nox -s probe_constraints -- --execute`)
+2026-10-22, PUB400 (IBM i 7.5), the journaled `default` library, write probe
+w13 (approved: phase 4 decision 3): its own `DJW13` tables only, one
+connection, through the PUB400 lock, all dropped at the end (checked: no
+`DJW13` object left). Catalog queries were limited to its own tables.
+
+- **Constraint names land in `CURRENT SCHEMA`.** A first run connected
+  without `DBQ` and every `ADD CONSTRAINT` failed with SQL5051 ("Qualifier ...
+  not same as name"): an unqualified constraint name goes to the default
+  schema, which must be the table's library. The backend sets `DBQ` to the
+  library (`drivers/pyodbc.py`); the probe now does too and checks
+  `CURRENT SCHEMA` before it creates anything. Only the rollback check of
+  that first run is used below.
+- **Foreign key violations**, with `ALTER TABLE ... ADD CONSTRAINT ...
+  FOREIGN KEY ... REFERENCES` as Django writes it:
+
+  | Violation | SQLSTATE | SQLCODE |
+  |---|---|---|
+  | insert or update a child with a missing parent | **`HY000`** | -530 |
+  | delete a referenced parent | **`HY000`** | -532 |
+  | update a referenced parent key | **`HY000`** | -531 |
+  | update another column of a referenced parent | (works) | |
+
+  As SQL0545 (CHECK), they arrive with `HY000`, not `23503`, so the
+  SQLSTATE class mapping misses them; the driver layer must map SQLCODE
+  -530 / -531 / -532 to IntegrityError (#96). `SYSREFCST` records
+  `UPDATE_RULE` and `DELETE_RULE` `NO ACTION` and the parent's primary key as
+  `UNIQUE_CONSTRAINT_NAME`.
+- **No visible index for a foreign key:** `SYSINDEXES` lists nothing for the
+  child table after the foreign key (nor for the primary keys); the access
+  paths constraints use are not SQL indexes. Django's own index on the column
+  (`CREATE INDEX ... (P_ID)`) works next to the foreign key and is listed
+  with `IS_UNIQUE` `D` (duplicates allowed). So `indexes_foreign_keys` is
+  False, and the backend keeps creating its own index (decision 5).
+- **Two constraints on the same columns:** a unique index next to a unique
+  constraint works, and so does a second foreign key on the same column; a
+  **second unique constraint on the same column fails with SQL0541**
+  ("Duplicate UNIQUE constraint exists", the baseline's one SQL0541).
+- **CHECK:** `ADD CONSTRAINT ... CHECK (A >= 0)` works; a violation is
+  SQL0545 / `HY000` (as in Django's test, #96); `SYSCHKCST.CHECK_CLAUSE`
+  holds the text as written (`A >= 0`); both `DROP CONSTRAINT` and `DROP CHECK`
+  remove it.
+- **DDL under commitment control is rolled back:** with autocommit off,
+  `CREATE TABLE` and `ALTER TABLE ... ADD COLUMN`, then `ROLLBACK`: the table
+  and the column are gone (both runs). `can_rollback_ddl` can be True, with
+  its own test when it is switched on.
 
 ### DROP COLUMN with and without CASCADE (`nox -s probe -- drop_column`)
 2026-10-20, PUB400 (IBM i 7.5), the backend's connection attributes, QTEMP,
