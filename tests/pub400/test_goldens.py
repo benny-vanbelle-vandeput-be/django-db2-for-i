@@ -16,6 +16,8 @@ A golden whose create dependency did not pass is skipped with a reason.
 <date>" only when it was unverified or verified on another level (IBM i release,
 TR, Db2 PTF Group, Django version), and writes the run's date and counts to
 tests/offline/golden/last-verification.txt (review the diff, commit it in a PR).
+``--goldens-from <file>`` runs only the goldens named in the file (bin/verify);
+such a run stamps them but leaves last-verification.txt to the full runs.
 """
 
 import dataclasses
@@ -117,7 +119,11 @@ def level(django_db_blocker, request):
             django.get_version(),
         )
     yield value
-    if request.config.getoption("--record-verification"):
+    # A run of some goldens only (--goldens-from, bin/verify) keeps the counts of
+    # the last full run.
+    if request.config.getoption("--record-verification") and not request.config.getoption(
+        "--goldens-from"
+    ):
         today = f"{dt.datetime.now(dt.UTC):%Y-%m-%d}"
         LAST_VERIFICATION.write_text(render_last_verification(value, today, RESULTS))
 

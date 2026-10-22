@@ -6,6 +6,8 @@
 #                                           bin/ibmi-test own -k goldens)
 #   bin/ibmi-test django <label> [...]      Django test modules or ids (--clean), one run per label
 #   bin/ibmi-test --full-tier               the full own IBM i tests (needs-full-tier)
+#   bin/ibmi-test --affected                the tests bin/verify would select (no stamps
+#                                           written, no corpus capture; scripts/verify.py)
 #   bin/ibmi-test --django 6.0 ...          another supported Django version (default: the newest)
 #   bin/ibmi-test --wait ...                queue behind a running PUB400 job
 #   bin/ibmi-test --dry-run ...             print the commands, run nothing
@@ -13,20 +15,22 @@
 #
 # The manual request (label run-ibmi). Own tests run with --create-db (a clean
 # test library). Never the full Django suite: every Django label is its own
-# run, and scripts/runtests.sh refuses a run without labels. --affected (the
-# tests bin/verify selects) comes with bin/verify.
+# run, and scripts/runtests.sh refuses a run without labels. --affected runs
+# what bin/verify selects against origin/main (fetch first), with the goldens
+# and corpus as they are in the working tree.
 
 source "$(dirname "$0")/_common.sh"
 common_args "$@"
 
 django=$(newest_django)
-mode= full=0
+mode= full=0 affected=0
 rest=()
 set -- ${ARGS[@]+"${ARGS[@]}"}
 while [ $# -gt 0 ]; do
     case $1 in
         --django) django=${2:?--django needs a version}; shift 2 ;;
         --full-tier) full=1; shift ;;
+        --affected) affected=1; shift ;;
         own | django)
             [ -z "$mode" ] || die "choose one of own / django"
             mode=$1
@@ -41,6 +45,15 @@ while [ $# -gt 0 ]; do
 done
 nox_combinations | awk '{ print $2 }' | grep -qx "$django" || die "Django $django is not supported (noxfile.py)"
 
+if [ "$affected" = 1 ]; then
+    [ -z "$mode" ] && [ "$full" = 0 ] || die "--affected selects the tests itself; no own/django/--full-tier"
+    dir=test-results/verify/$django
+    container uv run --no-project python scripts/verify.py select "$django" || exit 3
+    failed=0
+    ibmi_runs "$django" "$ROOT/$dir/runs.txt" "$ROOT/$dir/results.txt" 0 || failed=1
+    container uv run --no-project python scripts/verify.py finish "$django" --no-stamp || failed=1
+    exit "$failed"
+fi
 if [ "$full" = 1 ]; then
     [ -z "$mode" ] || die "--full-tier runs all own IBM i tests; no own/django selection"
     pub400 pub400 "$django" --create-db

@@ -279,3 +279,106 @@ def test_the_env_check_itself() -> None:
     ):
         assert READS_ENV.search(line), line
     assert not READS_ENV.search('if [ -e "$ROOT/.env" ]; then')
+
+
+# --- bin/verify, bin/ibmi-test --affected and the shared IBM i runner -------------------
+
+
+@needs_bin
+def test_verify_runs_offline_first_then_selects_runs_and_finishes(tmp_path) -> None:
+    result = run_bin(str(BIN / "verify"), "--dry-run", "--django", "6.0", tmp_path=tmp_path)
+    assert result.returncode == 0, result.stderr
+    lines = result.stdout.splitlines()
+    assert lines[0] == f"+ mkdir -p {ROOT}/test-results/verify/6.0"
+    assert lines[2].endswith(
+        r"tests nox -s offline\(3.14-django6.0\) -- --junitxml=test-results/verify/6.0/offline.xml"
+    )
+    assert lines[3].endswith(
+        r"tests nox -s corpus\(3.14-django6.0\) -- --junitxml=test-results/verify/6.0/corpus.xml"
+    )
+    assert lines[4].endswith("scripts/verify.py triage 6.0")
+    assert lines[5].endswith("scripts/verify.py select 6.0 --base origin/main")
+    assert lines[6] == (
+        "+ (the IBM i runs listed in test-results/verify/6.0/runs.txt,"
+        " each through scripts/pub400.sh)"
+    )
+    assert lines[7].endswith("scripts/verify.py finish 6.0")
+    limited = run_bin(
+        str(BIN / "verify"), "--dry-run", "--max-labels", "9", "--max-runs", "3", "--base", "x",
+        tmp_path=tmp_path,
+    )  # fmt: skip
+    assert "select 6.1 --base x --max-labels 9 --max-runs 3" in limited.stdout
+    for args, message in [
+        (("--django", "9.9"), "Django 9.9 is not supported"),
+        (("--fast",), "unknown argument: --fast"),
+    ]:
+        refused = run_bin(str(BIN / "verify"), *args, tmp_path=tmp_path)
+        assert refused.returncode == 2 and message in refused.stderr
+    assert not (tmp_path / "docker-called").exists()
+
+
+@needs_bin
+def test_ibmi_test_affected_selects_runs_and_reports_without_stamps(tmp_path) -> None:
+    lines = run_bin(str(BIN / "ibmi-test"), "--dry-run", "--affected", tmp_path=tmp_path)
+    lines = lines.stdout.splitlines()
+    assert lines[0].endswith("scripts/verify.py select 6.1")
+    assert lines[1].startswith("+ (the IBM i runs listed in test-results/verify/6.1/runs.txt")
+    assert lines[2].endswith("scripts/verify.py finish 6.1 --no-stamp")
+    refused = run_bin(str(BIN / "ibmi-test"), "--affected", "own", "x", tmp_path=tmp_path)
+    assert refused.returncode == 2 and "--affected selects the tests itself" in refused.stderr
+
+
+@needs_bin
+def test_the_container_trusts_only_the_checkouts_mount(tmp_path) -> None:
+    lines = run_bin(str(BIN / "check"), "--dry-run", tmp_path=tmp_path).stdout.splitlines()
+    containers = [line for line in lines if "docker compose" in line]
+    assert containers
+    for line in containers:
+        assert "-e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/workspace tests" in line
+    text = "\n".join(p.read_text() for p in BIN.glob("*"))
+    assert "safe.directory=*" not in text and "safe.directory '*'" not in text
+    assert "GIT_CONFIG_VALUE_0=\\*" not in "\n".join(lines)
+
+
+@needs_bin
+def test_ibmi_runs_runs_every_line_and_records_the_results(tmp_path) -> None:
+    runs = tmp_path / "runs.txt"
+    runs.write_text(
+        "goldens\ttest-results/verify/6.1/goldens.txt\n"
+        "own\tfull\n"
+        "own\ttests/pub400/test_a.py::test_x\ttests/pub400/test_b.py\n"
+        "django\ta.tests.A.test_1\tb.tests\tc\n"
+    )
+    results = tmp_path / "results.txt"
+    script = tmp_path / "runs.sh"
+    (tmp_path / ".env").touch()
+    script.write_text(
+        f'source "{BIN}/_common.sh"\nROOT="$2"\n'
+        # The full tier fails; the runs after it still run.
+        'pub400() { echo "pub400 $*"; [ "$#" != 3 ] || [ "$3" != --create-db ]; }\n'
+        'run() { echo "run $*"; }\n'
+        f'ibmi_runs 6.1 "{runs}" "{results}" "$1" < /dev/null || echo "status=$?"\n'
+    )
+    stamped = run_bin(str(script), "1", str(tmp_path), tmp_path=tmp_path).stdout.splitlines()
+    assert stamped == [
+        "pub400 pub400 6.1 tests/pub400/test_goldens.py --goldens-from "
+        "test-results/verify/6.1/goldens.txt --record-verification",
+        "pub400 pub400 6.1 --create-db",
+        "pub400 pub400 6.1 --create-db tests/pub400/test_a.py::test_x tests/pub400/test_b.py",
+        f"run {tmp_path}/scripts/runtests.sh 6.1 --clean --capture a.tests.A.test_1 b.tests c",
+        "status=1",
+    ]
+    assert results.read_text().splitlines() == [
+        "goldens\ttest-results/verify/6.1/goldens.txt\t0",
+        "own\tfull\t1",
+        "own\ttests/pub400/test_a.py::test_x tests/pub400/test_b.py\t0",
+        "django\ta.tests.A.test_1 b.tests c\t0",
+    ]
+    plain = run_bin(str(script), "0", str(tmp_path), tmp_path=tmp_path).stdout.splitlines()
+    assert "--record-verification" not in plain[0]
+    assert plain[3] == f"run {tmp_path}/scripts/runtests.sh 6.1 --clean a.tests.A.test_1 b.tests c"
+    # Without .env (checked for existence only) no run starts.
+    (tmp_path / ".env").unlink()
+    refused = run_bin(str(script), "1", str(tmp_path), tmp_path=tmp_path)
+    assert refused.stdout.splitlines() == ["status=1"]
+    assert "no .env in this checkout" in refused.stderr

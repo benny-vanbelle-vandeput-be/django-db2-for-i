@@ -43,9 +43,23 @@ and `--dry-run` (print the commands, run nothing), and none prints secrets:
   connection to PUB400 (`--offline` skips it).
 - `bin/probe`: runs read-only probes by name (`--list`). Write probes need
   the maintainer's approval and are not run by it.
+- `bin/verify`: verifies changed SQL and new tests on IBM i and writes the
+  stamps. It runs the offline tests and the corpus replay; a failure that is
+  not changed SQL stops it before PUB400. Changed SQL is written to the
+  goldens and corpus, then exactly what needs IBM i runs there: the unverified
+  goldens (with the create goldens they need), the own IBM i tests that are
+  new or changed against `origin/main` (the full own tier when shared own-test
+  code changed), one Django test per unverified corpus entry and the tests
+  that left the skip lists. Passing goldens and corpus entries get their
+  stamps in the working tree, never committed; the report is in
+  `test-results/verify/<django>/report.txt`, and says plainly when new SQL was
+  written but not verified. Many Django test ids of one class, test module or
+  app run as one label; more than 60 labels or 20 runs are refused
+  (`--max-labels`, `--max-runs`).
 - `bin/ibmi-test`: the manual IBM i run: own IBM i tests (`own <test ids or
   pytest options>`), Django test labels (`django <label>...`, one run each,
-  `--clean`), or `--full-tier`; `--django` for another version.
+  `--clean`), `--full-tier`, or `--affected` (what `bin/verify` would run,
+  without writing stamps); `--django` for another version.
 - `bin/ibmi-cleanup`: drops the leftover test objects of a crashed run from
   our own test libraries, under the standing approval in CLAUDE.md: only
   objects on the list that test runs write before each `CREATE`, only in a

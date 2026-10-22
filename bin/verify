@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# bin/verify: verify changed SQL and new tests on IBM i, and write the stamps.
+#
+#   bin/verify                      the newest Django version, against origin/main
+#   bin/verify --django 6.0         another supported Django version
+#   bin/verify --base <ref>         compare against another branch (default origin/main)
+#   bin/verify --max-labels 60      refuse more Django test labels than this (default 60)
+#   bin/verify --max-runs 20        refuse more scripts/runtests.sh runs than this (default 20)
+#   bin/verify --wait               queue behind a running PUB400 job
+#   bin/verify --dry-run            print the commands, run nothing
+#   bin/verify --help
+#
+# 1. Offline, in the container: the offline tests and the corpus replay. A
+#    failure that is not changed SQL stops here, before PUB400. Changed SQL
+#    is written to the goldens / corpus (--update-goldens, --update-corpus),
+#    which clears its stamps.
+# 2. scripts/verify.py select: the unverified goldens (and the create goldens
+#    they need), the own IBM i tests that are new or changed against the base
+#    (the full own tier when shared own-test code changed), one Django test
+#    per unverified corpus entry and the tests that left the skip lists,
+#    collapsed into class / module labels.
+# 3. On IBM i, each run through the PUB400 lock: the goldens stamp themselves
+#    when they pass; the Django runs capture their statements.
+# 4. scripts/verify.py finish: stamps the corpus entries a passing test sent,
+#    writes test-results/verify/<django>/report.txt.
+#
+# Results land in the working tree for review; nothing is committed. Fetch
+# first (git fetch origin) for an up-to-date base. Exit codes: 0 everything
+# verified; 1 an offline failure that is not changed SQL (nothing ran on
+# IBM i); 2 wrong usage; 3 an IBM i run failed or something is unverified.
+
+source "$(dirname "$0")/_common.sh"
+common_args "$@"
+
+django=$(newest_django)
+base=origin/main
+limits=()
+set -- ${ARGS[@]+"${ARGS[@]}"}
+while [ $# -gt 0 ]; do
+    case $1 in
+        --django) django=${2:?--django needs a version}; shift 2 ;;
+        --base) base=${2:?--base needs a git ref}; shift 2 ;;
+        --max-labels | --max-runs)
+            limits+=("$1" "${2:?$1 needs a number}")
+            shift 2
+            ;;
+        *) die "unknown argument: $1 (see --help)" ;;
+    esac
+done
+python=$(nox_combinations | awk -v d="$django" '$2 == d { p = $1 } END { print p }')
+[ -n "$python" ] || die "Django $django is not supported (noxfile.py)"
+
+dir=test-results/verify/$django
+verify() {
+    container uv run --no-project python scripts/verify.py "$@"
+}
+
+run mkdir -p "$ROOT/$dir"
+run rm -f "$ROOT/$dir/offline.xml" "$ROOT/$dir/corpus.xml" "$ROOT/$dir/results.txt"
+container nox -s "offline($python-django$django)" -- "--junitxml=$dir/offline.xml" || true
+container nox -s "corpus($python-django$django)" -- "--junitxml=$dir/corpus.xml" || true
+status=0
+verify triage "$django" || status=$?
+updated=()
+case $status in
+    0) ;;
+    4)
+        container nox -s "offline($python-django$django)" -- --update-goldens \
+            || die "writing the new goldens failed (see above)"
+        container nox -s "corpus($python-django$django)" -- --update-corpus \
+            || die "writing the new corpus SQL failed (see above)"
+        updated=(--updated)
+        ;;
+    *) exit 1 ;;
+esac
+
+status=0
+verify select "$django" --base "$base" ${limits[@]+"${limits[@]}"} || status=$?
+if [ "$status" != 0 ]; then
+    if [ "${#updated[@]}" -gt 0 ]; then
+        echo "WARNING: new SQL was written to the goldens / corpus but it is NOT verified" \
+            "on IBM i. Review it before committing (git diff tests/offline)." >&2
+    fi
+    exit 3
+fi
+
+ibmi_runs "$django" "$ROOT/$dir/runs.txt" "$ROOT/$dir/results.txt" 1 || true
+verify finish "$django" ${updated[@]+"${updated[@]}"}
