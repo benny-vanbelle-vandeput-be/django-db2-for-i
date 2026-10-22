@@ -4,7 +4,8 @@
 #   bin/ibmi-test own <selector> [...]      own IBM i tests: test ids or pytest options
 #                                           (bin/ibmi-test own tests/pub400/test_schema.py,
 #                                           bin/ibmi-test own -k goldens)
-#   bin/ibmi-test django <label> [...]      Django test modules or ids (--clean), one run per label
+#   bin/ibmi-test django <label> [...]      Django test modules or ids (--clean), one run per label;
+#                                           every label runs, also after one failed
 #   bin/ibmi-test --full-tier               the full own IBM i tests (needs-full-tier)
 #   bin/ibmi-test --affected                the tests bin/verify would select (no stamps
 #                                           written, no corpus capture; scripts/verify.py)
@@ -66,9 +67,15 @@ case $mode in
         ;;
     django)
         [ "${#rest[@]}" -gt 0 ] || die "name the Django test labels (never the full suite)"
+        # Every label runs, also after one failed; the exit code says whether all passed.
+        failed=()
         for label in "${rest[@]}"; do
-            run "$ROOT/scripts/runtests.sh" "$django" --clean "$label"
+            run "$ROOT/scripts/runtests.sh" "$django" --clean "$label" || failed+=("$label")
         done
+        if [ "${#failed[@]}" -gt 0 ]; then
+            echo "ibmi-test: failed: ${failed[*]}" >&2
+            exit 1
+        fi
         ;;
     *) die "choose own, django or --full-tier (see --help)" ;;
 esac
