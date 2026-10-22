@@ -71,6 +71,45 @@ def test_sequences(live) -> None:
         assert live.introspection.get_sequences(cursor, "testapp_tag") == []
 
 
+def test_constraints(live) -> None:
+    """get_constraints() on a table with a primary key, a foreign key, a column
+    check and two indexes; the primary key and the check have names Db2 chose."""
+    with live.cursor() as cursor:
+        constraints = live.introspection.get_constraints(cursor, "testapp_book")
+        primary_key = live.introspection.get_primary_key_column(cursor, "testapp_book")
+        tag = live.introspection.get_constraints(cursor, "testapp_tag")
+        account = live.introspection.get_constraints(cursor, "testapp_account")
+
+    def kinds(found: dict) -> list[tuple]:
+        return sorted(
+            (
+                entry["columns"],
+                entry["primary_key"],
+                entry["unique"],
+                entry["foreign_key"] or (),
+                entry["check"],
+                entry["index"],
+            )
+            for entry in found.values()
+        )
+
+    assert kinds(constraints) == [
+        (["author_id"], False, False, (), False, True),
+        (["author_id"], False, False, ("testapp_author", "id"), False, False),
+        (["id"], True, True, (), False, False),
+        (["pages"], False, False, (), True, False),
+        (["title"], False, False, (), False, True),
+    ]
+    assert primary_key == "id"
+    index = constraints["testapp_book_title_c797b345"]
+    assert (index["orders"], index["type"]) == (["ASC"], "idx")
+    assert sorted(entry["columns"] for entry in tag.values() if entry["unique"]) == [
+        ["id"],
+        ["label"],
+    ]
+    assert ["company", "number"] in [entry["columns"] for entry in account.values()]
+
+
 def test_foreign_keys_are_no_action(live) -> None:
     with live.cursor() as cursor:
         cursor.execute(
