@@ -1414,3 +1414,24 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   test concern, and it misses raw DDL); a list per checkout in
   `test-results/` (a crashed run in one worktree could not be cleaned up from
   another); dropping by name pattern (could hit a table we did not create).
+
+## 2026-10-22: Every pub400 module that creates testapp tables owns the marker
+- **Decision (project owner chose it):** the `testapp_tables` fixture works in
+  a marked library, like the golden check: both use
+  `tests/pub400/marked_library.py`, which runs the creation safety gate and
+  writes `DJDB2I_TEST_MARKER` before the module creates its tables, and drops
+  everything not in the marker's snapshot, then the marker, at teardown. The
+  marker has one owner at a time: the PUB400 lock allows one job, and a second
+  `marked_library()` inside the job fails instead of sharing it.
+  `test_creation.py` keeps its own fixture (it tests the marker itself and
+  requires an empty library, so no other owner can exist).
+- **Why:** `bin/ibmi-cleanup` only drops in a marked library (phase 4
+  decision 16). Without a marker, a crash in an ordinary own IBM i test left
+  tables that the cleanup refused and that blocked the next run until the
+  maintainer approved a manual drop. With the marker, the next run's setup
+  also drops a crashed module's leftovers, as for Django test runs.
+- **Alternatives:** leave the gap (a manual approval after every crash);
+  let `bin/ibmi-cleanup` drop listed tables in an unmarked library (weakens
+  the rule that protects libraries that may not be test libraries); one
+  session-wide marker (the golden check needs an empty library of its own,
+  so the modules would still have to hand the marker over).

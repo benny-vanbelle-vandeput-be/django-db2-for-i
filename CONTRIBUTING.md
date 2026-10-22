@@ -123,7 +123,10 @@ Offline · own tests run the same check) and `draft` shows the resulting section
 Tests that write to the IBM i use the tests.testapp tables: a module asks for
 them with `pytestmark = pytest.mark.usefixtures("testapp_tables")`
 (`tests/pub400/conftest.py`), which creates the tables for that module and
-drops them again. Put a test in the module of its area (`test_schema.py`,
+drops them again. It works in a marked library (`tests/pub400/marked_library.py`):
+the `DJDB2I_TEST_MARKER` table is written first, so `bin/ibmi-cleanup` can drop
+what a crashed module left, and teardown leaves the library without tables,
+marker included. Put a test in the module of its area (`test_schema.py`,
 `test_queries.py`, `test_aggregates.py`, ...).
 
 Run sessions that connect to PUB400 from the host with `scripts/pub400.sh`
