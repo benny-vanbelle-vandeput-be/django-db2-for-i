@@ -180,6 +180,12 @@ def unverified_goldens(django: str, unverifiable: Iterable[str] = ()) -> list[st
     return sorted(wanted)
 
 
+def is_unverified(django: str, name: str) -> bool:
+    return any(
+        read(path).verified == UNVERIFIED for path in (GOLDEN_ROOT / django).glob(f"*/{name}.sql")
+    )
+
+
 def corpus_test_ids(django: str) -> list[str]:
     """One test id per unverified corpus entry, preferring ids that already cover another."""
     directory = store.corpus_dir(django)
@@ -395,6 +401,7 @@ def select(django: str, base: str, max_labels: int = MAX_LABELS, max_runs: int =
     paths = changed_paths(base_commit)
 
     goldens = unverified_goldens(django, unverifiable_names(django))
+    unverified = [name for name in goldens if is_unverified(django, name)]
     own = own_selection(paths, lambda p: text_at(base_commit, p), current_text)
     corpus_ids = corpus_test_ids(django)
     unlisted = unlisted_test_ids(
@@ -423,6 +430,7 @@ def select(django: str, base: str, max_labels: int = MAX_LABELS, max_runs: int =
                 "base": base,
                 "merge_base": base_commit,
                 "goldens": goldens,
+                "unverified_goldens": unverified,
                 "own_full": own.full,
                 "own_tests": own.tests,
                 "corpus_test_ids": corpus_ids,
@@ -569,12 +577,16 @@ def finish(django: str, updated: bool, stamp: bool = True) -> int:
         lines += [f"  unverified: {name}" for name in unverified_goldens_left]
         lines.append(f"corpus entries: {stamped} stamped, {remaining} still unverified")
         lines.append("")
-        lines.append(
-            "The stamps are in the working tree; review them (git diff) and commit them"
-            " yourself: bin/verify never commits."
-            if not problem
-            else "Nothing was committed."
-        )
+        # The goldens that were unverified when selected and are verified now got a stamp.
+        unverified_before = selection.get("unverified_goldens", selection["goldens"])
+        written = stamped or any(goldens.get(name) == "verified" for name in unverified_before)
+        if written:
+            lines.append(
+                "The new stamps are in the working tree; review them (git diff) and commit"
+                " them yourself: bin/verify never commits."
+            )
+        else:
+            lines.append("No stamps were written; nothing was committed.")
     report = "\n".join(lines) + "\n"
     (directory / "report.txt").write_text(report)
     print(report, end="")

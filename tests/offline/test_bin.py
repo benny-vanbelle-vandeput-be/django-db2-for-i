@@ -382,3 +382,13 @@ def test_ibmi_runs_runs_every_line_and_records_the_results(tmp_path) -> None:
     refused = run_bin(str(script), "1", str(tmp_path), tmp_path=tmp_path)
     assert refused.stdout.splitlines() == ["status=1"]
     assert "no .env in this checkout" in refused.stderr
+
+
+def test_git_never_trusts_every_directory() -> None:
+    """safe.directory names exact paths only (the mount, a checkout), never '*'."""
+    files = [ROOT / "noxfile.py", ROOT / "compose.yaml", *BIN.glob("*")]
+    for pattern in ("scripts/*", "docker/*", "probes/*.py", ".github/workflows/*", "tests/*.py"):
+        files += ROOT.glob(pattern)
+    star = re.compile(r"safe\.directory\s*[= ]\s*['\"]?\*")
+    offenders = [str(p) for p in files if p.is_file() and star.search(p.read_text())]
+    assert offenders == []

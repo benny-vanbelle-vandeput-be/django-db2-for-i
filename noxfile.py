@@ -93,7 +93,7 @@ def django_checkout(session: nox.Session, django: str, commit: str) -> str:
         if not (path / ".git").exists():
             return ""
         return session.run(
-            "git", "-c", "safe.directory=*", "-C", str(path), "rev-parse", "HEAD",
+            "git", "-c", f"safe.directory={path.resolve()}", "-C", str(path), "rev-parse", "HEAD",
             external=True, silent=True,
         ).strip()  # fmt: skip
 
@@ -103,7 +103,8 @@ def django_checkout(session: nox.Session, django: str, commit: str) -> str:
     cache = pathlib.Path(".nox/_django") / commit
     if head(cache) != commit:
         cache.mkdir(parents=True, exist_ok=True)
-        git = ["git", "-c", "safe.directory=*", "-C", str(cache)]
+        # Only this checkout is trusted by git, never every directory.
+        git = ["git", "-c", f"safe.directory={cache.resolve()}", "-C", str(cache)]
         if not (cache / ".git").exists():
             session.run(*git, "init", "-q", external=True)
             session.run(
