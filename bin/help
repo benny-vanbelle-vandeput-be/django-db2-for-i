@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# bin/help: the workflow guide (docs/WORKFLOW.md) in the terminal.
+#
+#   bin/help                the quick start and the list of topics
+#   bin/help <topic>        one topic, e.g. bin/help change
+#   bin/help --dry-run      print what would be shown, nothing else (same as without)
+#   bin/help --help
+#
+# Reads docs/WORKFLOW.md only: no container, no network, no IBM i.
+
+source "$(dirname "$0")/_common.sh"
+common_args "$@"
+
+GUIDE=$ROOT/docs/WORKFLOW.md
+[ -f "$GUIDE" ] || die "docs/WORKFLOW.md is missing"
+[ "${#ARGS[@]}" -le 1 ] || die "one topic at a time (bin/help lists them)"
+
+# section <heading prefix>: the lines of one "## " section, heading included.
+section() {
+    awk -v want="$1" '
+        /^## / { inside = (index($0, want) == 1) }
+        inside { print }
+    ' "$GUIDE"
+}
+
+topics() { # "## <topic>: <summary>" headings
+    sed -n 's/^## \([a-z][a-z]*\): \(.*\)$/  \1|\2/p' "$GUIDE" \
+        | awk -F'|' '{ printf "%-18s %s\n", $1, $2 }'
+}
+
+if [ "${#ARGS[@]}" = 0 ]; then
+    section "## Quick start"
+    echo "## Topics (bin/help <topic>)"
+    echo
+    topics
+    exit 0
+fi
+topic=${ARGS[0]}
+case $topic in
+    *[!a-z]* | '') die "unknown topic: $topic (bin/help lists them)" ;;
+esac
+text=$(section "## $topic: ")
+[ -n "$text" ] || die "unknown topic: $topic (bin/help lists them)"
+printf '%s\n' "$text"
