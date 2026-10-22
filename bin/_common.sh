@@ -113,6 +113,11 @@ ibmi_runs() {
         return 0
     fi
     : >"$results"
+    if [ -s "$runs" ] && [ ! -e "$ROOT/.env" ]; then
+        # Existence only: the file is never read here (docker compose loads it).
+        echo "$(basename "$0"): no .env in this checkout; no IBM i run started (bin/doctor)" >&2
+        return 1
+    fi
     # fd 3: docker compose reads standard input.
     while IFS="$tab" read -r kind args <&3; do
         args=${args//$tab/ }

@@ -351,20 +351,21 @@ def test_ibmi_runs_runs_every_line_and_records_the_results(tmp_path) -> None:
     )
     results = tmp_path / "results.txt"
     script = tmp_path / "runs.sh"
+    (tmp_path / ".env").touch()
     script.write_text(
-        f'source "{BIN}/_common.sh"\n'
+        f'source "{BIN}/_common.sh"\nROOT="$2"\n'
         # The full tier fails; the runs after it still run.
         'pub400() { echo "pub400 $*"; [ "$#" != 3 ] || [ "$3" != --create-db ]; }\n'
         'run() { echo "run $*"; }\n'
         f'ibmi_runs 6.1 "{runs}" "{results}" "$1" < /dev/null || echo "status=$?"\n'
     )
-    stamped = run_bin(str(script), "1", tmp_path=tmp_path).stdout.splitlines()
+    stamped = run_bin(str(script), "1", str(tmp_path), tmp_path=tmp_path).stdout.splitlines()
     assert stamped == [
         "pub400 pub400 6.1 tests/pub400/test_goldens.py --goldens-from "
         "test-results/verify/6.1/goldens.txt --record-verification",
         "pub400 pub400 6.1 --create-db",
         "pub400 pub400 6.1 --create-db tests/pub400/test_a.py::test_x tests/pub400/test_b.py",
-        f"run {ROOT}/scripts/runtests.sh 6.1 --clean --capture a.tests.A.test_1 b.tests c",
+        f"run {tmp_path}/scripts/runtests.sh 6.1 --clean --capture a.tests.A.test_1 b.tests c",
         "status=1",
     ]
     assert results.read_text().splitlines() == [
@@ -373,6 +374,11 @@ def test_ibmi_runs_runs_every_line_and_records_the_results(tmp_path) -> None:
         "own\ttests/pub400/test_a.py::test_x tests/pub400/test_b.py\t0",
         "django\ta.tests.A.test_1 b.tests c\t0",
     ]
-    plain = run_bin(str(script), "0", tmp_path=tmp_path).stdout.splitlines()
+    plain = run_bin(str(script), "0", str(tmp_path), tmp_path=tmp_path).stdout.splitlines()
     assert "--record-verification" not in plain[0]
-    assert plain[3] == f"run {ROOT}/scripts/runtests.sh 6.1 --clean a.tests.A.test_1 b.tests c"
+    assert plain[3] == f"run {tmp_path}/scripts/runtests.sh 6.1 --clean a.tests.A.test_1 b.tests c"
+    # Without .env (checked for existence only) no run starts.
+    (tmp_path / ".env").unlink()
+    refused = run_bin(str(script), "1", str(tmp_path), tmp_path=tmp_path)
+    assert refused.stdout.splitlines() == ["status=1"]
+    assert "no .env in this checkout" in refused.stderr
