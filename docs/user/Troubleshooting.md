@@ -105,6 +105,37 @@ when the Python process does not run in a UTF-8 locale, for example with
 it in its environment, e.g. `Environment=LANG=C.UTF-8` in a systemd unit).
 See [Known limitations](Known-Limitations.md#run-in-a-utf-8-locale).
 
+## Columns not in the order of the model's fields
+
+**Not an error.** A table's columns follow the order of the model's fields in
+Django (`Model._meta.local_fields`), and the backend writes `CREATE TABLE`
+in exactly that order. Django orders fields by the order in which the field
+objects were created, not by the order of the base classes: fields inherited
+from an abstract base class or a mixin are copies that keep their original
+position, so they usually come **before** the model's own fields, in the
+order the bases were defined in their modules. For example:
+
+```python
+class TimestampedMixin(models.Model):
+    created = models.DateTimeField(null=True)
+    class Meta:
+        abstract = True
+
+class TitledBase(models.Model):
+    title = models.CharField(max_length=50)
+    class Meta:
+        abstract = True
+
+class Article(TimestampedMixin, TitledBase):
+    body = models.CharField(max_length=100)
+```
+
+gives the columns `ID, CREATED, TITLE, BODY`. A field added later with a
+migration (`AddField`) is appended at the end of the table, as `ALTER TABLE
+... ADD COLUMN` always appends on Db2 for i. Code that needs a fixed column
+order should name the columns (`SELECT ID, TITLE ...`), not rely on
+`SELECT *`.
+
 ## More errors
 
 > **Not documented yet.** Further entries (sign-on failures, TLS certificate
