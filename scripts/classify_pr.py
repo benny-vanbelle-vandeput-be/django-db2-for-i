@@ -120,6 +120,7 @@ DOCS_PATHS = {
     "scripts/verify_release_tag.py": "offline tooling",
     "bin/check": "offline tooling (what CI does)",
     "bin/status": "offline tooling (status pages)",
+    "bin/setup": "first-time setup (images, .env template, vendor/ checkouts)",
     ".github/": "CI (never connects to an IBM i)",
     ".devcontainer/": "editor setup",
     ".claude/": "editor setup",
