@@ -156,7 +156,11 @@ def run_bin(*args: str, tmp_path: Path) -> subprocess.CompletedProcess:
 
 
 # The arguments a dry run of each script needs (none: the script's default action).
-DRY_RUN_ARGS = {"probe": ["reachability"], "ibmi-test": ["--full-tier"]}
+DRY_RUN_ARGS = {
+    "probe": ["reachability"],
+    "ibmi-test": ["--full-tier"],
+    "release-prepare": ["0.1.0a5"],
+}
 
 
 @needs_bin
