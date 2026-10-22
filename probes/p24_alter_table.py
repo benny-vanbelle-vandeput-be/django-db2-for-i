@@ -1,0 +1,494 @@
+"""Probe 24: ALTER TABLE, renames, indexes and row length in QTEMP (phase 4, step A).
+
+Writes only to QTEMP (tables and indexes that disappear with the job). It
+changes no job attribute: it reads the job's inquiry message reply and runs
+only when it is *RQD (the database host server's default, IBMI_NOTES), so a
+statement that sends inquiry message CPA32B2 is cancelled (HY008) and
+changes nothing, and the job never waits.
+
+Every statement runs on a fresh one-row table and records the outcome
+(SQLSTATE, SQLCODE, message), the last job log messages (CPD32CE / CPF7304
+mean CPA32B2 cancelled it) and the column as the driver describes it
+afterwards (type code, size, precision, scale, nullable) with the row's value:
+
+- ALTER COLUMN ... SET DATA TYPE and ... TYPE, widening, narrowing and
+  cross-family (INTEGER, BIGINT, DECIMAL, NVARCHAR, NCLOB, BOOLEAN);
+- DROP NOT NULL, SET NOT NULL (with and without NULLs), SET / DROP DEFAULT;
+- RENAME COLUMN, ALTER TABLE ... RENAME TO, RENAME TABLE ... TO and the
+  system name of a renamed table (short and long name);
+- ALTER INDEX ... RENAME TO and RENAME INDEX ... TO;
+- identity: SET GENERATED ... AS IDENTITY on a plain column, DROP IDENTITY,
+  ADD COLUMN ... AS IDENTITY;
+- several clauses in one ALTER TABLE (supports_combined_alters);
+- where ADD COLUMN puts the column, and the column order of CREATE TABLE;
+- CREATE INDEX with DESC, on an NCLOB column, with a long name (and the
+  system name the index gets);
+- COMMENT ON TABLE / COLUMN with text in and outside the job CCSID
+  (UX'...' literals; supports_comments, phase 4 decision 7);
+- the largest NOT NULL CHAR(n) and nullable CHAR(n) a one-column table
+  takes (the CHAR limit), and the largest total of two and three NOT NULL
+  CHAR columns (the maximum row length).
+
+Findings go to docs/IBMI_NOTES.md.
+"""
+
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+from typing import Any
+
+from _common import Settings
+
+NEEDS_CONNECTION = True
+AUTOCOMMIT = True
+BACKEND = {"CMT": "1", "TRUEAUTOCOMMIT": "1", "NAM": "0", "DFT": "5", "TFT": "2"}
+_SQLCODE = re.compile(r"\((-?\d+)\)")
+_PREFIX = re.compile(r"^(\[[^\]]*\]\s*)+")
+
+TABLE = "QTEMP.P24T"
+# One row: ID 1, I 5, BI 5, D 1.50, V 'abc', C 'text', B TRUE, N NULL, NN 0.
+CREATE = (
+    f"CREATE TABLE {TABLE} (ID INTEGER, I INTEGER, BI BIGINT, D DECIMAL(9, 2), "
+    "V NVARCHAR(20), C NCLOB(1M), B BOOLEAN, N INTEGER, NN INTEGER NOT NULL DEFAULT 0)"
+)
+INSERT = (
+    f"INSERT INTO {TABLE} (ID, I, BI, D, V, C, B, N) "
+    "VALUES (1, 5, 5, 1.50, 'abc', 'text', TRUE, NULL) WITH NC"
+)
+JOB_LOG = (
+    "SELECT MESSAGE_ID FROM TABLE(QSYS2.JOBLOG_INFO('*')) X "
+    "ORDER BY ORDINAL_POSITION DESC FETCH FIRST 5 ROWS ONLY"
+)
+
+# (label, column described afterwards, statement); {t} is the table.
+TYPES = [
+    ("INTEGER -> BIGINT (widen)", "I", "ALTER TABLE {t} ALTER COLUMN I SET DATA TYPE BIGINT"),
+    ("INTEGER -> BIGINT, TYPE form", "I", "ALTER TABLE {t} ALTER COLUMN I TYPE BIGINT"),
+    ("BIGINT -> INTEGER (narrow)", "BI", "ALTER TABLE {t} ALTER COLUMN BI SET DATA TYPE INTEGER"),
+    (
+        "INTEGER -> DECIMAL(15, 2)",
+        "I",
+        "ALTER TABLE {t} ALTER COLUMN I SET DATA TYPE DECIMAL(15, 2)",
+    ),
+    ("DECIMAL(9, 2) -> INTEGER", "D", "ALTER TABLE {t} ALTER COLUMN D SET DATA TYPE INTEGER"),
+    (
+        "DECIMAL(9, 2) -> DECIMAL(12, 2)",
+        "D",
+        "ALTER TABLE {t} ALTER COLUMN D SET DATA TYPE DECIMAL(12, 2)",
+    ),
+    (
+        "DECIMAL(9, 2) -> DECIMAL(11, 4)",
+        "D",
+        "ALTER TABLE {t} ALTER COLUMN D SET DATA TYPE DECIMAL(11, 4)",
+    ),
+    (
+        "DECIMAL(9, 2) -> DECIMAL(7, 2) (narrow)",
+        "D",
+        "ALTER TABLE {t} ALTER COLUMN D SET DATA TYPE DECIMAL(7, 2)",
+    ),
+    (
+        "NVARCHAR(20) -> NVARCHAR(40)",
+        "V",
+        "ALTER TABLE {t} ALTER COLUMN V SET DATA TYPE NVARCHAR(40)",
+    ),
+    (
+        "NVARCHAR(20) -> NVARCHAR(10) (narrow)",
+        "V",
+        "ALTER TABLE {t} ALTER COLUMN V SET DATA TYPE NVARCHAR(10)",
+    ),
+    ("NVARCHAR(20) -> NCLOB(1M)", "V", "ALTER TABLE {t} ALTER COLUMN V SET DATA TYPE NCLOB(1M)"),
+    (
+        "NCLOB(1M) -> NVARCHAR(100)",
+        "C",
+        "ALTER TABLE {t} ALTER COLUMN C SET DATA TYPE NVARCHAR(100)",
+    ),
+    ("BOOLEAN -> SMALLINT", "B", "ALTER TABLE {t} ALTER COLUMN B SET DATA TYPE SMALLINT"),
+    ("INTEGER -> BOOLEAN", "I", "ALTER TABLE {t} ALTER COLUMN I SET DATA TYPE BOOLEAN"),
+]
+NULLS_DEFAULTS = [
+    ("SET NOT NULL, no NULLs", "I", "ALTER TABLE {t} ALTER COLUMN I SET NOT NULL"),
+    ("SET NOT NULL, a NULL in the row", "N", "ALTER TABLE {t} ALTER COLUMN N SET NOT NULL"),
+    ("DROP NOT NULL", "NN", "ALTER TABLE {t} ALTER COLUMN NN DROP NOT NULL"),
+    ("SET DEFAULT", "I", "ALTER TABLE {t} ALTER COLUMN I SET DEFAULT 7"),
+    ("DROP DEFAULT", "NN", "ALTER TABLE {t} ALTER COLUMN NN DROP DEFAULT"),
+]
+RENAMES = [
+    ("RENAME COLUMN", "I2", "ALTER TABLE {t} RENAME COLUMN I TO I2"),
+]
+IDENTITY = [
+    (
+        "SET GENERATED BY DEFAULT AS IDENTITY on a plain column",
+        "ID",
+        "ALTER TABLE {t} ALTER COLUMN ID SET GENERATED BY DEFAULT AS IDENTITY (START WITH 2)",
+    ),
+    (
+        "SET GENERATED ALWAYS AS IDENTITY on a plain column",
+        "ID",
+        "ALTER TABLE {t} ALTER COLUMN ID SET GENERATED ALWAYS AS IDENTITY (START WITH 2)",
+    ),
+    (
+        "ADD COLUMN ... GENERATED BY DEFAULT AS IDENTITY",
+        "X",
+        "ALTER TABLE {t} ADD COLUMN X INTEGER GENERATED BY DEFAULT AS IDENTITY",
+    ),
+]
+COMBINED = [
+    (
+        "two ALTER COLUMN clauses",
+        "V",
+        "ALTER TABLE {t} ALTER COLUMN I SET DEFAULT 1 ALTER COLUMN V SET DATA TYPE NVARCHAR(40)",
+    ),
+    (
+        "ADD COLUMN and ALTER COLUMN",
+        "Z",
+        "ALTER TABLE {t} ADD COLUMN Z INTEGER ALTER COLUMN I SET DEFAULT 1",
+    ),
+    (
+        "two ADD COLUMN clauses",
+        "Z2",
+        "ALTER TABLE {t} ADD COLUMN Z1 INTEGER ADD COLUMN Z2 INTEGER",
+    ),
+    (
+        "comma-separated clauses",
+        "Z1",
+        "ALTER TABLE {t} ADD COLUMN Z1 INTEGER, ALTER COLUMN I SET DEFAULT 1",
+    ),
+]
+# Text outside a single-byte job CCSID: Cyrillic, the euro sign, a check mark.
+UNICODE_TEXT = "Ж € ✓"
+
+
+def connection_attributes(settings: Settings) -> dict[str, str]:
+    import pyodbc
+
+    pyodbc.pooling = False
+    return BACKEND
+
+
+def _inquiry():
+    root = Path(__file__).resolve().parents[1]
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    from django_db2_for_i import inquiry
+
+    return inquiry
+
+
+def _execute(conn, sql: str, params=()) -> dict[str, Any]:
+    import pyodbc
+
+    cursor = conn.cursor()
+    try:
+        cursor.execute(sql, params)
+        return {"result": "ok"}
+    except pyodbc.Error as exc:
+        sqlstate = str(exc.args[0]) if exc.args else ""
+        message = str(exc.args[1] if len(exc.args) > 1 else exc)
+        match = _SQLCODE.search(message)
+        return {
+            "result": "error",
+            "sqlstate": sqlstate,
+            "sqlcode": int(match.group(1)) if match else None,
+            "message": _PREFIX.sub("", message)[:120],
+        }
+    finally:
+        cursor.close()
+
+
+def _rows(conn, sql: str, params=()) -> list:
+    import pyodbc
+
+    cursor = conn.cursor()
+    try:
+        cursor.execute(sql, params)
+        return [list(row) for row in cursor.fetchall()]
+    except pyodbc.Error as exc:
+        return [["error", str(exc.args[0]) if exc.args else ""]]
+    finally:
+        cursor.close()
+
+
+def _describe(conn, column: str) -> dict[str, Any]:
+    """The column as the driver describes it, and the row's value."""
+    import pyodbc
+
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"SELECT {column} FROM {TABLE}")
+        row = cursor.fetchone()
+        _name, type_code, _display, size, precision, scale, nullable = cursor.description[0]
+        return {
+            "type": getattr(type_code, "__name__", str(type_code)),
+            "size": size,
+            "precision": precision,
+            "scale": scale,
+            "nullable": nullable,
+            "value": repr(row[0]) if row else None,
+        }
+    except pyodbc.Error as exc:
+        return {"describe": "error", "sqlstate": str(exc.args[0]) if exc.args else ""}
+    finally:
+        cursor.close()
+
+
+def _column_order(conn, table: str = TABLE) -> list[str]:
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"SELECT * FROM {table} FETCH FIRST 1 ROW ONLY")
+        return [column[0] for column in cursor.description]
+    finally:
+        cursor.close()
+
+
+def _drop_all(conn) -> None:
+    for sql in (
+        "DROP INDEX QTEMP.P24I",
+        "DROP INDEX QTEMP.P24J",
+        "DROP INDEX QTEMP.P24K",
+        f"DROP TABLE {TABLE}",
+        "DROP TABLE QTEMP.P24R",
+        "DROP TABLE QTEMP.P24_RENAMED_WITH_A_LONG_NAME",
+        "DROP TABLE QTEMP.P24ID",
+    ):
+        _execute(conn, sql)
+
+
+def _fresh(conn) -> None:
+    _drop_all(conn)
+    for sql in (CREATE, INSERT):
+        outcome = _execute(conn, sql)
+        if outcome["result"] != "ok":
+            raise RuntimeError(f"setup failed: {sql}: {outcome}")
+
+
+def _case(conn, column: str, sql: str) -> dict[str, Any]:
+    _fresh(conn)
+    outcome = _execute(conn, sql.format(t=TABLE))
+    outcome["job log"] = [row[0] for row in _rows(conn, JOB_LOG)]
+    outcome["after"] = _describe(conn, column)
+    return outcome
+
+
+def _system_names(conn, prefix: str) -> list:
+    """Objects in QTEMP whose system name starts with ``prefix`` (OBJECT_STATISTICS)."""
+    return _rows(
+        conn,
+        "SELECT OBJNAME, OBJLONGNAME, OBJATTRIBUTE "
+        "FROM TABLE(QSYS2.OBJECT_STATISTICS('QTEMP', '*FILE')) X "
+        "WHERE OBJNAME LIKE ? ORDER BY OBJNAME",
+        (f"{prefix}%",),
+    )
+
+
+def table_renames(conn) -> dict[str, Any]:
+    results = {}
+    for label, sql, new in (
+        ("ALTER TABLE ... RENAME TO", f"ALTER TABLE {TABLE} RENAME TO P24R", "QTEMP.P24R"),
+        ("RENAME TABLE ... TO", f"RENAME TABLE {TABLE} TO P24R", "QTEMP.P24R"),
+        (
+            "RENAME TABLE ... TO a long name",
+            f"RENAME TABLE {TABLE} TO P24_RENAMED_WITH_A_LONG_NAME",
+            "QTEMP.P24_RENAMED_WITH_A_LONG_NAME",
+        ),
+        (
+            "RENAME TABLE ... TO a long name FOR SYSTEM NAME",
+            f"RENAME TABLE {TABLE} TO P24_RENAMED_WITH_A_LONG_NAME FOR SYSTEM NAME P24R",
+            "QTEMP.P24_RENAMED_WITH_A_LONG_NAME",
+        ),
+    ):
+        _fresh(conn)
+        outcome = _execute(conn, sql)
+        outcome["new name readable"] = _execute(conn, f"SELECT ID FROM {new}")["result"] == "ok"
+        outcome["system names"] = _system_names(conn, "P24")
+        results[label] = outcome
+    return results
+
+
+def index_cases(conn) -> dict[str, Any]:
+    results = {}
+    for label, setup, sql, check in (
+        (
+            "ALTER INDEX ... RENAME TO",
+            f"CREATE INDEX QTEMP.P24I ON {TABLE} (I)",
+            "ALTER INDEX QTEMP.P24I RENAME TO P24J",
+            "P24J",
+        ),
+        (
+            "RENAME INDEX ... TO",
+            f"CREATE INDEX QTEMP.P24I ON {TABLE} (I)",
+            "RENAME INDEX QTEMP.P24I TO P24J",
+            "P24J",
+        ),
+        (
+            "CREATE INDEX with DESC",
+            None,
+            f"CREATE INDEX QTEMP.P24K ON {TABLE} (I DESC, V ASC)",
+            "P24K",
+        ),
+        (
+            "CREATE INDEX on an NCLOB column",
+            None,
+            f"CREATE INDEX QTEMP.P24K ON {TABLE} (C)",
+            "P24K",
+        ),
+        (
+            "CREATE INDEX with a long name",
+            None,
+            f"CREATE INDEX QTEMP.P24_AN_INDEX_WITH_A_VERY_LONG_NAME ON {TABLE} (I)",
+            "P24",
+        ),
+    ):
+        _fresh(conn)
+        if setup:
+            _execute(conn, setup)
+        outcome = _execute(conn, sql)
+        outcome["system names"] = _system_names(conn, check)
+        results[label] = outcome
+        _execute(conn, "DROP INDEX QTEMP.P24_AN_INDEX_WITH_A_VERY_LONG_NAME")
+    return results
+
+
+def identity_drop(conn) -> dict[str, Any]:
+    """DROP IDENTITY on a column created as an identity column."""
+    _drop_all(conn)
+    create = _execute(
+        conn,
+        "CREATE TABLE QTEMP.P24ID (ID INTEGER GENERATED BY DEFAULT AS IDENTITY, A INTEGER)",
+    )
+    _execute(conn, "INSERT INTO QTEMP.P24ID (A) VALUES (1) WITH NC")
+    outcome = _execute(conn, "ALTER TABLE QTEMP.P24ID ALTER COLUMN ID DROP IDENTITY")
+    outcome["create"] = create["result"]
+    outcome["insert without ID afterwards"] = _execute(
+        conn, "INSERT INTO QTEMP.P24ID (A) VALUES (2) WITH NC"
+    )
+    return outcome
+
+
+def column_order(conn) -> dict[str, Any]:
+    _fresh(conn)
+    created = _column_order(conn)
+    added = _execute(conn, f"ALTER TABLE {TABLE} ADD COLUMN AA INTEGER")
+    return {
+        "CREATE TABLE": created,
+        "ADD COLUMN AA": added,
+        "after ADD COLUMN": _column_order(conn),
+    }
+
+
+def _ux(text: str) -> str:
+    """A UX'...' literal (UTF-16 code units in hex), independent of the job CCSID."""
+    return "UX'" + text.encode("utf-16-be").hex().upper() + "'"
+
+
+def comments(conn) -> dict[str, Any]:
+    results = {}
+    for label, sql in (
+        ("COMMENT ON TABLE, ASCII text", f"COMMENT ON TABLE {TABLE} IS 'plain text'"),
+        ("COMMENT ON TABLE, UX literal", f"COMMENT ON TABLE {TABLE} IS {_ux(UNICODE_TEXT)}"),
+        ("COMMENT ON COLUMN, UX literal", f"COMMENT ON COLUMN {TABLE}.V IS {_ux(UNICODE_TEXT)}"),
+        ("LABEL ON COLUMN, UX literal", f"LABEL ON COLUMN {TABLE}.V IS {_ux(UNICODE_TEXT)}"),
+        ("COMMENT ON TABLE, plain literal", f"COMMENT ON TABLE {TABLE} IS '{UNICODE_TEXT}'"),
+        ("COMMENT ON TABLE, N literal", f"COMMENT ON TABLE {TABLE} IS N'{UNICODE_TEXT}'"),
+    ):
+        _fresh(conn)
+        outcome = _execute(conn, sql)
+        # Whether QTEMP appears in the catalog is probe 25's question; read what is there.
+        outcome["SYSTABLES.LONG_COMMENT"] = _rows(
+            conn,
+            "SELECT LONG_COMMENT FROM QSYS2.SYSTABLES "
+            "WHERE TABLE_SCHEMA = 'QTEMP' AND TABLE_NAME = 'P24T'",
+        )
+        outcome["SYSCOLUMNS.LONG_COMMENT"] = _rows(
+            conn,
+            "SELECT LONG_COMMENT, COLUMN_TEXT FROM QSYS2.SYSCOLUMNS "
+            "WHERE TABLE_SCHEMA = 'QTEMP' AND TABLE_NAME = 'P24T' AND COLUMN_NAME = 'V'",
+        )
+        results[label] = outcome
+    results["expected text"] = UNICODE_TEXT
+    return results
+
+
+def _largest(conn, nullable: bool, low: int = 32000, high: int = 33000) -> dict[str, Any]:
+    """The largest n for which CREATE TABLE (A CHAR(n) [NOT NULL]) works (bisection)."""
+    errors = {}
+    while high - low > 1:
+        middle = (low + high) // 2
+        _execute(conn, "DROP TABLE QTEMP.P24W")
+        null = "" if nullable else " NOT NULL"
+        outcome = _execute(conn, f"CREATE TABLE QTEMP.P24W (A CHAR({middle}){null})")
+        if outcome["result"] == "ok":
+            low = middle
+        else:
+            high = middle
+            errors[middle] = outcome
+    _execute(conn, "DROP TABLE QTEMP.P24W")
+    first_failure = errors.get(high, {})
+    return {"largest": low, "first failing": high, "error": first_failure}
+
+
+def _largest_row(conn, columns: int, low: int = 32000, high: int = 33000) -> dict[str, Any]:
+    """The largest total of ``columns`` NOT NULL CHAR columns (the last one varies)."""
+    first = 30000 // (columns - 1)
+    fixed = ", ".join(f"F{i} CHAR({first}) NOT NULL" for i in range(columns - 1))
+    errors = {}
+    while high - low > 1:
+        middle = (low + high) // 2
+        last = middle - first * (columns - 1)
+        _execute(conn, "DROP TABLE QTEMP.P24W")
+        outcome = _execute(conn, f"CREATE TABLE QTEMP.P24W ({fixed}, L CHAR({last}) NOT NULL)")
+        if outcome["result"] == "ok":
+            low = middle
+        else:
+            high = middle
+            errors[middle] = outcome
+    _execute(conn, "DROP TABLE QTEMP.P24W")
+    return {"columns": columns, "largest total": low, "error": errors.get(high, {})}
+
+
+def run(settings: Settings, conn) -> dict[str, Any]:
+    inquiry = _inquiry()
+    cursor = conn.cursor()
+    try:
+        reply = inquiry.read_reply(cursor)
+    finally:
+        cursor.close()
+    results: dict[str, Any] = {"inquiry message reply": reply}
+    if reply != "*RQD":
+        print(f"  the job's inquiry message reply is {reply}, not *RQD; nothing was run")
+        return results
+    groups = {
+        "types": TYPES,
+        "nulls and defaults": NULLS_DEFAULTS,
+        "renames": RENAMES,
+        "identity": IDENTITY,
+        "combined": COMBINED,
+    }
+    try:
+        for group, cases in groups.items():
+            results[group] = {}
+            for label, column, sql in cases:
+                results[group][label] = outcome = _case(conn, column, sql)
+                print(f"\n  {group}: {label}")
+                for key, value in outcome.items():
+                    print(f"    {key:<10} {value}")
+        for name, function in (
+            ("table renames", table_renames),
+            ("indexes", index_cases),
+            ("DROP IDENTITY", identity_drop),
+            ("column order", column_order),
+            ("comments", comments),
+        ):
+            results[name] = function(conn)
+            print(f"\n  {name}: {results[name]}")
+        results["row length"] = {
+            "CHAR(n) NOT NULL": _largest(conn, nullable=False),
+            "CHAR(n) nullable": _largest(conn, nullable=True),
+            "two NOT NULL CHAR columns": _largest_row(conn, 2),
+            "three NOT NULL CHAR columns": _largest_row(conn, 3),
+        }
+        print(f"\n  row length: {results['row length']}")
+    finally:
+        _drop_all(conn)
+    return results
