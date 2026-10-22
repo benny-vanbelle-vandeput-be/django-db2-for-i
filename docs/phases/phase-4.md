@@ -554,13 +554,55 @@ Approved on 2026-10-21; see "Decisions" at the end. Each one is linked to its
 [DECISIONS.md](../DECISIONS.md) entry.
 
 ## IBM i findings
-None yet. Probes 24 and 25 (QTEMP and read-only) and, if approved, w13 will
-add their findings to [IBMI_NOTES.md](../IBMI_NOTES.md).
+Step A, 2026-10-22, details in [IBMI_NOTES.md](../IBMI_NOTES.md):
+- probe 24 (`alter_table`, QTEMP): only `ALTER COLUMN ... SET DATA TYPE` (not
+  `TYPE`); `RENAME TABLE` and `RENAME INDEX`, but no `ALTER TABLE ... RENAME`
+  form for tables or columns; narrowing changes and `SET NOT NULL` (also
+  without NULLs) send CPA32B2; no identity can be added to an existing
+  column; clauses combine without commas; `ADD COLUMN` appends at the end; no
+  index on an `NCLOB` column; `COMMENT ON` cannot carry text outside the job
+  CCSID (`supports_comments` stays off); rows hold at most 32,766 bytes;
+- probe 25 (`catalog`, read-only): the columns of the catalog views
+  introspection needs; QTEMP objects never appear in them;
+- probe w13 (`constraints`, the default library): in its own PR.
 
 ## Test status at the end of the phase
 Not started. Baseline: see [TEST_STATUS.md](../TEST_STATUS.md) (seven
-supported modules on 6.1, 6.0 and 5.2; none of the phase 4 modules has been
-run yet).
+supported modules on 6.1, 6.0 and 5.2).
+
+**Baseline runs of the phase 4 modules** (decision 10; 6.1, PUB400,
+2026-10-22, backend `ddf6ed9`, `--clean`, through the PUB400 lock):
+
+| Module | Tests | Passed | Failures | Errors | Skipped | Duration |
+|---|---|---|---|---|---|---|
+| `introspection` | 24 | 7 | 0 | 9 | 8 | 2 min 50 s |
+| `schema` | 227 | 17 | 2 | 96 | 112 | 7 min 29 s |
+
+The 9 `introspection` errors: `get_constraints()` not implemented (3),
+`data_types_reverse` missing for `INTEGER` / `SMALLINT` / `BIGINT`
+(`KeyError`, 4), the test's own SQL ending in `;` (SQL0104, 2).
+
+The 98 `schema` failures and errors:
+
+| Count | Cause | Where it is solved |
+|---|---|---|
+| 28 | `data_types_reverse` missing (`KeyError: 'INTEGER'`) | step B (item 6) |
+| 20 | `get_constraints()` not implemented | step B (item 4) |
+| 18 | `ALTER COLUMN ... TYPE` (SQL0199): Db2 for i needs `SET DATA TYPE` | step C (item 7) |
+| 11 | `ALTER TABLE ... RENAME` (SQL0199): no such form | step C, rename forms |
+| 6 | CPA32B2, cancelled (HY008): DROP COLUMN, narrowing, SET NOT NULL | expected failures (decision 2) |
+| 4 | follow-ons: "Model already registered" after an `m2m` failure | with their cause |
+| 3 | missing tables (SQL0204) after the `m2m` failures | with their cause |
+| 2 | `NOT NULL clause not allowed` (SQL0109) | step C |
+| 2 | the test's own SQL ending in `;` (SQL0104) | to decide in step B |
+| 1 | two UNIQUE constraints on the same columns (SQL0541) | `allows_multiple_constraints_on_same_fields` (w13) |
+| 1 | an index on a text column (SQL0350, no `NCLOB` index) | step D (text-field indexes) |
+| 1 | index ordering not introspected (`test_composed_index_with_fk`) | step D |
+| 1 | `test_m2m`: expected `DatabaseError` not raised | step B / C |
+
+Durations: both modules together take about 10 minutes, far below the
+estimate for `schema` in decision 6 (part of the tests are skipped or fail
+early today; the estimate stays until the modules pass).
 
 ## Carried forward
 To be filled at the end of the phase. Known candidates:
