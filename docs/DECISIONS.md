@@ -1481,3 +1481,38 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   replaces a module, so entries of tests that did not run would be lost);
   selecting own tests by running pytest's collection on both revisions
   (needs a second checkout of the base in the container).
+
+## 2026-10-22: Release scripts: a resumable release run and a release PR that never tags
+- **Decision (project owner set the limits):** `bin/release-run` runs the
+  release run per Django version through the PUB400 lock (one lock per
+  version). `scripts/release_run.py` records each label's and the tier's
+  result in `test-results/<version>/release-run/state.json` as soon as it is
+  known, with the backend and Django commits; a start on the same commits
+  skips what passed and runs what failed or is missing, other commits or
+  `--restart` start over and first delete the version's old raw captures,
+  `--limit N` stops after N runs. When everything of a version passed, its
+  corpus is rebuilt in the working tree. `bin/release-prepare` checks every
+  precondition before writing anything (main checkout only, never a subagent
+  worktree; HEAD is `origin/main` with only the corpus changed; CI passed on
+  `main`; the gate; a newer version; changelog fragments; complete, passed
+  release runs for every supported Django version with the backend unchanged
+  since, by the PR classification), then opens the release PR. It never
+  tags, never creates or edits GitHub releases, never touches the release
+  workflow, needs no `.env`, and prints the maintainer's manual steps (merge,
+  sign and push the tag, create the GitHub release). `bin/setup` writes
+  `.env` only when there is none, from `.env.example` and values typed in a
+  terminal; Claude never runs it interactively.
+- **Why:** CLAUDE.md requires the release run to stay complete but allows it
+  to be spread over several nights; recording each result as it is known
+  makes an interruption (a dropped connection, the end of the night) cost
+  one label, not the run. Keying the state on both commits keeps a resumed
+  run from mixing results of different code. Clearing old captures at a
+  fresh start keeps `bin/verify`'s single-test captures and captures of other
+  commits out of the corpus. "Unchanged since the runs" uses the same
+  classification as pull requests: a change that would need an IBM i run
+  needs a new release run. Tags and releases stay with the maintainer
+  (signed tags; the release workflow is parked).
+- **Alternatives:** resuming from the logs (they do not say whether a run
+  finished cleanly); one lock for the whole multi-version run (holds PUB400
+  for hours); `bin/release-prepare` tagging after the merge (the maintainer
+  signs tags with their own key, and Claude never creates tags).

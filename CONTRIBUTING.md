@@ -32,6 +32,14 @@ for setup instructions.
 
 The routine tasks have scripts in `bin/`, run from the host. Each has `--help`
 and `--dry-run` (print the commands, run nothing), and none prints secrets:
+- `bin/setup`: first-time setup: builds the images, creates `.env` from
+  `.env.example` when there is none (in a terminal it asks for the values, the
+  password hidden, and writes them with mode 600; an existing `.env` is never
+  read or changed), puts `vendor/django-<version>` at the commit the corpus
+  manifest pins, then runs `bin/doctor --offline`. It is for humans in their
+  own terminal: Claude never runs it interactively and never enters values,
+  only without a terminal (then `.env` is just the template) or when `.env`
+  exists.
 - `bin/check`: what CI does, locally (lint, offline tier, corpus replay, the
   verification gate, the classification), for every combination or a chosen
   one (`--python`, `--django`).
@@ -60,6 +68,11 @@ and `--dry-run` (print the commands, run nothing), and none prints secrets:
   pytest options>`), Django test labels (`django <label>...`, one run each,
   `--clean`), `--full-tier`, or `--affected` (what `bin/verify` would run,
   without writing stamps); `--django` for another version.
+- `bin/release-run`: the release run on IBM i (see "Releases"), per Django
+  version, resumable; nothing on GitHub.
+- `bin/release-prepare <version>`: checks the release preconditions and opens
+  the release pull request (see "Releases"); it never tags and never creates
+  releases.
 - `bin/ibmi-cleanup`: drops the leftover test objects of a crashed run from
   our own test libraries, under the standing approval in CLAUDE.md: only
   objects on the list that test runs write before each `CREATE`, only in a
@@ -258,23 +271,35 @@ docker compose run --rm tests nox -s "corpus(3.14-django6.1)"   # replay offline
 Releases are alpha releases on GitHub only (no PyPI). **Contributors and
 Claude never create release tags; the maintainer creates and signs them.**
 
-0. **Release run**, for every supported Django version (newest Python), one
-   after another: `scripts/pub400.sh release_run <django>`.
-   It checks that PUB400's database port answers (otherwise it stops at
+0. **Release run**, for every supported Django version (newest Python):
+   `bin/release-run` (all versions, one after another) or
+   `bin/release-run --django <version>`. Per version, under the PUB400 lock,
+   it checks that PUB400's database port answers (otherwise it stops at
    once), runs every supported Django test module (the `[[modules]]` of
    `docs/status.toml`, `queries` as its labels), each with `--clean` and
    `--capture` in its own run, then the pub400 tier with `--create-db`; logs in
    `test-results/<django>/`, raw corpus captures in
-   `test-results/<django>/corpus/`. Build the corpus from them
-   ([OFFLINE_CORPUS.md](docs/OFFLINE_CORPUS.md), "Refreshing a corpus") and
-   report the results and the corpus counts in the release PR.
-1. **Release PR** (prepared like any other PR): set `__version__` in
-   `django_db2_for_i/__init__.py` (the single source of the version) and run
-   `python scripts/assemble_changelog.py release <version>`: it writes the
-   fragments in `changelog.d/` into a `## [<version>] - <date>` section of
-   `CHANGELOG.md`, updates the comparison links at the bottom and deletes the
-   fragments. Review the section and commit it with the deletions. The
-   offline tier checks that `__version__` has a CHANGELOG section.
+   `test-results/<django>/corpus/`. It is **resumable**: each result is
+   recorded at once (`test-results/<django>/release-run/state.json`), and a
+   later start on the same backend and Django commits skips what passed, so
+   the run can be spread over several nights (`--restart` starts over,
+   `--limit N` stops after N runs). When every run of a version passed, it
+   rebuilds that version's corpus
+   ([OFFLINE_CORPUS.md](docs/OFFLINE_CORPUS.md)) in the working tree.
+1. **Release PR**: `bin/release-prepare <version>` in the main checkout (not a
+   subagent worktree). It refuses unless HEAD is `origin/main` with only the
+   release runs' corpus changed, CI passed on `main`, the verification gate
+   passes, the version is newer than `__version__`, there are changelog
+   fragments, and every supported Django version has a complete, passed
+   release run with the backend unchanged since. Then it commits the corpus,
+   sets `__version__` in `django_db2_for_i/__init__.py` (the single source of
+   the version), runs `python scripts/assemble_changelog.py release <version>`
+   (the fragments in `changelog.d/` become a `## [<version>] - <date>` section
+   of `CHANGELOG.md`, the comparison links are updated and the fragments
+   deleted), regenerates the status pages and FEATURES.md, runs `bin/check`,
+   pushes `chore/release-<version>` and opens the pull request with the
+   release runs and corpus counts. It never tags and never creates releases;
+   it ends by printing the steps below.
 2. **The maintainer merges it** and tags the merge commit on `main` from
    their own release clone, signed with their OpenPGP (GPG) key:
 
@@ -290,13 +315,8 @@ Claude never create release tags; the maintainer creates and signs them.**
    with the key whose public part is stored ASCII-armored in the admin-only
    Actions variable `RELEASE_SIGNING_KEY`, point to a commit on `main`, and
    equal `v` + `__version__`.
-3. **The release workflow** (`.github/workflows/release.yml`) verifies all of
-   that (`scripts/verify_release_tag.py`), builds the sdist and wheel, runs
-   the offline tier against the installed wheel (`nox -s wheel`) and creates
-   a GitHub **pre-release** with both files and the version's CHANGELOG
-   section (`scripts/changelog_section.py`). If any check fails, nothing is
-   published; fix the cause, delete the tag (`git push --delete origin
-   v<version>`, `git tag -d v<version>`) and tag again.
+3. **Create the GitHub release yourself** (the release workflow is parked,
+   see #94).
 
 Published tags are never moved or recreated. `v0.1.0a1` predates this
 workflow and its code reports version `0.0.1.dev0` (see `CHANGELOG.md`).
