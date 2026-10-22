@@ -96,6 +96,7 @@ IBMI_RUN_PATHS = {
     "scripts/runtests.sh": "the Django test runner on IBM i",
     "scripts/run_django_tests.py": "the Django test runner on IBM i",
     "scripts/release_run.py": "the release run",
+    "bin/release-run": "the release run",
 }
 # docs/tests only: nothing here runs on IBM i. Everything matched by no rule in
 # judge() is "needs full tier" (fails closed): a new file or directory is never

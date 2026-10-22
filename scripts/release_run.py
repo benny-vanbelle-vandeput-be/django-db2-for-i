@@ -1,6 +1,6 @@
 """The release run for one Django version (CLAUDE.md section 6; DECISIONS 2026-10-19).
 
-    nox -s release_run -- <django-version>
+    nox -s release_run -- <django-version> [--restart] [--limit N]
 
 Before every release, for each supported Django version (newest Python):
 every supported Django test module, then the pub400 tier. The modules and
@@ -20,10 +20,21 @@ so an unreachable system fails within seconds and nothing else runs; a label
 that fails does not stop the run, the summary lists it and the exit code is
 non-zero. Logs: test-results/<version>/ (runtests.py, by
 scripts/run_django_tests.py) and test-results/<version>/tiers/pub400.log (the tier).
+
+Resumable (bin/release-run): the result of every label and of the tier is
+written to test-results/<version>/release-run/state.json as soon as it is
+known, with the backend commit and the Django commit. A later run on the same
+two commits skips what passed and runs what failed or is missing, so the run
+can be spread over several nights; another commit, or ``--restart``, starts
+over and first deletes the raw captures of earlier runs of this version
+(bin/verify writes single-test captures there too). ``--limit N`` stops after
+N runs (a short run; the rest stays for the next start).
 """
 
 from __future__ import annotations
 
+import argparse
+import json
 import os
 import subprocess
 import sys
@@ -91,18 +102,67 @@ def run_tier(version: str) -> int:
         return process.wait()
 
 
+TIER = "pub400 tier"
+
+
+def state_path(version: str) -> Path:
+    return ROOT / "test-results" / version / "release-run" / "state.json"
+
+
+def read_state(version: str) -> dict:
+    path = state_path(version)
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
+def write_state(version: str, state: dict) -> None:
+    path = state_path(version)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.replace(path)  # never a half-written state
+
+
+def start_state(version: str, backend: str, django: str, restart: bool) -> tuple[dict, str]:
+    """The state to continue from, and why: resumed, or started over."""
+    state = read_state(version)
+    same = state.get("backend") == backend and state.get("django") == django
+    if state and same and not restart:
+        return state, "resumed"
+    why = "--restart" if restart and state else ("new commits" if state else "first run")
+    for capture in (ROOT / "test-results" / version / "corpus").glob("*.jsonl"):
+        capture.unlink()
+    state = {"backend": backend, "django": django, "results": {}}
+    write_state(version, state)
+    return state, f"started over ({why})"
+
+
+def complete(state: dict, run: Sequence[str]) -> bool:
+    """Every label and the tier passed."""
+    return all(state.get("results", {}).get(name) == "passed" for name in [*run, TIER])
+
+
 def main(argv: Sequence[str]) -> int:
-    if len(argv) != 1:
-        print("usage: nox -s release_run -- <django-version>", file=sys.stderr)
+    parser = argparse.ArgumentParser(prog="nox -s release_run --", add_help=False)
+    parser.add_argument("version")
+    parser.add_argument("--restart", action="store_true")
+    parser.add_argument("--limit", type=int)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        print(
+            "usage: nox -s release_run -- <django-version> [--restart] [--limit N]",
+            file=sys.stderr,
+        )
         return 2
-    (version,) = argv
+    version = args.version
     run = labels()
     try:
         run_django_tests.validate(version, run[:1])
     except run_django_tests.RunRefused as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return 2
-    if not (ROOT / "vendor" / f"django-{version}" / "tests" / "runtests.py").exists():
+    django_dir = ROOT / "vendor" / f"django-{version}"
+    if not (django_dir / "tests" / "runtests.py").exists():
         missing = f"vendor/django-{version} is missing (see scripts/runtests.sh)"
         print(f"refused: {missing}", file=sys.stderr)
         return 2
@@ -110,15 +170,42 @@ def main(argv: Sequence[str]) -> int:
     if problem:
         print(f"refused: PUB400 is not reachable, nothing was run ({problem})", file=sys.stderr)
         return 2
-    failed = []
-    for label in run:
-        if run_django_tests.main([version, "--clean", "--capture", label]) != 0:
-            failed.append(label)
-    if run_tier(version) != 0:
-        failed.append("pub400 tier")
+    backend = run_django_tests.backend_commit()
+    state, how = start_state(
+        version, backend, run_django_tests.git_full_commit(django_dir), args.restart
+    )
+    results = state["results"]
+    passed = [name for name in [*run, TIER] if results.get(name) == "passed"]
+    print(f"release run, Django {version}, backend {backend}: {how}")
+    if passed:
+        print(f"skipped, passed before on the same commits: {', '.join(passed)}")
+    budget = args.limit
+    for name in [*run, TIER]:
+        if results.get(name) == "passed":
+            continue
+        if budget is not None and budget <= 0:
+            print(f"stopped by --limit {args.limit}; the next start continues here ({name})")
+            break
+        if name == TIER:
+            status = run_tier(version)
+        else:
+            status = run_django_tests.main([version, "--clean", "--capture", name])
+        results[name] = "passed" if status == 0 else "failed"
+        write_state(version, state)
+        if budget is not None:
+            budget -= 1
+    failed = [name for name in [*run, TIER] if results.get(name) == "failed"]
+    missing = [name for name in [*run, TIER] if name not in results]
     print(f"\nrelease run, Django {version}: {len(run) + 1} runs, ", end="")
-    print(f"failed: {', '.join(failed)}" if failed else "all passed")
-    return 1 if failed else 0
+    if complete(state, run):
+        print("all passed")
+        return 0
+    print(
+        f"failed: {', '.join(failed) or 'none'}; not run yet: {len(missing)}"
+        if missing
+        else f"failed: {', '.join(failed)}"
+    )
+    return 1
 
 
 if __name__ == "__main__":

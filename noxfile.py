@@ -253,10 +253,10 @@ def release_run(session: nox.Session) -> None:
     """Before a release, per Django version: all supported Django modules, then the
     pub400 tier (scripts/release_run.py; sequential, one connection at a time).
 
-    nox -s release_run -- <django-version>
+    nox -s release_run -- <django-version> [--restart] [--limit N]
     """
-    if len(session.posargs) != 1:
-        session.error("usage: nox -s release_run -- <django-version>")
+    if not session.posargs or session.posargs[0].startswith("-"):
+        session.error("usage: nox -s release_run -- <django-version> [--restart] [--limit N]")
     # Django from the vendor checkout, as in django_tests, for the modules and the tier.
     session.install(*nox.project.dependency_groups(PYPROJECT, "test"))
     session.install("-e", f"vendor/django-{session.posargs[0]}")

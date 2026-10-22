@@ -392,3 +392,29 @@ def test_git_never_trusts_every_directory() -> None:
     star = re.compile(r"safe\.directory\s*[= ]\s*['\"]?\*")
     offenders = [str(p) for p in files if p.is_file() and star.search(p.read_text())]
     assert offenders == []
+
+
+@needs_bin
+def test_release_run_runs_each_version_under_the_lock_then_builds_its_corpus(tmp_path) -> None:
+    result = run_bin(
+        str(BIN / "release-run"), "--dry-run", "--django", "6.0", "--restart", "--limit", "2",
+        tmp_path=tmp_path,
+    )  # fmt: skip
+    assert result.returncode == 0, result.stderr
+    lines = result.stdout.splitlines()
+    assert lines[0] == f"+ {ROOT}/scripts/pub400.sh release_run 6.0 --restart --limit 2"
+    assert lines[1].endswith("tests uv run --no-project python scripts/build_corpus.py 6.0")
+    every = run_bin(str(BIN / "release-run"), "--dry-run", tmp_path=tmp_path).stdout
+    assert [line.split()[-1] for line in every.splitlines() if "release_run" in line] == [
+        "5.2",
+        "6.0",
+        "6.1",
+    ]
+    for args, message in [
+        (("--limit", "x"), "--limit needs a number"),
+        (("--django", "9.9"), "Django 9.9 is not supported"),
+        (("--fast",), "unknown argument: --fast"),
+    ]:
+        refused = run_bin(str(BIN / "release-run"), *args, tmp_path=tmp_path)
+        assert refused.returncode == 2 and message in refused.stderr
+    assert not (tmp_path / "docker-called").exists()
