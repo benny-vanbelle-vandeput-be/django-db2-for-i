@@ -207,13 +207,27 @@ Django 6.0 or later. The full list, with workarounds:
 ## Development
 
 All development and test runs happen in a container; the host only needs
-Docker (e.g. Docker Desktop) with the `docker compose` plugin.
+Docker (e.g. Docker Desktop) with the `docker compose` plugin. The workflow,
+step by step with the exact commands, is in [docs/WORKFLOW.md](docs/WORKFLOW.md);
+`bin/help` shows its quick start and topics in the terminal. First-time setup:
+run `bin/setup` in your own terminal (it asks for the `.env` values; never
+commit `.env`).
 
-```sh
-cp .env.example .env          # then fill in DB2I_* (never commit .env)
-docker compose build          # builds the "offline" and "full" images
-docker compose run --rm tests nox --list
-```
+The scripts in `bin/` run on the host; each has `--help` and `--dry-run`:
+
+| Script | What it does |
+|---|---|
+| `bin/help` | the workflow guide: the quick start and the topics (`bin/help <topic>`) |
+| `bin/setup` | first-time setup: images, `.env` (asked in your own terminal), `vendor/` checkouts |
+| `bin/doctor` | checks the environment, then one connection to PUB400 |
+| `bin/check` | what CI does, locally: lint, offline tests, corpus replay, gate, classification |
+| `bin/verify` | verifies changed SQL and new tests on IBM i and writes the stamps |
+| `bin/ibmi-test` | chosen own IBM i tests, Django test labels, `--affected` or `--full-tier` on IBM i |
+| `bin/probe` | read-only IBM i probes by name |
+| `bin/status` | regenerates the status pages; shows the PUB400 lock and labelled pull requests |
+| `bin/ibmi-cleanup` | lists (`--yes`: drops) the leftover test tables of a crashed run |
+| `bin/release-run` | the release run on IBM i, per Django version, resumable |
+| `bin/release-prepare` | checks the release preconditions and opens the release pull request |
 
 | Test set | How it runs | Needs |
 |---|---|---|

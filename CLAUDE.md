@@ -280,6 +280,11 @@ made when no other PRs are open.
   used because it recreates the commits without signatures.
 - One branch per logical change, named `<type>/<topic>` (`feat/`, `fix/`,
   `docs/`, `test/`, `ci/`, `chore/`), created from the current `origin/main`.
+- **`.env` in worktrees:** a new worktree has no `.env` (gitignored). Link it
+  (`ln -s ../django-db2-for-i/.env .env`, never reading it) only into worktrees the
+  main session uses for IBM i runs. **Never** link or copy it into a subagent's
+  worktree (`.claude/worktrees/`): subagents are offline only, and a missing `.env`
+  is an extra safeguard there.
 - Commits: conventional messages; author is the maintainer (noreply address),
   committer is the machine account (noreply address), every commit and tag is
   signed with the machine account's SSH signing key (all set in the
