@@ -169,8 +169,8 @@ def test_field_types(live) -> None:
 
 
 def test_column_defaults(live) -> None:
-    """FieldInfo.default is COLUMN_DEFAULT as Db2 for i records it (probe
-    lib_column_types); None for a column without a default."""
+    """FieldInfo.default is COLUMN_DEFAULT as Db2 for i records it, the literal
+    as the backend wrote it; None for a column without a default."""
     with live.cursor() as cursor:
         rows = live.introspection.get_table_description(cursor, Defaults._meta.db_table)
     defaults = {r.name: r.default for r in rows}
@@ -178,7 +178,9 @@ def test_column_defaults(live) -> None:
     assert defaults["number"] == "-1"
     assert defaults["flag"] == "TRUE"
     assert defaults["amount"] == "1.50"
-    assert defaults["text"] == "'O''Brien 100%'"
+    # The backend writes NVARCHAR literals as UX'<UTF-16 hex>' (any text
+    # survives the job CCSID); Db2 for i records the literal as written.
+    assert defaults["text"] == "UX'" + "O'Brien 100%".encode("utf-16-be").hex().upper() + "'"
     for column in ("ratio", "day", "clock", "stamp", "data", "code"):
         assert defaults[column] not in (None, "NULL"), column
     assert defaults["nothing"] in (None, "NULL")
