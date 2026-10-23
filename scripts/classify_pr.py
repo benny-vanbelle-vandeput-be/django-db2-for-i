@@ -123,6 +123,8 @@ DOCS_PATHS = {
     "bin/status": "offline tooling (status pages)",
     "bin/setup": "first-time setup (images, .env template, vendor/ checkouts)",
     "bin/help": "the workflow guide (reads docs/WORKFLOW.md)",
+    "bin/worktree-remove": "offline tooling (removes a merged worktree, keeps its results)",
+    "scripts/publish_probe_result.py": "offline tooling (a probe result without names)",
     "bin/release-prepare": "offline tooling (the release pull request)",
     "scripts/release_prepare.py": "offline tooling (the release pull request)",
     ".github/": "CI (never connects to an IBM i)",

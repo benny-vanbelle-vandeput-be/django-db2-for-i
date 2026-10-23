@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# bin/worktree-remove: remove a merged worktree, keeping its test results.
+#
+#   bin/worktree-remove ../django-db2-for-i-<topic>
+#   bin/worktree-remove --dry-run <path>
+#   bin/worktree-remove --help
+#
+# Refuses a worktree with changes to tracked files or whose branch is not
+# merged into origin/main (fetch first), and the main checkout itself. Then:
+# copies its test-results/ (gitignored: probe results, logs, bin/verify
+# reports) to the main checkout's test-results/archive/<worktree>/, removes
+# its .env if that is a link (it refuses a real .env file, which git would
+# delete with the worktree), and runs git worktree remove. Probe results a decision rests on also go into the
+# repository (bin/probe --publish).
+
+source "$(dirname "$0")/_common.sh"
+common_args "$@"
+
+[ "${#ARGS[@]}" = 1 ] || die "name the worktree (see --help)"
+path=$(cd "${ARGS[0]}" 2>/dev/null && pwd) || die "no such directory: ${ARGS[0]}"
+main=$(git -C "$path" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
+    || die "not a git worktree: $path"
+main=$(dirname "$main")
+[ "$path" != "$main" ] || die "that is the main checkout, not a worktree"
+git -C "$main" worktree list --porcelain | grep -qx "worktree $path" || die "not a worktree of $main"
+
+[ -z "$(git -C "$path" status --porcelain --untracked-files=no)" ] \
+    || die "$path has changes to tracked files; commit or discard them first"
+git -C "$path" merge-base --is-ancestor HEAD origin/main \
+    || die "the branch of $path is not merged into origin/main (git fetch first?)"
+# git worktree remove would delete an ignored .env too: refuse a real file.
+if [ -e "$path/.env" ] && [ ! -L "$path/.env" ]; then
+    die "$path/.env is a real file, not a link: move or delete it yourself first"
+fi
+
+name=$(basename "$path")
+if [ -d "$path/test-results" ]; then
+    run mkdir -p "$main/test-results/archive/$name"
+    run cp -R "$path/test-results/." "$main/test-results/archive/$name/"
+fi
+if [ -L "$path/.env" ]; then # a link only; never a real file
+    run unlink "$path/.env"
+fi
+run git -C "$main" worktree remove "$path"

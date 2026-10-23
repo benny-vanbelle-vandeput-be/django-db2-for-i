@@ -223,11 +223,12 @@ The scripts in `bin/` run on the host; each has `--help` and `--dry-run`:
 | `bin/check` | what CI does, locally: lint, offline tests, corpus replay, gate, classification |
 | `bin/verify` | verifies changed SQL and new tests on IBM i and writes the stamps |
 | `bin/ibmi-test` | chosen own IBM i tests, Django test labels, `--affected` or `--full-tier` on IBM i |
-| `bin/probe` | read-only IBM i probes by name |
+| `bin/probe` | read-only IBM i probes by name; `--publish` puts a result into the repository |
 | `bin/status` | regenerates the status pages; shows the PUB400 lock and labelled pull requests |
 | `bin/ibmi-cleanup` | lists (`--yes`: drops) the leftover test tables of a crashed run |
 | `bin/release-run` | the release run on IBM i, per Django version, resumable |
 | `bin/release-prepare` | checks the release preconditions and opens the release pull request |
+| `bin/worktree-remove` | removes a merged worktree, keeping its test results in the main checkout |
 
 | Test set | How it runs | Needs |
 |---|---|---|

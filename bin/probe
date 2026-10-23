@@ -5,11 +5,15 @@
 #   bin/probe <name> [<name>]    e.g. bin/probe reachability, bin/probe sysinfo libraries
 #   bin/probe --wait <name>      queue behind a running PUB400 job
 #   bin/probe --dry-run <name>   print the command, run nothing
+#   bin/probe --publish <file>   copy a result (test-results/probes/<probe>-<utc>.json)
+#                                to probes/results/<probe>.json without host, user
+#                                or library names (scripts/publish_probe_result.py)
 #   bin/probe --help
 #
 # Probes are read-only, or change only QTEMP (CLAUDE.md). The write probes
 # (nox sessions probe_*, outside QTEMP) need the maintainer's approval first
-# and are not run by this script. Results: test-results/probes/.
+# and are not run by this script. Results: test-results/probes/ (gitignored);
+# publish the ones a decision rests on (CLAUDE.md).
 
 source "$(dirname "$0")/_common.sh"
 common_args "$@"
@@ -30,6 +34,14 @@ PY
 }
 
 names=()
+if [ "${ARGS[0]:-}" = --publish ]; then
+    [ "${#ARGS[@]}" = 2 ] || die "--publish needs one result file"
+    file=${ARGS[1]}
+    file=${file#"$ROOT"/}
+    [ -f "$ROOT/$file" ] || [ "$DRY_RUN" = 1 ] || die "no such result: $file"
+    container uv run --no-project python scripts/publish_probe_result.py "$file"
+    exit
+fi
 for arg in ${ARGS[@]+"${ARGS[@]}"}; do
     case $arg in
         --list)

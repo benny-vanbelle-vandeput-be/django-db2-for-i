@@ -58,7 +58,14 @@ pushed to a public registry (IBM's license).
    `ln -s ../django-db2-for-i/.env .env`. **Never** link (or copy) it into a
    subagent's worktree (`.claude/worktrees/`): subagents work offline only,
    and a missing `.env` is an extra safeguard there.
-4. Remove a worktree when its branch is merged: `git worktree remove <path>`.
+4. Remove a worktree when its branch is merged:
+   `bin/worktree-remove ../django-db2-for-i-<topic>`. It copies the
+   worktree's `test-results/` (probe results, logs, reports) to the main
+   checkout's `test-results/archive/<worktree>/`, removes the `.env` link and
+   refuses a worktree with changes, an unmerged branch or a real `.env` file.
+5. Probe output a decision rests on goes into the repository:
+   `bin/probe --publish test-results/probes/<probe>-<utc>.json` writes
+   `probes/results/<probe>.json` with host, user and library names replaced.
 
 ## change: the daily loop
 
