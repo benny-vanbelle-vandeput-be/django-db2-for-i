@@ -96,13 +96,22 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
     everything in it vanishes when the job ends.
   - Nothing outside QTEMP (a library, a table in a user library, a journal, a
     system value, a reply list entry) may be created or changed without approval.
-  - **No write ("w") probe without explicit approval for that specific probe**:
+  - **No probe outside QTEMP without explicit approval for that specific probe**
+    (a write probe: it creates or changes anything outside QTEMP):
     the approval names the probe and what it creates (objects, library), is
     given before its first `--execute`, and covers only that probe as approved.
     A change to what it writes (more or other objects) needs a new approval;
     an earlier approval of another probe never carries over. Its dry run
     (read-only pre-checks) needs none. The approval is recorded in the probe's
     docstring (date, conditions).
+  - **A probe's name says where it acts**: `qtemp_<topic>.py` for a probe that
+    only reads, or writes only in QTEMP; `lib_<topic>.py` for a probe that
+    creates or changes anything in a library (approval above). A probe whose
+    scope grows from QTEMP to a library is renamed before it runs. When
+    reporting a probe run, state where it ran (read-only, QTEMP, or which
+    library and which objects). The older `pNN_` / `wNN_` names predate this
+    rule and do not say it reliably (several `wNN_` probes stayed in QTEMP);
+    their docstrings do.
   - **Standing approval (2026-10-21): `bin/ibmi-cleanup`** (phase 4 step 0) may drop
     leftover test tables, with their indexes and views, in the two `.env` libraries,
     and nothing else: only tables on the local list that test runs write *before*
