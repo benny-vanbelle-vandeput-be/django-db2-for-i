@@ -3,9 +3,9 @@
 THIS CHANGES THE IBM i (one sequence, two temporary tables). Not part of
 probes/run.py.
 
-Usage (inside the "tests" container):
-    nox -s probe_sequence              # dry run: checks only
-    nox -s probe_sequence -- --execute
+Usage (on the host; bin/probe checks the approval on GitHub first):
+    bin/probe --approved <link> lib_sequence              # dry run: checks only
+    bin/probe --approved <link> lib_sequence -- --execute
 
 Question: can an AutoField be backed by a SEQUENCE (column DEFAULT NEXT VALUE
 FOR ...), so that the key generator can be restarted inside a transaction
@@ -201,7 +201,7 @@ def main(argv: list[str]) -> int:
             print("\nDry run: nothing was changed. Re-run with --execute to apply.")
             return 0
         result = run(conn, library)
-        print(f"\nresult saved to {write_result('w04_sequence', result, settings)}")
+        print(f"\nresult saved to {write_result('lib_sequence', result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)
         return exc.exit_code

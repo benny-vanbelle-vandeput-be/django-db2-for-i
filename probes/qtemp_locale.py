@@ -112,7 +112,7 @@ def run_locale(name: str) -> int:
                 )
     finally:
         connection.close()
-    path = write_result(f"w12_locale_{name}", result, _settings())
+    path = write_result(f"lib_locale_{name}", result, _settings())
     print(f"\nresult saved to {path}")
     return 0
 

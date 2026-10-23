@@ -110,7 +110,7 @@ def main(argv: list[str]) -> int:
         settings = Settings.from_env(need_credentials=True)
         conn = connect(settings, {"CMT": "1", "TRUEAUTOCOMMIT": "1"}, autocommit=True)
         result = run(conn)
-        print(f"\nresult saved to {write_result('w06_defaults', result, settings)}")
+        print(f"\nresult saved to {write_result('qtemp_defaults', result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)
         return exc.exit_code

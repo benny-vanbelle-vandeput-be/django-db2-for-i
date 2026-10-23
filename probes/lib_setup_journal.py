@@ -2,12 +2,17 @@
 
 THIS CHANGES THE IBM i. It is not a probe and is not part of probes/run.py.
 
-Usage (inside the "tests" container):
-    nox -s setup_journal                      # dry run: checks and prints the CL commands
-    nox -s setup_journal -- --execute         # runs them
-    nox -s setup_journal -- --library other   # target DB2I_OTHER_LIBRARY instead
-    nox -s setup_journal -- --undo            # dry run of the removal
-    nox -s setup_journal -- --undo --execute  # removes journal and receivers
+Usage (on the host; bin/probe checks the approval on GitHub first):
+    # dry run: checks and prints the CL commands
+    bin/probe --approved <link> lib_setup_journal
+    # runs them
+    bin/probe --approved <link> lib_setup_journal -- --execute
+    # target DB2I_OTHER_LIBRARY instead
+    bin/probe --approved <link> lib_setup_journal -- --library other
+    # dry run of the removal
+    bin/probe --approved <link> lib_setup_journal -- --undo
+    # removes journal and receivers
+    bin/probe --approved <link> lib_setup_journal -- --undo --execute
 
 Setup, for one library <LIB> (DB2I_DEFAULT_LIBRARY by default):
 1. Read-only checks: <LIB> is owned by the current user and has no QSQJRN

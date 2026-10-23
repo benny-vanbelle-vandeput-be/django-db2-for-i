@@ -299,6 +299,31 @@ def ibmi_cleanup(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
+def probe_lib(session: nox.Session) -> None:
+    """CHANGES THE IBM i outside QTEMP: one lib_ probe, started only by
+    bin/probe --approved <link> (CLAUDE.md). Dry run unless --execute."""
+    import pathlib
+    import re
+
+    args = list(session.posargs)
+    name = args.pop(0) if args else ""
+    if not re.fullmatch(r"lib_[a-z0-9_]+", name) or not pathlib.Path(f"probes/{name}.py").is_file():
+        session.error(f"not a lib_ probe: {name!r} (bin/probe --list)")
+    env = {}
+    for option, variable in (
+        ("--approved", "DB2I_PROBE_APPROVED"),
+        ("--approved-by", "DB2I_PROBE_APPROVED_BY"),
+    ):
+        if option not in args or args.index(option) + 1 >= len(args):
+            session.error(f"{name} needs {option}: run it through bin/probe --approved <link>")
+        index = args.index(option)
+        env[variable] = args[index + 1]
+        del args[index : index + 2]
+    session.install("-e", ".")
+    session.run("python", f"probes/{name}.py", *args, env=env)
+
+
+@nox.session(python=NEWEST_PYTHON)
 def probe(session: nox.Session) -> None:
     """Read-only IBM i probes: nox -s probe -- [reachability|connect|sysinfo|libraries|all]."""
     session.install("-e", ".")
@@ -306,107 +331,35 @@ def probe(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
-def probe_write(session: nox.Session) -> None:
-    """CHANGES THE IBM i: write probe w01 (temporary table). Dry run unless -- --execute."""
-    session.install("-e", ".")
-    session.run("python", "probes/w01_commitment.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_autocommit(session: nox.Session) -> None:
-    """CHANGES THE IBM i: write probe w02 (temporary table). Dry run unless -- --execute."""
-    session.install("-e", ".")
-    session.run("python", "probes/w02_autocommit.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_operations(session: nox.Session) -> None:
-    """CHANGES THE IBM i: write probe w03 (temporary tables). Dry run unless -- --execute."""
-    session.install("-e", ".")
-    session.run("python", "probes/w03_operations.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_sequence(session: nox.Session) -> None:
-    """CHANGES THE IBM i: write probe w04 (sequence + tables). Dry run unless -- --execute."""
-    session.install("-e", ".")
-    session.run("python", "probes/w04_sequence.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_drop(session: nox.Session) -> None:
-    """CHANGES THE IBM i: write probe w05 (tables + view). Dry run unless -- --execute."""
-    session.install("-e", ".")
-    session.run("python", "probes/w05_drop.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
 def probe_defaults(session: nox.Session) -> None:
     """Write probe 06 (QTEMP only, nothing persists): accepted column DEFAULT forms."""
     session.install("-e", ".")
-    session.run("python", "probes/w06_defaults.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_savepoints(session: nox.Session) -> None:
-    """CHANGES THE IBM i: write probe w07 (one table). Dry run unless -- --execute."""
-    session.install("-e", ".")
-    session.run("python", "probes/w07_savepoints.py", *session.posargs)
+    session.run("python", "probes/qtemp_defaults.py", *session.posargs)
 
 
 @nox.session(python=NEWEST_PYTHON)
 def probe_inquiry(session: nox.Session) -> None:
     """Write probe 08 (QTEMP and own job only): DROP COLUMN inquiry message."""
     session.install("-e", ".")
-    session.run("python", "probes/w08_inquiry.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_job_reuse(session: nox.Session) -> None:
-    """Write probe 09 (own job only, two sequential connections): INQMSGRPY after disconnect."""
-    session.install("-e", ".")
-    session.run("python", "probes/w09_job_reuse.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
-def setup_journal(session: nox.Session) -> None:
-    """CHANGES THE IBM i: create QSQJRN in a test library. Dry run unless -- --execute."""
-    session.install("-e", ".")
-    session.run("python", "probes/setup_journal.py", *session.posargs)
+    session.run("python", "probes/qtemp_inquiry.py", *session.posargs)
 
 
 @nox.session(python=NEWEST_PYTHON)
 def probe_encoding(session: nox.Session) -> None:
     """Write probe 10 (QTEMP only, one connection per variant): string encoding."""
     session.install("-e", ".")
-    session.run("python", "probes/w10_encoding.py", *session.posargs)
+    session.run("python", "probes/qtemp_encoding.py", *session.posargs)
 
 
 @nox.session(python=NEWEST_PYTHON)
 def probe_job_ccsid(session: nox.Session) -> None:
     """Write probe 11 (QTEMP and own job, restored): job CCSID 37 and finding B."""
     session.install("-e", ".")
-    session.run("python", "probes/w11_job_ccsid.py", *session.posargs)
+    session.run("python", "probes/qtemp_job_ccsid.py", *session.posargs)
 
 
 @nox.session(python=NEWEST_PYTHON)
 def probe_locale(session: nox.Session) -> None:
     """Write probe 12 (QTEMP only, one connection per locale): non-UTF-8 locale."""
     install(session, NEWEST_DJANGO)
-    session.run("python", "probes/w12_locale.py", *session.posargs, env={"PYTHONPATH": "."})
-
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_constraints(session: nox.Session) -> None:
-    """CHANGES THE IBM i: write probe w13 (DJW13 tables in the default library,
-    dropped at the end). Dry run unless -- --execute."""
-    session.install("-e", ".")
-    session.run("python", "probes/w13_constraints.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_column_types(session: nox.Session) -> None:
-    """CHANGES THE IBM i: write probe w14 (DJW14 tables in the default library,
-    dropped at the end). Dry run unless -- --execute."""
-    session.install("-e", ".")
-    session.run("python", "probes/w14_column_types.py", *session.posargs)
+    session.run("python", "probes/qtemp_locale.py", *session.posargs, env={"PYTHONPATH": "."})

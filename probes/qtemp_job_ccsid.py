@@ -11,7 +11,7 @@ Usage (inside the "tests" container):
 Finding B (docs/IBMI_NOTES.md, "String encoding investigation"):
 ``DEFAULT 'O''Brien'`` is stored as ``O''Brien`` (NVARCHAR) or garbled
 (CHAR/VARCHAR), with every client-side setting tried, in job CCSID 273.
-This probe runs the same B checks (probes/w10_encoding.py) in job CCSID 273
+This probe runs the same B checks (probes/qtemp_encoding.py) in job CCSID 273
 and again after CHGJOB CCSID(37).
 
 Note: the driver learns the job CCSID at connect and keeps converting
@@ -25,7 +25,7 @@ import sys
 from typing import Any
 
 from _common import ProbeError, Settings, connect, write_result
-from w10_encoding import BACKEND, Probe, check_b, print_step
+from qtemp_encoding import BACKEND, Probe, check_b, print_step
 
 CCSID_SQL = (
     "SELECT CCSID, DEFAULT_CCSID FROM TABLE(QSYS2.ACTIVE_JOB_INFO("
@@ -89,7 +89,7 @@ def main(argv: list[str]) -> int:
         probe = Probe(conn)
         result = run(probe)
         result["steps"] = probe.steps
-        print(f"\nresult saved to {write_result('w11_job_ccsid', result, settings)}")
+        print(f"\nresult saved to {write_result('qtemp_job_ccsid', result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)
         return exc.exit_code

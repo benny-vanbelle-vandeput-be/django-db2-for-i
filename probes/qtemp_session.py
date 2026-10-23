@@ -16,7 +16,7 @@ autocommit off. Reports:
   VARCHAR(10) CCSID 273 casts: an emoji and exactly 10 / 11 accented
   characters. Note: CAST truncates with a warning, while INSERT into a too
   short column raises an error; the INSERT behaviour is covered by the
-  write probe w01_commitment.py.
+  write probe lib_commitment.py.
 
 The transaction is rolled back at the end.
 """

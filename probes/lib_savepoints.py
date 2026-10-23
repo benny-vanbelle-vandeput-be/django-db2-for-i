@@ -3,9 +3,9 @@
 THIS CHANGES THE IBM i (one table in the default library, dropped at the
 end). Not part of probes/run.py.
 
-Usage (inside the "tests" container):
-    nox -s probe_savepoints              # dry run: checks only
-    nox -s probe_savepoints -- --execute
+Usage (on the host; bin/probe checks the approval on GitHub first):
+    bin/probe --approved <link> lib_savepoints              # dry run: checks only
+    bin/probe --approved <link> lib_savepoints -- --execute
 
 Question: can ``uses_savepoints`` (and ``can_release_savepoints``) be
 enabled? Django's nested atomic() runs, on the backend's settings (CMT=1,
@@ -213,7 +213,7 @@ def main(argv: list[str]) -> int:
             print("\nDry run: nothing was changed. Re-run with --execute to apply.")
             return 0
         result = run(conn, library)
-        print(f"\nresult saved to {write_result('w07_savepoints', result, settings)}")
+        print(f"\nresult saved to {write_result('lib_savepoints', result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)
         return exc.exit_code

@@ -562,7 +562,7 @@ def run_variant(name: str) -> int:
         if setup == "qaqqini":
             probe.run("OVERRIDE_QAQQINI(3)", "CALL QSYS2.OVERRIDE_QAQQINI(3, '', '')", fetch=False)
         result["steps"] = probe.steps
-        print(f"\nresult saved to {write_result(f'w10_encoding_{name}', result, settings)}")
+        print(f"\nresult saved to {write_result(f'lib_encoding_{name}', result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)
         return exc.exit_code
