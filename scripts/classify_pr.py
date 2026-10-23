@@ -25,8 +25,11 @@ It **fails closed**: a path matched by no rule (a new file or directory) is
 With ``--before`` (the previous head of the pull request) the push from
 ``before`` to ``head`` is checked as well (CLAUDE.md, "Git workflow"). It needs
 no new IBM i run when it only adds verification stamps and files generated from
-them, or when it is a rebase whose own changes are identical (``git range-diff``)
-and whose new base commits are docs/tests only. Otherwise the labels apply again.
+them, when its own files are docs/tests that need no label and are no goldens or
+corpus entries (a stamp is only trusted from the run itself; e.g. a renamed
+changelog fragment), or when it is a rebase whose own changes are identical
+(``git range-diff``) and whose new base commits are docs/tests only. Otherwise
+the labels apply again.
 
 The script only reads git; it never connects to an IBM i and needs no project
 dependencies (the CI job runs it with the runner's Python). The labels are
@@ -387,6 +390,15 @@ def stamps_only(changes: Iterable[Change], old: Reader, new: Reader) -> bool:
     return True
 
 
+def docs_only(changes: Iterable[Change], old: Reader, new: Reader) -> bool:
+    """Files that need no label, goldens and corpus entries excluded: a golden whose
+    SQL changes keeps its old stamp, so only stamps_only() may accept one."""
+    changes = list(changes)
+    return not any(c.path.startswith((GOLDEN_DIR, CORPUS_DIR)) for c in changes) and not (
+        classify(changes, old, new).labels
+    )
+
+
 def range_diff_identical(output: str) -> bool:
     """``git range-diff`` output in which every commit pair is marked ``=``."""
     marks = [m["mark"] for line in output.splitlines() if (m := RANGE_DIFF_LINE.match(line))]
@@ -432,6 +444,8 @@ def check_push(before: str, head: str, base: str) -> PushCheck:
             return PushCheck(
                 False, "the push only adds verification stamps and files generated from them"
             )
+        if docs_only(changes_between(before, head), reader(before), reader(head)):
+            return PushCheck(False, "the push changes only docs/tests that do not run on IBM i")
         return PushCheck(True, "the push changes the pull request")
     old_base, new_base = (
         git("merge-base", before, base).strip(),
