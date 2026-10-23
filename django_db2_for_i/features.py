@@ -25,6 +25,10 @@ REASON_UNTYPED_RAW_SQL_PARAMETER = (
     "a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the "
     "select list (SQL0418); cast it in the SQL"
 )
+REASON_NO_DATABASE_FOREIGN_KEYS = (
+    "supports_foreign_keys is off: Django's test tables have no foreign key "
+    "constraints to introspect (phase 4, item 10)"
+)
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -155,7 +159,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 
     # Introspection
     can_introspect_default = False
-    can_introspect_foreign_keys = False
+    can_introspect_foreign_keys = True
     can_introspect_check_constraints = False
     supports_index_column_ordering = False
     supports_inspectdb = False
@@ -194,6 +198,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "queries.tests.Queries1Tests.test_tickets_1878_2939",
             # RawSQL("%s", ...) annotation.
             "queries.test_query.TestQueryNoModel.test_rawsql_annotation",
+        },
+        # Expects the foreign keys of its models; get_relations() finds none.
+        REASON_NO_DATABASE_FOREIGN_KEYS: {
+            "introspection.tests.IntrospectionTests.test_get_relations",
         },
     }
     django_test_expected_failures: set[str] = set().union(*expected_failures.values())

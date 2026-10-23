@@ -12,6 +12,7 @@ import pytest
 from django.core.management.color import no_style
 from django.db import models
 
+from django_db2_for_i import compat
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
 from tests.pub400.testapp_tables import MODELS, TABLES
 from tests.testapp.models import Article, Author, Book, Defaults, Document, Node, Tag
@@ -108,6 +109,18 @@ def test_constraints(live) -> None:
         ["label"],
     ]
     assert ["company", "number"] in [entry["columns"] for entry in account.values()]
+
+
+def test_relations(live) -> None:
+    """get_relations() on the tier's foreign keys (Db2's default NO ACTION),
+    including a self-reference, in the shape of the running Django version."""
+    with live.cursor() as cursor:
+        book = live.introspection.get_relations(cursor, "testapp_book")
+        node = live.introspection.get_relations(cursor, "testapp_node")
+        tag = live.introspection.get_relations(cursor, "testapp_tag")
+    assert book == {"author_id": compat.relation("id", "testapp_author", "DO_NOTHING")}
+    assert node == {"parent_id": compat.relation("id", "testapp_node", "DO_NOTHING")}
+    assert tag == {}
 
 
 def test_foreign_keys_are_no_action(live) -> None:

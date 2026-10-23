@@ -43,6 +43,18 @@ DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON = django.VERSION >= (6, 0)
 DJANGO_CALLS_ADAPT_DURATIONFIELD_VALUE = django.VERSION >= (6, 1)
 
 
+def relation(column: str, table: str, on_delete: str | None) -> tuple:
+    """A value of introspection.get_relations(): ``(column, table, db_on_delete)``
+    on 6.1, ``(column, table)`` before. ``on_delete`` names the constant in
+    django.db.models (``"DB_CASCADE"``, ...), which exist only from 6.1 on;
+    ``None`` for a rule Django has no constant for."""
+    if django.VERSION < (6, 1):
+        return (column, table)
+    from django.db import models
+
+    return (column, table, getattr(models, on_delete) if on_delete else None)
+
+
 def install_duration_adapter() -> None:
     """Before Django 6.1: route DurationField values through the backend's
     ``adapt_durationfield_value()`` (its BIGINT range check), as 6.1 does.

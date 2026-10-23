@@ -1,8 +1,10 @@
 """DatabaseIntrospection on catalog rows (no server needed)."""
 
-from django.db import connections
+import django
+import pytest
+from django.db import connections, models
 
-from django_db2_for_i import introspection
+from django_db2_for_i import compat, introspection
 
 
 class CatalogCursor:
@@ -141,3 +143,41 @@ def test_queries_take_the_uppercase_table_name() -> None:
     ]
     for sql, _ in cursor.executed:
         assert "TABLE_SCHEMA = CURRENT SCHEMA" in sql
+
+
+def test_relations() -> None:
+    cursor = CatalogCursor(
+        {
+            introspection.RELATIONS_SQL: [
+                ("AUTHOR_ID ", "TESTAPP_AUTHOR  ", "ID  ", "NO ACTION  "),
+                ("EDITOR_ID", "TESTAPP_AUTHOR", "ID", "SET NULL"),
+                ("SHELF_ID", "TESTAPP_SHELF", "ID", "RESTRICT"),
+            ]
+        }
+    )
+    relations = connections["default"].introspection.get_relations(cursor, "testapp_book")
+    assert cursor.executed == [(introspection.RELATIONS_SQL, ["TESTAPP_BOOK"])]
+    assert relations == {
+        "author_id": compat.relation("id", "testapp_author", "DO_NOTHING"),
+        "editor_id": compat.relation("id", "testapp_author", "DB_SET_NULL"),
+        "shelf_id": compat.relation("id", "testapp_shelf", None),
+    }
+
+
+def test_relation_shape_per_django_version(monkeypatch) -> None:
+    monkeypatch.setattr(django, "VERSION", (6, 0, 0, "final", 0))
+    assert compat.relation("id", "t", "DB_CASCADE") == ("id", "t")
+    monkeypatch.setattr(django, "VERSION", (6, 1, 0, "final", 0))
+    if not hasattr(models, "DB_CASCADE"):
+        pytest.skip("the db_on_delete constants exist from Django 6.1 on")
+    assert compat.relation("id", "t", "DB_CASCADE") == ("id", "t", models.DB_CASCADE)
+    assert compat.relation("id", "t", None) == ("id", "t", None)
+
+
+def test_delete_rules_name_django_constants() -> None:
+    assert set(introspection.DELETE_RULES.values()) == {
+        "DO_NOTHING",
+        "DB_CASCADE",
+        "DB_SET_NULL",
+        "DB_SET_DEFAULT",
+    }

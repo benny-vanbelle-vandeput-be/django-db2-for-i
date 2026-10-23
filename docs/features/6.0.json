@@ -14,7 +14,7 @@
     "can_distinct_on_fields": false,
     "can_introspect_check_constraints": false,
     "can_introspect_default": false,
-    "can_introspect_foreign_keys": false,
+    "can_introspect_foreign_keys": true,
     "can_introspect_json_field": false,
     "can_introspect_materialized_views": false,
     "can_release_savepoints": true,

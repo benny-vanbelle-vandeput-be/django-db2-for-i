@@ -11,6 +11,8 @@ returns them in lowercase, Django's form (see operations.quote_name).
 from django.db.backends.base.introspection import BaseDatabaseIntrospection, FieldInfo, TableInfo
 from django.db.models import Index
 
+from django_db2_for_i import compat
+
 # QSYS2.SYSKEYS.ORDERING (column text: "A-Ascending, D-Descending", probe 25).
 ORDERS = {"A": "ASC", "D": "DESC"}
 # QSYS2.SYSINDEXES.IS_UNIQUE: "D" is an index that allows duplicate keys
@@ -50,6 +52,36 @@ FOREIGN_KEYS_SQL = (
     "WHERE C.TABLE_SCHEMA = CURRENT SCHEMA AND C.TABLE_NAME = %s "
     "AND C.CONSTRAINT_TYPE = 'FOREIGN KEY' "
     "ORDER BY C.CONSTRAINT_NAME, PK.ORDINAL_POSITION"
+)
+# QSYS2.SYSREFCST.DELETE_RULE -> the name of Django's db_on_delete constant,
+# the way Django's own backends map theirs. Only NO ACTION occurs on PUB400
+# (probe w13; the backend writes no ON DELETE); the other rules are IBM's
+# documented values, checked when phase 6 switches on supports_on_delete_db_*.
+# RESTRICT has no Django constant (None, as on PostgreSQL).
+DELETE_RULES = {
+    "NO ACTION": "DO_NOTHING",
+    "CASCADE": "DB_CASCADE",
+    "SET NULL": "DB_SET_NULL",
+    "SET DEFAULT": "DB_SET_DEFAULT",
+}
+# Each foreign key column of a table with the referenced table, the referenced
+# column at the same key position, and the delete rule.
+RELATIONS_SQL = (
+    "SELECT K.COLUMN_NAME, P.TABLE_NAME, PK.COLUMN_NAME, R.DELETE_RULE "
+    "FROM QSYS2.SYSCST C "
+    "JOIN QSYS2.SYSREFCST R "
+    "ON R.CONSTRAINT_SCHEMA = C.CONSTRAINT_SCHEMA AND R.CONSTRAINT_NAME = C.CONSTRAINT_NAME "
+    "JOIN QSYS2.SYSKEYCST K "
+    "ON K.CONSTRAINT_SCHEMA = C.CONSTRAINT_SCHEMA AND K.CONSTRAINT_NAME = C.CONSTRAINT_NAME "
+    "JOIN QSYS2.SYSCST P "
+    "ON P.CONSTRAINT_SCHEMA = R.UNIQUE_CONSTRAINT_SCHEMA "
+    "AND P.CONSTRAINT_NAME = R.UNIQUE_CONSTRAINT_NAME "
+    "JOIN QSYS2.SYSKEYCST PK "
+    "ON PK.CONSTRAINT_SCHEMA = P.CONSTRAINT_SCHEMA AND PK.CONSTRAINT_NAME = P.CONSTRAINT_NAME "
+    "AND PK.ORDINAL_POSITION = K.ORDINAL_POSITION "
+    "WHERE C.TABLE_SCHEMA = CURRENT SCHEMA AND C.TABLE_NAME = %s "
+    "AND C.CONSTRAINT_TYPE = 'FOREIGN KEY' "
+    "ORDER BY C.CONSTRAINT_NAME, K.ORDINAL_POSITION"
 )
 # The SQL indexes of a table with their key columns in order. The access
 # paths that constraints use are not listed in SYSINDEXES (probe w13), so a
@@ -124,6 +156,19 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             {"table": table_name, "column": self.identifier_converter(column.rstrip())}
             for (column,) in cursor.fetchall()
         ]
+
+    def get_relations(self, cursor, table_name: str) -> dict[str, tuple]:
+        """{column: (referenced column, referenced table[, db_on_delete])}; the
+        tuple's shape follows the Django version (compat.relation)."""
+        cursor.execute(RELATIONS_SQL, [table_name.upper()])
+        return {
+            self.identifier_converter(column.rstrip()): compat.relation(
+                self.identifier_converter(target_column.rstrip()),
+                self.identifier_converter(target_table.rstrip()),
+                DELETE_RULES.get(rule.rstrip()),
+            )
+            for column, target_table, target_column, rule in cursor.fetchall()
+        }
 
     def get_constraints(self, cursor, table_name: str) -> dict[str, dict]:
         """Primary keys, unique, foreign key and check constraints, and indexes."""
