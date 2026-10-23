@@ -369,6 +369,24 @@ def test_push_of_stamps_only_needs_no_new_run(repo) -> None:
     assert cp.check_push(head, fixed, "main").new_run_needed
 
 
+def test_push_of_docs_only_needs_no_new_run(repo) -> None:
+    _git(repo, "switch", "-q", "-c", "pr")
+    before = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    (repo / "changelog.d").mkdir()
+    _git(repo, "mv", "docs/a.md", "changelog.d/1.added.md")
+    _git(repo, "commit", "-q", "-m", "docs: changelog fragment")
+    head = _git(repo, "rev-parse", "HEAD")
+    assert cp.check_push(before, head, "main") == cp.PushCheck(
+        False, "the push changes only docs/tests that do not run on IBM i"
+    )
+    test = _commit(repo, {"tests/pub400/test_x.py": b"def test(): pass\n"}, "test")
+    assert cp.check_push(head, test, "main").new_run_needed
+    fixed = _commit(repo, {"django_db2_for_i/schema.py": b"x = 3\n"}, "fix")
+    assert cp.check_push(test, fixed, "main").new_run_needed
+    stamped = _commit(repo, {GOLDEN: golden(STAMP)}, "test: a golden with a stamp")
+    assert cp.check_push(fixed, stamped, "main").new_run_needed
+
+
 def test_rebase_onto_docs_commits_needs_no_new_run(repo) -> None:
     _git(repo, "switch", "-q", "-c", "pr")
     before = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat: x")

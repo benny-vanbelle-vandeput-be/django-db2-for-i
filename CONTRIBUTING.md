@@ -109,8 +109,9 @@ summary.
   commit has passed and its result (the commit, the counts) is posted on the
   pull request. A pull request with either label is not merged.
 - A later push brings the labels back, except a push that only adds the
-  verification stamps written by the run (and files generated from them), and
-  a conflict-free rebase whose own changes are identical (`git range-diff`)
+  verification stamps written by the run (and files generated from them), a
+  push whose own files are docs/tests that do not run on IBM i (such as a
+  renamed changelog fragment), and a conflict-free rebase whose own changes are identical (`git range-diff`)
   onto docs/tests-only commits of `main`.
 - Pull requests are rebased onto `main` whenever they are behind it (the
   `main` ruleset requires the `offline` check on an up-to-date branch).

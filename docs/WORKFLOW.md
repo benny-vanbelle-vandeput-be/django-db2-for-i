@@ -115,7 +115,9 @@ pushed to a public registry (IBM's license).
    remove the label (REST:
    `gh api -X DELETE "repos/{owner}/{repo}/issues/<PR>/labels/run-ibmi"`).
 4. A later push puts the labels back, except a push that only adds the
-   stamps of that run (and files generated from them), or a conflict-free
+   stamps of that run (and files generated from them), a push whose own files
+   are docs/tests that do not run on IBM i (a renamed changelog fragment), or a
+   conflict-free
    rebase onto docs/tests-only `main` commits with identical changes.
 5. When the branch is behind `main`, rebase and
    `git push --force-with-lease` (pull request branches only; never `main`).

@@ -311,13 +311,16 @@ made when no other PRs are open.
   other PUB400 job, posts the result on the PR (the SHA it ran on, the counts) and only
   then removes the label; the run must be on the PR's **latest** commit. The maintainer
   does not merge a PR that carries either label. Nothing in CI reacts to the labels.
-- **A later push puts the labels back** (CI adds them again), with two exceptions that
+- **A later push puts the labels back** (CI adds them again), with three exceptions that
   need no new run:
   - a push that only contains the verification stamps written by the run
     (`--record-verification`) on the previous commit, and files generated solely from
     them (e.g. the golden count in `docs/TEST_STATUS.md` via `nox -s test_status`). The
     PR comment then states the SHA the run was on and that the latest commit only adds
     those stamps and generated files;
+  - a push (no rewrite) whose own files the classification marks as docs/tests only
+    without an IBM i run, goldens and corpus entries excluded (e.g. renaming the
+    changelog fragment to the PR number);
   - a conflict-free rebase whose own changes are identical (`git range-diff`) onto new
     `main` commits that the classification marks as docs/tests only.
 - Before review, and whenever a PR branch is behind `main`, Claude rebases it
