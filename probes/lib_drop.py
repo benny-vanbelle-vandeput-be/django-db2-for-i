@@ -2,9 +2,9 @@
 
 THIS CHANGES THE IBM i (temporary tables and a view). Not part of probes/run.py.
 
-Usage (inside the "tests" container):
-    nox -s probe_drop              # dry run: checks only
-    nox -s probe_drop -- --execute
+Usage (on the host; bin/probe checks the approval on GitHub first):
+    bin/probe --approved <link> lib_drop              # dry run: checks only
+    bin/probe --approved <link> lib_drop -- --execute
 
 On DB2I_DEFAULT_LIBRARY (journaled), backend connection settings. For a parent
 table DJDRPPAR referenced by DJDRPCHD (foreign key) and a view DJDRPVW on the
@@ -165,7 +165,7 @@ def main(argv: list[str]) -> int:
             print("\nDry run: nothing was changed. Re-run with --execute to apply.")
             return 0
         result = run(conn, library)
-        print(f"\nresult saved to {write_result('w05_drop', result, settings)}")
+        print(f"\nresult saved to {write_result('lib_drop', result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)
         return exc.exit_code

@@ -2,10 +2,11 @@
 
 THIS CHANGES THE IBM i (one temporary table). It is not part of probes/run.py.
 
-Usage (inside the "tests" container), one connection per run:
-    nox -s probe_autocommit -- --true-autocommit 0             # dry run: checks only
-    nox -s probe_autocommit -- --true-autocommit 0 --execute
-    nox -s probe_autocommit -- --true-autocommit 1 --execute
+Usage (on the host; bin/probe checks the approval on GitHub first), one connection per run:
+    # dry run: checks only
+    bin/probe --approved <link> lib_autocommit -- --true-autocommit 0
+    bin/probe --approved <link> lib_autocommit -- --true-autocommit 0 --execute
+    bin/probe --approved <link> lib_autocommit -- --true-autocommit 1 --execute
 
 Django assumes that a single statement in autocommit mode is atomic. This
 probe runs, on a journaled table in DB2I_DEFAULT_LIBRARY:
@@ -141,7 +142,7 @@ def main(argv: list[str]) -> int:
             return 0
         result = run(conn, library)
         result["connection_attributes"] = attributes
-        name = f"w02_autocommit-tac{args.true_autocommit}"
+        name = f"lib_autocommit-tac{args.true_autocommit}"
         print(f"\nresult saved to {write_result(name, result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)

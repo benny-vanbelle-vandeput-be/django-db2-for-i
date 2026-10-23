@@ -20,61 +20,61 @@ from __future__ import annotations
 import contextlib
 import sys
 
-import p00_reachability
-import p01_connect
-import p02_system_info
-import p03_libraries
-import p04_session
-import p05_packages
-import p06_features
-import p07_string_limits
-import p08_extract
-import p09_queries
-import p10_listagg
-import p11_trunc
-import p12_durations
-import p13_fetch_errors
-import p14_mapping_errors
-import p15_long_string_params
-import p16_in_subquery
-import p17_tuple_in
-import p18_tuple_lookups
-import p19_compound_parts
-import p20_selected_predicates
-import p21_numeric_params
-import p22_constraint_errors
-import p23_drop_column
-import p24_alter_table
-import p25_catalog
+import qtemp_alter_table
+import qtemp_catalog
+import qtemp_compound_parts
+import qtemp_connect
+import qtemp_constraint_errors
+import qtemp_drop_column
+import qtemp_durations
+import qtemp_extract
+import qtemp_features
+import qtemp_fetch_errors
+import qtemp_in_subquery
+import qtemp_libraries
+import qtemp_listagg
+import qtemp_long_string_params
+import qtemp_mapping_errors
+import qtemp_numeric_params
+import qtemp_packages
+import qtemp_queries
+import qtemp_reachability
+import qtemp_selected_predicates
+import qtemp_session
+import qtemp_string_limits
+import qtemp_system_info
+import qtemp_trunc
+import qtemp_tuple_in
+import qtemp_tuple_lookups
 from _common import ProbeError, Settings, connect, write_result
 
 PROBES = {
-    "reachability": p00_reachability,
-    "connect": p01_connect,
-    "sysinfo": p02_system_info,
-    "libraries": p03_libraries,
-    "session": p04_session,
-    "packages": p05_packages,
-    "features": p06_features,
-    "string_limits": p07_string_limits,
-    "extract": p08_extract,
-    "queries": p09_queries,
-    "listagg": p10_listagg,
-    "trunc": p11_trunc,
-    "durations": p12_durations,
-    "fetch_errors": p13_fetch_errors,
-    "mapping_errors": p14_mapping_errors,
-    "long_string_params": p15_long_string_params,
-    "in_subquery": p16_in_subquery,
-    "tuple_in": p17_tuple_in,
-    "tuple_lookups": p18_tuple_lookups,
-    "compound_parts": p19_compound_parts,
-    "selected_predicates": p20_selected_predicates,
-    "numeric_params": p21_numeric_params,
-    "constraint_errors": p22_constraint_errors,
-    "drop_column": p23_drop_column,
-    "alter_table": p24_alter_table,
-    "catalog": p25_catalog,
+    "reachability": qtemp_reachability,
+    "connect": qtemp_connect,
+    "sysinfo": qtemp_system_info,
+    "libraries": qtemp_libraries,
+    "session": qtemp_session,
+    "packages": qtemp_packages,
+    "features": qtemp_features,
+    "string_limits": qtemp_string_limits,
+    "extract": qtemp_extract,
+    "queries": qtemp_queries,
+    "listagg": qtemp_listagg,
+    "trunc": qtemp_trunc,
+    "durations": qtemp_durations,
+    "fetch_errors": qtemp_fetch_errors,
+    "mapping_errors": qtemp_mapping_errors,
+    "long_string_params": qtemp_long_string_params,
+    "in_subquery": qtemp_in_subquery,
+    "tuple_in": qtemp_tuple_in,
+    "tuple_lookups": qtemp_tuple_lookups,
+    "compound_parts": qtemp_compound_parts,
+    "selected_predicates": qtemp_selected_predicates,
+    "numeric_params": qtemp_numeric_params,
+    "constraint_errors": qtemp_constraint_errors,
+    "drop_column": qtemp_drop_column,
+    "alter_table": qtemp_alter_table,
+    "catalog": qtemp_catalog,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 

@@ -236,6 +236,12 @@ def test_the_ibmi_scripts_go_through_pub400_sh(tmp_path) -> None:
     assert dry(str(BIN / "probe"), "--dry-run", "sysinfo", "libraries") == [
         f"+ {pub400} probe sysinfo libraries"
     ]
+    approval = (
+        "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/1#issuecomment-2"
+    )
+    (line,) = dry(str(BIN / "probe"), "--dry-run", "--approved", approval, "lib_drop", "--execute")
+    assert line.startswith(f"+ {pub400} probe_lib lib_drop --approved {approval} --approved-by ")
+    assert line.endswith(" --execute")
     assert dry(str(BIN / "ibmi-test"), "--dry-run", "own", "-k", "goldens") == [
         f"+ {pub400} pub400 6.1 --create-db -k goldens"
     ]
@@ -258,6 +264,14 @@ def test_the_ibmi_scripts_refuse_what_is_not_allowed(tmp_path) -> None:
     cases = [
         ((str(BIN / "probe"), "nope"), "unknown probe: nope"),
         ((str(BIN / "probe"),), "name a probe"),
+        ((str(BIN / "probe"), "lib_drop"), "lib_drop changes the IBM i outside QTEMP"),
+        ((str(BIN / "probe"), "lib_drop", "--execute"), "needs --approved"),
+        ((str(BIN / "probe"), "--approved", "x", "reachability"), "for lib_ probes only"),
+        ((str(BIN / "probe"), "--approved"), "--approved needs the link"),
+        (
+            (str(BIN / "probe"), "--approved", "x", "lib_drop", "lib_sequence"),
+            "one lib_ probe per run",
+        ),
         ((str(BIN / "ibmi-test"), "django"), "never the full suite"),
         ((str(BIN / "ibmi-test"), "--django", "9.9", "own", "x"), "Django 9.9 is not supported"),
         ((str(BIN / "ibmi-test"), "--full-tier", "own", "x"), "no own/django selection"),

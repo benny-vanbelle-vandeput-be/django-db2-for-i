@@ -101,7 +101,7 @@ def test_unknown_paths_fail_closed(path) -> None:
         ("tests/django_settings/settings_corpus.py", cp.DOCS, []),
         ("tests/corpus/capture.py", cp.DOCS, ["run-ibmi"]),
         ("tests/conftest.py", cp.DOCS, ["run-ibmi"]),
-        ("probes/p23_drop_column.py", cp.DOCS, []),
+        ("probes/qtemp_drop_column.py", cp.DOCS, []),
     ],
 )
 def test_ibmi_related_paths(path, cls, labels) -> None:

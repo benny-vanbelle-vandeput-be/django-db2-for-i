@@ -96,13 +96,23 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
     everything in it vanishes when the job ends.
   - Nothing outside QTEMP (a library, a table in a user library, a journal, a
     system value, a reply list entry) may be created or changed without approval.
-  - **No write ("w") probe without explicit approval for that specific probe**:
-    the approval names the probe and what it creates (objects, library), is
-    given before its first `--execute`, and covers only that probe as approved.
-    A change to what it writes (more or other objects) needs a new approval;
-    an earlier approval of another probe never carries over. Its dry run
-    (read-only pre-checks) needs none. The approval is recorded in the probe's
-    docstring (date, conditions).
+  - **A probe's name says where it acts**: `probes/qtemp_<topic>.py` only
+    reads, or writes only in QTEMP (or its own job); `probes/lib_<topic>.py`
+    creates or changes anything outside QTEMP. A probe whose scope grows beyond
+    QTEMP becomes a `lib_` probe before it runs. Every probe report states where
+    it ran (read-only, QTEMP, or which library and which objects).
+  - **No `lib_` probe without the maintainer's explicit approval for that
+    specific probe, and the approval is a link.** Before any `lib_` probe,
+    Claude asks first, saying what it creates or changes and how it cleans up,
+    and waits for an approval **comment by the maintainer on GitHub** (an
+    answer in the session is not enough). It covers only that probe as
+    described; more or other objects need a new approval. It is enforced:
+    `bin/probe --approved <comment link> lib_<topic>` checks on GitHub that the
+    comment is the maintainer's (`scripts/probe_approval.py`), the nox session
+    `probe_lib` is the only way a `lib_` probe starts, `probes/_common.connect()`
+    refuses a `lib_` probe without the approval, and the link is stored with
+    the result. This holds for its dry run too. `tests/offline/test_probes.py`
+    checks the names and the gate.
   - **Standing approval (2026-10-21): `bin/ibmi-cleanup`** (phase 4 step 0) may drop
     leftover test tables, with their indexes and views, in the two `.env` libraries,
     and nothing else: only tables on the local list that test runs write *before*

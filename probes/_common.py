@@ -18,6 +18,7 @@ import json
 import os
 import re
 import socket
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,40 @@ _PASSWORD_LENGTH = re.compile(r"(password length\s*=\s*)\d+", re.IGNORECASE)
 EXIT_CONFIG = 1
 EXIT_UNREACHABLE = 2
 EXIT_CONNECT_FAILED = 3
+
+
+# A lib_ probe changes something outside QTEMP and needs the maintainer's
+# approval for that specific probe (CLAUDE.md, "Initial test system: PUB400").
+# bin/probe checks the reference on GitHub (scripts/probe_approval.py) and the
+# nox session probe_lib passes it in these variables; connect() refuses a lib_
+# probe without it, and write_result() stores it with the result.
+APPROVAL_ENV = "DB2I_PROBE_APPROVED"
+APPROVER_ENV = "DB2I_PROBE_APPROVED_BY"
+REPOSITORY = "benny-vanbelle-vandeput-be/django-db2-for-i"
+APPROVAL_URL = re.compile(
+    rf"^https://github\.com/{re.escape(REPOSITORY)}/(?:pull|issues)/\d+#issuecomment-(\d+)$"
+)
+
+
+def is_lib_probe(script: str) -> bool:
+    return Path(script).name.startswith("lib_")
+
+
+def require_approval(script: str) -> dict[str, str] | None:
+    """The approval of a lib_ probe ({"approved": url, "approved_by": login});
+    None for a qtemp_ probe. Raises ProbeError for a lib_ probe without one."""
+    if not is_lib_probe(script):
+        return None
+    url = os.environ.get(APPROVAL_ENV, "")
+    approver = os.environ.get(APPROVER_ENV, "")
+    if not APPROVAL_URL.match(url) or not approver:
+        raise ProbeError(
+            "approval",
+            f"{Path(script).name} changes the IBM i outside QTEMP: run it only through "
+            "bin/probe --approved <link to the maintainer's approval comment>; nothing was changed",
+            1,
+        )
+    return {"approved": url, "approved_by": approver}
 
 
 class ProbeError(Exception):
@@ -121,7 +156,9 @@ def connect(settings: Settings, attributes: dict[str, str] | None = None, autoco
 
     ``attributes`` are extra ODBC connection keywords that override
     DEFAULT_ATTRIBUTES (e.g. {"CMT": "1", "DBQ": "MYLIB"}).
+    A lib_ probe gets no connection without its approval (require_approval).
     """
+    require_approval(sys.argv[0])
     import pyodbc
 
     preflight = tcp_check(settings.host, settings.database_port)
@@ -321,7 +358,9 @@ def write_result(name: str, data: dict[str, Any], settings: Settings) -> Path:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     stamp = dt.datetime.now(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
     path = RESULTS_DIR / f"{name}-{stamp}.json"
-    payload = {"probe": name, "utc": stamp, "host": settings.host, "ssl": settings.ssl, **data}
+    payload = {"probe": name, "utc": stamp, "host": settings.host, "ssl": settings.ssl}
+    payload.update(require_approval(sys.argv[0]) or {})
+    payload.update(data)
     # default=str: parameters may be date/time/Decimal objects.
     text = json.dumps(payload, indent=2, ensure_ascii=False, default=str)
     path.write_text(settings.scrub(text) + "\n")

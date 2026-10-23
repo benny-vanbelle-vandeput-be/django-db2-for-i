@@ -3,6 +3,57 @@
 IBM i quirks and probe findings. Every claim here is backed by a probe in
 `probes/` or by a cited IBM source, with the date it was checked.
 
+**Probe names.** Since 2026-10-23 a probe's name says where it acts:
+`qtemp_` (read-only, or only QTEMP and its own job) or `lib_` (changes a
+library; runs only through `bin/probe --approved <link>`, CLAUDE.md). The
+entries below keep the names and commands of the day; they map as follows
+(the `nox -s probe_*` write sessions became `bin/probe --approved <link>
+lib_<topic>`):
+
+| Old name | New name |
+|---|---|
+| `p00_reachability.py` | `qtemp_reachability.py` |
+| `p01_connect.py` | `qtemp_connect.py` |
+| `p02_system_info.py` | `qtemp_system_info.py` |
+| `p03_libraries.py` | `qtemp_libraries.py` |
+| `p04_session.py` | `qtemp_session.py` |
+| `p05_packages.py` | `qtemp_packages.py` |
+| `p06_features.py` | `qtemp_features.py` |
+| `p07_string_limits.py` | `qtemp_string_limits.py` |
+| `p08_extract.py` | `qtemp_extract.py` |
+| `p09_queries.py` | `qtemp_queries.py` |
+| `p10_listagg.py` | `qtemp_listagg.py` |
+| `p11_trunc.py` | `qtemp_trunc.py` |
+| `p12_durations.py` | `qtemp_durations.py` |
+| `p13_fetch_errors.py` | `qtemp_fetch_errors.py` |
+| `p14_mapping_errors.py` | `qtemp_mapping_errors.py` |
+| `p15_long_string_params.py` | `qtemp_long_string_params.py` |
+| `p16_in_subquery.py` | `qtemp_in_subquery.py` |
+| `p17_tuple_in.py` | `qtemp_tuple_in.py` |
+| `p18_tuple_lookups.py` | `qtemp_tuple_lookups.py` |
+| `p19_compound_parts.py` | `qtemp_compound_parts.py` |
+| `p20_selected_predicates.py` | `qtemp_selected_predicates.py` |
+| `p21_numeric_params.py` | `qtemp_numeric_params.py` |
+| `p22_constraint_errors.py` | `qtemp_constraint_errors.py` |
+| `p23_drop_column.py` | `qtemp_drop_column.py` |
+| `p24_alter_table.py` | `qtemp_alter_table.py` |
+| `p25_catalog.py` | `qtemp_catalog.py` |
+| `setup_journal.py` | `lib_setup_journal.py` |
+| `w01_commitment.py` | `lib_commitment.py` |
+| `w02_autocommit.py` | `lib_autocommit.py` |
+| `w03_operations.py` | `lib_operations.py` |
+| `w04_sequence.py` | `lib_sequence.py` |
+| `w05_drop.py` | `lib_drop.py` |
+| `w06_defaults.py` | `qtemp_defaults.py` |
+| `w07_savepoints.py` | `lib_savepoints.py` |
+| `w08_inquiry.py` | `qtemp_inquiry.py` |
+| `w09_job_reuse.py` | `lib_job_reuse.py` |
+| `w10_encoding.py` | `qtemp_encoding.py` |
+| `w11_job_ccsid.py` | `qtemp_job_ccsid.py` |
+| `w12_locale.py` | `qtemp_locale.py` |
+| `w13_constraints.py` | `lib_constraints.py` |
+| `w14_column_types.py` | `lib_column_types.py` |
+
 ## IBM i Access ODBC Driver for Linux
 
 Checked 2026-10-16 against IBM's repository

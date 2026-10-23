@@ -5,8 +5,8 @@ the probe sets to *SYSRPYL and deliberately does NOT restore before it
 disconnects. Two connections, strictly one after the other. Not part of
 probes/run.py.
 
-Usage (inside the "tests" container):
-    nox -s probe_job_reuse
+Usage (on the host; bin/probe checks the approval on GitHub first):
+    bin/probe --approved <link> lib_job_reuse
 
 1. Connection 1: read the job name, its INQUIRY_MESSAGE_REPLY and the
    prestart job reuse count; CHGJOB INQMSGRPY(*SYSRPYL); read it back;
@@ -105,7 +105,7 @@ def main(argv: list[str]) -> int:
         print("\nSummary")
         for key in list(result)[1:]:
             print(f"  {key:<36} {result[key]}")
-        print(f"\nresult saved to {write_result('w09_job_reuse', result, settings)}")
+        print(f"\nresult saved to {write_result('lib_job_reuse', result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)
         return exc.exit_code

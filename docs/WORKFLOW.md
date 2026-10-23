@@ -146,8 +146,9 @@ pushed to a public registry (IBM's license).
    "PUB400 busy: <holder>", or queues with `--wait`.
 3. The scripts:
    - `bin/doctor`: the environment check and one connection;
-   - `bin/probe <name>` (`--list`): read-only probes; probes may change only
-     `QTEMP`; anything else needs the maintainer's approval first;
+   - `bin/probe <name>` (`--list`): `qtemp_` probes (read-only or QTEMP);
+     `bin/probe --approved <link> lib_<topic>` for a probe that changes a
+     library, only with the maintainer's approval comment for it (CLAUDE.md);
    - `bin/ibmi-test own <tests>`, `bin/ibmi-test django <label>...`,
      `bin/ibmi-test --full-tier`, `bin/ibmi-test --affected`;
    - `bin/verify`: targeted runs with stamps (topic `change`);

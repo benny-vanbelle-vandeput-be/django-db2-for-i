@@ -196,7 +196,7 @@ def main(argv: list[str]) -> int:
         # The backend's settings: commitment control, autocommit (schema editor).
         conn = connect(settings, {"CMT": "1", "TRUEAUTOCOMMIT": "1"}, autocommit=True)
         result = run(conn)
-        print(f"\nresult saved to {write_result('w08_inquiry', result, settings)}")
+        print(f"\nresult saved to {write_result('qtemp_inquiry', result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)
         return exc.exit_code

@@ -2,9 +2,10 @@
 
 THIS CHANGES THE IBM i (one temporary table). It is not part of probes/run.py.
 
-Usage (inside the "tests" container):
-    nox -s probe_write -- --library <LIB>             # dry run: checks only
-    nox -s probe_write -- --library <LIB> --execute   # creates, uses and drops the table
+Usage (on the host; bin/probe checks the approval on GitHub first):
+    bin/probe --approved <link> lib_commitment -- --library <LIB>             # dry run: checks only
+    # creates, uses and drops the table
+    bin/probe --approved <link> lib_commitment -- --library <LIB> --execute
 
 <LIB> must be owned by the current user and must NOT have a QSQJRN journal:
 the point is to see how commit mode *CS behaves on an unjournaled table.
@@ -189,7 +190,7 @@ def main(argv: list[str]) -> int:
             print("\nDry run: nothing was changed. Re-run with --execute to apply.")
             return 0
         result = run(conn, library)
-        print(f"\nresult saved to {write_result('w01_commitment', result, settings)}")
+        print(f"\nresult saved to {write_result('lib_commitment', result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)
         return exc.exit_code

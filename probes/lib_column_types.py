@@ -9,9 +9,9 @@ nothing else read or changed, one connection, nothing else on PUB400 at the
 same time (scripts/pub400.sh holds the PUB400 lock for the whole run). Not
 part of probes/run.py.
 
-Usage (inside the "tests" container, through scripts/pub400.sh):
-    nox -s probe_column_types              # dry run: checks only
-    nox -s probe_column_types -- --execute
+Usage (on the host; bin/probe checks the approval on GitHub first):
+    bin/probe --approved <link> lib_column_types              # dry run: checks only
+    bin/probe --approved <link> lib_column_types -- --execute
 
 Questions (data_types_reverse, get_field_type(), get_table_description(),
 can_introspect_default, can_introspect_check_constraints):
@@ -240,7 +240,7 @@ def main(argv: list[str]) -> int:
             print("\nDry run: nothing was changed. Re-run with --execute to apply.")
             return 0
         result = run(conn, library)
-        print(f"\nresult saved to {write_result('w14_column_types', result, settings)}")
+        print(f"\nresult saved to {write_result('lib_column_types', result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)
         return exc.exit_code

@@ -2,9 +2,9 @@
 
 THIS CHANGES THE IBM i (two temporary tables). It is not part of probes/run.py.
 
-Usage (inside the "tests" container):
-    nox -s probe_operations              # dry run: checks only
-    nox -s probe_operations -- --execute
+Usage (on the host; bin/probe checks the approval on GitHub first):
+    bin/probe --approved <link> lib_operations              # dry run: checks only
+    bin/probe --approved <link> lib_operations -- --execute
 
 Runs on DB2I_DEFAULT_LIBRARY (must have a QSQJRN journal) with the backend's
 connection settings: NAM=0, CMT=1 (*CS), TRUEAUTOCOMMIT=1, autocommit on.
@@ -205,7 +205,7 @@ def main(argv: list[str]) -> int:
             print("\nDry run: nothing was changed. Re-run with --execute to apply.")
             return 0
         result = run(conn, library)
-        print(f"\nresult saved to {write_result('w03_operations', result, settings)}")
+        print(f"\nresult saved to {write_result('lib_operations', result, settings)}")
     except ProbeError as exc:
         print(f"\nPROBE FAILED [{exc.category}]: {exc}", file=sys.stderr)
         return exc.exit_code
