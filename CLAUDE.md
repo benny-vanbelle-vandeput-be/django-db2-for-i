@@ -96,6 +96,13 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
     everything in it vanishes when the job ends.
   - Nothing outside QTEMP (a library, a table in a user library, a journal, a
     system value, a reply list entry) may be created or changed without approval.
+  - **No write ("w") probe without explicit approval for that specific probe**:
+    the approval names the probe and what it creates (objects, library), is
+    given before its first `--execute`, and covers only that probe as approved.
+    A change to what it writes (more or other objects) needs a new approval;
+    an earlier approval of another probe never carries over. Its dry run
+    (read-only pre-checks) needs none. The approval is recorded in the probe's
+    docstring (date, conditions).
   - **Standing approval (2026-10-21): `bin/ibmi-cleanup`** (phase 4 step 0) may drop
     leftover test tables, with their indexes and views, in the two `.env` libraries,
     and nothing else: only tables on the local list that test runs write *before*
