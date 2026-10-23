@@ -402,3 +402,11 @@ def probe_constraints(session: nox.Session) -> None:
     dropped at the end). Dry run unless -- --execute."""
     session.install("-e", ".")
     session.run("python", "probes/w13_constraints.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
+def probe_column_types(session: nox.Session) -> None:
+    """CHANGES THE IBM i: write probe w14 (DJW14 tables in the default library,
+    dropped at the end). Dry run unless -- --execute."""
+    session.install("-e", ".")
+    session.run("python", "probes/w14_column_types.py", *session.posargs)

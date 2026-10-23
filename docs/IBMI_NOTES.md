@@ -904,6 +904,47 @@ probe 25. The views' columns, from their own `QSYS2.SYSCOLUMNS` rows:
   `DATA_TYPE` values `CHAR`, `INTEGER`, `SMALLINT`, `VARCHAR` and `VARG`
   (graphic varying, i.e. NVARCHAR).
 
+### Column types in the catalog (`nox -s probe_column_types -- --execute`)
+2026-10-23, PUB400 (IBM i 7.5), write probe w14 (approved 2026-10-23, step B
+item 6): four own `DJW14` tables in the journaled `default` library, each on
+the table list before its `CREATE TABLE`, all dropped at the end (none left).
+`QSYS2.SYSCOLUMNS` for every type of `DatabaseWrapper.data_types`:
+
+| Backend type (Django field) | `DATA_TYPE` | `LENGTH` | Other |
+|---|---|---|---|
+| `INTEGER` / identity (`AutoField`) | `INTEGER` | 4 | precision 9 |
+| `BIGINT` / identity (`BigAutoField`, `DurationField`) | `BIGINT` | 8 | precision 18 |
+| `SMALLINT` / identity (`SmallAutoField`) | `SMALLINT` | 2 | precision 4 |
+| `BOOLEAN` | `BOOLEAN` | 1 | |
+| `NVARCHAR(n)` (`CharField`, `SlugField`, ...) | `VARG` | n | CCSID 1200, octet length 2n |
+| `NCLOB` (`TextField`) | `DBCLOB` | 1048576 | CCSID 1200 |
+| `VARCHAR(n)` (`IPAddressField`, ...) | `VARCHAR` | n | job CCSID (273 on PUB400) |
+| `CHAR(32)` (`UUIDField`) | `CHAR` | 32 | job CCSID |
+| `BLOB` (`BinaryField`) | `BLOB` | 1048576 | CCSID 65535 |
+| `DECIMAL(p, s)` | `DECIMAL` | p | precision p, scale s |
+| `DOUBLE` (`FloatField`) | `FLOAT` | 8 | precision 52, radix 2 |
+| `DATE` | `DATE` | 4 | |
+| `TIME` | `TIME` | 3 | |
+| `TIMESTAMP(6)` | `TIMESTMP` | 10 | the fraction digits are not in `NUMERIC_SCALE` (the driver reports scale 6) |
+
+- **Identity:** `IS_IDENTITY` `YES`, `IDENTITY_GENERATION` `BY DEFAULT`,
+  `HAS_DEFAULT` **`J`**, `COLUMN_DEFAULT` NULL.
+- **Defaults:** `HAS_DEFAULT` `Y` and `COLUMN_DEFAULT` the clause as text:
+  `42`, `-1`, `1.50`, `2.5`, `'abc'`, `'it''s'`, `''` (quoted as in SQL),
+  `TRUE`, `CURRENT_DATE`, `CURRENT_TIMESTAMP` (with an underscore, although
+  the DDL said `CURRENT DATE` / `CURRENT TIMESTAMP`), and `NULL` for an
+  explicit `DEFAULT NULL`. **A nullable column without a `DEFAULT` clause
+  also has `HAS_DEFAULT` `Y`**, with `COLUMN_DEFAULT` NULL (the implicit null
+  default); a `NOT NULL` column without one has `N`.
+- **Column check** in Django's form `CHECK (k_pos >= 0)`: a system name
+  `Q_<library>_<table>_<column>_00001`, `SYSCHKCST.CHECK_CLAUSE`
+  `K_POS >= 0` (the identifier uppercased), one `SYSCSTCOL` row (`K_POS`).
+- **`cursor.description`** (pyodbc): `display_size` is always `None`;
+  `internal_size` and `precision` are the same number: the length for
+  strings and LOBs (characters), the digits for numbers (`INTEGER` 10,
+  `BIGINT` 20, `SMALLINT` 5, `DOUBLE` 15), 10 / 8 / 26 for `DATE` / `TIME` /
+  `TIMESTAMP(6)`; scale 6 for `TIMESTAMP(6)`, s for `DECIMAL`.
+
 ### Numeric values that do not fit the column (`nox -s probe -- numeric_params`)
 2026-10-20, PUB400 (IBM i 7.5), the backend's connection attributes; a QTEMP
 table with `SMALL SMALLINT` and `AMOUNT DECIMAL(5, 2)` whose rows hold the
