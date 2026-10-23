@@ -8,15 +8,17 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**23 flags enabled on Django 6.1.**
+**25 flags enabled on Django 6.1.**
 
-## Enabled (23)
+## Enabled (25)
 
 On in at least one supported Django version.
 
 | Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 |
 |---|---|---|---|---|
 | `allow_sliced_subqueries_with_in` | A sliced queryset (`qs[:n]`, also with an offset) can be used in `__in`. | ✅ | ✅ | ✅ |
+| `can_introspect_check_constraints` | `inspectdb` and introspection find CHECK constraints. | ✅ | ✅ | ✅ |
+| `can_introspect_default` | Introspection reads column defaults. | ✅ | ✅ | ✅ |
 | `can_introspect_foreign_keys` | Introspection finds foreign keys. | ✅ | ✅ | ✅ |
 | `can_release_savepoints` | Savepoints are released after a nested `atomic()` block that succeeded. | ✅ | ✅ | ✅ |
 | `has_native_boolean_field` | `BooleanField` is a native `BOOLEAN` column (IBM i 7.5). | – | – | ✅ |
@@ -58,15 +60,13 @@ Off on purpose, with the reason.
 | `supports_tuple_comparison_against_subquery` | Composite fields compared with `>`, `<` against a subquery. | – | ❌ | ❌ | Db2 for i rejects row-value comparisons with a subquery (SQL0115). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (28)
+## Planned (26)
 
 Off for now; planned for the phase shown.
 
 | Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Phase |
 |---|---|---|---|---|---|
 | `allows_multiple_constraints_on_same_fields` | Several constraints on the same columns. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
-| `can_introspect_check_constraints` | `inspectdb` and introspection find CHECK constraints. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
-| `can_introspect_default` | Introspection reads column defaults. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `can_rename_index` | `RenameIndex` renames an index in place instead of dropping and recreating it. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `can_return_columns_from_insert` | Inserted rows return their primary key and defaults in one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `can_return_rows_from_bulk_insert` | `bulk_create()` sets the primary keys of the created objects. | 🗓️ | 🗓️ | 🗓️ | phase 5 |

@@ -158,11 +158,24 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_on_delete_db_null = False
 
     # Introspection
-    can_introspect_default = False
+    can_introspect_default = True
     can_introspect_foreign_keys = True
-    can_introspect_check_constraints = False
+    can_introspect_check_constraints = True
     supports_index_column_ordering = False
     supports_inspectdb = False
+
+    @cached_property
+    def introspected_field_types(self) -> dict[str, str]:
+        """What introspection finds for a field the backend created: no unsigned
+        types (Positive*), DurationField as BIGINT, the IP fields as VARCHAR."""
+        return {
+            **super().introspected_field_types,
+            "DurationField": "BigIntegerField",
+            "GenericIPAddressField": "CharField",
+            "PositiveBigIntegerField": "BigIntegerField",
+            "PositiveIntegerField": "IntegerField",
+            "PositiveSmallIntegerField": "SmallIntegerField",
+        }
 
     # JSON
     supports_json_field = False

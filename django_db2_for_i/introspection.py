@@ -8,7 +8,10 @@ database's NAME). Catalog names are uppercase; ``identifier_converter``
 returns them in lowercase, Django's form (see operations.quote_name).
 """
 
-from django.db.backends.base.introspection import BaseDatabaseIntrospection, FieldInfo, TableInfo
+from collections import namedtuple
+
+from django.db.backends.base.introspection import BaseDatabaseIntrospection, TableInfo
+from django.db.backends.base.introspection import FieldInfo as BaseFieldInfo
 from django.db.models import Index
 
 from django_db2_for_i import compat
@@ -94,6 +97,10 @@ INDEXES_SQL = (
     "ORDER BY I.INDEX_NAME, K.ORDINAL_POSITION"
 )
 
+# get_table_description() rows: Django's fields plus whether the column is an
+# identity (get_field_type() turns it into an AutoField), as on PostgreSQL.
+FieldInfo = namedtuple("FieldInfo", [*BaseFieldInfo._fields, "is_autofield"])
+
 # QSYS2.SYSTABLES.TABLE_TYPE -> Django's TableInfo type.
 TABLE_TYPES = {
     "T": "t",  # table
@@ -103,6 +110,37 @@ TABLE_TYPES = {
 
 
 class DatabaseIntrospection(BaseDatabaseIntrospection):
+    # QSYS2.SYSCOLUMNS.DATA_TYPE -> Django field, for every type the backend
+    # writes (probe w14, IBMI_NOTES "Column types in the catalog").
+    data_types_reverse = {
+        "BIGINT": "BigIntegerField",
+        "BLOB": "BinaryField",
+        "BOOLEAN": "BooleanField",
+        "CHAR": "CharField",
+        "DATE": "DateField",
+        "DBCLOB": "TextField",  # NCLOB
+        "DECIMAL": "DecimalField",
+        "FLOAT": "FloatField",  # DOUBLE
+        "INTEGER": "IntegerField",
+        "SMALLINT": "SmallIntegerField",
+        "TIME": "TimeField",
+        "TIMESTMP": "DateTimeField",
+        "VARCHAR": "CharField",
+        "VARG": "CharField",  # NVARCHAR
+    }
+    # An identity column of each integer type.
+    AUTO_FIELDS = {
+        "IntegerField": "AutoField",
+        "BigIntegerField": "BigAutoField",
+        "SmallIntegerField": "SmallAutoField",
+    }
+
+    def get_field_type(self, data_type: str, description) -> str:
+        field_type = super().get_field_type(data_type, description)
+        if description.is_autofield:
+            return self.AUTO_FIELDS.get(field_type, field_type)
+        return field_type
+
     def identifier_converter(self, name: str) -> str:
         """Catalog names are uppercase (see quote_name); Django's are lowercase."""
         return name.lower()
@@ -122,10 +160,18 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         ]
 
     def get_table_description(self, cursor, table_name: str) -> list[FieldInfo]:
-        """Columns in table order. Completed in phase 4 (types, defaults)."""
+        """Columns in table order.
+
+        ``display_size`` is the length in characters of a character or LOB
+        column (inspectdb's ``max_length``), ``internal_size`` the catalog's
+        ``LENGTH``. ``default`` is ``COLUMN_DEFAULT`` as Db2 for i records it
+        (``42``, ``'abc'``, ``CURRENT_TIMESTAMP``, ``NULL`` for an explicit
+        ``DEFAULT NULL``); ``None`` without a default clause.
+        """
         cursor.execute(
-            "SELECT COLUMN_NAME, DATA_TYPE, LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, "
-            "IS_NULLABLE, COLUMN_DEFAULT FROM QSYS2.SYSCOLUMNS "
+            "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, LENGTH, "
+            "NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT, IS_IDENTITY "
+            "FROM QSYS2.SYSCOLUMNS "
             "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s "
             "ORDER BY ORDINAL_POSITION",
             [table_name.upper()],
@@ -134,15 +180,26 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             FieldInfo(
                 name=self.identifier_converter(name.rstrip()),
                 type_code=data_type.rstrip(),
-                display_size=None,
+                display_size=characters,
                 internal_size=length,
                 precision=precision,
                 scale=scale,
                 null_ok=nullable.rstrip() == "Y",
                 default=default,
                 collation=None,
+                is_autofield=identity.rstrip() == "YES",
             )
-            for name, data_type, length, precision, scale, nullable, default in cursor.fetchall()
+            for (
+                name,
+                data_type,
+                characters,
+                length,
+                precision,
+                scale,
+                nullable,
+                default,
+                identity,
+            ) in cursor.fetchall()
         ]
 
     def get_sequences(self, cursor, table_name: str, table_fields=()) -> list[dict]:

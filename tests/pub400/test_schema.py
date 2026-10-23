@@ -123,6 +123,95 @@ def test_relations(live) -> None:
     assert tag == {}
 
 
+def test_field_types(live) -> None:
+    """get_field_type() on the catalog's types: what inspectdb would write back
+    for the tier's tables (identities as AutoFields, UUIDField as CHAR(32))."""
+    expected = {
+        "testapp_book": {
+            "id": "BigAutoField",
+            "author_id": "IntegerField",
+            "title": "CharField",
+            "published": "DateTimeField",
+            "reading_time": "TimeField",
+            "available": "BooleanField",
+            "pages": "IntegerField",
+        },
+        "testapp_node": {"id": "SmallAutoField", "parent_id": "SmallIntegerField"},
+        "testapp_tag": {"id": "CharField", "label": "CharField"},
+        "testapp_document": {"id": "AutoField", "text": "TextField", "data": "BinaryField"},
+        "testapp_schedule": {
+            "id": "AutoField",
+            "start": "DateTimeField",
+            "day": "DateField",
+            "clock": "TimeField",
+            "length": "BigIntegerField",
+        },
+        "testapp_measure": {
+            "id": "AutoField",
+            "small": "SmallIntegerField",
+            "amount": "DecimalField",
+            "big": "BigIntegerField",
+        },
+    }
+    found = {}
+    with live.cursor() as cursor:
+        for table in expected:
+            rows = live.introspection.get_table_description(cursor, table)
+            found[table] = {r.name: live.introspection.get_field_type(r.type_code, r) for r in rows}
+            sizes = {r.name: (r.display_size, r.precision, r.scale) for r in rows}
+            if table == "testapp_book":
+                assert sizes["title"][0] == 200
+            if table == "testapp_measure":
+                assert sizes["amount"][1:] == (5, 2)
+            if table == "testapp_tag":
+                assert sizes["id"][0] == 32
+    assert found == expected
+
+
+def test_column_defaults(live) -> None:
+    """FieldInfo.default is COLUMN_DEFAULT as Db2 for i records it (probe
+    lib_column_types); None for a column without a default."""
+    with live.cursor() as cursor:
+        rows = live.introspection.get_table_description(cursor, Defaults._meta.db_table)
+    defaults = {r.name: r.default for r in rows}
+    assert defaults["id"] is None
+    assert defaults["number"] == "-1"
+    assert defaults["flag"] == "TRUE"
+    assert defaults["amount"] == "1.50"
+    assert defaults["text"] == "'O''Brien 100%'"
+    for column in ("ratio", "day", "clock", "stamp", "data", "code"):
+        assert defaults[column] not in (None, "NULL"), column
+    assert defaults["nothing"] in (None, "NULL")
+
+
+def test_inspectdb(live, monkeypatch) -> None:
+    """The common use of introspection: inspectdb writes models for existing
+    tables, with types, lengths, nullability and the foreign key. On 6.1
+    inspectdb needs supports_inspectdb (step D); it is switched on here only."""
+    import io
+
+    from django.core.management import call_command
+
+    monkeypatch.setattr(live.features, "supports_inspectdb", True)
+    out = io.StringIO()
+    call_command("inspectdb", "testapp_author", "testapp_book", stdout=out)
+    lines = [line.strip() for line in out.getvalue().splitlines()]
+    for line in (
+        "class TestappAuthor(models.Model):",
+        "name = models.CharField(max_length=100)",
+        "class TestappBook(models.Model):",
+        "id = models.BigAutoField(primary_key=True)",
+        "author = models.ForeignKey(TestappAuthor, models.DO_NOTHING)",
+        "title = models.CharField(max_length=200)",
+        "published = models.DateTimeField(blank=True, null=True)",
+        "reading_time = models.TimeField(blank=True, null=True)",
+        "available = models.BooleanField()",
+        "pages = models.IntegerField()",
+        "db_table = 'testapp_book'",
+    ):
+        assert line in lines, (line, out.getvalue())
+
+
 def test_foreign_keys_are_no_action(live) -> None:
     with live.cursor() as cursor:
         cursor.execute(
