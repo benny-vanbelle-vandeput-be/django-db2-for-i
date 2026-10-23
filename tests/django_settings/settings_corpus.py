@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 ]
 
 SECRET_KEY = "django_tests_secret_key"
-DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+# No DEFAULT_AUTO_FIELD: Django's own default per version, as in Django's
+# reference test settings (AutoField on 5.2, BigAutoField from 6.0 on).
 USE_TZ = False
 SITE_ID = 1
