@@ -82,7 +82,7 @@ Status values:
 | Item | Backend | Status |
 |---|---|---|
 | `DatabaseOperations.adapt_durationfield_value()` added | Overridden: BIGINT range check ([#57](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/57)) | done |
-| `DatabaseIntrospection.get_relations()` returns `(field, table, db_on_delete)` | Not implemented (`can_introspect_foreign_keys = False`) | later (phase 4) |
+| `DatabaseIntrospection.get_relations()` returns `(field, table, db_on_delete)` | Implemented; the tuple comes from `compat.relation()` (`(field, table)` on 6.0 and 5.2), `SYSREFCST.DELETE_RULE` mapped to `DO_NOTHING` / `DB_*` | done (phase 4) |
 | `DatabaseFeatures.supports_inspectdb` | `False` | done |
 | `prohibits_dollar_signs_in_column_aliases` removed | Never set | n/a |
 | `binary_placeholder_sql(value, compiler)` returns `(sql, params)` | Not overridden; a bytes `Value` is refused | later (with binary values) |
