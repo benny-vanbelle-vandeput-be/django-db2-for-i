@@ -81,17 +81,27 @@ def convert_placeholders(sql: str) -> str:
     return _FORMAT_MARKER.sub(lambda match: "?" if match.group(1) == "s" else "%", sql)
 
 
+def strip_statement_end(sql: str) -> str:
+    """Without one trailing ``;`` (after trailing whitespace), as Django's Oracle
+    backend does: Db2 for i rejects it (SQL0104), and tests and user code write
+    it. Only one: ``;;`` keeps one, so the error stays visible."""
+    stripped = sql.rstrip()
+    return stripped[:-1] if stripped.endswith(";") else sql
+
+
 class FormatStyleCursor:
     """Accepts Django's ``%s`` placeholders and passes ``?`` to the driver.
 
     SQL is only converted when parameters are given: with ``params=None``
-    Django sends SQL as is, so a literal ``%`` must not be touched.
+    Django sends SQL as is, so a literal ``%`` must not be touched. One
+    trailing ``;`` is always removed (strip_statement_end).
     """
 
     def __init__(self, cursor: Database.Cursor):
         self.cursor = cursor
 
     def execute(self, sql: str, params: Sequence[Any] | None = None) -> FormatStyleCursor:
+        sql = strip_statement_end(sql)
         if params is None:
             self.cursor.execute(sql)
         else:
@@ -101,7 +111,7 @@ class FormatStyleCursor:
     def executemany(self, sql: str, param_list) -> FormatStyleCursor:
         rows = [self._sequence(params) for params in param_list]
         if rows:
-            self.cursor.executemany(convert_placeholders(sql), rows)
+            self.cursor.executemany(convert_placeholders(strip_statement_end(sql)), rows)
         return self
 
     @staticmethod
