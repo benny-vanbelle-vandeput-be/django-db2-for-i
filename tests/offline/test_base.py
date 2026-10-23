@@ -5,7 +5,12 @@ import pytest
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connection, connections
 
-from django_db2_for_i.base import DatabaseWrapper, FormatStyleCursor, convert_placeholders
+from django_db2_for_i.base import (
+    DatabaseWrapper,
+    FormatStyleCursor,
+    convert_placeholders,
+    strip_statement_end,
+)
 from django_db2_for_i.drivers import base as Database
 
 
@@ -103,6 +108,40 @@ def test_dict_params_become_django_not_supported_error() -> None:
         connection.wrap_database_errors,
     ):
         cursor.execute("SELECT %(a)s", {"a": 1})
+
+
+@pytest.mark.parametrize(
+    ("sql", "expected"),
+    [
+        ("SELECT 1;", "SELECT 1"),
+        ("SELECT 1; ", "SELECT 1"),
+        ("SELECT 1;\n", "SELECT 1"),
+        # Only one is removed: Db2 for i still rejects the rest (SQL0104).
+        ("SELECT 1;;", "SELECT 1;"),
+        # A ";" inside a string literal is not the statement's end.
+        ("SELECT ';' FROM T", "SELECT ';' FROM T"),
+        ("SELECT 'a;' FROM T WHERE B = 'x;'", "SELECT 'a;' FROM T WHERE B = 'x;'"),
+        ("SELECT ';' FROM T;", "SELECT ';' FROM T"),
+        # Without a ";" the SQL stays as it is, trailing whitespace included.
+        ("SELECT 1 ", "SELECT 1 "),
+    ],
+)
+def test_strip_statement_end(sql: str, expected: str) -> None:
+    assert strip_statement_end(sql) == expected
+
+
+@pytest.mark.parametrize("params", [None, [1]])
+def test_execute_strips_one_trailing_semicolon(params) -> None:
+    raw = RecordingCursor()
+    FormatStyleCursor(raw).execute("SELECT %s; " if params else "SELECT 1;", params)
+    sql = raw.calls[0][1]
+    assert sql == ("SELECT ?" if params else "SELECT 1")
+
+
+def test_executemany_strips_one_trailing_semicolon() -> None:
+    raw = RecordingCursor()
+    FormatStyleCursor(raw).executemany("INSERT INTO T VALUES (%s);", [[1], [2]])
+    assert raw.calls == [("executemany", "INSERT INTO T VALUES (?)", [[1], [2]])]
 
 
 def test_cursor_context_manager_closes() -> None:

@@ -84,6 +84,14 @@ NULL` fails with SQL0206). Custom expressions, transforms or `RawSQL` that
 produce a bare `NULL` must cast it, e.g. `CAST(NULL AS INTEGER)`. Django's
 own expressions do this already on this backend.
 
+## One statement per execute, without a closing `;`
+
+Db2 for i runs one statement per call and rejects a `;` at its end
+(`SQL0104 - Token ; was not valid`). The backend removes **one** trailing `;`
+(and the whitespace after it) from every statement, as Django's Oracle backend
+does, so `cursor.execute("SELECT ... ;")` works. A second `;`, or several
+statements in one string, still fail with `SQL0104`: run them one by one.
+
 ## Table and column names are uppercase
 
 Names are created in uppercase (`basic_article` becomes `BASIC_ARTICLE`).

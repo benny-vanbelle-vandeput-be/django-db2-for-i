@@ -5,7 +5,7 @@ connection of the ``default`` alias, and write only to a QTEMP table.
 """
 
 import pytest
-from django.db import connection
+from django.db import ProgrammingError, connection
 
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
 
@@ -30,6 +30,17 @@ def test_placeholders_and_percent(live) -> None:
         # Without params the SQL is sent as is.
         cursor.execute("SELECT '100%' FROM SYSIBM.SYSDUMMY1")
         assert cursor.fetchone() == ("100%",)
+
+
+def test_trailing_semicolon(live) -> None:
+    """One trailing ";" is removed (SQL0104 otherwise); a ";" in a literal stays."""
+    with live.cursor() as cursor:
+        cursor.execute("SELECT 1 FROM SYSIBM.SYSDUMMY1; ")
+        assert cursor.fetchone() == (1,)
+        cursor.execute("SELECT CAST(%s AS INTEGER), ';' FROM SYSIBM.SYSDUMMY1;", [7])
+        assert cursor.fetchone() == (7, ";")
+        with pytest.raises(ProgrammingError, match="SQL0104"):
+            cursor.execute("SELECT 1 FROM SYSIBM.SYSDUMMY1;;")
 
 
 def test_session_state(live) -> None:
