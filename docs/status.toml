@@ -109,6 +109,33 @@ prs = [119, 120]
 [[phases]]
 phase = "4"
 content = "Schema editor completeness"
+status = "in progress"
+
+[[phases.steps]]
+step = "0: tooling (classification, gate, lock, bin/ scripts)"
+status = "done"
+prs = [126, 127, 128, 129, 130, 131, 132, 133, 137, 139]
+
+[[phases.steps]]
+step = "A: facts first (probes 24, 25, w13; column order #23)"
+status = "done"
+prs = [134, 135, 136]
+
+[[phases.steps]]
+step = "B: introspection"
+status = "in progress"
+prs = [138, 140, 141, 142]
+
+[[phases.steps]]
+step = "C: schema editor"
+status = "planned"
+
+[[phases.steps]]
+step = "D: inspectdb"
+status = "planned"
+
+[[phases.steps]]
+step = "Close-out: user docs, phase record, changelog"
 status = "planned"
 
 [[phases]]
