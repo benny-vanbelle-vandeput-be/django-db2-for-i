@@ -9,6 +9,58 @@ returns them in lowercase, Django's form (see operations.quote_name).
 """
 
 from django.db.backends.base.introspection import BaseDatabaseIntrospection, FieldInfo, TableInfo
+from django.db.models import Index
+
+# QSYS2.SYSKEYS.ORDERING (column text: "A-Ascending, D-Descending", probe 25).
+ORDERS = {"A": "ASC", "D": "DESC"}
+# QSYS2.SYSINDEXES.IS_UNIQUE: "D" is an index that allows duplicate keys
+# (probe w13); every other value is a unique kind.
+DUPLICATES_ALLOWED = "D"
+
+# The constraints of a table with their columns in key order: the key
+# columns (SYSKEYCST) for primary, unique and foreign keys, the referenced
+# columns (SYSCSTCOL) for checks. Only the constraint name and the table go
+# in as parameters.
+CONSTRAINTS_SQL = (
+    "SELECT C.CONSTRAINT_NAME, C.CONSTRAINT_TYPE, K.COLUMN_NAME, K.ORDINAL_POSITION "
+    "FROM QSYS2.SYSCST C LEFT JOIN QSYS2.SYSKEYCST K "
+    "ON K.CONSTRAINT_SCHEMA = C.CONSTRAINT_SCHEMA AND K.CONSTRAINT_NAME = C.CONSTRAINT_NAME "
+    "WHERE C.TABLE_SCHEMA = CURRENT SCHEMA AND C.TABLE_NAME = %s "
+    "AND C.CONSTRAINT_TYPE IN ('PRIMARY KEY', 'UNIQUE', 'FOREIGN KEY') "
+    "UNION ALL "
+    "SELECT C.CONSTRAINT_NAME, C.CONSTRAINT_TYPE, S.COLUMN_NAME, 0 "
+    "FROM QSYS2.SYSCST C LEFT JOIN QSYS2.SYSCSTCOL S "
+    "ON S.CONSTRAINT_SCHEMA = C.CONSTRAINT_SCHEMA AND S.CONSTRAINT_NAME = C.CONSTRAINT_NAME "
+    "WHERE C.TABLE_SCHEMA = CURRENT SCHEMA AND C.TABLE_NAME = %s "
+    "AND C.CONSTRAINT_TYPE = 'CHECK' "
+    "ORDER BY 1, 4, 3"
+)
+# For each foreign key of a table: the referenced table and the first column of
+# the referenced key (Django's ``foreign_key`` is one (table, column) pair).
+FOREIGN_KEYS_SQL = (
+    "SELECT C.CONSTRAINT_NAME, P.TABLE_NAME, PK.COLUMN_NAME "
+    "FROM QSYS2.SYSCST C "
+    "JOIN QSYS2.SYSREFCST R "
+    "ON R.CONSTRAINT_SCHEMA = C.CONSTRAINT_SCHEMA AND R.CONSTRAINT_NAME = C.CONSTRAINT_NAME "
+    "JOIN QSYS2.SYSCST P "
+    "ON P.CONSTRAINT_SCHEMA = R.UNIQUE_CONSTRAINT_SCHEMA "
+    "AND P.CONSTRAINT_NAME = R.UNIQUE_CONSTRAINT_NAME "
+    "JOIN QSYS2.SYSKEYCST PK "
+    "ON PK.CONSTRAINT_SCHEMA = P.CONSTRAINT_SCHEMA AND PK.CONSTRAINT_NAME = P.CONSTRAINT_NAME "
+    "WHERE C.TABLE_SCHEMA = CURRENT SCHEMA AND C.TABLE_NAME = %s "
+    "AND C.CONSTRAINT_TYPE = 'FOREIGN KEY' "
+    "ORDER BY C.CONSTRAINT_NAME, PK.ORDINAL_POSITION"
+)
+# The SQL indexes of a table with their key columns in order. The access
+# paths that constraints use are not listed in SYSINDEXES (probe w13), so a
+# constraint does not show up twice.
+INDEXES_SQL = (
+    "SELECT I.INDEX_NAME, I.IS_UNIQUE, K.COLUMN_NAME, K.ORDERING "
+    "FROM QSYS2.SYSINDEXES I JOIN QSYS2.SYSKEYS K "
+    "ON K.INDEX_SCHEMA = I.INDEX_SCHEMA AND K.INDEX_NAME = I.INDEX_NAME "
+    "WHERE I.TABLE_SCHEMA = CURRENT SCHEMA AND I.TABLE_NAME = %s "
+    "ORDER BY I.INDEX_NAME, K.ORDINAL_POSITION"
+)
 
 # QSYS2.SYSTABLES.TABLE_TYPE -> Django's TableInfo type.
 TABLE_TYPES = {
@@ -72,3 +124,50 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             {"table": table_name, "column": self.identifier_converter(column.rstrip())}
             for (column,) in cursor.fetchall()
         ]
+
+    def get_constraints(self, cursor, table_name: str) -> dict[str, dict]:
+        """Primary keys, unique, foreign key and check constraints, and indexes."""
+        table = table_name.upper()
+        constraints: dict[str, dict] = {}
+        cursor.execute(CONSTRAINTS_SQL, [table, table])
+        for name, kind, column, _position in cursor.fetchall():
+            kind = kind.rstrip()
+            entry = constraints.setdefault(
+                self.identifier_converter(name.rstrip()),
+                {
+                    "columns": [],
+                    "primary_key": kind == "PRIMARY KEY",
+                    "unique": kind in ("PRIMARY KEY", "UNIQUE"),
+                    "foreign_key": None,
+                    "check": kind == "CHECK",
+                    "index": False,
+                },
+            )
+            if column is not None:
+                entry["columns"].append(self.identifier_converter(column.rstrip()))
+        cursor.execute(FOREIGN_KEYS_SQL, [table])
+        for name, target_table, target_column in cursor.fetchall():
+            entry = constraints.get(self.identifier_converter(name.rstrip()))
+            if entry is not None and entry["foreign_key"] is None:
+                entry["foreign_key"] = (
+                    self.identifier_converter(target_table.rstrip()),
+                    self.identifier_converter(target_column.rstrip()),
+                )
+        cursor.execute(INDEXES_SQL, [table])
+        for name, unique, column, ordering in cursor.fetchall():
+            entry = constraints.setdefault(
+                self.identifier_converter(name.rstrip()),
+                {
+                    "columns": [],
+                    "orders": [],
+                    "primary_key": False,
+                    "unique": unique.rstrip() != DUPLICATES_ALLOWED,
+                    "foreign_key": None,
+                    "check": False,
+                    "index": True,
+                    "type": Index.suffix,
+                },
+            )
+            entry["columns"].append(self.identifier_converter(column.rstrip()))
+            entry["orders"].append(ORDERS.get(ordering.rstrip(), "ASC"))
+        return constraints
