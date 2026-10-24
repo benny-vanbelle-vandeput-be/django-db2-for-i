@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2574 | 2 | 0 | 0 | 2026-10-24 08:06:49 UTC |
+| Offline · own tests | 2607 | 2 | 0 | 0 | 2026-10-24 09:20:00 UTC |
 | IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 03:02:59 UTC |
 | IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-22 21:00:55 UTC |
-| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-24 08:07:26 UTC |
+| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-24 09:20:39 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2575 | 1 | 0 | 0 | 2026-10-24 08:03:53 UTC |
+| Offline · own tests | 2608 | 1 | 0 | 0 | 2026-10-24 09:17:03 UTC |
 | IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 01:55:40 UTC |
 | IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-21 01:03:38 UTC |
-| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-24 08:04:30 UTC |
+| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-24 09:17:40 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2573 | 1 | 0 | 0 | 2026-10-24 08:00:53 UTC |
+| Offline · own tests | 2606 | 1 | 0 | 0 | 2026-10-24 09:13:57 UTC |
 | IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-21 00:42:24 UTC |
 | IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 23:51:07 UTC |
-| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-24 08:01:31 UTC |
+| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-24 09:14:41 UTC |
 
 ### About the tests
 
@@ -88,7 +88,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 database; **expected failures** are known Db2 for i limitations, each with a reason
 ([Known limitations](docs/user/Known-Limitations.md)).
 
-Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (25 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
+Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (26 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
 <!-- tests:end -->
 
 <!-- status:start -->
