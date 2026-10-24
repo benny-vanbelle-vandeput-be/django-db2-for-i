@@ -442,3 +442,104 @@ def test_run_verdict() -> None:
     assert cp.run_verdict(sql, None) == "yes, run-ibmi"
     assert cp.run_verdict(sql, changed) == "yes, run-ibmi (changed)"
     assert cp.run_verdict(sql, stamps).startswith("no new run (stamps only)")
+
+
+# --- The previous head from the PR comment (CI) ------------------------------------------
+
+
+SHA = "0123456789abcdef0123456789abcdef01234567"
+
+
+@pytest.mark.parametrize(
+    ("comment", "expected"),
+    [
+        (f"<!-- classify-pr head={SHA} -->\n### Classification", SHA),
+        ("<!-- classify-pr -->\n### Classification", None),  # written before the head was named
+        ("", None),  # no comment yet
+        (f"text\n<!-- classify-pr head={SHA} -->", None),  # only as the first line
+        ("<!-- classify-pr head=abc123 -->", None),  # a full SHA only
+    ],
+)
+def test_previous_head(comment, expected) -> None:
+    assert cp.previous_head(comment) == expected
+
+
+def test_the_comment_names_the_head_it_classified() -> None:
+    result = run({"django_db2_for_i/schema.py": (b"a", b"b")})
+    comment = cp.as_markdown(result, None, SHA)
+    assert comment.splitlines()[0] == f"<!-- classify-pr head={SHA} -->"
+    assert comment.startswith(cp.COMMENT_PREFIX)
+    assert cp.previous_head(comment) == SHA
+
+
+def _json(capsys, *args: str) -> dict:
+    assert cp.main(["--base", "main", "--format", "json", *args]) == 0
+    return json.loads(capsys.readouterr().out)
+
+
+def test_no_comment_yet_classifies_the_whole_pull_request(repo, tmp_path, capsys) -> None:
+    """The first run, or the first run after a cancelled one: no previous
+    head, so the labels of the whole pull request are added."""
+    _git(repo, "switch", "-q", "-c", "pr")
+    _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    _commit(repo, {"changelog.d/1.added.md": b"x\n"}, "docs: fragment")
+    empty = tmp_path / "previous.md"
+    empty.write_text("")
+    assert cp.main(["--previous-comment", str(empty), "--print-before"]) == 0
+    assert capsys.readouterr().out == "\n"
+    data = _json(capsys, "--previous-comment", str(empty))
+    assert (data["labels"], data["push"]) == (["run-ibmi"], None)
+
+
+def test_a_cancelled_run_does_not_count_as_classified(repo, tmp_path, capsys) -> None:
+    """#158: the run for the backend commit was cancelled by a docs-only push
+    right after it. The push's own "before" (the cancelled head) would say "no
+    new run"; the comment still names the last classified head, so the push
+    is checked from there and the labels are added."""
+    _git(repo, "switch", "-q", "-c", "pr")
+    classified = _commit(repo, {"docs/b.md": b"b\n"}, "docs: b")
+    cancelled = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    _commit(repo, {"changelog.d/1.added.md": b"x\n"}, "docs: fragment")
+
+    from_push = _json(capsys, "--before", cancelled)
+    assert from_push["push"]["new_run_needed"] is False  # the gap
+
+    comment = tmp_path / "previous.md"
+    comment.write_text(f"<!-- classify-pr head={classified} -->\n### Classification")
+    assert cp.main(["--previous-comment", str(comment), "--print-before"]) == 0
+    assert capsys.readouterr().out == f"{classified}\n"
+    data = _json(capsys, "--previous-comment", str(comment))
+    assert data["labels"] == ["run-ibmi"]
+    assert data["push"]["new_run_needed"] is True
+
+
+def test_a_completed_run_on_the_same_head_keeps_the_labels(repo, tmp_path, capsys) -> None:
+    _git(repo, "switch", "-q", "-c", "pr")
+    head = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    comment = tmp_path / "previous.md"
+    comment.write_text(f"<!-- classify-pr head={head} -->\n")
+    data = _json(capsys, "--previous-comment", str(comment))
+    assert data["push"]["new_run_needed"] is False
+
+
+def test_the_markdown_comment_names_the_head(repo, capsys) -> None:
+    _git(repo, "switch", "-q", "-c", "pr")
+    head = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    assert cp.main(["--base", "main", "--format", "markdown"]) == 0
+    assert capsys.readouterr().out.splitlines()[0] == f"<!-- classify-pr head={head} -->"
+
+
+def test_before_and_previous_comment_exclude_each_other(tmp_path) -> None:
+    comment = tmp_path / "previous.md"
+    comment.write_text("")
+    with pytest.raises(SystemExit):
+        cp.main(["--before", SHA, "--previous-comment", str(comment)])
+
+
+def test_the_workflow_takes_the_previous_head_from_the_comment() -> None:
+    workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/classify.yml").read_text()
+    assert "github.event.before" not in workflow
+    assert "--previous-comment previous.md" in workflow
+    labels = workflow.index('gh api "repos/$REPO/issues/$PR/labels"')
+    comment = workflow.index("-F body=@comment.md")
+    assert labels < comment  # the labels before the comment that names the head

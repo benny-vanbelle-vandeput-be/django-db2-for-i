@@ -32,40 +32,54 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      # On a push (synchronize) the previous head is checked too: a push of
-      # only verification stamps, or a rebase with identical changes onto
-      # docs/tests-only commits, needs no new IBM i run. A previous head that
-      # cannot be fetched counts as "new run needed".
+      # The previous head is the one the last *completed* run handled: its
+      # comment's marker names it. Not the push's "before": a run cancelled by
+      # a newer push never applied its labels, so its head must not count as
+      # classified. Without such a comment the whole pull request is
+      # classified and its labels are added. A previous head that cannot be
+      # fetched counts as "new run needed". A push of only verification stamps,
+      # or a rebase with identical changes onto docs/tests-only commits, needs
+      # no new IBM i run.
+      - name: Previous classification
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh api --paginate "repos/$REPO/issues/$PR/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- classify-pr"))) | [.id, .body] | @json' \
+            | head -n 1 > previous.json
+          if [ -s previous.json ]; then
+            jq -r '.[0]' previous.json > comment-id
+            jq -r '.[1]' previous.json > previous.md
+          else
+            : > comment-id
+            : > previous.md
+          fi
+
       - name: Classify
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
-          BEFORE: ${{ github.event.action == 'synchronize' && github.event.before || '' }}
         run: |
           git fetch --quiet origin "$BASE_REF"
-          args=(--base "origin/$BASE_REF" --head HEAD)
-          if [ -n "$BEFORE" ]; then
-            git fetch --quiet origin "$BEFORE" || true
-            args+=(--before "$BEFORE")
+          before=$(python3 scripts/classify_pr.py --previous-comment previous.md --print-before)
+          if [ -n "$before" ]; then
+            git fetch --quiet origin "$before" || true
           fi
+          args=(--base "origin/$BASE_REF" --head HEAD --previous-comment previous.md)
           python3 scripts/classify_pr.py "${args[@]}" --format json > classification.json
           python3 scripts/classify_pr.py "${args[@]}" --format markdown > comment.md
           cat comment.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Comment and labels
+      # Labels first, then the comment: the comment names this head as
+      # classified, so it is written only after the labels are applied.
+      - name: Labels and comment
         if: github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          marker='<!-- classify-pr -->'
-          id=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
-            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id" | head -n 1)
-          if [ -n "$id" ]; then
-            gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@comment.md > /dev/null
-          else
-            gh api "repos/$REPO/issues/$PR/comments" -F body=@comment.md > /dev/null
-          fi
           if [ "$(jq -r '.push == null or .push.new_run_needed' classification.json)" = true ]; then
             for label in $(jq -r '.labels[]' classification.json); do
               gh api "repos/$REPO/issues/$PR/labels" -f "labels[]=$label" > /dev/null
@@ -73,4 +87,10 @@ jobs:
             done
           else
             echo "no new IBM i run needed: labels unchanged"
+          fi
+          id=$(cat comment-id)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@comment.md > /dev/null
+          else
+            gh api "repos/$REPO/issues/$PR/comments" -F body=@comment.md > /dev/null
           fi

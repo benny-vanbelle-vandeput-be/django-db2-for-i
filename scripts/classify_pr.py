@@ -1,6 +1,7 @@
 """Classify a pull request from its changed files, and decide whether a push needs a new IBM i run.
 
-    python scripts/classify_pr.py [--base origin/main] [--head HEAD] [--before SHA]
+    python scripts/classify_pr.py [--base origin/main] [--head HEAD]
+                                  [--before SHA | --previous-comment FILE [--print-before]]
                                   [--format text|markdown|json]
 
 The changed files are those of ``git diff <merge-base of base and head> <head>``.
@@ -31,6 +32,13 @@ changelog fragment), or when it is a rebase whose own changes are identical
 (``git range-diff``) and whose new base commits are docs/tests only. Otherwise
 the labels apply again.
 
+In CI the previous head is not the push's ``before`` but the head the last
+*completed* classification handled: the PR comment's marker names it
+(``<!-- classify-pr head=<sha> -->``, ``--previous-comment``). A run that was
+cancelled (a newer push) never wrote its comment, so the next run checks the
+push from the last head whose labels were really applied; without such a
+comment the whole pull request is classified and its labels are added.
+
 The script only reads git; it never connects to an IBM i and needs no project
 dependencies (the CI job runs it with the runner's Python). The labels are
 added by CI and removed by the main session only, after the run
@@ -53,7 +61,10 @@ from collections.abc import Callable, Iterable
 DOCS, SQL, FULL = "docs/tests only", "SQL-affecting", "needs full tier"
 RANK = {DOCS: 0, SQL: 1, FULL: 2}
 FULL_TIER_LABEL, RUN_IBMI_LABEL = "needs-full-tier", "run-ibmi"
+# The comment's first line; it names the head the classification handled.
 COMMENT_MARKER = "<!-- classify-pr -->"
+COMMENT_PREFIX = "<!-- classify-pr"
+_COMMENT_HEAD = re.compile(r"\A<!-- classify-pr head=(?P<sha>[0-9a-f]{40}) -->")
 
 BACKEND = "django_db2_for_i/"
 FULL_TIER_PATHS = {
@@ -494,9 +505,25 @@ def as_text(result: Classification, push: PushCheck | None) -> str:
     return "\n".join(lines)
 
 
-def as_markdown(result: Classification, push: PushCheck | None) -> str:
+def comment_marker(head_sha: str | None) -> str:
+    return f"<!-- classify-pr head={head_sha} -->" if head_sha else COMMENT_MARKER
+
+
+def previous_head(comment: str) -> str | None:
+    """The head the last completed classification handled, from its PR comment;
+    None for no comment, or one written before the marker named the head."""
+    match = _COMMENT_HEAD.match(comment)
+    return match["sha"] if match else None
+
+
+def as_markdown(result: Classification, push: PushCheck | None, head_sha: str | None = None) -> str:
     labels = ", ".join(f"`{label}`" for label in result.labels) or "none"
-    lines = [COMMENT_MARKER, f"### Classification: **{result.cls}**", "", f"Labels: {labels}"]
+    lines = [
+        comment_marker(head_sha),
+        f"### Classification: **{result.cls}**",
+        "",
+        f"Labels: {labels}",
+    ]
     lines.append(f"IBM i run needed: **{run_verdict(result, push)}**.")
     lines += ["", "| File | Class | Why |", "|---|---|---|"]
     lines += [
@@ -519,18 +546,39 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--base", default="origin/main")
     parser.add_argument("--head", default="HEAD")
-    parser.add_argument("--before", help="the previous head, to check the push")
+    previous = parser.add_mutually_exclusive_group()
+    previous.add_argument("--before", help="the previous head, to check the push")
+    previous.add_argument(
+        "--previous-comment",
+        metavar="FILE",
+        help="the PR's classification comment (empty: none); its head is the previous head",
+    )
+    parser.add_argument(
+        "--print-before",
+        action="store_true",
+        help="with --previous-comment: print the previous head (or nothing) and stop",
+    )
     parser.add_argument("--format", choices=["text", "markdown", "json"], default="text")
     args = parser.parse_args(argv)
+    before = args.before
+    if args.previous_comment is not None:
+        with open(args.previous_comment, encoding="utf-8") as handle:
+            before = previous_head(handle.read())
+    if args.print_before:
+        print(before or "")
+        return 0
     try:
         merge_base = git("merge-base", args.base, args.head).strip()
         result = classify_refs(merge_base, args.head)
-        push = check_push(args.before, args.head, args.base) if args.before else None
+        push = check_push(before, args.head, args.base) if before else None
+        head_sha = git("rev-parse", args.head).strip()
     except subprocess.CalledProcessError as exc:
         print(f"error: git {' '.join(exc.cmd[1:])}: {(exc.stderr or '').strip()}", file=sys.stderr)
         return 2
-    render = {"text": as_text, "markdown": as_markdown, "json": as_json}[args.format]
-    print(render(result, push))
+    if args.format == "markdown":
+        print(as_markdown(result, push, head_sha))
+    else:
+        print({"text": as_text, "json": as_json}[args.format](result, push))
     return 0
 
 
