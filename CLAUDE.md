@@ -122,6 +122,12 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
     receiver or system object. Without `--yes` it only lists; it writes what it
     dropped to `test-results/cleanup/`. A table not on the list is reported, and
     dropping it needs approval.
+    **Renames (extended 2026-10-24):** a `RENAME TABLE` by a test run updates the
+    entry of a table that is already on the list (old name -> new name, the same
+    entry, never a new object), written *before* the statement runs and set back if
+    it fails; a rename back updates it again, so the list holds the current name.
+    A table not on the list is never added by a rename. The marker rule above is
+    unchanged.
 - PUB400 limits connections per IP: one connection per run, `--parallel=1`, no retry storms.
 - **One PUB400 job at a time on this machine**, whatever the worktree: no probe, tier
   or Django run starts while another one runs; it queues instead. `scripts/pub400.sh`

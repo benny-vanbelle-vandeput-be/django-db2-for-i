@@ -6,6 +6,11 @@ every connection of this backend; before a statement runs, a ``CREATE TABLE``,
 ``CREATE VIEW`` or ``CREATE ALIAS`` appends its object to the list and the line
 is flushed to disk, so a crash during the create still leaves it on the list.
 
+A ``RENAME TABLE`` of a table on the list updates that entry to the new name,
+also before the statement runs (and back if the statement fails), so the list
+always names the table as it is; a table that is not on the list is never
+added by a rename (CLAUDE.md, standing approval of ``bin/ibmi-cleanup``).
+
 The list is ``DB2I_TABLE_LIST``, set by ``scripts/pub400.sh`` to a file in the
 state directory outside every checkout (next to the PUB400 lock), so it does
 not depend on the worktree a run came from. Without it nothing is recorded,
@@ -29,6 +34,11 @@ _IDENT = r'(?:"(?:[^"]|"")+"|[A-Za-z_$#@][\w$#@]*)'
 CREATED = re.compile(
     rf"^\s*CREATE\s+(?:OR\s+REPLACE\s+)?(?P<kind>TABLE|VIEW|ALIAS)\s+"
     rf"(?:(?P<library>{_IDENT})\s*\.\s*)?(?P<name>{_IDENT})",
+    re.IGNORECASE,
+)
+RENAMED = re.compile(
+    rf"^\s*RENAME\s+TABLE\s+(?:(?P<library>{_IDENT})\s*\.\s*)?(?P<old>{_IDENT})"
+    rf"\s+TO\s+(?P<new>{_IDENT})",
     re.IGNORECASE,
 )
 
@@ -59,6 +69,28 @@ def parse(sql: str, default_library: str) -> Entry | None:
     return Entry(match["kind"].upper(), library, _identifier(match["name"]))
 
 
+def parse_rename(sql: str, default_library: str) -> tuple[str, str, str] | None:
+    """``(library, old name, new name)`` of a ``RENAME TABLE``; the new name is
+    unqualified on Db2 for i (it stays in the library)."""
+    match = RENAMED.match(sql)
+    if not match:
+        return None
+    library = _identifier(match["library"]) if match["library"] else default_library.upper()
+    return library, _identifier(match["old"]), _identifier(match["new"])
+
+
+def rename(path: Path, library: str, old: str, new: str) -> bool:
+    """Rename the TABLE entry ``library.old`` to ``new``; False (and no change)
+    when it is not on the list. The entry keeps its creation time."""
+    entries = read(path)
+    for index, entry in enumerate(entries):
+        if (entry.kind, entry.library, entry.name) == ("TABLE", library, old):
+            entries[index] = dataclasses.replace(entry, name=new)
+            write(path, entries)
+            return True
+    return False
+
+
 def record(path: Path, entry: Entry) -> None:
     stamped = dataclasses.replace(
         entry, created=dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -84,7 +116,10 @@ def read(path: Path) -> list[Entry]:
 def write(path: Path, entries: list[Entry]) -> None:
     """Replace the list (atomically): bin/ibmi-cleanup prunes objects that are gone."""
     temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text("".join(entry.line() for entry in entries), encoding="utf-8")
+    with temporary.open("w", encoding="utf-8") as handle:
+        handle.write("".join(entry.line() for entry in entries))
+        handle.flush()
+        os.fsync(handle.fileno())
     temporary.replace(path)
 
 
@@ -97,9 +132,18 @@ def wrapper(execute, sql, params, many, context):
     path = list_path()
     if path is not None and isinstance(sql, str):
         connection = context["connection"]
-        entry = parse(sql, connection.settings_dict["NAME"] or "")
+        library = connection.settings_dict["NAME"] or ""
+        entry = parse(sql, library)
         if entry is not None:
             record(path, entry)
+        renamed = parse_rename(sql, library)
+        if renamed is not None and rename(path, *renamed):
+            library, old, new = renamed
+            try:
+                return execute(sql, params, many, context)
+            except Exception:
+                rename(path, library, new, old)
+                raise
     return execute(sql, params, many, context)
 
 

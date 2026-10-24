@@ -1,5 +1,6 @@
 """tests/table_registry.py and scripts/ibmi_cleanup.py: the cleanup list (no server needed)."""
 
+import contextlib
 import importlib.util
 import sys
 from pathlib import Path
@@ -131,3 +132,91 @@ def test_cleanup_refuses_without_the_list(monkeypatch, capsys) -> None:
     monkeypatch.delenv(registry.ENV, raising=False)
     assert cleanup.main([]) == 2
     assert "DB2I_TABLE_LIST is not set" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("sql", "expected"),
+    [
+        ('RENAME TABLE "T_OLD" TO "T_NEW"', ("LIB", "T_OLD", "T_NEW")),
+        ('rename table "MYLIB"."T_OLD" to t_new', ("MYLIB", "T_OLD", "T_NEW")),
+        ("RENAME TABLE T_OLD TO T_NEW FOR SYSTEM NAME TNEW", ("LIB", "T_OLD", "T_NEW")),
+    ],
+)
+def test_table_renames_are_recognised(sql, expected) -> None:
+    assert registry.parse_rename(sql, "lib") == expected
+
+
+def test_index_renames_are_not_table_renames() -> None:
+    assert registry.parse_rename('RENAME INDEX "I" TO "J"', "lib") is None
+
+
+def _run(statements, path, failing=()):
+    """The wrapper around a fake execute; ``seen`` is the list as each statement ran."""
+    seen = []
+
+    def execute(sql, params, many, context):
+        seen.append((sql, [e.name for e in registry.read(path)]))
+        if sql in failing:
+            raise RuntimeError("SQL0204")
+
+    context = {"connection": FakeConnection()}
+    for sql in statements:
+        with contextlib.suppress(RuntimeError):
+            registry.wrapper(execute, sql, None, False, context)
+    return seen
+
+
+def test_a_rename_updates_the_entry_before_it_runs_and_again_on_the_way_back(
+    tmp_path, monkeypatch
+) -> None:
+    path = tmp_path / "created-objects.txt"
+    monkeypatch.setenv(registry.ENV, str(path))
+    seen = _run(
+        [
+            'CREATE TABLE "T_OLD" (X INT)',
+            'RENAME TABLE "T_OLD" TO "T_NEW"',
+            'RENAME TABLE "T_NEW" TO "T_OLD"',
+        ],
+        path,
+    )
+    assert [names for _sql, names in seen] == [["T_OLD"], ["T_NEW"], ["T_OLD"]]
+    (entry,) = registry.read(path)
+    assert (entry.kind, entry.library, entry.name) == ("TABLE", "TESTLIB", "T_OLD")
+
+
+def test_a_failed_rename_sets_the_entry_back(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "created-objects.txt"
+    monkeypatch.setenv(registry.ENV, str(path))
+    rename = 'RENAME TABLE "T_OLD" TO "T_NEW"'
+    seen = _run(['CREATE TABLE "T_OLD" (X INT)', rename], path, failing={rename})
+    assert seen[-1] == (rename, ["T_NEW"])  # written before the statement ran
+    assert [e.name for e in registry.read(path)] == ["T_OLD"]
+
+
+def test_a_rename_never_adds_a_table_that_is_not_on_the_list(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "created-objects.txt"
+    monkeypatch.setenv(registry.ENV, str(path))
+    _run(['CREATE TABLE "LISTED" (X INT)', 'RENAME TABLE "REAL_TABLE" TO "STOLEN"'], path)
+    assert [e.name for e in registry.read(path)] == ["LISTED"]
+
+
+def test_cleanup_drops_a_table_renamed_before_a_crash(tmp_path, monkeypatch) -> None:
+    """A run creates a table, renames it, and dies before the rename back: the
+    list names the renamed table, and the cleanup plan drops it (marker rule
+    and snapshot unchanged)."""
+    path = tmp_path / "created-objects.txt"
+    monkeypatch.setenv(registry.ENV, str(path))
+    _run(['CREATE TABLE "TESTAPP_RENAMEPROBE" (X INT)'], path)
+    _run(['RENAME TABLE "TESTAPP_RENAMEPROBE" TO "TESTAPP_RENAMED_PROBE"'], path)
+    # The crash: no rename back. The library holds the renamed table only.
+    inventory = {"TESTAPP_RENAMED_PROBE": "T", "DJDB2I_TEST_MARKER": "T", "KEEP": "T"}
+    drop, unlisted = cleanup.plan(
+        registry.read(path), "TESTLIB", inventory, {"KEEP"}, "DJDB2I_TEST_MARKER"
+    )
+    assert drop == ["TESTAPP_RENAMED_PROBE"]
+    assert unlisted == []
+    # The same leftover in another library (no entry there) is never dropped.
+    drop, unlisted = cleanup.plan(
+        registry.read(path), "OTHERLIB", inventory, set(), "DJDB2I_TEST_MARKER"
+    )
+    assert drop == [] and "TESTAPP_RENAMED_PROBE" in unlisted

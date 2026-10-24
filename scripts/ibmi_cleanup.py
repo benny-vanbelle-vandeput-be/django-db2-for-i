@@ -10,7 +10,8 @@ exactly this, and nothing else:
 - only a library that contains the ``DJDB2I_TEST_MARKER`` table; any other is
   refused, so a wrong ``.env`` can never touch a real library;
 - only objects on the cleanup list (``DB2I_TABLE_LIST``, written by test runs
-  before each ``CREATE``, tests/table_registry.py) that still exist, never one
+  before each ``CREATE``, tests/table_registry.py; a ``RENAME TABLE`` of a
+  listed table updates its entry to the new name first) that still exist, never one
   in the marker's snapshot, never the marker itself; indexes and views go with
   their tables (the backend's own drop, creation.py);
 - without ``--yes`` it only lists. Objects that are not on the list are
