@@ -155,6 +155,28 @@ CHECK_VIOLATED = (
     "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0545 - "
     "INSERT, UPDATE, or MERGE not allowed by CHECK constraint. (-545) (SQLExecDirectW)"
 )
+# The message texts of SQL0544 and SQL0530-SQL0532 follow IBM's message file; IBM i
+# reported them with SQLSTATE HY000 (docs/IBMI_NOTES.md: probe w13 and the
+# check_journal notes). Only the SQLCODE decides the class.
+CHECK_NOT_ADDED = (
+    "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0544 - "
+    "CHECK constraint TESTAPP_BOOK_PAGES cannot be added. (-544) (SQLExecDirectW)"
+)
+FK_NO_PARENT = (
+    "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0530 - "
+    "Operation not allowed by referential constraint TESTAPP_LINK_FK in DJTEST. "
+    "(-530) (SQLExecDirectW)"
+)
+FK_UPDATE_PARENT = (
+    "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0531 - "
+    "Update prevented by referential constraint TESTAPP_LINK_FK in DJTEST. "
+    "(-531) (SQLExecDirectW)"
+)
+FK_DELETE_PARENT = (
+    "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0532 - "
+    "Delete prevented by referential constraint TESTAPP_LINK_FK in DJTEST. "
+    "(-532) (SQLExecDirectW)"
+)
 SYNTAX = (
     "[42000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0104 - "
     "Token ISOLATION was not valid. (-104) (SQLExecDirectW)"
@@ -167,6 +189,12 @@ SYNTAX = (
         (pyodbc.IntegrityError("23000", DUPLICATE_KEY), base.IntegrityError, "23000", -803),
         (pyodbc.Error("HY000", NOT_JOURNALED), base.OperationalError, "HY000", -7008),
         (pyodbc.Error("HY000", CHECK_VIOLATED), base.IntegrityError, "HY000", -545),
+        (pyodbc.Error("HY000", CHECK_NOT_ADDED), base.IntegrityError, "HY000", -544),
+        (pyodbc.Error("HY000", FK_NO_PARENT), base.IntegrityError, "HY000", -530),
+        (pyodbc.Error("HY000", FK_UPDATE_PARENT), base.IntegrityError, "HY000", -531),
+        (pyodbc.Error("HY000", FK_DELETE_PARENT), base.IntegrityError, "HY000", -532),
+        # The standard foreign key SQLSTATE, should a driver report it.
+        (pyodbc.Error("23503", "[23503] fk violation"), base.IntegrityError, "23503", None),
         (pyodbc.DataError("22001", TOO_BIG), base.DataError, "22001", None),
         (pyodbc.ProgrammingError("42000", SYNTAX), base.ProgrammingError, "42000", -104),
         (
