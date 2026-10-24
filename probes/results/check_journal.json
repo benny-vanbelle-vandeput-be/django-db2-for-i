@@ -1,0 +1,60 @@
+{
+  "probe": "check_journal",
+  "utc": "20261024T141140Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "table": "QTEMP.PCKJ",
+  "connection": {
+    "CMT": "1",
+    "TRUEAUTOCOMMIT": "1",
+    "NAM": "0",
+    "DFT": "5",
+    "TFT": "2"
+  },
+  "autocommit": {
+    "no constraint (control)": {
+      "result": "ok"
+    },
+    "column check in CREATE TABLE": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -7008,
+      "message": "SQL7008 - PCKJ in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+    },
+    "named check in CREATE TABLE": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -7008,
+      "message": "SQL7008 - PCKJ in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+    },
+    "ALTER TABLE ADD CONSTRAINT CHECK": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -7008,
+      "message": "SQL7008 - PCKJ in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+    }
+  },
+  "transaction": {
+    "no constraint (control)": {
+      "result": "ok"
+    },
+    "column check in CREATE TABLE": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -7008,
+      "message": "SQL7008 - PCKJ in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+    },
+    "named check in CREATE TABLE": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -7008,
+      "message": "SQL7008 - PCKJ in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+    },
+    "ALTER TABLE ADD CONSTRAINT CHECK": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -7008,
+      "message": "SQL7008 - PCKJ in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+    }
+  }
+}

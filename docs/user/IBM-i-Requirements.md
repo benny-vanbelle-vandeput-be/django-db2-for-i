@@ -29,6 +29,14 @@ allows that on journaled tables. Without a journal you get **SQL7008**, see
   deleting receivers may not be acceptable on production systems.
 - Tables that existed before the journal was created are **not** journaled
   automatically; start journaling for them with `STRJRNPF`.
+- Constraints need the journal too: a primary key, a unique constraint, a
+  foreign key and a CHECK constraint (the check of a positive integer field,
+  a model's `CheckConstraint`) fail with **SQL7008** on a table that is not
+  journaled, both in `CREATE TABLE` and in `ALTER TABLE ... ADD CONSTRAINT`,
+  also in autocommit mode. A migration that adds a check constraint to an
+  existing table (`AddConstraint`, or `AlterField` to a positive integer
+  field) therefore needs that table journaled, for example with `STRJRNPF`
+  for a table created before the journal.
 
 ## Test library
 
