@@ -65,6 +65,17 @@ Everything else (joins, WHERE, aggregates, HAVING, ORDER BY) stays as it
 is; wherever the grouped expression is compiled it becomes ``G.G1``.
 Grouping by columns, and by expressions without parameters that are only
 selected as a whole, keeps its SQL.
+
+Conditions of constraints and indexes
+-------------------------------------
+For a ``CheckConstraint`` (and a condition of a ``UniqueConstraint`` or an
+``Index``) Django builds a WhereNode on a ``Query(alias_cols=False)`` and
+calls its ``as_sql()`` directly, so its predicates reach ``compile()`` at
+depth 0, where they would be wrapped as select-list values. They are search
+conditions (``CHECK (<search condition>)``), and their parameters are
+inlined as literals, so they stay predicates: at depth 0 of such a query
+the compiler is in a search condition. Db2 for i has no generated columns
+with an expression, the other schema use of these queries.
 """
 
 from __future__ import annotations
@@ -183,10 +194,16 @@ class SQLCompiler(compiler.SQLCompiler):
             return self._grouping_columns[node], []
         # A lookup that renders as another lookup on the same lhs (RelatedIn as
         # TupleIn for a multi-column relation) keeps the search condition.
-        in_condition = self._in_condition or (
-            isinstance(node, Lookup)
-            and self._condition_lookup is not None
-            and node.lhs is self._condition_lookup.lhs
+        # The condition of a constraint or index (module docstring).
+        schema_condition = self._depth == 0 and not self.query.alias_cols
+        in_condition = (
+            self._in_condition
+            or schema_condition
+            or (
+                isinstance(node, Lookup)
+                and self._condition_lookup is not None
+                and node.lhs is self._condition_lookup.lhs
+            )
         )
         if _is_in_subquery(node) and not in_condition:
             if self._depth == 0:  # selected as it is: the three-valued BOOLEAN itself
@@ -204,7 +221,12 @@ class SQLCompiler(compiler.SQLCompiler):
             isinstance(node, WhereNode) and (in_condition or self._is_query_condition(node))
         )
         self._condition_lookup = node if in_condition and isinstance(node, Lookup) else None
-        as_value = self._depth == 0 and not self._in_condition and _is_value_predicate(node)
+        as_value = (
+            self._depth == 0
+            and not self._in_condition
+            and not schema_condition
+            and _is_value_predicate(node)
+        )
         if as_value and _single_in_subquery(node):
             # Q(x__in=<subquery>) as a value: the rewrite's BOOLEAN is the value
             # (its subqueries once, not twice through CASE WHEN p ... NOT (p)).
