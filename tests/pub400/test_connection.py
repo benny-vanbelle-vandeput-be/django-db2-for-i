@@ -165,3 +165,21 @@ def test_quote_value_literal_round_trip(live, text) -> None:
     with live.cursor() as cursor:
         cursor.execute(f"SELECT {literal} FROM SYSIBM.SYSDUMMY1")
         assert cursor.fetchone() == (text,)
+
+
+def test_journal_check_passes_on_the_test_library(live) -> None:
+    """The system check django_db2_for_i.W001 reads the library's journaling
+    state (read-only); the default library has a QSQJRN journal."""
+    assert live.validation.check() == []
+
+
+def test_journal_check_reads_both_sources(live) -> None:
+    from django_db2_for_i.validation import _journaling_sql
+
+    library = live.settings_dict["NAME"].upper()
+    with live.cursor() as cursor:
+        cursor.execute(_journaling_sql(library))
+        journaled, inherit, _, _, qsqjrn = cursor.fetchone()
+        assert (journaled.strip(), inherit.strip(), qsqjrn) == ("NO", "NO", 1)
+        cursor.execute(_journaling_sql("DJDB2INONE"))
+        assert cursor.fetchone() is None

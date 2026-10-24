@@ -27,6 +27,11 @@ allows that on journaled tables. Without a journal you get **SQL7008**, see
   `MNGRCV(*SYSTEM) DLTRCV(*YES)` lets the system attach new receivers and
   delete old ones. Check this against your backup and recovery policy:
   deleting receivers may not be acceptable on production systems.
+- Instead of a `QSQJRN` journal, the library itself can be journaled with
+  `STRJRNLIB`, to a journal of any name. With the default inherit rules
+  (`INHRULES`), new tables in it start journaling to that journal. This rests
+  on IBM's STRJRNLIB documentation and is not yet tested on IBM i; the
+  `QSQJRN` journal above is.
 - Tables that existed before the journal was created are **not** journaled
   automatically; start journaling for them with `STRJRNPF`.
 - Constraints need the journal too: a primary key, a unique constraint, a
@@ -37,6 +42,31 @@ allows that on journaled tables. Without a journal you get **SQL7008**, see
   existing table (`AddConstraint`, or `AlterField` to a positive integer
   field) therefore needs that table journaled, for example with `STRJRNPF`
   for a table created before the journal.
+
+### System check `django_db2_for_i.W001`
+
+Django's database checks (`migrate`, `manage.py check --database <alias>`)
+warn when new tables in a library of a checked alias would not be journaled:
+the library given as `NAME` and the one given as `TEST["NAME"]`. A library is
+fine when it has a `QSQJRN` journal, or when it is journaled with `STRJRNLIB`
+and new objects inherit that. The check only reads catalog services
+(`QSYS2.LIBRARY_INFO`, `QSYS2.OBJECT_STATISTICS`), and needs `*READ` authority
+to the library. A library that does not exist is not reported. It does not
+look at tables that already exist (see `STRJRNPF` above).
+
+| Id | Meaning |
+|---|---|
+| `django_db2_for_i.W001` | New tables in the library would not be journaled. |
+| `django_db2_for_i.W002` | The journaling state could not be read (the warning shows the error). |
+
+`migrate` checks only the alias it migrates; to check several aliases, name
+each one: `manage.py check --database default --database other`. To silence
+a check, add its id to `SILENCED_SYSTEM_CHECKS`; with W001 silenced the
+backend does not query the journaling state at all:
+
+```python
+SILENCED_SYSTEM_CHECKS = ["django_db2_for_i.W001"]
+```
 
 ## Test library
 
