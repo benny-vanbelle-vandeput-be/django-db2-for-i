@@ -369,6 +369,14 @@ def test_savepoint_sql() -> None:
     assert ops.savepoint_rollback_sql(sid) == 'ROLLBACK TO SAVEPOINT "S140234567890123_X1"'
 
 
+def test_transaction_sql() -> None:
+    """What sqlmigrate prints around an atomic migration: no start statement
+    exists on Db2 for i (probe transaction_start)."""
+    assert connection.features.can_rollback_ddl
+    assert ops.start_transaction_sql() == ""
+    assert ops.end_transaction_sql() == "COMMIT;"
+
+
 # --- Extracting date/time parts --------------------------------------------------------
 
 

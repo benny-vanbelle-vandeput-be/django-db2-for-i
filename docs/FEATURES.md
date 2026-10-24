@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**28 flags enabled on Django 6.1.**
+**29 flags enabled on Django 6.1.**
 
-## Enabled (28)
+## Enabled (29)
 
 On in at least one supported Django version.
 
@@ -22,6 +22,7 @@ On in at least one supported Django version.
 | `can_introspect_foreign_keys` | Introspection finds foreign keys. | ✅ | ✅ | ✅ |
 | `can_release_savepoints` | Savepoints are released after a nested `atomic()` block that succeeded. | ✅ | ✅ | ✅ |
 | `can_rename_index` | `RenameIndex` renames an index in place instead of dropping and recreating it. | ✅ | ✅ | ✅ |
+| `can_rollback_ddl` | Schema changes inside a transaction are rolled back with it: a migration that fails halfway leaves nothing behind. | ✅ | ✅ | ✅ |
 | `has_native_boolean_field` | `BooleanField` is a native `BOOLEAN` column (IBM i 7.5). | – | – | ✅ |
 | `implied_column_null` | Columns are nullable unless `NOT NULL` is written; no bare `NULL` keyword in DDL. | ✅ | ✅ | ✅ |
 | `nulls_order_largest` | NULL sorts as the largest value: last in ascending order, first in descending. | ✅ | ✅ | ✅ |
@@ -45,7 +46,7 @@ On in at least one supported Django version.
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (12)
+## Intentionally off (11)
 
 Off on purpose, with the reason.
 
@@ -54,7 +55,6 @@ Off on purpose, with the reason.
 | `atomic_transactions` | An error inside a transaction aborts the whole transaction. | ❌ | ❌ | ❌ | Db2 for i keeps the transaction usable after a failed statement (unlike PostgreSQL). |
 | `can_create_inline_fk` | Foreign keys are created inline in `CREATE TABLE`. | ❌ | ❌ | ❌ | Foreign keys are separate `ALTER TABLE ... ADD CONSTRAINT` statements, which also work for tables that reference each other. |
 | `can_defer_constraint_checks` | Constraint checks can be deferred to the end of the transaction. | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
-| `can_rollback_ddl` | Schema changes inside a transaction are rolled back with it. | ❌ | ❌ | ❌ | Not relied on until a probe shows DDL is rolled back on Db2 for i. |
 | `has_zoneinfo_database` | The database has its own time zone database. | ❌ | ❌ | ❌ | Db2 for i has no time zone names; conversions happen in Python. |
 | `supports_combined_alters` | Several column changes are written as one `ALTER TABLE` statement. | ❌ | ❌ | ❌ | Db2 for i takes several clauses in one `ALTER TABLE` only without commas; Django joins them with commas (probe 24). |
 | `supports_expression_defaults` | `db_default` can be an expression, not only a constant. | ❌ | ❌ | ❌ | A column `DEFAULT` on Db2 for i takes only a constant or a special register. |

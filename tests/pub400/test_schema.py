@@ -456,10 +456,10 @@ def test_alter_field_and_back(live, alter_model) -> None:
     table with rows, and the rows keep their values. Back: narrowing and NOT NULL
     are cancelled by CPA32B2 on PUB400 (no system reply list entry, IBMI_NOTES);
     the error explains it, and the table is unchanged. The rows are unchanged
-    too, except that the way back to NOT NULL first sets NULLs to the default
-    (Django's UPDATE before SET NOT NULL) and that UPDATE stays: without
-    can_rollback_ddl the schema editor runs no transaction (Known limitations;
-    phase 4 item 11a).
+    too: the way back to NOT NULL first sets NULLs to the default (Django's
+    UPDATE before SET NOT NULL), and with can_rollback_ddl the schema editor's
+    transaction rolls that UPDATE back when CPA32B2 cancels SET NOT NULL
+    (phase 4 item 11a).
     """
     from django.db import OperationalError
 
@@ -498,10 +498,9 @@ def test_alter_field_and_back(live, alter_model) -> None:
         cursor.execute('INSERT INTO "TESTAPP_ALTERFIELD" ("NUMBER") VALUES (NULL)')
     rows.append((3, "Ж € ✓", None, Decimal("1.500")))
 
-    after_not_null = [*rows[:2], (3, "Ж € ✓", -1, Decimal("1.500"))]
-    for old, new, rows_after in (
-        (wide_text, _rebuilt(model, "text", max_length=20), rows),  # narrowing
-        (wide_number, _rebuilt(model, "number", models.BigIntegerField), after_not_null),
+    for old, new in (
+        (wide_text, _rebuilt(model, "text", max_length=20)),  # narrowing
+        (wide_number, _rebuilt(model, "number", models.BigIntegerField)),  # NOT NULL
     ):
         with pytest.raises(OperationalError) as info, live.schema_editor() as editor:
             editor.alter_field(model, old, new, strict=True)
@@ -513,7 +512,7 @@ def test_alter_field_and_back(live, alter_model) -> None:
             cursor.execute(ALTER_COLUMNS)
             assert _stripped(cursor.fetchall()) == forward
             cursor.execute(ALTER_ROWS)
-            assert [tuple(row) for row in cursor.fetchall()] == rows_after
+            assert [tuple(row) for row in cursor.fetchall()] == rows
 
 
 # --- Renames and identity changes ---------------------------------------------------
@@ -556,14 +555,17 @@ def _index_names(live, table: str) -> set[str]:
 RENAME_NAMES = ("TESTAPP_RENAMEPROBE", "TESTAPP_RENAMED_PROBE")
 
 
-def _listed(live) -> set[tuple[str, str]]:
-    """(name, renamed_from) of the cleanup list entries of the rename probe table."""
+def _current(live) -> tuple[str, tuple[str, ...]]:
+    """(name, renamed_from) of the rename probe table's newest cleanup list
+    entry, the one a rename updates (older entries of earlier runs may stay
+    pending: a rolled-back rename keeps both names)."""
     library = live.settings_dict["NAME"].upper()
-    return {
-        (entry.name, entry.renamed_from)
+    entries = [
+        entry
         for entry in table_registry.read(table_registry.list_path())
         if entry.library == library and entry.names & set(RENAME_NAMES)
-    }
+    ]
+    return entries[-1].name, entries[-1].renamed_from
 
 
 def test_rename_table_index_and_identity(live, rename_model) -> None:
@@ -572,10 +574,10 @@ def test_rename_table_index_and_identity(live, rename_model) -> None:
     name, and AutoField -> IntegerField (DROP IDENTITY: no generated keys).
 
     The cleanup list follows the renames (CLAUDE.md, bin/ibmi-cleanup): while
-    each RENAME TABLE runs its entry holds both names, afterwards only the new
-    one; after the rename back no entry names the renamed table. The list may
-    hold older entries of the same table from earlier runs, hence the subset
-    checks.
+    each RENAME TABLE runs its entry holds both names, after the schema
+    editor's transaction commits only the new one; after the rename back only
+    the old one. The checks look at the table's newest entry, the one a rename
+    updates.
     """
     from django.db import IntegrityError
 
@@ -586,7 +588,7 @@ def test_rename_table_index_and_identity(live, rename_model) -> None:
     def capture(execute, sql, params, many, context):
         # Inside the list's own wrapper: the list as the statement runs.
         if sql.lstrip().upper().startswith("RENAME TABLE"):
-            during.append(_listed(live))
+            during.append(_current(live))
         return execute(sql, params, many, context)
 
     model = rename_model
@@ -610,14 +612,13 @@ def test_rename_table_index_and_identity(live, rename_model) -> None:
     with live.cursor() as cursor:
         cursor.execute('INSERT INTO "TESTAPP_RENAMEPROBE" ("NAME") VALUES (%s)', ["three"])
 
-    assert (old, "") in _listed(live)
+    assert _current(live) == (old, ())
     try:
         with live.execute_wrapper(capture), live.schema_editor() as editor:
             editor.alter_db_table(model, "testapp_renameprobe", "testapp_renamed_probe")
         model._meta.db_table = "testapp_renamed_probe"
-        assert (new, old) in during[0]
-        assert (new, "") in _listed(live)
-        assert not any(renamed_from for _name, renamed_from in _listed(live))
+        assert during[0] == (new, (old,))
+        assert _current(live) == (new, ())
         assert list(model.objects.order_by("id").values_list("id", "name")) == [
             (1, "one"),
             (2, "two"),
@@ -634,15 +635,141 @@ def test_rename_table_index_and_identity(live, rename_model) -> None:
             with live.execute_wrapper(capture), live.schema_editor() as editor:
                 editor.alter_db_table(model, "testapp_renamed_probe", "testapp_renameprobe")
             model._meta.db_table = "testapp_renameprobe"
-    assert (old, new) in during[1]
-    assert not any(name == new or renamed_from for name, renamed_from in _listed(live))
-    assert (old, "") in _listed(live)
+    assert during[1] == (old, (new,))
+    assert _current(live) == (old, ())
 
     with live.schema_editor() as editor:
         editor.alter_field(model, auto, plain, strict=True)
     model.objects.create(id=10, name="explicit")
     with pytest.raises(IntegrityError), live.cursor() as cursor:
         cursor.execute('INSERT INTO "TESTAPP_RENAMEPROBE" ("NAME") VALUES (%s)', ["no key"])
+
+
+def _tables(live, *names: str) -> set[str]:
+    """Which of ``names`` exist in the library (as this connection sees them)."""
+    with live.cursor() as cursor:
+        cursor.execute(
+            "SELECT TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = CURRENT SCHEMA "
+            f"AND TABLE_NAME IN ({', '.join(['%s'] * len(names))})",
+            list(names),
+        )
+        return {row[0] for row in cursor.fetchall()}
+
+
+class _Rollback(Exception):
+    pass
+
+
+def test_rename_rolled_back_keeps_both_names(live, rename_model) -> None:
+    """A RENAME TABLE in a transaction that is rolled back: the table has its
+    old name again, and its cleanup list entry keeps both names (CLAUDE.md,
+    bin/ibmi-cleanup: cleared only after the commit)."""
+    from django.db import transaction
+
+    old, new = RENAME_NAMES
+    with pytest.raises(_Rollback), transaction.atomic():
+        with live.schema_editor() as editor:
+            editor.alter_db_table(rename_model, "testapp_renameprobe", "testapp_renamed_probe")
+        assert _tables(live, old, new) == {new}
+        assert _current(live) == (new, (old,))
+        raise _Rollback
+    assert _tables(live, old, new) == {old}
+    assert _current(live) == (new, (old,))
+
+
+def test_rename_in_a_rolled_back_savepoint_keeps_both_names(live, rename_model) -> None:
+    """A RENAME TABLE in a nested atomic() whose savepoint is rolled back while
+    the outer transaction commits: ROLLBACK TO SAVEPOINT undoes the rename, and
+    Django discards the on_commit callback registered in the savepoint, so the
+    entry keeps both names after the commit."""
+    from django.db import transaction
+
+    old, new = RENAME_NAMES
+    with transaction.atomic():
+        with pytest.raises(_Rollback), transaction.atomic():
+            with live.schema_editor() as editor:
+                editor.alter_db_table(rename_model, "testapp_renameprobe", "testapp_renamed_probe")
+            assert _tables(live, old, new) == {new}
+            raise _Rollback
+        assert _tables(live, old, new) == {old}
+        assert live.run_on_commit == []
+    assert _tables(live, old, new) == {old}
+    assert _current(live) == (new, (old,))
+
+
+def test_rename_without_a_transaction_clears_the_entry_at_once(live, rename_model) -> None:
+    """atomic = False (autocommit): the entry holds only the new name as soon
+    as the statement succeeded, and only the old one after the rename back."""
+    old, new = RENAME_NAMES
+    try:
+        with live.schema_editor(atomic=False) as editor:
+            editor.alter_db_table(rename_model, "testapp_renameprobe", "testapp_renamed_probe")
+            assert _current(live) == (new, ())
+            assert not live.in_atomic_block
+    finally:
+        if _tables(live, old, new) == {new}:
+            with live.schema_editor(atomic=False) as editor:
+                editor.alter_db_table(rename_model, "testapp_renamed_probe", "testapp_renameprobe")
+    assert _current(live) == (old, ())
+
+
+# --- Migrations that fail halfway ---------------------------------------------------
+
+HALFWAY_TABLE = "ROLLBACKPROBE_HALFWAY"
+
+
+def test_failed_migration_leaves_nothing_behind(live) -> None:
+    """An atomic migration that CPA32B2 cancels halfway (a narrowing AlterField
+    after CreateModel, AddField, AddIndex and AddConstraint), applied by
+    Django's MigrationExecutor: with can_rollback_ddl nothing of it is left, no
+    table, column, index or constraint, and no django_migrations row."""
+    from django.db import OperationalError, migrations
+    from django.db.migrations.executor import MigrationExecutor
+    from django.db.migrations.recorder import MigrationRecorder
+    from django.db.migrations.state import ProjectState
+    from django.db.models import CheckConstraint, Q
+
+    migration = migrations.Migration("0001_halfway", "rollbackprobe")
+    migration.operations = [
+        migrations.CreateModel(
+            "Halfway",
+            [
+                ("id", models.AutoField(primary_key=True)),
+                ("name", models.CharField(max_length=20)),
+                ("count", models.IntegerField(default=0)),
+            ],
+        ),
+        migrations.AddField("halfway", "extra", models.CharField(max_length=10, null=True)),
+        migrations.AddIndex("halfway", models.Index(fields=["name"], name="rbp_halfway_name_idx")),
+        migrations.AddConstraint(
+            "halfway", CheckConstraint(condition=Q(count__gte=0), name="rbp_halfway_count_gte_0")
+        ),
+        migrations.AlterField("halfway", "name", models.CharField(max_length=10)),  # CPA32B2
+    ]
+    executor = MigrationExecutor(live)
+    try:
+        with pytest.raises(OperationalError, match="CPA32B2"):
+            executor.apply_migration(ProjectState(), migration)
+        assert not live.in_atomic_block
+        assert _tables(live, HALFWAY_TABLE) == set()
+        with live.cursor() as cursor:
+            cursor.execute(
+                "SELECT INDEX_NAME FROM QSYS2.SYSINDEXES "
+                "WHERE INDEX_SCHEMA = CURRENT SCHEMA AND INDEX_NAME = 'RBP_HALFWAY_NAME_IDX'"
+            )
+            assert cursor.fetchall() == []
+            cursor.execute(
+                "SELECT CONSTRAINT_NAME FROM QSYS2.SYSCST WHERE CONSTRAINT_SCHEMA = "
+                "CURRENT SCHEMA AND CONSTRAINT_NAME = 'RBP_HALFWAY_COUNT_GTE_0'"
+            )
+            assert cursor.fetchall() == []
+        recorded = MigrationRecorder(live).applied_migrations()
+        assert ("rollbackprobe", "0001_halfway") not in recorded
+    finally:
+        replace_if_unusable(live)
+        if _tables(live, HALFWAY_TABLE):
+            with live.cursor() as cursor:
+                cursor.execute(f'DROP TABLE "{HALFWAY_TABLE}"')
 
 
 # --- Check constraints --------------------------------------------------------------

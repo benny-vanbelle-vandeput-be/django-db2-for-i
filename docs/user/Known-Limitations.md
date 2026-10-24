@@ -178,14 +178,15 @@ administrator adds a system reply list entry and the database settings set
 `OPTIONS["inquiry_message_reply"] = "*SYSRPYL"`, see
 [IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data).
 
-**A cancelled change to `NOT NULL` can still change rows.** For a field that
-goes from `null=True` to `null=False` with a `default` or `db_default`,
-Django first sets the existing NULLs to that default (`UPDATE ... WHERE ...
-IS NULL`), then sends `SET NOT NULL`. Migrations on Db2 for i do not run in a
-transaction yet (`can_rollback_ddl` is off), so when CPA32B2 cancels
-`SET NOT NULL` the column stays nullable but the NULLs have already been
-replaced by the default. Run such a migration only where the reply list entry
-is in place, or check for NULLs first.
+**A migration cancelled halfway is rolled back.** Migrations run in one
+transaction (`can_rollback_ddl`), so when CPA32B2 cancels a statement, the
+earlier operations of the same migration are undone too: tables, columns,
+indexes, constraints and data changes such as Django's `UPDATE ... WHERE ...
+IS NULL` before `SET NOT NULL`. This needs journaled tables (see
+[IBM i requirements](IBM-i-Requirements.md#journaling-required)). A migration
+with `atomic = False` runs without a transaction: there, a cancelled
+`SET NOT NULL` leaves the column nullable but the NULLs already replaced by
+the default.
 
 The backend writes `DROP COLUMN` without `CASCADE` or `RESTRICT` on every
 Django version (Django 5.2's own text adds `CASCADE`). What Db2 for i does

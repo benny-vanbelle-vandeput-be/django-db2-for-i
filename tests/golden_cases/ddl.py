@@ -1,4 +1,8 @@
-"""DDL goldens: CREATE TABLE per type rule, ALTER TABLE, DROP TABLE."""
+"""DDL goldens: CREATE TABLE per type rule, ALTER TABLE, DROP TABLE.
+
+The schema editors only collect SQL, with atomic=False: with can_rollback_ddl
+an atomic one enters transaction.atomic(), which opens a connection.
+"""
 
 from __future__ import annotations
 
@@ -53,7 +57,7 @@ def _ddl(*models, foreign_keys: bool = False):
         saved = features.supports_foreign_keys
         features.supports_foreign_keys = foreign_keys
         try:
-            with connection.schema_editor(collect_sql=True) as editor:
+            with connection.schema_editor(collect_sql=True, atomic=False) as editor:
                 for model in models:
                     editor.create_model(model)
         finally:
@@ -67,7 +71,7 @@ def _add_not_null_with_python_default(connection):
     """AddField of a NOT NULL column with a Python default (literal, then dropped)."""
     field = CharField(max_length=20, default="O'Brien")
     field.set_attributes_from_name("nickname")
-    with connection.schema_editor(collect_sql=True) as editor:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         editor.add_field(Defaults, field)
     return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
 
@@ -76,7 +80,7 @@ def _remove_field(model, name):
     """RemoveField: ALTER TABLE ... DROP COLUMN, the same on every Django version."""
 
     def build(connection):
-        with connection.schema_editor(collect_sql=True) as editor:
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
             editor.remove_field(model, model._meta.get_field(name))
         return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
 
@@ -99,7 +103,7 @@ def _alter(model, *changes):
     """AlterField, one ``(old, new)`` pair of fields per change (built by _field)."""
 
     def build(connection):
-        with connection.schema_editor(collect_sql=True) as editor:
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
             for old, new in changes:
                 editor.alter_field(model, old(), new(), strict=True)
         return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
@@ -112,7 +116,7 @@ def _rename_table_and_back(model, new_name):
 
     def build(connection):
         old_name = model._meta.db_table
-        with connection.schema_editor(collect_sql=True) as editor:
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
             editor.alter_db_table(model, old_name, new_name)
             editor.alter_db_table(model, new_name, old_name)
         return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
@@ -125,7 +129,7 @@ def _rename_index_and_back(model, fields, old_name, new_name):
 
     def build(connection):
         old, new = Index(fields=fields, name=old_name), Index(fields=fields, name=new_name)
-        with connection.schema_editor(collect_sql=True) as editor:
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
             editor.rename_index(model, old, new)
             editor.rename_index(model, new, old)
         return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
@@ -137,7 +141,7 @@ def _add_and_remove_constraint(model, constraint):
     """AddConstraint and RemoveConstraint: ALTER TABLE ... ADD / DROP CONSTRAINT."""
 
     def build(connection):
-        with connection.schema_editor(collect_sql=True) as editor:
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
             editor.add_constraint(model, constraint)
             editor.remove_constraint(model, constraint)
         return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
@@ -147,7 +151,7 @@ def _add_and_remove_constraint(model, constraint):
 
 def _drop(model):
     def build(connection):
-        with connection.schema_editor(collect_sql=True) as editor:
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
             editor.delete_model(model)
         return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
 

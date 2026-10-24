@@ -50,8 +50,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # to find out. Commitment control works on journaled tables (see
     # docs/IBMI_NOTES.md).
     supports_transactions = True
-    # DDL inside a transaction is not rolled back until a probe shows it is.
-    can_rollback_ddl = False
+    # ROLLBACK undoes every DDL form the schema editor writes, none commits
+    # implicitly, and a transaction stays usable after a CPA32B2 cancel
+    # (probe lib_rollback_ddl, phase 4 item 11a): an atomic migration runs in
+    # one transaction and leaves nothing behind when it fails.
+    can_rollback_ddl = True
     # An error does not abort the transaction (unlike PostgreSQL).
     atomic_transactions = False
     # SELECT without FROM is not allowed.
