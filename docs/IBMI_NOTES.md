@@ -1000,6 +1000,32 @@ The schema editor therefore drops the identity with `DROP IDENTITY` and, for a
 new identity, restarts it with the compound statement (it needs no query
 before, so it also works for collected SQL, `sqlmigrate`).
 
+### Column type changes in place (`probe -- type_changes`)
+2026-10-24, PUB400 (IBM i 7.5), the backend's connection attributes, QTEMP
+only, inquiry message reply `*RQD`. Phase 4 step C item 9,
+`probes/qtemp_type_changes.py`: every ordered pair of the 14 base types the
+backend writes (182 pairs), each `ALTER COLUMN ... SET DATA TYPE` on an empty
+one-column table, so only the type rules show.
+
+| From \ to | in place | CPA32B2 (needs the reply list entry) | SQL0190 (never in place) |
+|---|---|---|---|
+| SMALLINT | INTEGER, BIGINT, DECIMAL | DOUBLE | all others |
+| INTEGER | BIGINT | SMALLINT, DECIMAL, DOUBLE | all others |
+| BIGINT, DECIMAL, DOUBLE | - | the other numeric types | all others |
+| CHAR | VARCHAR, NVARCHAR, NCLOB | - | all others |
+| VARCHAR | NVARCHAR, NCLOB | CHAR | all others |
+| NVARCHAR | NCLOB | CHAR, VARCHAR | all others |
+| NCLOB | - | CHAR, VARCHAR, NVARCHAR | all others |
+| BLOB | - | CHAR, VARCHAR | all others (also NVARCHAR, NCLOB) |
+| BOOLEAN, DATE, TIME, TIMESTAMP | - | - | every other type (also DATE -> TIMESTAMP) |
+
+So a type changes in place, or with the reply list entry, only within the
+numeric types and within the character types (and BLOB to CHAR / VARCHAR).
+The schema editor raises `NotSupportedError` for every other change before it
+sends any statement (`alter_field()`; Django drops the column's foreign keys,
+unique constraints and indexes before the type change, and without
+`can_rollback_ddl` a later error would leave them dropped).
+
 ### Catalog views for introspection (`probe -- catalog`)
 2026-10-22, PUB400 (IBM i 7.5), read-only outside QTEMP; phase 4 step A,
 probe 25. The views' columns, from their own `QSYS2.SYSCOLUMNS` rows:

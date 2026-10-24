@@ -6,7 +6,7 @@ Usage (inside the "tests" container):
                      tuple_in|tuple_lookups|compound_parts|selected_predicates|catalog|all] ...
     nox -s probe -- fetch_errors | mapping_errors | long_string_params |
                     numeric_params | constraint_errors | drop_column | alter_table |
-                    alter_column | renames
+                    alter_column | renames | type_changes
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -49,6 +49,7 @@ import qtemp_system_info
 import qtemp_trunc
 import qtemp_tuple_in
 import qtemp_tuple_lookups
+import qtemp_type_changes
 from _common import ProbeError, Settings, connect, write_result
 
 PROBES = {
@@ -79,6 +80,7 @@ PROBES = {
     "alter_table": qtemp_alter_table,
     "alter_column": qtemp_alter_column,
     "renames": qtemp_renames,
+    "type_changes": qtemp_type_changes,
     "catalog": qtemp_catalog,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
