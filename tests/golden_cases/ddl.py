@@ -186,16 +186,22 @@ def _add_and_drop_foreign_keys(model):
 
 def _add_relation(model, name, make_field):
     """AddField of a relation with foreign keys on: ADD COLUMN, ADD CONSTRAINT and
-    (except for a OneToOneField) Django's index. The column stays: DROP COLUMN is
-    cancelled by CPA32B2 on PUB400."""
+    (except for a OneToOneField) Django's index, then DROP CONSTRAINT of the
+    foreign key again, so no constraint is left that refers to the parent table
+    (later goldens change it). The column stays: DROP COLUMN is cancelled by
+    CPA32B2 on PUB400."""
 
     def build(connection):
         field = make_field()
         field.set_attributes_from_name(name)
+        field.model = model
         restore = _foreign_keys_on(connection)
         try:
             with connection.schema_editor(collect_sql=True, atomic=False) as editor:
                 editor.add_field(model, field)
+                fk_name = editor._fk_constraint_name(model, field, "_fk_%(to_table)s_%(to_column)s")
+                # The foreign key is deferred SQL: drop it after it.
+                editor.deferred_sql.append(editor._delete_fk_sql(model, str(fk_name)))
         finally:
             restore()
         return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
@@ -241,6 +247,40 @@ CASES: tuple[Case, ...] = (
     Case(RATING, "create", _ddl(Rating)),
     # Fields from an abstract mixin and an abstract base: column order (#23).
     Case("ddl/create_article", "create", _ddl(Article)),
+    # Foreign keys (supports_foreign_keys is still off): each foreign key of
+    # Link as create_model() defers it, to an INTEGER, NVARCHAR, CHAR(32) (UUID)
+    # and key-to-a-key primary key, added and dropped again; AddField of a
+    # nullable ForeignKey, of one to a non-primary-key UNIQUE column (to_field),
+    # and of a OneToOneField (UNIQUE, no extra index), each foreign key dropped
+    # again. Before the alter goldens: alter_field_identity leaves
+    # TESTAPP_AUTHOR.ID a BIGINT, and Db2 for i rejects a foreign key whose
+    # column type differs from the parent key's (SQL0538).
+    Case(
+        "ddl/add_foreign_keys",
+        "alter",
+        _add_and_drop_foreign_keys(Link),
+        (LINK, AUTHOR, CODE, TAG, PROFILE),
+    ),
+    Case(
+        "ddl/add_field_foreign_key",
+        "alter",
+        _add_relation(Schedule, "author", lambda: ForeignKey(Author, PROTECT, null=True)),
+        (SCHEDULE, AUTHOR),
+    ),
+    Case(
+        "ddl/add_field_foreign_key_to_field",
+        "alter",
+        _add_relation(
+            Schedule, "tag", lambda: ForeignKey(Tag, SET_NULL, null=True, to_field="label")
+        ),
+        (SCHEDULE, TAG),
+    ),
+    Case(
+        "ddl/add_field_one_to_one",
+        "alter",
+        _add_relation(Switch, "author", lambda: OneToOneField(Author, PROTECT, null=True)),
+        (SWITCH, AUTHOR),
+    ),
     Case(
         "ddl/add_field_not_null_default",
         "create",
@@ -347,37 +387,6 @@ CASES: tuple[Case, ...] = (
             Rating, CheckConstraint(condition=Q(stars__lte=5), name="testapp_rating_stars_lte_5")
         ),
         (RATING,),
-    ),
-    # Foreign keys (supports_foreign_keys is still off): each foreign key of
-    # Link as create_model() defers it, to an INTEGER, NVARCHAR, CHAR(32) (UUID)
-    # and key-to-a-key primary key, added and dropped again; AddField of a
-    # nullable ForeignKey, of one to a non-primary-key UNIQUE column (to_field),
-    # and of a OneToOneField (UNIQUE, no extra index).
-    Case(
-        "ddl/add_foreign_keys",
-        "alter",
-        _add_and_drop_foreign_keys(Link),
-        (LINK, AUTHOR, CODE, TAG, PROFILE),
-    ),
-    Case(
-        "ddl/add_field_foreign_key",
-        "alter",
-        _add_relation(Schedule, "author", lambda: ForeignKey(Author, PROTECT, null=True)),
-        (SCHEDULE, AUTHOR),
-    ),
-    Case(
-        "ddl/add_field_foreign_key_to_field",
-        "alter",
-        _add_relation(
-            Schedule, "tag", lambda: ForeignKey(Tag, SET_NULL, null=True, to_field="label")
-        ),
-        (SCHEDULE, TAG),
-    ),
-    Case(
-        "ddl/add_field_one_to_one",
-        "alter",
-        _add_relation(Switch, "author", lambda: OneToOneField(Author, PROTECT, null=True)),
-        (SWITCH, AUTHOR),
     ),
     # DROP COLUMN without CASCADE / RESTRICT on every Django version (probe 23).
     Case("ddl/remove_field", "drop", _remove_field(Defaults, "ratio"), (DEFAULTS,)),
