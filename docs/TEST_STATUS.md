@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2607 | 2 | 0 | 0 | 2026-10-24 09:20:00 UTC |
+| Offline · own tests | 2628 | 2 | 0 | 0 | 2026-10-24 12:15:08 UTC |
 | IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 03:02:59 UTC |
 | IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-22 21:00:55 UTC |
-| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-24 09:20:39 UTC |
+| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-24 12:15:49 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2608 | 1 | 0 | 0 | 2026-10-24 09:17:03 UTC |
+| Offline · own tests | 2629 | 1 | 0 | 0 | 2026-10-24 12:11:47 UTC |
 | IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 01:55:40 UTC |
 | IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-21 01:03:38 UTC |
-| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-24 09:17:40 UTC |
+| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-24 12:12:28 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2606 | 1 | 0 | 0 | 2026-10-24 09:13:57 UTC |
+| Offline · own tests | 2627 | 1 | 0 | 0 | 2026-10-24 12:08:23 UTC |
 | IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-21 00:42:24 UTC |
 | IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 23:51:07 UTC |
-| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-24 09:14:41 UTC |
+| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-24 12:09:01 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -141,6 +141,9 @@ The IBM i · Django test suite per module and Django version.
 | Reason | Expected failures | Skips |
 |---|---|---|
 | Db2 for i TIME has no fractional seconds | 1 | 0 |
+| Db2 for i asks CPA32B2 before a change that may lose data (DROP COLUMN, narrowing, SET NOT NULL), and the test system's reply list has no entry for it; the test passes on a system with the CPA32B2 reply list entry and OPTIONS['inquiry_message_reply'] = '*SYSRPYL' | 15 | 0 |
+| Db2 for i cannot change this column type in place (SQL0190) | 5 | 0 |
+| Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6) | 10 | 0 |
 | Db2 for i rejects an untyped NULL as an expression (SQL0206) | 1 | 0 |
 | a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 3 | 0 |
 | identity restart deferred in TestCase (SQL0910) | 0 | 0 |
