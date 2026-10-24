@@ -544,6 +544,13 @@ PR boundaries, in this order:
     before item 10: `CREATE TABLE` already writes the column checks while the
     check-constraint flags are off, so an `AlterField` that changes such a
     check fails with SQL0199 "Keyword NONE" (#151, closed by item 11's PR).
+    *Added 2026-10-24 (item 11):* with the flags on, Django's
+    `test_alter_field_default_dropped` gets past the check and then stops at
+    CPA32B2 (`null=True` -> NOT NULL), so it is a CPA32B2 expected failure;
+    `test_rename_field_with_check_to_truncated_name` now runs and renames a
+    column (column-rename list). CHECK conditions compile as search
+    conditions (compiler.py). Constraints need a journaled table (SQL7008,
+    probe `check_journal`, IBM i requirements).
     *Added 2026-10-24 (item 7, maintainer):* 11a comes right after item 8.
     Its pub400 test also covers a multi-operation migration that hits
     CPA32B2 halfway: are the earlier operations rolled back? Item 7 found
