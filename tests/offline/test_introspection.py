@@ -2,7 +2,7 @@
 
 import django
 import pytest
-from django.db import connections, models
+from django.db import DatabaseError, connections, models
 
 from django_db2_for_i import compat, introspection
 
@@ -197,6 +197,19 @@ def description_row(**values) -> tuple:
         "identity": "NO ",
     } | values
     return tuple(row.values())
+
+
+def test_table_description_of_a_missing_table_raises() -> None:
+    sql = (
+        "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, LENGTH, "
+        "NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT, IS_IDENTITY "
+        "FROM QSYS2.SYSCOLUMNS "
+        "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s "
+        "ORDER BY ORDINAL_POSITION"
+    )
+    introspection_ = connections["default"].introspection
+    with pytest.raises(DatabaseError, match="Table gone does not exist"):
+        introspection_.get_table_description(CatalogCursor({sql: []}), "gone")
 
 
 def test_table_description() -> None:

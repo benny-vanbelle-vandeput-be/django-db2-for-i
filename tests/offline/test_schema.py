@@ -227,3 +227,27 @@ def test_create_table_follows_local_fields_with_inherited_fields() -> None:
     expected = [field.column.upper() for field in Article._meta.local_fields]
     assert columns == expected
     assert expected == ["ID", "CREATED", "TITLE", "SUBTITLE", "BODY", "RANK"]
+
+
+def test_rename_column_is_not_supported() -> None:
+    """IBM i 7.5 and 7.6 have no statement to rename a column (probe qtemp_renames)."""
+    old = Author._meta.get_field("name")
+    new = models.CharField(max_length=100)
+    new.set_attributes_from_name("full_name")
+    with (
+        pytest.raises(NotSupportedError, match="db_column='name'") as info,
+        connection.schema_editor(collect_sql=True) as editor,
+    ):
+        editor.alter_field(Author, old, new, strict=True)
+    assert 'See "Renaming a column" in docs/user/Known-Limitations.md.' in str(info.value)
+    assert connection.connection is None, "collecting SQL must not connect"
+
+
+def test_rename_field_with_db_column_writes_nothing() -> None:
+    """The workaround: the renamed field keeps the column (db_column), no SQL."""
+    old = Author._meta.get_field("name")
+    new = models.CharField(max_length=100, db_column="name")
+    new.set_attributes_from_name("full_name")
+    with connection.schema_editor(collect_sql=True) as editor:
+        editor.alter_field(Author, old, new, strict=True)
+    assert editor.collected_sql == []

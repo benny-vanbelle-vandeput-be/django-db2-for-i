@@ -192,6 +192,19 @@ Django version (Django 5.2's own text adds `CASCADE`). What Db2 for i does
 with views or indexes that depend on the column is not verified yet: on a
 system without the reply list entry the statement is always cancelled first.
 
+## Renaming a column
+
+Db2 for i has no statement to rename a column: IBM i 7.5 and 7.6 offer
+neither `ALTER TABLE ... RENAME COLUMN` nor another form (`SQL0199`; IBM
+idea [IBMI-I-1002](https://ibm-power-systems.ideas.ibm.com/ideas/IBMI-I-1002)
+is still open). A migration with `RenameField` that changes the column name,
+or an `AlterField` with a new `db_column`, raises `NotSupportedError`.
+
+Keep the column and rename only the field: give the renamed field the old
+column name, for example `full_name = models.CharField(..., db_column="name")`.
+Django then writes no SQL for the rename. Renaming tables (`RenameModel`,
+`AlterModelTable`) and indexes (`RenameIndex`) works.
+
 ## Differences between the supported Django versions
 
 The backend behaves the same on Django 5.2, 6.0 and 6.1, except:

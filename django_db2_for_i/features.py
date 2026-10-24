@@ -156,6 +156,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_on_delete_db_cascade = False
     supports_on_delete_db_default = False
     supports_on_delete_db_null = False
+    # RENAME INDEX (probe 24). Combined alters stay off: Db2 for i accepts
+    # several clauses in one ALTER TABLE only without commas, and Django joins
+    # them with ", ".
+    can_rename_index = True
 
     # Introspection
     can_introspect_default = True

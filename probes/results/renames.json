@@ -1,0 +1,296 @@
+{
+  "probe": "renames",
+  "utc": "20261024T084114Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "inquiry message reply": "*RQD",
+  "RENAME COLUMN in ALTER TABLE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword RENAME not expected. Valid tokens: ADD LOG NOT SET DATA DROP ALTER CHECK APPEND ATTACH DETACH. (-199) ",
+    "job log": [
+      "SQL0199",
+      "SQL0204",
+      "SQL799C",
+      "CPIAD02",
+      "CPF1301"
+    ],
+    "check": {
+      "select B": {
+        "result": "error",
+        "sqlstate": "42S22",
+        "sqlcode": -206,
+        "message": "SQL0206 - Column or global variable B not found. (-206) (SQLExecDirectW)"
+      }
+    }
+  },
+  "RENAME COLUMN statement": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token QTEMP was not valid. Valid tokens: TO. (-104) (SQLExecDirectW)",
+    "job log": [
+      "SQL0104",
+      "CPI3212",
+      "SQL0206",
+      "SQL0199",
+      "SQL0204"
+    ],
+    "check": {
+      "select B": {
+        "result": "error",
+        "sqlstate": "42S22",
+        "sqlcode": -206,
+        "message": "SQL0206 - Column or global variable B not found. (-206) (SQLExecDirectW)"
+      }
+    }
+  },
+  "ALTER COLUMN ... RENAME TO": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword RENAME not expected. Valid tokens: SET DROP RESTART. (-199) (SQLExecDirectW)",
+    "job log": [
+      "SQL0199",
+      "CPI3212",
+      "SQL0206",
+      "SQL0104",
+      "CPI3212"
+    ],
+    "check": {
+      "select B": {
+        "result": "error",
+        "sqlstate": "42S22",
+        "sqlcode": -206,
+        "message": "SQL0206 - Column or global variable B not found. (-206) (SQLExecDirectW)"
+      }
+    }
+  },
+  "RENAME <table>.<column>": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -950,
+    "message": "SQL0950 - Relational database QTEMP not in relational database directory. (-950) (SQLExecDirectW)",
+    "job log": [
+      "SQL0950",
+      "SQL0950",
+      "CPI3212",
+      "SQL0206",
+      "SQL0199"
+    ],
+    "check": {
+      "select B": {
+        "result": "error",
+        "sqlstate": "42S22",
+        "sqlcode": -206,
+        "message": "SQL0206 - Column or global variable B not found. (-206) (SQLExecDirectW)"
+      }
+    }
+  },
+  "AutoField -> IntegerField as Django writes it (SET DATA TYPE INTEGER)": {
+    "result": "ok",
+    "job log": [
+      "CPI3212",
+      "SQL0206",
+      "SQL0950",
+      "SQL0950",
+      "CPI3212"
+    ],
+    "check": {
+      "insert with ID": {
+        "result": "ok"
+      },
+      "insert without ID": {
+        "result": "ok"
+      },
+      "IDs": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          5
+        ]
+      ],
+      "catalog": []
+    }
+  },
+  "AutoField -> IntegerField with DROP IDENTITY": {
+    "result": "ok",
+    "job log": [
+      "CPI3212",
+      "CPI3212",
+      "SQL0206",
+      "SQL0950",
+      "SQL0950"
+    ],
+    "check": {
+      "insert with ID": {
+        "result": "ok"
+      },
+      "insert without ID": {
+        "result": "error",
+        "sqlstate": "23000",
+        "sqlcode": -407,
+        "message": "SQL0407 - Null values not allowed in column or variable ID. (-407) (SQLExecDirectW)"
+      },
+      "IDs": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          5
+        ]
+      ],
+      "catalog": []
+    }
+  },
+  "IntegerField -> AutoField on a column with rows": {
+    "result": "ok",
+    "job log": [
+      "CPI3212",
+      "SQL0407",
+      "CPF4277",
+      "CPI3212",
+      "CPI3212"
+    ],
+    "check": {
+      "insert without ID": {
+        "result": "error",
+        "sqlstate": "23000",
+        "sqlcode": -803,
+        "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+      },
+      "IDs": [
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ]
+    }
+  },
+  "IntegerField -> AutoField, then RESTART WITH 3": {
+    "result": "ok",
+    "job log": [
+      "CPI3212",
+      "SQL0803",
+      "CPF5034",
+      "CPF5034",
+      "CPF5009"
+    ],
+    "check": {
+      "restart": {
+        "result": "ok"
+      },
+      "insert without ID": {
+        "result": "ok"
+      },
+      "IDs": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    }
+  },
+  "IntegerField -> AutoField, then a compound statement restarts at MAX + 1": {
+    "result": "ok",
+    "job log": [
+      "CPI3212",
+      "CPI3212",
+      "SQL0803",
+      "CPF5034",
+      "CPF5034"
+    ],
+    "check": {
+      "compound": {
+        "result": "ok"
+      },
+      "insert without ID": {
+        "result": "ok"
+      },
+      "IDs": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    }
+  },
+  "SmallAutoField -> AutoField": {
+    "result": "ok",
+    "job log": [
+      "CPC2955",
+      "CPI3212",
+      "CPC2191",
+      "CPC2191",
+      "CPC5D07"
+    ],
+    "check": {
+      "insert without ID": {
+        "result": "ok"
+      },
+      "IDs": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    }
+  },
+  "BigAutoField -> AutoField (narrowing)": {
+    "result": "error",
+    "sqlstate": "HY008",
+    "sqlcode": 30071,
+    "message": "Operation cancelled. (30071) (SQLExecDirectW)",
+    "job log": [
+      "SQL0952",
+      "CPF7304",
+      "CPD32CE",
+      "CPD32CC",
+      "CPI3212"
+    ],
+    "check": {
+      "insert without ID": {
+        "result": "ok"
+      },
+      "IDs": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    }
+  }
+}

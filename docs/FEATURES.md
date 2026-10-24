@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**25 flags enabled on Django 6.1.**
+**26 flags enabled on Django 6.1.**
 
-## Enabled (25)
+## Enabled (26)
 
 On in at least one supported Django version.
 
@@ -21,6 +21,7 @@ On in at least one supported Django version.
 | `can_introspect_default` | Introspection reads column defaults. | ✅ | ✅ | ✅ |
 | `can_introspect_foreign_keys` | Introspection finds foreign keys. | ✅ | ✅ | ✅ |
 | `can_release_savepoints` | Savepoints are released after a nested `atomic()` block that succeeded. | ✅ | ✅ | ✅ |
+| `can_rename_index` | `RenameIndex` renames an index in place instead of dropping and recreating it. | ✅ | ✅ | ✅ |
 | `has_native_boolean_field` | `BooleanField` is a native `BOOLEAN` column (IBM i 7.5). | – | – | ✅ |
 | `implied_column_null` | Columns are nullable unless `NOT NULL` is written; no bare `NULL` keyword in DDL. | ✅ | ✅ | ✅ |
 | `nulls_order_largest` | NULL sorts as the largest value: last in ascending order, first in descending. | ✅ | ✅ | ✅ |
@@ -42,7 +43,7 @@ On in at least one supported Django version.
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (11)
+## Intentionally off (12)
 
 Off on purpose, with the reason.
 
@@ -53,6 +54,7 @@ Off on purpose, with the reason.
 | `can_defer_constraint_checks` | Constraint checks can be deferred to the end of the transaction. | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `can_rollback_ddl` | Schema changes inside a transaction are rolled back with it. | ❌ | ❌ | ❌ | Not relied on until a probe shows DDL is rolled back on Db2 for i. |
 | `has_zoneinfo_database` | The database has its own time zone database. | ❌ | ❌ | ❌ | Db2 for i has no time zone names; conversions happen in Python. |
+| `supports_combined_alters` | Several column changes are written as one `ALTER TABLE` statement. | ❌ | ❌ | ❌ | Db2 for i takes several clauses in one `ALTER TABLE` only without commas; Django joins them with commas (probe 24). |
 | `supports_expression_defaults` | `db_default` can be an expression, not only a constant. | ❌ | ❌ | ❌ | A column `DEFAULT` on Db2 for i takes only a constant or a special register. |
 | `supports_forward_references` | Rows may reference rows inserted later in the same transaction (deferred constraints). | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `supports_paramstyle_pyformat` | Raw SQL may use `%(name)s` parameters with a dict. | ❌ | ❌ | ❌ | The driver takes positional `?` markers only. |
@@ -60,14 +62,13 @@ Off on purpose, with the reason.
 | `supports_tuple_comparison_against_subquery` | Composite fields compared with `>`, `<` against a subquery. | – | ❌ | ❌ | Db2 for i rejects row-value comparisons with a subquery (SQL0115). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (26)
+## Planned (25)
 
 Off for now; planned for the phase shown.
 
 | Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Phase |
 |---|---|---|---|---|---|
 | `allows_multiple_constraints_on_same_fields` | Several constraints on the same columns. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
-| `can_rename_index` | `RenameIndex` renames an index in place instead of dropping and recreating it. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `can_return_columns_from_insert` | Inserted rows return their primary key and defaults in one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `can_return_rows_from_bulk_insert` | `bulk_create()` sets the primary keys of the created objects. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `has_bulk_insert` | `bulk_create()` inserts many rows in one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
@@ -93,7 +94,7 @@ Off for now; planned for the phase shown.
 | `supports_table_check_constraints` | Model `CheckConstraint`s are enforced by the database. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_update_conflicts` | `bulk_create(update_conflicts=True)` (upsert). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 
-## Not yet evaluated (82)
+## Not yet evaluated (81)
 
 Off: Django's default or not looked at yet.
 
@@ -146,7 +147,6 @@ Off: Django's default or not looked at yet.
 | `supports_cast_with_precision` |  | ❌ | ❌ | ❌ |
 | `supports_collation_on_charfield` | `CharField(db_collation=...)`. | ❌ | ❌ | ❌ |
 | `supports_collation_on_textfield` | `TextField(db_collation=...)`. | ❌ | ❌ | ❌ |
-| `supports_combined_alters` | Several column changes are written as one `ALTER TABLE` statement. | ❌ | ❌ | ❌ |
 | `supports_comments_inline` | Column comments are written in the `ADD COLUMN` statement itself. | ❌ | ❌ | ❌ |
 | `supports_comparing_boolean_expr` |  | ❌ | ❌ | ❌ |
 | `supports_covering_indexes` |  | ❌ | ❌ | ❌ |

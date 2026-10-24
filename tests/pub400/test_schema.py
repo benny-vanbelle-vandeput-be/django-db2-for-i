@@ -513,3 +513,95 @@ def test_alter_field_and_back(live, alter_model) -> None:
             assert _stripped(cursor.fetchall()) == forward
             cursor.execute(ALTER_ROWS)
             assert [tuple(row) for row in cursor.fetchall()] == rows_after
+
+
+# --- Renames and identity changes ---------------------------------------------------
+
+
+@pytest.fixture
+def rename_model(live):
+    """A model of its own (testapp_renameprobe) with an integer primary key and a
+    named index; created for the test and dropped after it. The test renames the
+    table back before it ends, so bin/ibmi-cleanup's list still names it."""
+    from django.apps import apps
+
+    class RenameProbe(models.Model):
+        id = models.IntegerField(primary_key=True)
+        name = models.CharField(max_length=20)
+
+        class Meta:
+            app_label = "testapp"
+            indexes = (models.Index(fields=["name"], name="testapp_rp_name_idx"),)
+
+    try:
+        with live.schema_editor() as editor:
+            editor.create_model(RenameProbe)
+        yield RenameProbe
+    finally:
+        replace_if_unusable(live)
+        RenameProbe._meta.db_table = "testapp_renameprobe"
+        with live.cursor() as cursor:
+            cursor.execute('DROP TABLE "TESTAPP_RENAMEPROBE"')
+        apps.all_models["testapp"].pop("renameprobe", None)
+        apps.clear_cache()
+
+
+def _index_names(live, table: str) -> set[str]:
+    with live.cursor() as cursor:
+        constraints = live.introspection.get_constraints(cursor, table)
+    return {name for name, info in constraints.items() if info["index"]}
+
+
+def test_rename_table_index_and_identity(live, rename_model) -> None:
+    """RenameIndex, IntegerField -> AutoField on a table with rows (the identity
+    continues after the largest key), RenameModel with the ORM working on the new
+    name, and AutoField -> IntegerField (DROP IDENTITY: no generated keys)."""
+    from django.db import IntegrityError
+
+    model = rename_model
+    model.objects.bulk_create([model(id=1, name="one"), model(id=2, name="two")])
+
+    old_index, new_index = (
+        model._meta.indexes[0],
+        models.Index(fields=["name"], name="testapp_rp_label_idx"),
+    )
+    with live.schema_editor() as editor:
+        editor.rename_index(model, old_index, new_index)
+    assert "testapp_rp_label_idx" in _index_names(live, "testapp_renameprobe")
+    assert "testapp_rp_name_idx" not in _index_names(live, "testapp_renameprobe")
+
+    plain = model._meta.get_field("id")
+    auto = models.AutoField(primary_key=True)
+    auto.set_attributes_from_name("id")
+    auto.model = model
+    with live.schema_editor() as editor:
+        editor.alter_field(model, plain, auto, strict=True)
+    with live.cursor() as cursor:
+        cursor.execute('INSERT INTO "TESTAPP_RENAMEPROBE" ("NAME") VALUES (%s)', ["three"])
+
+    try:
+        with live.schema_editor() as editor:
+            editor.alter_db_table(model, "testapp_renameprobe", "testapp_renamed_probe")
+        model._meta.db_table = "testapp_renamed_probe"
+        assert list(model.objects.order_by("id").values_list("id", "name")) == [
+            (1, "one"),
+            (2, "two"),
+            (3, "three"),
+        ]
+        assert model.objects.get(name="two").pk == 2
+        assert "testapp_rp_label_idx" in _index_names(live, "testapp_renamed_probe")
+        with live.cursor() as cursor:
+            cursor.execute('INSERT INTO "TESTAPP_RENAMED_PROBE" ("NAME") VALUES (%s)', ["four"])
+            cursor.execute('SELECT "ID" FROM "TESTAPP_RENAMED_PROBE" WHERE "NAME" = %s', ["four"])
+            assert cursor.fetchone() == (4,)
+    finally:
+        if model._meta.db_table != "testapp_renameprobe":
+            with live.schema_editor() as editor:
+                editor.alter_db_table(model, "testapp_renamed_probe", "testapp_renameprobe")
+            model._meta.db_table = "testapp_renameprobe"
+
+    with live.schema_editor() as editor:
+        editor.alter_field(model, auto, plain, strict=True)
+    model.objects.create(id=10, name="explicit")
+    with pytest.raises(IntegrityError), live.cursor() as cursor:
+        cursor.execute('INSERT INTO "TESTAPP_RENAMEPROBE" ("NAME") VALUES (%s)', ["no key"])

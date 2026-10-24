@@ -18,7 +18,7 @@
     "can_introspect_json_field": false,
     "can_introspect_materialized_views": false,
     "can_release_savepoints": true,
-    "can_rename_index": false,
+    "can_rename_index": true,
     "can_return_columns_from_insert": false,
     "can_return_rows_from_bulk_insert": false,
     "can_return_rows_from_update": false,
