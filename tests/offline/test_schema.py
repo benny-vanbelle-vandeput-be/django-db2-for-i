@@ -8,6 +8,7 @@ The collected SQL is the same.
 import datetime as dt
 from decimal import Decimal
 
+import django.db
 import pytest
 from django.apps import apps
 from django.db import NotSupportedError, connection, models
@@ -368,3 +369,57 @@ def test_alter_field_adds_a_column_check() -> None:
         'ALTER TABLE "TESTAPP_BOOK" ADD CONSTRAINT "TESTAPP_BOOK_PAGES_90D8912E_CHECK" '
         "CHECK (pages >= 0);"
     ]
+
+
+# --- Leaving the schema editor's transaction -----------------------------------------
+
+
+class FakeAtomic:
+    def __init__(self):
+        self.exits = []
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.exits.append((exc_type, exc_value))
+
+
+def _atomic_editor(monkeypatch, deferred, failing=()):
+    """A schema editor in an atomic migration, without entering it (that would
+    open a connection): its transaction is a FakeAtomic."""
+    editor = connection.schema_editor(atomic=True)
+    assert editor.atomic_migration
+    editor.atomic = FakeAtomic()
+    editor.deferred_sql = list(deferred)
+    executed = []
+
+    def execute(sql, params=()):
+        executed.append(sql)
+        if sql in failing:
+            raise django.db.DatabaseError("SQL0350")
+
+    monkeypatch.setattr(editor, "execute", execute)
+    return editor, executed
+
+
+def test_a_failing_deferred_statement_rolls_the_transaction_back(monkeypatch) -> None:
+    """Django's __exit__ would skip atomic.__exit__ (the connection stays in an
+    atomic block); the editor leaves it with the error, so it rolls back."""
+    editor, executed = _atomic_editor(monkeypatch, ["A", "B", "C"], failing={"B"})
+    with pytest.raises(django.db.DatabaseError, match="SQL0350") as info:
+        editor.__exit__(None, None, None)
+    assert executed == ["A", "B"]
+    assert editor.atomic.exits == [(django.db.DatabaseError, info.value)]
+
+
+def test_deferred_statements_run_once_before_the_commit(monkeypatch) -> None:
+    editor, executed = _atomic_editor(monkeypatch, ["A", "B"])
+    editor.__exit__(None, None, None)
+    assert executed == ["A", "B"]
+    assert editor.atomic.exits == [(None, None)]
+
+
+def test_an_error_in_the_block_skips_the_deferred_statements(monkeypatch) -> None:
+    editor, executed = _atomic_editor(monkeypatch, ["A"])
+    error = ValueError("in the block")
+    editor.__exit__(ValueError, error, None)
+    assert executed == []
+    assert editor.atomic.exits == [(ValueError, error)]
