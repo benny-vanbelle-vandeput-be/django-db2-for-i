@@ -558,6 +558,14 @@ PR boundaries, in this order:
     default, Django's `UPDATE ... WHERE ... IS NULL` before `SET NOT NULL`
     stays when CPA32B2 cancels `SET NOT NULL` (Known limitations). With the
     flag on, `test_alter_field_and_back` asserts intact rows instead.
+    *Added 2026-10-24 (item 11a, maintainer approval):* the flag goes on;
+    `start_transaction_sql()` is `""` (no start statement exists, probe
+    `transaction_start`). The cleanup list keeps a rename pending until its
+    transaction commits (`on_commit`), and keeps every name after a rollback,
+    also of a savepoint; in autocommit it is cleared after the statement
+    (CLAUDE.md, standing approval amended). Own IBM i tests: a migration
+    cancelled halfway by CPA32B2 leaves nothing behind; renames rolled back,
+    in a rolled-back savepoint, and with `atomic = False`.
 12. `feat(schema)`: indexes from probe 24: `supports_index_column_ordering`,
     `supports_index_on_text_field` where possible.
 13. `feat(schema)`: `supports_comments` if approved (open question 7).

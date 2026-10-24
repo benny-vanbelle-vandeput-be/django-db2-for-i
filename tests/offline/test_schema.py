@@ -1,4 +1,9 @@
-"""DDL collected with schema_editor(collect_sql=True) (no server needed)."""
+"""DDL collected with schema_editor(collect_sql=True) (no server needed).
+
+atomic=False everywhere: with can_rollback_ddl an atomic schema editor enters
+transaction.atomic(), which opens a connection even when it only collects SQL.
+The collected SQL is the same.
+"""
 
 import datetime as dt
 from decimal import Decimal
@@ -12,7 +17,7 @@ from tests.testapp.models import Article, Author, Book, Node, Tag
 
 
 def collect(*actions) -> list[str]:
-    with connection.schema_editor(collect_sql=True) as editor:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         for action, model in actions:
             getattr(editor, action)(model)
     assert connection.connection is None, "collecting SQL must not connect"
@@ -99,20 +104,20 @@ def test_foreign_keys_use_no_action(monkeypatch: pytest.MonkeyPatch) -> None:
     ],
 )
 def test_quote_value(value, literal: str) -> None:
-    with connection.schema_editor(collect_sql=True) as editor:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         assert editor.quote_value(value) == literal
 
 
 def test_quote_value_rejects_unknown_types() -> None:
     with (
-        connection.schema_editor(collect_sql=True) as editor,
+        connection.schema_editor(collect_sql=True, atomic=False) as editor,
         pytest.raises(ValueError, match="Cannot quote"),
     ):
         editor.quote_value(object())
 
 
 def test_prepare_default_escapes_percent() -> None:
-    with connection.schema_editor(collect_sql=True) as editor:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         assert editor.prepare_default("100%") == "'100%%'"
 
 
@@ -150,7 +155,7 @@ def test_prepare_default_escapes_percent() -> None:
     ],
 )
 def test_prepare_default_per_type(value, literal: str) -> None:
-    with connection.schema_editor(collect_sql=True) as editor:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         assert editor.prepare_default(value) == literal
 
 
@@ -171,7 +176,7 @@ def test_prepare_default_per_type(value, literal: str) -> None:
 )
 def test_prepare_default_without_a_rule_is_not_supported(value) -> None:
     with (
-        connection.schema_editor(collect_sql=True) as editor,
+        connection.schema_editor(collect_sql=True, atomic=False) as editor,
         pytest.raises(NotSupportedError),
     ):
         editor.prepare_default(value)
@@ -188,7 +193,7 @@ def _create_sql(**fields) -> str:
         {"__module__": __name__, "Meta": type("Meta", (), {"app_label": "testapp"}), **fields},
     )
     try:
-        with connection.schema_editor(collect_sql=True) as editor:
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
             editor.create_model(model)
         return editor.collected_sql[0]
     finally:
@@ -236,7 +241,7 @@ def test_rename_column_is_not_supported() -> None:
     new.set_attributes_from_name("full_name")
     with (
         pytest.raises(NotSupportedError, match="db_column='name'") as info,
-        connection.schema_editor(collect_sql=True) as editor,
+        connection.schema_editor(collect_sql=True, atomic=False) as editor,
     ):
         editor.alter_field(Author, old, new, strict=True)
     assert 'See "Renaming a column" in docs/user/Known-Limitations.md.' in str(info.value)
@@ -248,7 +253,7 @@ def test_rename_field_with_db_column_writes_nothing() -> None:
     old = Author._meta.get_field("name")
     new = models.CharField(max_length=100, db_column="name")
     new.set_attributes_from_name("full_name")
-    with connection.schema_editor(collect_sql=True) as editor:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         editor.alter_field(Author, old, new, strict=True)
     assert editor.collected_sql == []
 
@@ -272,7 +277,7 @@ def test_type_change_db2_cannot_make_is_refused_before_any_sql(old, new) -> None
         field.model = Author
     with (
         pytest.raises(NotSupportedError, match=r"in place \(SQL0190\)\. Add a new field") as info,
-        connection.schema_editor(collect_sql=True) as editor,
+        connection.schema_editor(collect_sql=True, atomic=False) as editor,
     ):
         editor.alter_field(Author, old, new, strict=True)
     assert editor.collected_sql == []
@@ -292,7 +297,7 @@ def test_type_changes_within_a_family_are_written(old, new) -> None:
     for field in (old, new):
         field.set_attributes_from_name("info")
         field.model = Author
-    with connection.schema_editor(collect_sql=True) as editor:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         editor.alter_field(Author, old, new, strict=True)
     assert any("SET DATA TYPE" in sql for sql in editor.collected_sql)
 
@@ -316,7 +321,7 @@ def test_check_constraint_is_a_search_condition(condition, check) -> None:
     """CHECK takes a search condition: no select-list CASE WHEN wrapper
     (compiler.py, "Conditions of constraints and indexes"), parameters inlined."""
     constraint = models.CheckConstraint(condition=condition, name="testapp_book_check")
-    with connection.schema_editor(collect_sql=True) as editor:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         editor.add_constraint(Book, constraint)
     assert editor.collected_sql == [
         f'ALTER TABLE "TESTAPP_BOOK" ADD CONSTRAINT "TESTAPP_BOOK_CHECK" CHECK ({check});'
@@ -341,7 +346,7 @@ def test_alter_field_drops_the_column_check(new, monkeypatch) -> None:
     old = Book._meta.get_field("pages")
     new.set_attributes_from_name("pages")
     new.model = Book
-    with connection.schema_editor(collect_sql=True) as editor:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         monkeypatch.setattr(editor, "_constraint_names", constraint_names)
         editor.alter_field(Book, old, new, strict=True)
     assert found == [(["pages"], True)]
@@ -357,7 +362,7 @@ def test_alter_field_adds_a_column_check() -> None:
     old.set_attributes_from_name("pages")
     old.model = Book
     new = Book._meta.get_field("pages")
-    with connection.schema_editor(collect_sql=True) as editor:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         editor.alter_field(Book, old, new, strict=True)
     assert [sql for sql in editor.collected_sql if "CHECK" in sql] == [
         'ALTER TABLE "TESTAPP_BOOK" ADD CONSTRAINT "TESTAPP_BOOK_PAGES_90D8912E_CHECK" '

@@ -395,7 +395,14 @@ class DatabaseOperations(BaseDatabaseOperations):
             value = uuid.UUID(value)
         return value
 
-    # --- Savepoints -------------------------------------------------------------
+    # --- Transactions and savepoints ----------------------------------------------
+
+    def start_transaction_sql(self):
+        """No statement: under commitment control a transaction starts with the
+        first statement (lib_rollback_ddl). Db2 for i has no BEGIN, BEGIN WORK
+        or START TRANSACTION (SQL0104 / SQL0199, probe transaction_start); this
+        is what ``sqlmigrate`` prints before an atomic migration."""
+        return ""
 
     def savepoint_create_sql(self, sid):
         """The ON ROLLBACK clause is required on Db2 for i (SQL0104 without it).

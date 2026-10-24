@@ -228,7 +228,7 @@ def test_capabilities_without_boolean_type_are_refused() -> None:
 def test_features() -> None:
     features = make_wrapper().features
     assert features.supports_transactions is True
-    assert features.can_rollback_ddl is False
+    assert features.can_rollback_ddl is True
     assert features.uses_savepoints is True
     assert features.can_release_savepoints is True
     assert features.supports_timezones is False

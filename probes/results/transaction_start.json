@@ -1,0 +1,42 @@
+{
+  "probe": "transaction_start",
+  "utc": "20261024T174442Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "connection": {
+    "CMT": "1",
+    "TRUEAUTOCOMMIT": "1",
+    "NAM": "0",
+    "DFT": "5",
+    "TFT": "2"
+  },
+  "statements": {
+    "BEGIN": {
+      "result": "error",
+      "sqlstate": "42000",
+      "sqlcode": -104,
+      "message": "SQL0104 - Token <END-OF-STATEMENT> was not valid. Valid tokens: ( IF GET SET CALL CASE DROP GOTO. (-104) (SQLExecDirectW"
+    },
+    "BEGIN WORK": {
+      "result": "error",
+      "sqlstate": "42000",
+      "sqlcode": -104,
+      "message": "SQL0104 - Token <END-OF-STATEMENT> was not valid. Valid tokens: :. (-104) (SQLExecDirectW)"
+    },
+    "BEGIN TRANSACTION": {
+      "result": "error",
+      "sqlstate": "42000",
+      "sqlcode": -104,
+      "message": "SQL0104 - Token <END-OF-STATEMENT> was not valid. Valid tokens: :. (-104) (SQLExecDirectW)"
+    },
+    "START TRANSACTION": {
+      "result": "error",
+      "sqlstate": "42000",
+      "sqlcode": -199,
+      "message": "SQL0199 - Keyword START not expected. Valid tokens: ( CL END GET SET TAG CALL DROP FREE HOLD LOCK OPEN WITH ALTER. (-199"
+    },
+    "BEGIN ATOMIC END": {
+      "result": "ok"
+    }
+  }
+}

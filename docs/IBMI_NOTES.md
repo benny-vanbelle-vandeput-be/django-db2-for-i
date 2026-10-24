@@ -1084,6 +1084,24 @@ So `can_rollback_ddl` can be True: with it the schema editor runs a migration
 in one transaction, and a statement cancelled by CPA32B2 leaves nothing of
 the migration behind (item 11a).
 
+### No statement starts a transaction (`probe -- transaction_start`)
+2026-10-24, PUB400 (IBM i 7.5), QTEMP probe that writes nothing: the
+backend's connection attributes (commitment control, `TRUEAUTOCOMMIT=1`),
+autocommit off, each candidate followed by `ROLLBACK`. Result in
+`probes/results/transaction_start.json`.
+
+| Statement | Result |
+|---|---|
+| `BEGIN` | SQL0104 (42000), token `<END-OF-STATEMENT>` not valid |
+| `BEGIN WORK`, `BEGIN TRANSACTION` | SQL0104 (42000) |
+| `START TRANSACTION` | SQL0199 (42000), keyword `START` not expected |
+| `BEGIN ATOMIC END` | ok: an (empty) compound statement, not a transaction start |
+
+Under commitment control the transaction starts with the first statement
+(`lib_rollback_ddl` rolled DDL back without any start statement), so
+`start_transaction_sql()` returns `""`: that is what `sqlmigrate` prints
+before an atomic migration once `can_rollback_ddl` is on.
+
 ### Catalog views for introspection (`probe -- catalog`)
 2026-10-22, PUB400 (IBM i 7.5), read-only outside QTEMP; phase 4 step A,
 probe 25. The views' columns, from their own `QSYS2.SYSCOLUMNS` rows:

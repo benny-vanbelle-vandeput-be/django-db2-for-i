@@ -7,7 +7,8 @@ Usage (inside the "tests" container):
                      library_journal|journal_check|all] ...
     nox -s probe -- fetch_errors | mapping_errors | long_string_params |
                     numeric_params | constraint_errors | drop_column | alter_table |
-                    alter_column | renames | type_changes | check_journal
+                    alter_column | renames | type_changes | check_journal |
+                    transaction_start
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -50,6 +51,7 @@ import qtemp_selected_predicates
 import qtemp_session
 import qtemp_string_limits
 import qtemp_system_info
+import qtemp_transaction_start
 import qtemp_trunc
 import qtemp_tuple_in
 import qtemp_tuple_lookups
@@ -89,6 +91,7 @@ PROBES = {
     "catalog": qtemp_catalog,
     "library_journal": qtemp_library_journal,
     "journal_check": qtemp_journal_check,
+    "transaction_start": qtemp_transaction_start,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 

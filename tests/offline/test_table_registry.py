@@ -61,11 +61,23 @@ def test_record_read_write(tmp_path) -> None:
 
 
 class FakeConnection:
+    """Autocommit by default; ``in_atomic_block`` collects on_commit callbacks."""
+
     vendor = "db2_for_i"
 
-    def __init__(self):
+    def __init__(self, *, in_atomic_block=False, autocommit=True):
         self.settings_dict = {"NAME": "testlib"}
         self.execute_wrappers = []
+        self.in_atomic_block = in_atomic_block
+        self.autocommit = autocommit
+        self.callbacks = []
+
+    def get_autocommit(self):
+        return self.autocommit
+
+    def on_commit(self, func):
+        assert self.in_atomic_block
+        self.callbacks.append(func)
 
 
 def test_the_wrapper_records_before_the_statement_runs(tmp_path, monkeypatch) -> None:
@@ -198,10 +210,10 @@ def test_a_pending_rename_holds_both_names(tmp_path, monkeypatch) -> None:
     pending.clear()
     registry.wrapper(execute, rename, None, False, context)
     ((name, old, names),) = [(e.name, e.renamed_from, e.names) for e in pending]
-    assert (name, old, names) == ("T_NEW", "T_OLD", {"T_NEW", "T_OLD"})
+    assert (name, old, names) == ("T_NEW", ("T_OLD",), {"T_NEW", "T_OLD"})
     assert path.read_text().splitlines()[0].endswith("\tT_NEW\t" + pending[0].created)
     (done,) = registry.read(path)
-    assert (done.name, done.renamed_from) == ("T_NEW", "")
+    assert (done.name, done.renamed_from) == ("T_NEW", ())
 
 
 def test_a_failed_rename_sets_the_entry_back(tmp_path, monkeypatch) -> None:
@@ -285,3 +297,112 @@ def test_a_rename_updates_the_newest_entry_of_a_name(tmp_path, monkeypatch) -> N
     _run(['CREATE TABLE "T" (X INT)', 'CREATE TABLE "T" (X INT)'], path)
     _run(['RENAME TABLE "T" TO "T_NEW"'], path)
     assert [e.name for e in registry.read(path)] == ["T", "T_NEW"]
+
+
+# --- Renames in a transaction (can_rollback_ddl) -------------------------------------
+
+
+def _in_transaction(path, statements, connection, failing=()):
+    def execute(sql, params, many, context):
+        if sql in failing:
+            raise RuntimeError("SQL0204")
+
+    context = {"connection": connection}
+    for sql in statements:
+        with contextlib.suppress(RuntimeError):
+            registry.wrapper(execute, sql, None, False, context)
+    (entry,) = registry.read(path)
+    return entry
+
+
+@pytest.fixture
+def listed(tmp_path, monkeypatch):
+    path = tmp_path / "created-objects.txt"
+    monkeypatch.setenv(registry.ENV, str(path))
+    registry.record(path, registry.Entry("TABLE", "TESTLIB", "T_A"))
+    return path
+
+
+def test_a_rename_in_a_transaction_stays_pending_until_it_commits(listed) -> None:
+    connection = FakeConnection(in_atomic_block=True)
+    entry = _in_transaction(listed, ['RENAME TABLE "T_A" TO "T_B"'], connection)
+    assert (entry.name, entry.renamed_from) == ("T_B", ("T_A",))
+    for callback in connection.callbacks:  # the commit
+        callback()
+    (entry,) = registry.read(listed)
+    assert (entry.name, entry.renamed_from) == ("T_B", ())
+
+
+def test_a_rolled_back_rename_keeps_both_names(listed) -> None:
+    connection = FakeConnection(in_atomic_block=True)
+    _in_transaction(listed, ['RENAME TABLE "T_A" TO "T_B"'], connection)
+    connection.callbacks.clear()  # the rollback: Django discards the callbacks
+    (entry,) = registry.read(listed)
+    assert entry.names == {"T_A", "T_B"}
+
+
+def test_renames_in_one_transaction_keep_every_name_until_the_commit(listed) -> None:
+    connection = FakeConnection(in_atomic_block=True)
+    entry = _in_transaction(
+        listed, ['RENAME TABLE "T_A" TO "T_B"', 'RENAME TABLE "T_B" TO "T_C"'], connection
+    )
+    assert (entry.name, entry.renamed_from) == ("T_C", ("T_A", "T_B"))
+    line = registry.read(listed)[0].line()
+    assert line.endswith("\tT_A\tT_B\n")
+    for callback in connection.callbacks:
+        callback()
+    (entry,) = registry.read(listed)
+    assert (entry.name, entry.renamed_from) == ("T_C", ())
+
+
+def test_a_rename_back_in_one_transaction(listed) -> None:
+    connection = FakeConnection(in_atomic_block=True)
+    entry = _in_transaction(
+        listed, ['RENAME TABLE "T_A" TO "T_B"', 'RENAME TABLE "T_B" TO "T_A"'], connection
+    )
+    assert (entry.name, entry.renamed_from) == ("T_A", ("T_B",))
+    for callback in connection.callbacks:
+        callback()
+    (entry,) = registry.read(listed)
+    assert (entry.name, entry.renamed_from) == ("T_A", ())
+
+
+def test_a_rename_in_a_rolled_back_savepoint_leaves_every_name(listed) -> None:
+    """A -> B in the outer transaction, B -> C in a savepoint that is rolled
+    back (its callback discarded), then the outer commit: the table is B, the
+    entry still holds C and keeps every name."""
+    connection = FakeConnection(in_atomic_block=True)
+    _in_transaction(listed, ['RENAME TABLE "T_A" TO "T_B"'], connection)
+    outer = list(connection.callbacks)
+    _in_transaction(listed, ['RENAME TABLE "T_B" TO "T_C"'], connection)
+    for callback in outer:
+        callback()
+    (entry,) = registry.read(listed)
+    assert entry.names == {"T_A", "T_B", "T_C"}
+    # A later rename finds the entry by its real name, which is pending.
+    connection = FakeConnection()
+    entry = _in_transaction(listed, ['RENAME TABLE "T_B" TO "T_D"'], connection)
+    assert (entry.name, entry.renamed_from) == ("T_D", ())
+
+
+def test_a_failed_rename_in_a_transaction_restores_the_pending_names(listed) -> None:
+    connection = FakeConnection(in_atomic_block=True)
+    failing = 'RENAME TABLE "T_B" TO "T_C"'
+    entry = _in_transaction(
+        listed, ['RENAME TABLE "T_A" TO "T_B"', failing], connection, failing={failing}
+    )
+    assert (entry.name, entry.renamed_from) == ("T_B", ("T_A",))
+    assert len(connection.callbacks) == 1
+
+
+def test_autocommit_clears_the_entry_after_the_statement(listed) -> None:
+    connection = FakeConnection()  # atomic = False: autocommit, no atomic block
+    entry = _in_transaction(listed, ['RENAME TABLE "T_A" TO "T_B"'], connection)
+    assert (entry.name, entry.renamed_from) == ("T_B", ())
+    assert connection.callbacks == []
+
+
+def test_manual_transaction_management_keeps_the_names_pending(listed) -> None:
+    connection = FakeConnection(autocommit=False)
+    entry = _in_transaction(listed, ['RENAME TABLE "T_A" TO "T_B"'], connection)
+    assert entry.names == {"T_A", "T_B"}

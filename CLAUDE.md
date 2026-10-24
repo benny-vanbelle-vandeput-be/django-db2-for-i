@@ -125,11 +125,16 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
     **Renames (extended 2026-10-24):** a `RENAME TABLE` by a test run updates the
     entry of a table that is already on the list (the same entry, never a new
     object). *Before* the statement runs, the entry holds the new name and the old
-    one (`renamed_from`); after it succeeded only the new name, and if it fails the
-    old name again; a rename back updates it the same way, so the list holds the
-    current name. After a crash during a rename `bin/ibmi-cleanup` drops whichever
-    of the two names exists. A table not on the list is never added by a rename.
-    The marker rule above is unchanged.
+    one (`renamed_from`); if it fails, the entry as it was again; a rename back
+    updates it the same way, so the list holds the current name.
+    **In a transaction (amended 2026-10-24, item 11a, `can_rollback_ddl`):** the
+    pending entry (both names, or every name since the last commit) is cleared
+    only after the transaction commits (`on_commit`); in autocommit /
+    `atomic = False` it is cleared after the statement succeeds. After a
+    rollback, also of a savepoint, the entry keeps every name. After a crash or
+    a rollback `bin/ibmi-cleanup` drops whichever of the names exists. A table
+    not on the list is never added by a rename. The marker rule above is
+    unchanged.
 - PUB400 limits connections per IP: one connection per run, `--parallel=1`, no retry storms.
 - **One PUB400 job at a time on this machine**, whatever the worktree: no probe, tier
   or Django run starts while another one runs; it queues instead. `scripts/pub400.sh`
