@@ -11,7 +11,8 @@ exactly this, and nothing else:
   refused, so a wrong ``.env`` can never touch a real library;
 - only objects on the cleanup list (``DB2I_TABLE_LIST``, written by test runs
   before each ``CREATE``, tests/table_registry.py; a ``RENAME TABLE`` of a
-  listed table updates its entry to the new name first) that still exist, never one
+  listed table updates its entry, holding both names while it is pending, and
+  whichever of them exists is dropped) that still exist, never one
   in the marker's snapshot, never the marker itself; indexes and views go with
   their tables (the backend's own drop, creation.py);
 - without ``--yes`` it only lists. Objects that are not on the list are
@@ -41,7 +42,7 @@ RESULTS = ROOT / "test-results" / "cleanup"
 
 def plan(entries, library, inventory, snapshot, marker_table):
     """``(drop, unlisted)`` for one library: what may go, and what is only reported."""
-    listed = {e.name for e in entries if e.library == library}
+    listed = {name for e in entries if e.library == library for name in e.names}
     leftovers = set(inventory) - set(snapshot) - {marker_table}
     return sorted(leftovers & listed), sorted(leftovers - listed)
 
@@ -74,7 +75,9 @@ def main(argv: list[str]) -> int:
         with connection.cursor() as cursor:
             inventory = creation._inventory(cursor, library)
             if MARKER_TABLE not in inventory:
-                listed = sorted({e.name for e in entries if e.library == library} & set(inventory))
+                listed = sorted(
+                    {n for e in entries if e.library == library for n in e.names} & set(inventory)
+                )
                 if listed:
                     print(
                         f"{library}: no {MARKER_TABLE} table: refused, nothing dropped "
@@ -109,7 +112,11 @@ def main(argv: list[str]) -> int:
     elif not args.yes:
         print("nothing dropped: without --yes bin/ibmi-cleanup only lists")
     # Only the libraries checked here: entries of others stay on the list.
-    kept = [e for e in entries if e.library not in visited or (e.library, e.name) in remaining]
+    kept = [
+        e
+        for e in entries
+        if e.library not in visited or any((e.library, n) in remaining for n in e.names)
+    ]
     if len(kept) != len(entries):
         table_registry.write(path, kept)
         print(f"pruned {len(entries) - len(kept)} list entr(ies) of objects that no longer exist")

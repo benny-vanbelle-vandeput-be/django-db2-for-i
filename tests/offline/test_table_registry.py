@@ -184,6 +184,26 @@ def test_a_rename_updates_the_entry_before_it_runs_and_again_on_the_way_back(
     assert (entry.kind, entry.library, entry.name) == ("TABLE", "TESTLIB", "T_OLD")
 
 
+def test_a_pending_rename_holds_both_names(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "created-objects.txt"
+    monkeypatch.setenv(registry.ENV, str(path))
+    rename = 'RENAME TABLE "T_OLD" TO "T_NEW"'
+    pending = []
+
+    def execute(sql, params, many, context):
+        pending.extend(registry.read(path))
+
+    context = {"connection": FakeConnection()}
+    registry.wrapper(execute, 'CREATE TABLE "T_OLD" (X INT)', None, False, context)
+    pending.clear()
+    registry.wrapper(execute, rename, None, False, context)
+    ((name, old, names),) = [(e.name, e.renamed_from, e.names) for e in pending]
+    assert (name, old, names) == ("T_NEW", "T_OLD", {"T_NEW", "T_OLD"})
+    assert path.read_text().splitlines()[0].endswith("\tT_NEW\t" + pending[0].created)
+    (done,) = registry.read(path)
+    assert (done.name, done.renamed_from) == ("T_NEW", "")
+
+
 def test_a_failed_rename_sets_the_entry_back(tmp_path, monkeypatch) -> None:
     path = tmp_path / "created-objects.txt"
     monkeypatch.setenv(registry.ENV, str(path))
@@ -220,3 +240,39 @@ def test_cleanup_drops_a_table_renamed_before_a_crash(tmp_path, monkeypatch) -> 
         registry.read(path), "OTHERLIB", inventory, set(), "DJDB2I_TEST_MARKER"
     )
     assert drop == [] and "TESTAPP_RENAMED_PROBE" in unlisted
+
+
+def _crash_during_rename(path, monkeypatch):
+    """Create a listed table, then die while its RENAME TABLE runs (no except
+    clause runs for a process that dies; KeyboardInterrupt stands in for it)."""
+    monkeypatch.setenv(registry.ENV, str(path))
+    _run(['CREATE TABLE "TESTAPP_RENAMEPROBE" (X INT)'], path)
+
+    def dies(sql, params, many, context):
+        raise KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        registry.wrapper(
+            dies,
+            'RENAME TABLE "TESTAPP_RENAMEPROBE" TO "TESTAPP_RENAMED_PROBE"',
+            None,
+            False,
+            {"connection": FakeConnection()},
+        )
+    (entry,) = registry.read(path)
+    assert entry.names == {"TESTAPP_RENAMEPROBE", "TESTAPP_RENAMED_PROBE"}
+    return registry.read(path)
+
+
+@pytest.mark.parametrize(
+    "existing",
+    ["TESTAPP_RENAMEPROBE", "TESTAPP_RENAMED_PROBE"],
+    ids=["rename-did-not-happen", "rename-happened"],
+)
+def test_cleanup_drops_whichever_name_exists_after_a_crash_during_the_rename(
+    tmp_path, monkeypatch, existing
+) -> None:
+    entries = _crash_during_rename(tmp_path / "created-objects.txt", monkeypatch)
+    inventory = {existing: "T", "DJDB2I_TEST_MARKER": "T", "KEEP": "T"}
+    drop, unlisted = cleanup.plan(entries, "TESTLIB", inventory, {"KEEP"}, "DJDB2I_TEST_MARKER")
+    assert (drop, unlisted) == ([existing], [])
