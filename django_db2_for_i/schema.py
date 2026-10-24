@@ -17,7 +17,7 @@ import datetime
 import math
 from decimal import Decimal
 
-from django.db import DatabaseError, NotSupportedError, OperationalError
+from django.db import DatabaseError, NotSupportedError, OperationalError, models
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
 from . import inquiry
@@ -94,6 +94,20 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     # narrowing is cancelled by CPA32B2 (qtemp_alter_column, docs/IBMI_NOTES.md).
     # The NULL and DEFAULT templates of the base class are Db2 for i syntax.
     sql_alter_column_type = "ALTER COLUMN %(column)s SET DATA TYPE %(type)s%(collation)s"
+    # Db2 for i renames tables and indexes with RENAME, not ALTER ... RENAME TO
+    # (SQL0199, probe 24). It has no statement to rename a column (see
+    # _rename_field_sql()).
+    sql_rename_table = "RENAME TABLE %(old_table)s TO %(new_table)s"
+    sql_rename_index = "RENAME INDEX %(old_name)s TO %(new_name)s"
+    # A column that becomes an identity numbers from 1, below the keys it
+    # already holds; RESTART WITH takes only a constant, so a dynamic compound
+    # statement reads MAX() itself (also for collected SQL, qtemp_renames).
+    sql_restart_identity = (
+        "BEGIN DECLARE NEXT_ID BIGINT; "
+        "SET NEXT_ID = (SELECT COALESCE(MAX(%(column)s), 0) + 1 FROM %(table)s); "
+        "EXECUTE IMMEDIATE 'ALTER TABLE %(table_text)s ALTER COLUMN %(column_text)s "
+        "RESTART WITH ' CONCAT VARCHAR(NEXT_ID); END"
+    )
 
     def execute(self, sql, params=()):
         """Explain an ALTER TABLE that Db2 for i cancelled (CPA32B2, see inquiry.py)."""
@@ -117,6 +131,50 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         except DatabaseError:
             return False
         return bool(messages & set(inquiry.CANCEL_MESSAGES))
+
+    def _alter_column_type_sql(
+        self, model, old_field, new_field, new_type, old_collation, new_collation
+    ):
+        """Identity changes need more than SET DATA TYPE (probe qtemp_renames).
+
+        - From an AutoField to another field: SET DATA TYPE keeps the identity,
+          so DROP IDENTITY first, then set the type.
+        - To an AutoField from another field: SET DATA TYPE ... AS IDENTITY
+          works, then the identity restarts after the largest key.
+        Between AutoFields the base class's SET DATA TYPE ... AS IDENTITY is
+        right (widening keeps the numbering; narrowing is cancelled by CPA32B2).
+        """
+        fragment, other_actions = super()._alter_column_type_sql(
+            model, old_field, new_field, new_type, old_collation, new_collation
+        )
+        old_auto = isinstance(old_field, models.AutoField)
+        new_auto = isinstance(new_field, models.AutoField)
+        table = self.quote_name(model._meta.db_table)
+        column = self.quote_name(new_field.column)
+        if old_auto and not new_auto:
+            set_type = self.sql_alter_column % {"table": table, "changes": fragment[0]}
+            return (f"ALTER COLUMN {column} DROP IDENTITY", []), [
+                (set_type, fragment[1]),
+                *other_actions,
+            ]
+        if new_auto and not old_auto:
+            restart = self.sql_restart_identity % {
+                "table": table,
+                "column": column,
+                "table_text": table.replace("'", "''"),
+                "column_text": column.replace("'", "''"),
+            }
+            return fragment, [*other_actions, (restart, [])]
+        return fragment, other_actions
+
+    def _rename_field_sql(self, table, old_field, new_field, new_type):
+        """Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6)."""
+        raise NotSupportedError(
+            f"Db2 for i cannot rename column {old_field.column!r} of table {table!r} to "
+            f"{new_field.column!r}: IBM i has no statement for it (SQL0199). Keep the "
+            f"column name with db_column={old_field.column!r} on the renamed field. See "
+            '"Renaming a column" in docs/user/Known-Limitations.md.'
+        )
 
     def quote_value(self, value) -> str:
         """An SQL literal for ``value`` (collected SQL, COMMENT ON).

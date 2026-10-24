@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from django.db.models import (
     NOT_PROVIDED,
+    BigAutoField,
     BigIntegerField,
     CharField,
+    Index,
+    IntegerField,
 )
 
 from tests.golden_cases.base import (
@@ -100,6 +103,32 @@ def _alter(model, *changes):
     return build
 
 
+def _rename_table_and_back(model, new_name):
+    """RenameModel: RENAME TABLE, and back, so the later goldens find the table."""
+
+    def build(connection):
+        old_name = model._meta.db_table
+        with connection.schema_editor(collect_sql=True) as editor:
+            editor.alter_db_table(model, old_name, new_name)
+            editor.alter_db_table(model, new_name, old_name)
+        return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
+
+    return build
+
+
+def _rename_index_and_back(model, fields, old_name, new_name):
+    """RenameIndex: RENAME INDEX (can_rename_index), and back."""
+
+    def build(connection):
+        old, new = Index(fields=fields, name=old_name), Index(fields=fields, name=new_name)
+        with connection.schema_editor(collect_sql=True) as editor:
+            editor.rename_index(model, old, new)
+            editor.rename_index(model, new, old)
+        return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
+
+    return build
+
+
 def _drop(model):
     def build(connection):
         with connection.schema_editor(collect_sql=True) as editor:
@@ -182,6 +211,35 @@ CASES: tuple[Case, ...] = (
             ),
         ),
         (DEFAULTS,),
+    ),
+    # RenameModel and RenameIndex: RENAME TABLE / RENAME INDEX, each and back.
+    Case(
+        "ddl/rename_table",
+        "alter",
+        _rename_table_and_back(Switch, "testapp_lightswitch"),
+        (SWITCH,),
+    ),
+    Case(
+        "ddl/rename_index",
+        "alter",
+        _rename_index_and_back(
+            Book, ["title"], "testapp_book_title_c797b345", "testapp_book_title_idx"
+        ),
+        (BOOK,),
+    ),
+    # Identity changes: AutoField -> IntegerField drops the identity;
+    # IntegerField -> AutoField adds it and restarts after MAX(); AutoField ->
+    # BigAutoField widens it.
+    Case(
+        "ddl/alter_field_identity",
+        "alter",
+        _alter(
+            Author,
+            (lambda: _field(Author, "id"), lambda: _field(Author, "id", IntegerField)),
+            (lambda: _field(Author, "id", IntegerField), lambda: _field(Author, "id")),
+            (lambda: _field(Author, "id"), lambda: _field(Author, "id", BigAutoField)),
+        ),
+        (AUTHOR, BOOK),
     ),
     # The way back: narrowing and NOT NULL are cancelled by CPA32B2 (unverifiable.toml).
     Case(
