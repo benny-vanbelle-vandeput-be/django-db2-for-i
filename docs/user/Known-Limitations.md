@@ -192,6 +192,35 @@ Django version (Django 5.2's own text adds `CASCADE`). What Db2 for i does
 with views or indexes that depend on the column is not verified yet: on a
 system without the reply list entry the statement is always cancelled first.
 
+## Changing a column to an incompatible type
+
+Db2 for i changes a column's type in place only within the numeric types
+(`SmallIntegerField`, `IntegerField`, `BigIntegerField`, `DecimalField`,
+`FloatField`) and within the text types (`CharField`, `TextField`, `SlugField`
+and the like). Every other change, for example text to a date, a number to
+text, a number to `BooleanField`, `DateField` to `DateTimeField`, or
+`AutoField` to `CharField`, is refused by Db2 for i (`SQL0190`). The backend
+raises `NotSupportedError` for such an `AlterField` before it sends any SQL.
+
+Instead: add a new field with the new type, copy the data in a data migration
+(`RunPython`), then remove the old field (and rename the new one only on the
+Python side, see "Renaming a column"). Removing the old field needs the reply
+list entry of "Dropping, narrowing or making a column NOT NULL needs a reply
+list entry" above. Within a family, narrowing changes (a shorter `max_length`,
+a smaller integer type) and changes to `FloatField` are possible only with
+that reply list entry.
+
+## Changing the check of a positive integer field
+
+Until check constraints are switched on (phase 4 item 11,
+[#151](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/151)),
+an `AlterField` that changes or removes the database check of a
+`PositiveIntegerField`, `PositiveSmallIntegerField` or
+`PositiveBigIntegerField`, for example to `IntegerField` or
+`BigIntegerField`, fails with `SQL0199 - Keyword NONE not expected`. Changes
+that keep the check (`>= 0`), such as `null=True`, work. Until then: add a new
+field, copy the data in a data migration, then remove the old field.
+
 ## Renaming a column
 
 Db2 for i has no statement to rename a column: IBM i 7.5 and 7.6 offer

@@ -129,7 +129,7 @@ prs = [138, 140, 141, 142, 143, 144, 145]
 [[phases.steps]]
 step = "C: schema editor"
 status = "in progress"
-prs = [146, 147, 148]
+prs = [146, 147, 148, 152]
 
 [[phases.steps]]
 step = "D: inspectdb"

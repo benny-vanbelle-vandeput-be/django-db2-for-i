@@ -10,6 +10,8 @@ enabling one is a visible one-line change.
 from django.db.backends.base.features import BaseDatabaseFeatures
 from django.utils.functional import cached_property
 
+from django_db2_for_i import compat
+
 # Fixed reasons for skips and expected failures, so related entries can be
 # found and counted (docs/DECISIONS.md).
 REASON_TIME_FRACTIONS = "Db2 for i TIME has no fractional seconds"
@@ -29,6 +31,14 @@ REASON_NO_DATABASE_FOREIGN_KEYS = (
     "supports_foreign_keys is off: Django's test tables have no foreign key "
     "constraints to introspect (phase 4, item 10)"
 )
+REASON_CPA32B2 = (
+    "Db2 for i asks CPA32B2 before a change that may lose data (DROP COLUMN, narrowing, "
+    "SET NOT NULL), and the test system's reply list has no entry for it; the test passes "
+    "on a system with the CPA32B2 reply list entry and "
+    "OPTIONS['inquiry_message_reply'] = '*SYSRPYL'"
+)
+REASON_NO_COLUMN_RENAME = "Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6)"
+REASON_TYPE_NOT_IN_PLACE = "Db2 for i cannot change this column type in place (SQL0190)"
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -220,5 +230,52 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         REASON_NO_DATABASE_FOREIGN_KEYS: {
             "introspection.tests.IntrospectionTests.test_get_relations",
         },
+        # DROP COLUMN, a narrowing ALTER COLUMN or SET NOT NULL on PUB400.
+        # test_alter_auto_field_to_integer_field and
+        # test_alter_implicit_id_to_explicit narrow BIGINT to INTEGER only from
+        # Django 6.0 on (BigAutoField default): compat.PASSING_ON_THIS_VERSION.
+        REASON_CPA32B2: {
+            "schema.tests.SchemaTests.test_add_field_remove_field",
+            "schema.tests.SchemaTests.test_alter",
+            "schema.tests.SchemaTests.test_alter_auto_field_to_integer_field",
+            "schema.tests.SchemaTests.test_alter_autofield_pk_to_smallautofield_pk",
+            "schema.tests.SchemaTests.test_alter_implicit_id_to_explicit",
+            "schema.tests.SchemaTests.test_alter_not_unique_field_to_primary_key",
+            "schema.tests.SchemaTests.test_alter_null_to_not_null",
+            "schema.tests.SchemaTests.test_alter_null_to_not_null_keeping_default",
+            "schema.tests.SchemaTests.test_alter_null_with_default_value_deferred_constraints",
+            "schema.tests.SchemaTests.test_alter_primary_key_the_same_name",
+            "schema.tests.SchemaTests.test_alter_text_field_to_not_null_with_default_value",
+            "schema.tests.SchemaTests.test_alter_textual_field_keep_null_status",
+            "schema.tests.SchemaTests.test_primary_key",
+            "schema.tests.SchemaTests.test_remove_field",
+            "schema.tests.SchemaTests.test_remove_indexed_field",
+        },
+        # RenameField / a new db_column: NotSupportedError (schema.py).
+        REASON_NO_COLUMN_RENAME: {
+            "schema.tests.SchemaTests.test_alter_pk_with_self_referential_field",
+            "schema.tests.SchemaTests.test_autofield_to_o2o",
+            "schema.tests.SchemaTests.test_m2m_rename_field_in_target_model",
+            "schema.tests.SchemaTests.test_referenced_field_without_constraint_rename_inside_atomic_block",
+            "schema.tests.SchemaTests.test_rename",
+            "schema.tests.SchemaTests.test_rename_column_renames_deferred_sql_references",
+            "schema.tests.SchemaTests.test_rename_keep_db_default",
+            "schema.tests.SchemaTests.test_rename_keep_null_status",
+            "schema.tests.SchemaTests.test_rename_referenced_field",
+            "schema.tests.SchemaTests.test_unique",
+        },
+        # Text to a date or time, AutoField to and from CharField: NotSupportedError.
+        REASON_TYPE_NOT_IN_PLACE: {
+            "schema.tests.SchemaTests.test_alter_auto_field_to_char_field",
+            "schema.tests.SchemaTests.test_alter_text_field_to_date_field",
+            "schema.tests.SchemaTests.test_alter_text_field_to_datetime_field",
+            "schema.tests.SchemaTests.test_alter_text_field_to_time_field",
+            "schema.tests.SchemaTests.test_char_field_pk_to_auto_field",
+        },
     }
-    django_test_expected_failures: set[str] = set().union(*expected_failures.values())
+    # Per Django version: the entries above that pass on the running version
+    # (compat.PASSING_ON_THIS_VERSION) are left out, since an expected failure
+    # that passes fails the run.
+    django_test_expected_failures: set[str] = (
+        set().union(*expected_failures.values()) - compat.PASSING_ON_THIS_VERSION
+    )

@@ -540,6 +540,10 @@ PR boundaries, in this order:
     in a migration are all rolled back. With its own pub400 test: a
     migration that fails halfway leaves no partial schema (no table, column,
     index or constraint of it).
+    *Added 2026-10-24 (item 9, maintainer):* item 11 comes right after item 9,
+    before item 10: `CREATE TABLE` already writes the column checks while the
+    check-constraint flags are off, so an `AlterField` that changes such a
+    check fails with SQL0199 "Keyword NONE" (#151, closed by item 11's PR).
     *Added 2026-10-24 (item 7, maintainer):* 11a comes right after item 8.
     Its pub400 test also covers a multi-operation migration that hits
     CPA32B2 halfway: are the earlier operations rolled back? Item 7 found

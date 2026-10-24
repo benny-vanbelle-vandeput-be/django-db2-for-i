@@ -101,7 +101,7 @@ All of these also apply to 5.2.
 | `adapt_durationfield_value()` is never called; `DurationField` converts itself | Values still arrive as microseconds, but the range check is skipped, so the driver would raise an unclear error. Kept through `compat.py` ([DECISIONS](DECISIONS.md#2026-10-19-the-duration-range-check-on-every-supported-django-version)), with a pub400 test per version. `compat.install_duration_adapter()` routes the values through it ([DECISIONS](DECISIONS.md#2026-10-20-the-duration-range-check-before-django-61)). | done (step A PR 3) |
 | Aliases are not quoted (`quote_name_unless_alias()`) | Different SQL text, so 6.0 needs its own goldens. Unquoted aliases fold to uppercase like our quoted ones; the 154 6.0 goldens differ from 6.1's only in that quoting, and all 154 were accepted on PUB400 ([#110](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/110)). | done |
 | Combined querysets ignore the default model ordering | Different SQL and results: goldens per series. The compound-query goldens of 6.0 and 5.2 equal 6.1's (apart from alias quoting), and the `queries` labels pass on all three versions. | checked |
-| `mark_expected_failures_and_skips` has no `ImportError` fallback | A skip or expected-failure name that 6.0's suite lacks breaks every run, so the lists must be per Django version. All names in today's lists exist in the 6.0 and 5.2 suites, and no version needed its own entries. | checked |
+| `mark_expected_failures_and_skips` has no `ImportError` fallback | A skip or expected-failure name that 6.0's suite lacks breaks every run, so the lists must be per Django version. All names in today's lists exist in the 6.0 and 5.2 suites. Two `schema` expected failures pass on 5.2 and are left out there (`compat.PASSING_ON_THIS_VERSION`, 2026-10-24). | checked |
 | No `has_native_boolean_field` / `pattern_lookup_needs_param_pattern` base flags | Same behaviour as our values (`conditional_expression_supported_in_where_clause()` is always True; the pattern is always applied) | n/a |
 | No `supports_inspectdb`, `supports_bit_aggregations`, `supports_on_delete_db_*` | Our False values are ignored; no tests in the supported modules depend on them | n/a |
 
@@ -131,8 +131,8 @@ steps of phase 3 find real differences:
 | Section | Holds | Deleted when |
 |---|---|---|
 | Django 6.0 only | nothing known yet | 6.0 is dropped |
-| Django 5.2 only | `StringAgg` (None on 5.2), `DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON` | 5.2 is dropped |
-| Before 6.1 (6.0 and 5.2) | `install_duration_adapter()` (the duration range check, [DECISIONS](DECISIONS.md#2026-10-20-the-duration-range-check-before-django-61)); no per-version test lists were needed | both are dropped |
+| Django 5.2 only | `StringAgg` (None on 5.2), `DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON`, `PASSING_ON_THIS_VERSION` (two `schema` expected failures that pass on 5.2, [DECISIONS](DECISIONS.md#2026-10-24-the-first-per-version-expected-failure-list)) | 5.2 is dropped |
+| Before 6.1 (6.0 and 5.2) | `install_duration_adapter()` (the duration range check, [DECISIONS](DECISIONS.md#2026-10-20-the-duration-range-check-before-django-61)) | both are dropped |
 
 **Dropping a version** means deleting its section, its entries in the
 per-version lists, `tests/offline/golden/<version>/`, its line in

@@ -1516,3 +1516,23 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   finished cleanly); one lock for the whole multi-version run (holds PUB400
   for hours); `bin/release-prepare` tagging after the merge (the maintainer
   signs tags with their own key, and Claude never creates tags).
+
+## 2026-10-24: The first per-version expected-failure list
+- **Decision (project owner):** expected failures stay one list in
+  `features.py`, grouped by fixed reasons; an entry that passes on one
+  supported Django version is listed in `compat.py` in that version's section
+  (`PASSING_ON_THIS_VERSION`, "Django 5.2 only") and left out of
+  `django_test_expected_failures` there. The first such entries are two
+  `schema` tests, `test_alter_auto_field_to_integer_field` and
+  `test_alter_implicit_id_to_explicit`.
+- **Why:** first per-version list, because Django 6.0 made `BigAutoField` the
+  default `DEFAULT_AUTO_FIELD` (#145): on 6.0 and 6.1 those tests narrow a
+  `BIGINT` primary key to `INTEGER`, which CPA32B2 cancels on PUB400, while
+  on 5.2 they start from `AutoField` and pass. An expected failure that
+  passes fails the run, so the list must differ per version. Keeping the
+  exception in `compat.py` keeps every `django.VERSION` check there and
+  removes it with 5.2.
+- **Alternatives:** separate lists per version in `features.py` (version
+  checks outside `compat.py`); skipping the tests on every version (hides
+  that they pass on 5.2); forcing `AutoField` in the test settings (undone
+  by #145).

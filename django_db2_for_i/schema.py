@@ -15,6 +15,7 @@ Implemented in phase 1 (CREATE/DROP TABLE); completed in phase 4.
 
 import datetime
 import math
+import re
 from decimal import Decimal
 
 from django.db import DatabaseError, NotSupportedError, OperationalError, models
@@ -84,6 +85,33 @@ def default_literal(value) -> str:
     )
 
 
+# Which base types ALTER COLUMN ... SET DATA TYPE converts in place (probe
+# qtemp_type_changes, docs/IBMI_NOTES.md): within the numeric types and within
+# the character types (narrowing or to DOUBLE is cancelled by CPA32B2), and BLOB
+# to CHAR / VARCHAR (CPA32B2). Every other change between two of these base
+# types is refused (SQL0190); a type not listed here is not checked.
+NUMERIC_TYPES = frozenset({"SMALLINT", "INTEGER", "BIGINT", "DECIMAL", "DOUBLE"})
+CHARACTER_TYPES = frozenset({"CHAR", "VARCHAR", "NVARCHAR", "NCLOB"})
+KNOWN_TYPES = NUMERIC_TYPES | CHARACTER_TYPES | {"BLOB", "BOOLEAN", "DATE", "TIME", "TIMESTAMP"}
+
+
+def base_type(sql_type: str) -> str:
+    """``DECIMAL`` for ``DECIMAL(9, 2)``, ``INTEGER`` for an identity column."""
+    match = re.match(r"\s*([A-Za-z]+)", sql_type or "")
+    return match.group(1).upper() if match else ""
+
+
+def converts_in_place(old_type: str, new_type: str) -> bool:
+    old, new = base_type(old_type), base_type(new_type)
+    if old == new or old not in KNOWN_TYPES or new not in KNOWN_TYPES:
+        return True
+    if (old in NUMERIC_TYPES and new in NUMERIC_TYPES) or (
+        old in CHARACTER_TYPES and new in CHARACTER_TYPES
+    ):
+        return True
+    return old == "BLOB" and new in {"CHAR", "VARCHAR"}
+
+
 class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     # The same DROP COLUMN on every supported Django version (Django 5.2 adds
     # CASCADE, 6.0+ does not): Db2 for i's default for dependent objects is not
@@ -131,6 +159,23 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         except DatabaseError:
             return False
         return bool(messages & set(inquiry.CANCEL_MESSAGES))
+
+    def alter_field(self, model, old_field, new_field, strict=False):
+        """Refuse a type change Db2 for i cannot make in place (SQL0190) before
+        any statement runs: Django drops foreign keys, unique constraints and
+        indexes of the column first, and without can_rollback_ddl a later
+        error would leave them dropped."""
+        old_type = old_field.db_parameters(connection=self.connection)["type"]
+        new_type = new_field.db_parameters(connection=self.connection)["type"]
+        if old_type and new_type and not converts_in_place(old_type, new_type):
+            raise NotSupportedError(
+                f"Db2 for i cannot change {model._meta.label}.{new_field.name} "
+                f"({model._meta.db_table}.{new_field.column}) from {base_type(old_type)} to "
+                f"{base_type(new_type)} in place (SQL0190). Add a new field with the new "
+                "type, copy the data in a data migration, then remove the old field. See "
+                '"Changing a column to an incompatible type" in docs/user/Known-Limitations.md.'
+            )
+        return super().alter_field(model, old_field, new_field, strict=strict)
 
     def _alter_column_type_sql(
         self, model, old_field, new_field, new_type, old_collation, new_collation
