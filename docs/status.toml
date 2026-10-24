@@ -129,7 +129,7 @@ prs = [138, 140, 141, 142, 143, 144, 145]
 [[phases.steps]]
 step = "C: schema editor"
 status = "in progress"
-prs = [146, 147]
+prs = [146, 147, 148]
 
 [[phases.steps]]
 step = "D: inspectdb"
@@ -212,10 +212,7 @@ text = "Offline query corpus: Django 6.1 done (7 modules, 2533 entries, replayed
 text = "Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82))."
 
 [[tracks]]
-text = "Verify the column order of created tables (phase 4, [#23](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/23))."
-
-[[tracks]]
-text = "`DROP COLUMN` on a table with rows is cancelled by CPA32B2 (`HY008`), which raises the question of table rebuilds in phase 4 (see [IBMI_NOTES](docs/IBMI_NOTES.md))."
+text = "`DROP COLUMN`, narrowing column changes and `SET NOT NULL` are cancelled by CPA32B2 (`HY008`) on PUB400, also on empty tables; whether to rebuild tables is decided at the end of phase 4 step C (see [IBMI_NOTES](docs/IBMI_NOTES.md))."
 
 [[tracks]]
 text = "Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier."

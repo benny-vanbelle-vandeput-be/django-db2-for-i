@@ -101,7 +101,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (26 enabled on Django 6.1) Â
 | 0: tooling (classification, gate, lock, bin/ scripts) | done | [#126](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/126), [#127](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/127), [#128](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/128), [#129](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/129), [#130](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/130), [#131](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/131), [#132](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/132), [#133](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/133), [#137](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/137), [#139](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/139) |
 | A: facts first (probes 24, 25, w13; column order #23) | done | [#134](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/134), [#135](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/135), [#136](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/136) |
 | B: introspection | done | [#138](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/138), [#140](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/140), [#141](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/141), [#142](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/142), [#143](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/143), [#144](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/144), [#145](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/145) |
-| C: schema editor | in progress | [#146](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/146), [#147](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/147) |
+| C: schema editor | in progress | [#146](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/146), [#147](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/147), [#148](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/148) |
 | D: inspectdb | planned |  |
 | Close-out: user docs, phase record, changelog | planned |  |
 
@@ -122,8 +122,7 @@ Open tracks:
 
 - Offline query corpus: Django 6.1 done (7 modules, 2533 entries, replayed in every offline CI job); 6.0 and 5.2 corpora are still to be captured.
 - Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82)).
-- Verify the column order of created tables (phase 4, [#23](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/23)).
-- `DROP COLUMN` on a table with rows is cancelled by CPA32B2 (`HY008`), which raises the question of table rebuilds in phase 4 (see [IBMI_NOTES](docs/IBMI_NOTES.md)).
+- `DROP COLUMN`, narrowing column changes and `SET NOT NULL` are cancelled by CPA32B2 (`HY008`) on PUB400, also on empty tables; whether to rebuild tables is decided at the end of phase 4 step C (see [IBMI_NOTES](docs/IBMI_NOTES.md)).
 - Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier.
 <!-- status:end -->
 
