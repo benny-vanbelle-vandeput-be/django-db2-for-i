@@ -14,6 +14,7 @@ from tests.testapp.models import (
     Measure,
     Node,
     Profile,
+    Rating,
     Schedule,
     Switch,
     Tag,
@@ -34,6 +35,7 @@ MODELS = (
     Contact,
     Switch,
     Measure,
+    Rating,
     Article,
 )
 TABLES = {model._meta.db_table for model in MODELS}

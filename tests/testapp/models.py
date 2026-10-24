@@ -126,6 +126,28 @@ class Measure(models.Model):
     big = models.BigIntegerField(null=True)
 
 
+class Rating(models.Model):
+    """CHECK constraints: a column check (PositiveSmallIntegerField) and model
+    CheckConstraints comparing two columns and with string literals."""
+
+    stars = models.PositiveSmallIntegerField()
+    low = models.IntegerField(default=0)
+    high = models.IntegerField(default=0)
+    grade = models.CharField(max_length=2, default="A")
+
+    class Meta:
+        constraints = (
+            models.CheckConstraint(
+                condition=models.Q(low__lte=models.F("high")),
+                name="testapp_rating_low_lte_high",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(grade__in=["A", "B", "O'"]),
+                name="testapp_rating_grade",
+            ),
+        )
+
+
 # Issue #23: a model with an abstract base used as a mixin and an abstract
 # base class. Django orders a model's fields by Field.creation_counter (the
 # order the field objects were created in), not by the order of the bases:

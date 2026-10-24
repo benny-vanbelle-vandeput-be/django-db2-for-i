@@ -295,3 +295,71 @@ def test_type_changes_within_a_family_are_written(old, new) -> None:
     with connection.schema_editor(collect_sql=True) as editor:
         editor.alter_field(Author, old, new, strict=True)
     assert any("SET DATA TYPE" in sql for sql in editor.collected_sql)
+
+
+# --- Check constraints ------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("condition", "check"),
+    [
+        (models.Q(pages__lte=1000), '"PAGES" <= 1000'),
+        (models.Q(available=True), '"AVAILABLE" = TRUE'),
+        (models.Q(available=False) | models.Q(pages=0), '("AVAILABLE" = FALSE OR "PAGES" = 0)'),
+        (~models.Q(title=""), "NOT (\"TITLE\" = '')"),
+        (models.Q(published__isnull=True), '"PUBLISHED" IS NULL'),
+        (models.Q(title__startswith="O'"), "\"TITLE\" LIKE 'O''%' ESCAPE '\\'"),
+    ],
+    ids=["lte", "boolean", "or", "not", "isnull", "startswith"],
+)
+def test_check_constraint_is_a_search_condition(condition, check) -> None:
+    """CHECK takes a search condition: no select-list CASE WHEN wrapper
+    (compiler.py, "Conditions of constraints and indexes"), parameters inlined."""
+    constraint = models.CheckConstraint(condition=condition, name="testapp_book_check")
+    with connection.schema_editor(collect_sql=True) as editor:
+        editor.add_constraint(Book, constraint)
+    assert editor.collected_sql == [
+        f'ALTER TABLE "TESTAPP_BOOK" ADD CONSTRAINT "TESTAPP_BOOK_CHECK" CHECK ({check});'
+    ]
+    assert connection.connection is None, "collecting SQL must not connect"
+
+
+@pytest.mark.parametrize(
+    "new",
+    [models.IntegerField(default=0), models.BigIntegerField(default=0)],
+    ids=["integer", "bigint"],
+)
+def test_alter_field_drops_the_column_check(new, monkeypatch) -> None:
+    """#151: PositiveIntegerField -> IntegerField drops the column check by the
+    name Db2 for i gave it (introspected; stubbed here), not ``None`` (SQL0199)."""
+    found = []
+
+    def constraint_names(model, column_names=None, check=None, **kwargs):
+        found.append((column_names, check))
+        return ["Q_LIBRARY_TESTAPP_BOOK_PAGES_00001"] if check else []
+
+    old = Book._meta.get_field("pages")
+    new.set_attributes_from_name("pages")
+    new.model = Book
+    with connection.schema_editor(collect_sql=True) as editor:
+        monkeypatch.setattr(editor, "_constraint_names", constraint_names)
+        editor.alter_field(Book, old, new, strict=True)
+    assert found == [(["pages"], True)]
+    assert editor.collected_sql[0] == (
+        'ALTER TABLE "TESTAPP_BOOK" DROP CONSTRAINT "Q_LIBRARY_TESTAPP_BOOK_PAGES_00001";'
+    )
+    assert None not in editor.collected_sql
+
+
+def test_alter_field_adds_a_column_check() -> None:
+    """IntegerField -> PositiveIntegerField adds a named check (no introspection)."""
+    old = models.IntegerField(default=0)
+    old.set_attributes_from_name("pages")
+    old.model = Book
+    new = Book._meta.get_field("pages")
+    with connection.schema_editor(collect_sql=True) as editor:
+        editor.alter_field(Book, old, new, strict=True)
+    assert [sql for sql in editor.collected_sql if "CHECK" in sql] == [
+        'ALTER TABLE "TESTAPP_BOOK" ADD CONSTRAINT "TESTAPP_BOOK_PAGES_90D8912E_CHECK" '
+        "CHECK (pages >= 0);"
+    ]

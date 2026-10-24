@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**26 flags enabled on Django 6.1.**
+**28 flags enabled on Django 6.1.**
 
-## Enabled (26)
+## Enabled (28)
 
 On in at least one supported Django version.
 
@@ -31,6 +31,7 @@ On in at least one supported Django version.
 | `supports_aggregate_order_by_clause` | `StringAgg(..., order_by=...)` and other ordered aggregates. | – | ✅ | ✅ |
 | `supports_any_value` | The `AnyValue` aggregate (one value of a column per group). | – | ✅ | ✅ |
 | `supports_boolean_expr_in_select_clause` | Conditions such as `Exists()` or `Q()` can be selected and grouped by. | ✅ | ✅ | ✅ |
+| `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | ✅ | ✅ | ✅ |
 | `supports_parentheses_in_compound` | Parts of a compound query may have their own `ORDER BY` / slice. | ✅ | ✅ | ✅ |
 | `supports_regex_backreferencing` | `regex` / `iregex` lookups support backreferences (ICU regular expressions). | ✅ | ✅ | ✅ |
 | `supports_select_difference` | `QuerySet.difference()` (`EXCEPT`). | ✅ | ✅ | ✅ |
@@ -38,6 +39,7 @@ On in at least one supported Django version.
 | `supports_select_union` | `QuerySet.union()` (`UNION` / `UNION ALL`). | ✅ | ✅ | ✅ |
 | `supports_slicing_ordering_in_compound` | Slicing and ordering of the parts of a compound query. | ✅ | ✅ | ✅ |
 | `supports_subqueries_in_group_by` | A subquery can be used in `GROUP BY`. | ✅ | ✅ | ✅ |
+| `supports_table_check_constraints` | Model `CheckConstraint`s are enforced by the database. | ✅ | ✅ | ✅ |
 | `supports_temporal_subtraction` | Subtracting dates, times and datetimes gives an exact `timedelta`. | ✅ | ✅ | ✅ |
 | `supports_transactions` | Transactions with commit and rollback (on journaled tables). | ✅ | ✅ | ✅ |
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
@@ -62,7 +64,7 @@ Off on purpose, with the reason.
 | `supports_tuple_comparison_against_subquery` | Composite fields compared with `>`, `<` against a subquery. | – | ❌ | ❌ | Db2 for i rejects row-value comparisons with a subquery (SQL0115). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (25)
+## Planned (23)
 
 Off for now; planned for the phase shown.
 
@@ -74,7 +76,6 @@ Off for now; planned for the phase shown.
 | `has_bulk_insert` | `bulk_create()` inserts many rows in one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `has_json_object_function` | JSON objects can be built in SQL (`JSONObject`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `indexes_foreign_keys` | Foreign key columns get an index. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
-| `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_comments` | `db_comment` and `db_table_comment` are stored as column and table comments. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_expression_indexes` | Indexes on expressions (`Index(Lower('name'))`). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_foreign_keys` | Foreign keys are enforced by the database. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
@@ -91,7 +92,6 @@ Off for now; planned for the phase shown.
 | `supports_partial_indexes` | Indexes and unique constraints with a `condition`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_partially_nullable_unique_constraints` | Multi-column unique constraints where some columns are NULL. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_sequence_reset` | `sqlsequencereset` resets identity values. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
-| `supports_table_check_constraints` | Model `CheckConstraint`s are enforced by the database. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_update_conflicts` | `bulk_create(update_conflicts=True)` (upsert). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 
 ## Not yet evaluated (81)

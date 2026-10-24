@@ -151,8 +151,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_foreign_keys = False
     can_create_inline_fk = False
     indexes_foreign_keys = False
-    supports_column_check_constraints = False
-    supports_table_check_constraints = False
+    # CHECK constraints (phase 4 item 11): the column check of the positive
+    # integer fields and model CheckConstraints. A violation is SQL0545 with
+    # SQLSTATE HY000, mapped to IntegrityError by its SQLCODE (#96).
+    supports_column_check_constraints = True
+    supports_table_check_constraints = True
     supports_expression_defaults = False
     supports_index_on_text_field = False
     supports_partial_indexes = False
