@@ -8,12 +8,16 @@ from __future__ import annotations
 
 from django.db.models import (
     NOT_PROVIDED,
+    PROTECT,
+    SET_NULL,
     BigAutoField,
     BigIntegerField,
     CharField,
     CheckConstraint,
+    ForeignKey,
     Index,
     IntegerField,
+    OneToOneField,
     Q,
 )
 
@@ -21,10 +25,13 @@ from tests.golden_cases.base import (
     ACCOUNT,
     AUTHOR,
     BOOK,
+    CODE,
     CONTACT,
     DEFAULTS,
+    LINK,
     MEASURE,
     NODE,
+    PROFILE,
     RATING,
     SCHEDULE,
     SWITCH,
@@ -149,6 +156,53 @@ def _add_and_remove_constraint(model, constraint):
     return build
 
 
+def _foreign_keys_on(connection):
+    """Foreign key DDL while supports_foreign_keys is off (as in _ddl)."""
+    features = connection.features
+    saved = features.supports_foreign_keys
+    features.supports_foreign_keys = True
+    return lambda: setattr(features, "supports_foreign_keys", saved)
+
+
+def _add_and_drop_foreign_keys(model):
+    """The ADD CONSTRAINT ... FOREIGN KEY that create_model() defers for each of
+    ``model``'s foreign keys, then DROP CONSTRAINT by the same name. (Dropping
+    one in RemoveField / AlterField finds the name by introspection, which needs
+    a connection; the pub400 introspection tests cover that part.)"""
+
+    def build(connection):
+        suffix = "_fk_%(to_table)s_%(to_column)s"
+        fields = [field for field in model._meta.local_fields if field.remote_field]
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+            for field in fields:
+                editor.execute(editor._create_fk_sql(model, field, suffix))
+            for field in fields:
+                name = editor._fk_constraint_name(model, field, suffix)
+                editor.execute(editor._delete_fk_sql(model, str(name)))
+        return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
+
+    return build
+
+
+def _add_relation(model, name, make_field):
+    """AddField of a relation with foreign keys on: ADD COLUMN, ADD CONSTRAINT and
+    (except for a OneToOneField) Django's index. The column stays: DROP COLUMN is
+    cancelled by CPA32B2 on PUB400."""
+
+    def build(connection):
+        field = make_field()
+        field.set_attributes_from_name(name)
+        restore = _foreign_keys_on(connection)
+        try:
+            with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+                editor.add_field(model, field)
+        finally:
+            restore()
+        return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
+
+    return build
+
+
 def _drop(model):
     def build(connection):
         with connection.schema_editor(collect_sql=True, atomic=False) as editor:
@@ -172,9 +226,9 @@ CASES: tuple[Case, ...] = (
     # DurationField: BIGINT microseconds.
     Case(SCHEDULE, "create", _ddl(Schedule)),
     # Foreign keys to integer, CharField, UUID and key primary keys; an IP.
-    Case("ddl/create_code", "create", _ddl(Code)),
-    Case("ddl/create_profile", "create", _ddl(Profile)),
-    Case("ddl/create_link", "create", _ddl(Link)),
+    Case(CODE, "create", _ddl(Code)),
+    Case(PROFILE, "create", _ddl(Profile)),
+    Case(LINK, "create", _ddl(Link)),
     # A composite UNIQUE key, the target of a two-column ForeignObject.
     Case(ACCOUNT, "create", _ddl(Account)),
     Case(CONTACT, "create", _ddl(Contact)),
@@ -293,6 +347,37 @@ CASES: tuple[Case, ...] = (
             Rating, CheckConstraint(condition=Q(stars__lte=5), name="testapp_rating_stars_lte_5")
         ),
         (RATING,),
+    ),
+    # Foreign keys (supports_foreign_keys is still off): each foreign key of
+    # Link as create_model() defers it, to an INTEGER, NVARCHAR, CHAR(32) (UUID)
+    # and key-to-a-key primary key, added and dropped again; AddField of a
+    # nullable ForeignKey, of one to a non-primary-key UNIQUE column (to_field),
+    # and of a OneToOneField (UNIQUE, no extra index).
+    Case(
+        "ddl/add_foreign_keys",
+        "alter",
+        _add_and_drop_foreign_keys(Link),
+        (LINK, AUTHOR, CODE, TAG, PROFILE),
+    ),
+    Case(
+        "ddl/add_field_foreign_key",
+        "alter",
+        _add_relation(Schedule, "author", lambda: ForeignKey(Author, PROTECT, null=True)),
+        (SCHEDULE, AUTHOR),
+    ),
+    Case(
+        "ddl/add_field_foreign_key_to_field",
+        "alter",
+        _add_relation(
+            Schedule, "tag", lambda: ForeignKey(Tag, SET_NULL, null=True, to_field="label")
+        ),
+        (SCHEDULE, TAG),
+    ),
+    Case(
+        "ddl/add_field_one_to_one",
+        "alter",
+        _add_relation(Switch, "author", lambda: OneToOneField(Author, PROTECT, null=True)),
+        (SWITCH, AUTHOR),
     ),
     # DROP COLUMN without CASCADE / RESTRICT on every Django version (probe 23).
     Case("ddl/remove_field", "drop", _remove_field(Defaults, "ratio"), (DEFAULTS,)),

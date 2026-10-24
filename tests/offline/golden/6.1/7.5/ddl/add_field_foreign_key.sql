@@ -1,0 +1,9 @@
+-- golden: ddl/add_field_foreign_key
+-- django: 6.1
+-- profile: 7.5
+-- depends: ddl/create_schedule, ddl/create_author
+-- params: [[], [], []]
+-- verified: unverified
+ALTER TABLE "TESTAPP_SCHEDULE" ADD COLUMN "AUTHOR_ID" INTEGER;
+ALTER TABLE "TESTAPP_SCHEDULE" ADD CONSTRAINT "TESTAPP_SCHEDULE_AUTHOR_ID_BFEA9ACB_FK_TESTAPP_AUTHOR_ID" FOREIGN KEY ("AUTHOR_ID") REFERENCES "TESTAPP_AUTHOR" ("ID");
+CREATE INDEX "TESTAPP_SCHEDULE_AUTHOR_ID_BFEA9ACB" ON "TESTAPP_SCHEDULE" ("AUTHOR_ID");
