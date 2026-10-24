@@ -251,3 +251,47 @@ def test_rename_field_with_db_column_writes_nothing() -> None:
     with connection.schema_editor(collect_sql=True) as editor:
         editor.alter_field(Author, old, new, strict=True)
     assert editor.collected_sql == []
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        (models.TextField(), models.DateField()),
+        (models.CharField(max_length=10), models.IntegerField()),
+        (models.IntegerField(), models.BooleanField()),
+        (models.DateField(), models.DateTimeField()),
+        (models.BinaryField(), models.TextField()),
+        (models.BinaryField(), models.CharField(max_length=10)),
+    ],
+    ids=["text-date", "char-int", "int-bool", "date-timestamp", "blob-nclob", "blob-nvarchar"],
+)
+def test_type_change_db2_cannot_make_is_refused_before_any_sql(old, new) -> None:
+    """SQL0190 pairs (probe qtemp_type_changes): NotSupportedError, no SQL at all."""
+    for field in (old, new):
+        field.set_attributes_from_name("info")
+        field.model = Author
+    with (
+        pytest.raises(NotSupportedError, match=r"in place \(SQL0190\)\. Add a new field") as info,
+        connection.schema_editor(collect_sql=True) as editor,
+    ):
+        editor.alter_field(Author, old, new, strict=True)
+    assert editor.collected_sql == []
+    assert '"Changing a column to an incompatible type"' in str(info.value)
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        (models.SmallIntegerField(), models.DecimalField(max_digits=9, decimal_places=2)),
+        (models.CharField(max_length=10), models.TextField()),
+        (models.BigIntegerField(), models.IntegerField()),  # CPA32B2 on IBM i, not refused here
+    ],
+    ids=["small-decimal", "char-text", "big-int"],
+)
+def test_type_changes_within_a_family_are_written(old, new) -> None:
+    for field in (old, new):
+        field.set_attributes_from_name("info")
+        field.model = Author
+    with connection.schema_editor(collect_sql=True) as editor:
+        editor.alter_field(Author, old, new, strict=True)
+    assert any("SET DATA TYPE" in sql for sql in editor.collected_sql)
