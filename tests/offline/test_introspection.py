@@ -181,3 +181,120 @@ def test_delete_rules_name_django_constants() -> None:
         "DB_SET_NULL",
         "DB_SET_DEFAULT",
     }
+
+
+def description_row(**values) -> tuple:
+    """A SYSCOLUMNS row in get_table_description()'s column order."""
+    row = {
+        "name": "COL",
+        "data_type": "INTEGER",
+        "characters": None,
+        "length": 4,
+        "precision": 9,
+        "scale": 0,
+        "nullable": "N",
+        "default": None,
+        "identity": "NO ",
+    } | values
+    return tuple(row.values())
+
+
+def test_table_description() -> None:
+    sql = (
+        "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, LENGTH, "
+        "NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT, IS_IDENTITY "
+        "FROM QSYS2.SYSCOLUMNS "
+        "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s "
+        "ORDER BY ORDINAL_POSITION"
+    )
+    cursor = CatalogCursor(
+        {
+            sql: [
+                description_row(name="ID", identity="YES"),
+                description_row(
+                    name="TITLE",
+                    data_type="VARG",
+                    characters=200,
+                    length=200,
+                    precision=None,
+                    scale=None,
+                    default="'it''s'",
+                ),
+                description_row(name="PAGES", nullable="Y", default="NULL"),
+            ]
+        }
+    )
+    introspection_ = connections["default"].introspection
+    rows = introspection_.get_table_description(cursor, "testapp_book")
+    assert cursor.executed == [(sql, ["TESTAPP_BOOK"])]
+    assert [(r.name, r.type_code, r.display_size, r.internal_size) for r in rows] == [
+        ("id", "INTEGER", None, 4),
+        ("title", "VARG", 200, 200),
+        ("pages", "INTEGER", None, 4),
+    ]
+    assert [(r.null_ok, r.default, r.is_autofield) for r in rows] == [
+        (False, None, True),
+        (False, "'it''s'", False),
+        (True, "NULL", False),
+    ]
+    assert [introspection_.get_field_type(r.type_code, r) for r in rows] == [
+        "AutoField",
+        "CharField",
+        "IntegerField",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("data_type", "identity", "expected"),
+    [
+        ("INTEGER", "YES", "AutoField"),
+        ("BIGINT", "YES", "BigAutoField"),
+        ("SMALLINT", "YES", "SmallAutoField"),
+        ("INTEGER", "NO", "IntegerField"),
+        ("BIGINT", "NO", "BigIntegerField"),
+        ("SMALLINT", "NO", "SmallIntegerField"),
+        ("BOOLEAN", "NO", "BooleanField"),
+        ("VARG", "NO", "CharField"),
+        ("VARCHAR", "NO", "CharField"),
+        ("CHAR", "NO", "CharField"),
+        ("DBCLOB", "NO", "TextField"),
+        ("BLOB", "NO", "BinaryField"),
+        ("DECIMAL", "NO", "DecimalField"),
+        ("FLOAT", "NO", "FloatField"),
+        ("DATE", "NO", "DateField"),
+        ("TIME", "NO", "TimeField"),
+        ("TIMESTMP", "NO", "DateTimeField"),
+    ],
+)
+def test_field_type(data_type: str, identity: str, expected: str) -> None:
+    (row,) = connections["default"].introspection.get_table_description(
+        _one_row_cursor(data_type, identity), "t"
+    )
+    assert connections["default"].introspection.get_field_type(data_type, row) == expected
+
+
+def _one_row_cursor(data_type: str, identity: str):
+    class Cursor(CatalogCursor):
+        def fetchall(self):
+            return [description_row(data_type=data_type, identity=identity)]
+
+    return Cursor({})
+
+
+def test_every_backend_type_is_introspected() -> None:
+    """Each column type the backend writes has a reverse entry (w14's codes)."""
+    codes = connections["default"].introspection.data_types_reverse
+    assert set(codes) == {
+        "BIGINT", "BLOB", "BOOLEAN", "CHAR", "DATE", "DBCLOB", "DECIMAL",
+        "FLOAT", "INTEGER", "SMALLINT", "TIME", "TIMESTMP", "VARCHAR", "VARG",
+    }  # fmt: skip
+
+
+def test_introspected_field_types() -> None:
+    types = connections["default"].features.introspected_field_types
+    assert types["DurationField"] == "BigIntegerField"
+    assert types["GenericIPAddressField"] == "CharField"
+    assert types["PositiveIntegerField"] == "IntegerField"
+    assert types["PositiveSmallIntegerField"] == "SmallIntegerField"
+    assert types["PositiveBigIntegerField"] == "BigIntegerField"
+    assert types["BigAutoField"] == "BigAutoField"

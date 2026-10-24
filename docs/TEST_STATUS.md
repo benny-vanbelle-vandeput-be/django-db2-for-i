@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2308 | 3 | 0 | 0 | 2026-10-21 20:19:36 UTC |
+| Offline · own tests | 2507 | 2 | 0 | 0 | 2026-10-23 18:54:13 UTC |
 | IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 03:02:59 UTC |
-| IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-21 02:16:34 UTC |
-| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-21 20:21:20 UTC |
+| IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-22 21:00:55 UTC |
+| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-23 18:54:29 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2310 | 1 | 0 | 0 | 2026-10-21 20:18:50 UTC |
+| Offline · own tests | 2508 | 1 | 0 | 0 | 2026-10-23 18:52:04 UTC |
 | IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 01:55:40 UTC |
 | IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-21 01:03:38 UTC |
-| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-21 20:20:44 UTC |
+| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-23 18:52:19 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2308 | 1 | 0 | 0 | 2026-10-21 20:18:02 UTC |
+| Offline · own tests | 2506 | 1 | 0 | 0 | 2026-10-23 18:49:29 UTC |
 | IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-21 00:42:24 UTC |
 | IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 23:51:07 UTC |
-| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-21 20:20:11 UTC |
+| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-23 18:49:47 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,10 +73,10 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-10-20 23:30:50 UTC to 2026-10-21 02:16:34 UTC
+- **Runs:** 2026-10-20 23:30:50 UTC to 2026-10-22 21:00:55 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
 - **Python:** 3.14.8
-- **Backend commits:** 4cf4e0e 2026-10-21 (per module in the table)
+- **Backend commits:** 4cf4e0e 2026-10-21, e664be7 2026-10-22 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
@@ -90,7 +90,7 @@ The IBM i · Django test suite per module and Django version.
 | aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-10-21 02:11:00 UTC | 4cf4e0e 2026-10-21 |
 | basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-20 23:30:50 UTC | 4cf4e0e 2026-10-21 |
 | basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-21 00:43:23 UTC | 4cf4e0e 2026-10-21 |
-| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-21 01:56:45 UTC | 4cf4e0e 2026-10-21 |
+| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-22 21:00:55 UTC | e664be7 2026-10-22 |
 | expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-20 23:48:00 UTC | 4cf4e0e 2026-10-21 |
 | expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-21 01:00:22 UTC | 4cf4e0e 2026-10-21 |
 | expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-21 02:13:24 UTC | 4cf4e0e 2026-10-21 |
@@ -110,6 +110,9 @@ The IBM i · Django test suite per module and Django version.
 ## Feature flags set to True by the backend
 
 - `allow_sliced_subqueries_with_in`
+- `can_introspect_check_constraints`
+- `can_introspect_default`
+- `can_introspect_foreign_keys`
 - `can_release_savepoints`
 - `implied_column_null`
 - `nulls_order_largest`
@@ -141,7 +144,8 @@ The IBM i · Django test suite per module and Django version.
 | a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 3 | 0 |
 | identity restart deferred in TestCase (SQL0910) | 0 | 0 |
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
+| supports_foreign_keys is off: Django's test tables have no foreign key constraints to introspect (phase 4, item 10) | 1 | 0 |
 
 ## Golden files
 
-463 goldens, 3 unverified; unverifiable on PUB400: 3 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
+466 goldens, 3 unverified; unverifiable on PUB400: 3 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).

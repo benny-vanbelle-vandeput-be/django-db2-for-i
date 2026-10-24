@@ -17,6 +17,8 @@ development = []
 # --- Enabled ----------------------------------------------------------------
 
 allow_sliced_subqueries_with_in.description = "A sliced queryset (`qs[:n]`, also with an offset) can be used in `__in`."
+can_introspect_check_constraints.description = "`inspectdb` and introspection find CHECK constraints."
+can_introspect_default.description = "Introspection reads column defaults."
 can_introspect_foreign_keys.description = "Introspection finds foreign keys."
 can_release_savepoints.description = "Savepoints are released after a nested `atomic()` block that succeeded."
 has_native_boolean_field.description = "`BooleanField` is a native `BOOLEAN` column (IBM i 7.5)."
@@ -66,10 +68,6 @@ allows_multiple_constraints_on_same_fields.description = "Several constraints on
 allows_multiple_constraints_on_same_fields.planned = "phase 4"
 can_create_inline_fk.description = "Foreign keys are created inline in `CREATE TABLE`."
 can_create_inline_fk.off = "Foreign keys are separate `ALTER TABLE ... ADD CONSTRAINT` statements, which also work for tables that reference each other."
-can_introspect_check_constraints.description = "`inspectdb` and introspection find CHECK constraints."
-can_introspect_check_constraints.planned = "phase 4"
-can_introspect_default.description = "Introspection reads column defaults."
-can_introspect_default.planned = "phase 4"
 indexes_foreign_keys.description = "Foreign key columns get an index."
 indexes_foreign_keys.planned = "phase 4"
 supports_column_check_constraints.description = "CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database."

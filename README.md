@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2308 | 3 | 0 | 0 | 2026-10-21 20:19:36 UTC |
+| Offline · own tests | 2507 | 2 | 0 | 0 | 2026-10-23 18:54:13 UTC |
 | IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 03:02:59 UTC |
-| IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-21 02:16:34 UTC |
-| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-21 20:21:20 UTC |
+| IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-22 21:00:55 UTC |
+| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-23 18:54:29 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2310 | 1 | 0 | 0 | 2026-10-21 20:18:50 UTC |
+| Offline · own tests | 2508 | 1 | 0 | 0 | 2026-10-23 18:52:04 UTC |
 | IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 01:55:40 UTC |
 | IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-21 01:03:38 UTC |
-| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-21 20:20:44 UTC |
+| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-23 18:52:19 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2308 | 1 | 0 | 0 | 2026-10-21 20:18:02 UTC |
+| Offline · own tests | 2506 | 1 | 0 | 0 | 2026-10-23 18:49:29 UTC |
 | IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-21 00:42:24 UTC |
 | IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 23:51:07 UTC |
-| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-21 20:20:11 UTC |
+| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-23 18:49:47 UTC |
 
 ### About the tests
 
@@ -88,11 +88,22 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 database; **expected failures** are known Db2 for i limitations, each with a reason
 ([Known limitations](docs/user/Known-Limitations.md)).
 
-Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (22 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
+Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (25 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
 <!-- tests:end -->
 
 <!-- status:start -->
 ## Project status
+
+**Phase 4: Schema editor completeness** (in progress)
+
+| Step | State | Pull requests |
+|---|---|---|
+| 0: tooling (classification, gate, lock, bin/ scripts) | done | [#126](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/126), [#127](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/127), [#128](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/128), [#129](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/129), [#130](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/130), [#131](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/131), [#132](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/132), [#133](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/133), [#137](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/137), [#139](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/139) |
+| A: facts first (probes 24, 25, w13; column order #23) | done | [#134](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/134), [#135](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/135), [#136](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/136) |
+| B: introspection | in progress | [#138](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/138), [#140](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/140), [#141](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/141), [#142](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/142) |
+| C: schema editor | planned |  |
+| D: inspectdb | planned |  |
+| Close-out: user docs, phase record, changelog | planned |  |
 
 | Phase | Content | Status |
 |---|---|---|
@@ -100,7 +111,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (22 enabled on Django 6.1) �
 | [1](docs/phases/phase-1.md) | Minimal backend | done |
 | [2](docs/phases/phase-2.md) | Queries & pagination (ordering, lookup, aggregation, expressions, queries) | done |
 | [3](docs/phases/phase-3.md) | Django 6.0 and 5.2 support | done |
-| [4](docs/phases/phase-4.md) | Schema editor completeness | planned |
+| [4](docs/phases/phase-4.md) | Schema editor completeness | in progress |
 | 5 | Returning & bulk | planned |
 | 6 | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
 | 7 | PUB400 tier & release prep | planned |
