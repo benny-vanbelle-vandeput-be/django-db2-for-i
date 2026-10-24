@@ -3,6 +3,6 @@
 -- profile: 7.5
 -- depends: ddl/create_book
 -- params: [[], []]
--- verified: unverified
+-- verified: IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.18, 2026-10-24
 RENAME INDEX "TESTAPP_BOOK_TITLE_C797B345" TO "TESTAPP_BOOK_TITLE_IDX";
 RENAME INDEX "TESTAPP_BOOK_TITLE_IDX" TO "TESTAPP_BOOK_TITLE_C797B345";
