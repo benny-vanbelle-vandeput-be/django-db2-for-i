@@ -7,8 +7,10 @@ from django.db.models import (
     BigAutoField,
     BigIntegerField,
     CharField,
+    CheckConstraint,
     Index,
     IntegerField,
+    Q,
 )
 
 from tests.golden_cases.base import (
@@ -19,6 +21,7 @@ from tests.golden_cases.base import (
     DEFAULTS,
     MEASURE,
     NODE,
+    RATING,
     SCHEDULE,
     SWITCH,
     TAG,
@@ -37,6 +40,7 @@ from tests.testapp.models import (
     Measure,
     Node,
     Profile,
+    Rating,
     Schedule,
     Switch,
     Tag,
@@ -129,6 +133,18 @@ def _rename_index_and_back(model, fields, old_name, new_name):
     return build
 
 
+def _add_and_remove_constraint(model, constraint):
+    """AddConstraint and RemoveConstraint: ALTER TABLE ... ADD / DROP CONSTRAINT."""
+
+    def build(connection):
+        with connection.schema_editor(collect_sql=True) as editor:
+            editor.add_constraint(model, constraint)
+            editor.remove_constraint(model, constraint)
+        return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
+
+    return build
+
+
 def _drop(model):
     def build(connection):
         with connection.schema_editor(collect_sql=True) as editor:
@@ -162,6 +178,9 @@ CASES: tuple[Case, ...] = (
     Case(SWITCH, "create", _ddl(Switch)),
     # SMALLINT, DECIMAL(5, 2) and BIGINT columns (issue #69).
     Case(MEASURE, "create", _ddl(Measure)),
+    # CHECK constraints: a column check and two model CheckConstraints (a
+    # column against a column, string literals with a quote).
+    Case(RATING, "create", _ddl(Rating)),
     # Fields from an abstract mixin and an abstract base: column order (#23).
     Case("ddl/create_article", "create", _ddl(Article)),
     Case(
@@ -259,6 +278,17 @@ CASES: tuple[Case, ...] = (
             (lambda: _field(Defaults, "number", null=True), lambda: _field(Defaults, "number")),
         ),
         (DEFAULTS,),
+    ),
+    # AddConstraint / RemoveConstraint of a CheckConstraint. Changing a column
+    # check (#151) needs the name Db2 for i gave it, which holds the library
+    # name: tests/offline/test_schema.py and the pub400 tests cover it.
+    Case(
+        "ddl/add_check_constraint",
+        "alter",
+        _add_and_remove_constraint(
+            Rating, CheckConstraint(condition=Q(stars__lte=5), name="testapp_rating_stars_lte_5")
+        ),
+        (RATING,),
     ),
     # DROP COLUMN without CASCADE / RESTRICT on every Django version (probe 23).
     Case("ddl/remove_field", "drop", _remove_field(Defaults, "ratio"), (DEFAULTS,)),

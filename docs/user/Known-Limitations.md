@@ -210,17 +210,6 @@ list entry" above. Within a family, narrowing changes (a shorter `max_length`,
 a smaller integer type) and changes to `FloatField` are possible only with
 that reply list entry.
 
-## Changing the check of a positive integer field
-
-Until check constraints are switched on (phase 4 item 11,
-[#151](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/151)),
-an `AlterField` that changes or removes the database check of a
-`PositiveIntegerField`, `PositiveSmallIntegerField` or
-`PositiveBigIntegerField`, for example to `IntegerField` or
-`BigIntegerField`, fails with `SQL0199 - Keyword NONE not expected`. Changes
-that keep the check (`>= 0`), such as `null=True`, work. Until then: add a new
-field, copy the data in a data migration, then remove the old field.
-
 ## Renaming a column
 
 Db2 for i has no statement to rename a column: IBM i 7.5 and 7.6 offer
@@ -370,6 +359,6 @@ fractional seconds (see "TimeField has no fractional seconds").
 
 The backend is in early development; these are switched off for now and
 enabled one at a time: foreign key constraints in the database, bulk insert,
-returning columns, check constraints, JSONField, window functions, `select_for_update`,
+returning columns, JSONField, window functions, `select_for_update`,
 `inspectdb`, and creating test schemas (tests
 run in an existing library, see [Configuration](Configuration.md#test-database-test)).

@@ -1026,6 +1026,37 @@ sends any statement (`alter_field()`; Django drops the column's foreign keys,
 unique constraints and indexes before the type change, and without
 `can_rollback_ddl` a later error would leave them dropped).
 
+### CHECK constraints on a table that is not journaled (`probe -- check_journal`)
+2026-10-24, PUB400 (IBM i 7.5), the backend's connection attributes (`CMT=1`,
+`TRUEAUTOCOMMIT=1`), QTEMP only. Phase 4 step C item 11,
+`probes/qtemp_check_journal.py`. QTEMP tables cannot be journaled, so they
+stand in for a table in a library without a journal. Each CHECK form the
+schema editor writes, in autocommit mode and in a transaction (rolled back):
+
+| Statement | autocommit | transaction |
+|---|---|---|
+| `CREATE TABLE` without a constraint (control) | ok | ok |
+| column check in `CREATE TABLE` (`A INTEGER CHECK (A >= 0)`) | SQL7008 | SQL7008 |
+| named check in `CREATE TABLE` (`CONSTRAINT QTEMP.C CHECK (...)`) | SQL7008 | SQL7008 |
+| `ALTER TABLE ... ADD CONSTRAINT QTEMP.C CHECK (...)` | SQL7008 | SQL7008 |
+
+- Every CHECK fails with `SQL7008 - PCKJ in QTEMP not valid for operation`,
+  SQLSTATE `HY000`, as `PRIMARY KEY`, `UNIQUE` and `REFERENCES` do (probe 22):
+  a constraint needs a journaled table under commitment control, and the
+  backend always runs under it (`TRUEAUTOCOMMIT=1`, also in autocommit mode).
+- So check constraints add no new requirement: a Django table has a primary
+  key, so its `CREATE TABLE` already needs the journal. What they add is
+  `ADD CONSTRAINT` on an existing table (AddConstraint, AlterField to a
+  positive integer field): a table that is not journaled (created before the
+  library's `QSQJRN`, or outside SQL) fails there.
+- A table in a user library without a journal was not probed with constraints
+  (that needs approval); it gave the same SQL7008 for a transaction in
+  probe `w01_commitment` ("Commitment control on an unjournaled table").
+- Adding a CHECK that a row already violates fails with `SQL0544 - CHECK
+  constraint ... cannot be added` (SQLSTATE `HY000`, DatabaseError), and the
+  table is unchanged (pub400 test `test_positive_field_to_integer_and_back`,
+  journaled library).
+
 ### DDL under commitment control: what ROLLBACK undoes (`lib_rollback_ddl`)
 2026-10-24, PUB400 (IBM i 7.5), write probe in the journaled default library,
 approved by the maintainer on issue #149 (started via `bin/probe --approved`).

@@ -151,8 +151,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_foreign_keys = False
     can_create_inline_fk = False
     indexes_foreign_keys = False
-    supports_column_check_constraints = False
-    supports_table_check_constraints = False
+    # CHECK constraints (phase 4 item 11): the column check of the positive
+    # integer fields and model CheckConstraints. A violation is SQL0545 with
+    # SQLSTATE HY000, mapped to IntegrityError by its SQLCODE (#96).
+    supports_column_check_constraints = True
+    supports_table_check_constraints = True
     supports_expression_defaults = False
     supports_index_on_text_field = False
     supports_partial_indexes = False
@@ -239,6 +242,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "schema.tests.SchemaTests.test_alter",
             "schema.tests.SchemaTests.test_alter_auto_field_to_integer_field",
             "schema.tests.SchemaTests.test_alter_autofield_pk_to_smallautofield_pk",
+            "schema.tests.SchemaTests.test_alter_field_default_dropped",
             "schema.tests.SchemaTests.test_alter_implicit_id_to_explicit",
             "schema.tests.SchemaTests.test_alter_not_unique_field_to_primary_key",
             "schema.tests.SchemaTests.test_alter_null_to_not_null",
@@ -261,6 +265,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "schema.tests.SchemaTests.test_rename_column_renames_deferred_sql_references",
             "schema.tests.SchemaTests.test_rename_keep_db_default",
             "schema.tests.SchemaTests.test_rename_keep_null_status",
+            "schema.tests.SchemaTests.test_rename_field_with_check_to_truncated_name",
             "schema.tests.SchemaTests.test_rename_referenced_field",
             "schema.tests.SchemaTests.test_unique",
         },

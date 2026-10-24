@@ -17,7 +17,7 @@ from django_db2_for_i.drivers import pyodbc as pyodbc_driver
 from tests import table_registry
 from tests.pub400.connection_guard import replace_if_unusable
 from tests.pub400.testapp_tables import MODELS, TABLES
-from tests.testapp.models import Article, Author, Book, Defaults, Document, Node, Tag
+from tests.testapp.models import Article, Author, Book, Defaults, Document, Node, Rating, Tag
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")
 
@@ -643,3 +643,106 @@ def test_rename_table_index_and_identity(live, rename_model) -> None:
     model.objects.create(id=10, name="explicit")
     with pytest.raises(IntegrityError), live.cursor() as cursor:
         cursor.execute('INSERT INTO "TESTAPP_RENAMEPROBE" ("NAME") VALUES (%s)', ["no key"])
+
+
+# --- Check constraints --------------------------------------------------------------
+
+
+def test_check_constraints_are_enforced(live, empty) -> None:
+    """A violated column check or CheckConstraint is SQL0545, with SQLSTATE
+    HY000 from the driver, and arrives as IntegrityError (#96)."""
+    from django.db import IntegrityError
+
+    author = Author.objects.create(name="Ada")
+    rating = Rating.objects.create(stars=5, low=1, high=2, grade="O'")
+    violations = [
+        lambda: Book.objects.create(author=author, title="Negative", pages=-1),
+        lambda: Rating.objects.create(stars=-1),
+        lambda: Rating.objects.create(stars=1, low=3, high=2),
+        lambda: Rating.objects.create(stars=1, grade="Z"),
+        lambda: Rating.objects.filter(pk=rating.pk).update(low=10),
+    ]
+    for violation in violations:
+        with pytest.raises(IntegrityError, match="SQL0545"):
+            violation()
+    assert list(Rating.objects.values_list("stars", "low", "high", "grade")) == [(5, 1, 2, "O'")]
+    assert not Book.objects.exists()
+
+
+def test_check_constraints_introspected(live) -> None:
+    """The CheckConstraints by their names, the column check by Db2's name."""
+    with live.cursor() as cursor:
+        constraints = live.introspection.get_constraints(cursor, "testapp_rating")
+    checks = {name: entry["columns"] for name, entry in constraints.items() if entry["check"]}
+    assert checks.pop("testapp_rating_low_lte_high") == ["high", "low"]
+    assert checks.pop("testapp_rating_grade") == ["grade"]
+    assert list(checks.values()) == [["stars"]]
+
+
+@pytest.fixture
+def check_model(live):
+    """A model of its own (testapp_checkprobe) with a PositiveIntegerField;
+    created for the test and dropped after it."""
+    from django.apps import apps
+
+    class CheckProbe(models.Model):
+        count = models.PositiveIntegerField()
+
+        class Meta:
+            app_label = "testapp"
+
+    try:
+        with live.schema_editor() as editor:
+            editor.create_model(CheckProbe)
+        yield CheckProbe
+    finally:
+        replace_if_unusable(live)
+        with live.cursor() as cursor:
+            cursor.execute('DROP TABLE "TESTAPP_CHECKPROBE"')
+        apps.all_models["testapp"].pop("checkprobe", None)
+        apps.clear_cache()
+
+
+def _column_checks(live, table: str) -> list[str]:
+    with live.cursor() as cursor:
+        constraints = live.introspection.get_constraints(cursor, table)
+    return sorted(name for name, entry in constraints.items() if entry["check"])
+
+
+def test_positive_field_to_integer_and_back(live, check_model) -> None:
+    """#151: PositiveIntegerField -> IntegerField drops the column check Db2 for
+    i named, on a table with rows; the way back adds a named check, once no
+    row violates it."""
+    from django.db import DatabaseError, IntegrityError
+
+    model = check_model
+    model.objects.bulk_create([model(count=0), model(count=5)])
+    with pytest.raises(IntegrityError, match="SQL0545"):
+        model.objects.create(count=-1)
+    [system_name] = _column_checks(live, "testapp_checkprobe")
+    assert system_name.startswith("q_")
+
+    positive = _rebuilt(model, "count")
+    integer = _rebuilt(model, "count", models.IntegerField)
+    with live.schema_editor() as editor:
+        editor.alter_field(model, positive, integer, strict=True)
+    assert _column_checks(live, "testapp_checkprobe") == []
+    model.objects.create(count=-1)
+    assert sorted(model.objects.values_list("count", flat=True)) == [-1, 0, 5]
+
+    # The way back while a row has a negative value: SQL0544, nothing changed.
+    with pytest.raises(DatabaseError, match="SQL0544"), live.schema_editor() as editor:
+        editor.alter_field(model, integer, positive, strict=True)
+    assert _column_checks(live, "testapp_checkprobe") == []
+
+    # filter(count=-1) on the PositiveIntegerField would match nothing (Django
+    # leaves out values below the field's range), so plain SQL.
+    with live.cursor() as cursor:
+        cursor.execute('DELETE FROM "TESTAPP_CHECKPROBE" WHERE "COUNT" < 0')
+    with live.schema_editor() as editor:
+        editor.alter_field(model, integer, positive, strict=True)
+    [named] = _column_checks(live, "testapp_checkprobe")
+    assert named.startswith("testapp_checkprobe_count_") and named.endswith("_check")
+    with pytest.raises(IntegrityError, match="SQL0545"):
+        model.objects.create(count=-2)
+    assert sorted(model.objects.values_list("count", flat=True)) == [0, 5]
