@@ -582,6 +582,18 @@ Step A, 2026-10-22, details in [IBMI_NOTES.md](../IBMI_NOTES.md):
   introspection needs; QTEMP objects never appear in them;
 - probe w13 (`constraints`, the default library): in its own PR.
 
+Step C, 2026-10-24:
+- `qtemp_alter_column` (item 7, QTEMP): widening keeps the values, also on a
+  column with an index or a unique index and for `DECIMAL(5, 2)` ->
+  `DECIMAL(7, 3)`; `SET DEFAULT UX'...'` stores the text exactly; an identity
+  column widens from `INTEGER` to `BIGINT` and keeps numbering; QTEMP takes
+  no constraints under commitment control (SQL7008);
+- `qtemp_renames` (item 8, QTEMP): no statement renames a column (SQL0199,
+  SQL0104, SQL0950; the 7.6 SQL reference and IBM idea IBMI-I-1002 agree);
+  `SET DATA TYPE INTEGER` on an identity column keeps the identity, `DROP
+  IDENTITY` removes it; a column that becomes an identity numbers from 1 and
+  needs a restart after `MAX()` (a dynamic compound statement does it).
+
 ## Test status at the end of the phase
 Not started. Baseline: see [TEST_STATUS.md](../TEST_STATUS.md) (seven
 supported modules on 6.1, 6.0 and 5.2).
@@ -619,6 +631,32 @@ The 98 `schema` failures and errors:
 Durations: both modules together take about 10 minutes, far below the
 estimate for `schema` in decision 6 (part of the tests are skipped or fail
 early today; the estimate stays until the modules pass).
+
+**Progress** (6.1, PUB400, the PR's last commit):
+
+| After | `introspection` | `schema` passed / failures / errors |
+|---|---|---|
+| baseline | 7 passed, 9 errors | 17 / 2 / 96 |
+| [#144](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/144) (step B done) | OK | 58 / 3 / 54 |
+| [#146](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/146) (item 7) | OK | 64 / 3 / 48 |
+| [#147](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/147) (item 8) | OK: 24 run, 7 skipped, 1 expected failure | 73 / 3 / 39 |
+
+Step C so far (2026-10-24):
+- item 7, #146: `ALTER COLUMN ... SET DATA TYPE`; the CPA32B2 message also
+  names `NOT NULL` and points to the user docs; a cancelled change to `NOT
+  NULL` can leave NULLs set to the default (Known limitations; fixed by item
+  11a);
+- item 8, #147: `RENAME TABLE` and `RENAME INDEX` (`can_rename_index`),
+  identity changes (`DROP IDENTITY`; a new identity restarts after `MAX()`);
+  renaming a column raises `NotSupportedError` (no statement on IBM i 7.5 or
+  7.6); `get_table_description()` of a missing table raises `DatabaseError`;
+- #148: `bin/ibmi-cleanup`'s list follows table renames (`renamed_from` while
+  a rename is pending); the standing approval in CLAUDE.md was extended;
+- item 9 (expected failures for CPA32B2, column renames and type changes Db2
+  for i cannot make in place) is in progress; item 11a (`can_rollback_ddl`)
+  waits for the maintainer's approval comment on
+  [#149](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/149)
+  for its `lib_` probe.
 
 ## Carried forward
 To be filled at the end of the phase. Known candidates:
