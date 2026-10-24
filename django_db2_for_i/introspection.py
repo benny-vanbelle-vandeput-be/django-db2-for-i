@@ -10,6 +10,7 @@ returns them in lowercase, Django's form (see operations.quote_name).
 
 from collections import namedtuple
 
+from django.db import DatabaseError
 from django.db.backends.base.introspection import BaseDatabaseIntrospection, TableInfo
 from django.db.backends.base.introspection import FieldInfo as BaseFieldInfo
 from django.db.models import Index
@@ -166,7 +167,10 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         column (inspectdb's ``max_length``), ``internal_size`` the catalog's
         ``LENGTH``. ``default`` is ``COLUMN_DEFAULT`` as Db2 for i records it
         (``42``, ``'abc'``, ``CURRENT_TIMESTAMP``, ``NULL`` for an explicit
-        ``DEFAULT NULL``); ``None`` without a default clause.
+        ``DEFAULT NULL``); ``None`` without a default clause. A table that does
+        not exist raises DatabaseError (the catalog has no rows for it), as
+        Django's schema tests expect (e.g. the old through table of a renamed
+        ManyToManyField).
         """
         cursor.execute(
             "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, LENGTH, "
@@ -176,6 +180,9 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             "ORDER BY ORDINAL_POSITION",
             [table_name.upper()],
         )
+        rows = cursor.fetchall()
+        if not rows:
+            raise DatabaseError(f"Table {table_name} does not exist in the current schema.")
         return [
             FieldInfo(
                 name=self.identifier_converter(name.rstrip()),
@@ -199,7 +206,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
                 nullable,
                 default,
                 identity,
-            ) in cursor.fetchall()
+            ) in rows
         ]
 
     def get_sequences(self, cursor, table_name: str, table_fields=()) -> list[dict]:
