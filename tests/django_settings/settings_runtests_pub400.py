@@ -54,7 +54,8 @@ DATABASES = {
 SECRET_KEY = "django_tests_secret_key"
 # Faster password hashing in tests, as in Django's own test settings.
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
-DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+# No DEFAULT_AUTO_FIELD: Django's own default per version, as in Django's
+# reference test settings (AutoField on 5.2, BigAutoField from 6.0 on).
 # As in Django's reference settings (tests/test_sqlite.py): the test suite
 # assumes naive datetimes, and runtests.py turns the RuntimeWarning for a
 # naive datetime under USE_TZ = True (the default since Django 5.0) into an
