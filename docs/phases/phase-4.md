@@ -540,6 +540,13 @@ PR boundaries, in this order:
     in a migration are all rolled back. With its own pub400 test: a
     migration that fails halfway leaves no partial schema (no table, column,
     index or constraint of it).
+    *Added 2026-10-24 (item 7, maintainer):* 11a comes right after item 8.
+    Its pub400 test also covers a multi-operation migration that hits
+    CPA32B2 halfway: are the earlier operations rolled back? Item 7 found
+    the same gap in one AlterField: for `null=True` -> `null=False` with a
+    default, Django's `UPDATE ... WHERE ... IS NULL` before `SET NOT NULL`
+    stays when CPA32B2 cancels `SET NOT NULL` (Known limitations). With the
+    flag on, `test_alter_field_and_back` asserts intact rows instead.
 12. `feat(schema)`: indexes from probe 24: `supports_index_column_ordering`,
     `supports_index_on_text_field` where possible.
 13. `feat(schema)`: `supports_comments` if approved (open question 7).
