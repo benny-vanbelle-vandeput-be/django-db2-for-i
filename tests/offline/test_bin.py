@@ -255,7 +255,7 @@ def test_the_ibmi_scripts_go_through_pub400_sh(tmp_path) -> None:
     assert dry(str(BIN / "ibmi-cleanup"), "--dry-run", "--yes") == [
         f"+ {pub400} ibmi_cleanup --yes"
     ]
-    assert dry(str(BIN / "doctor"), "--dry-run")[-1] == f"+ {pub400} probe connect"
+    assert dry(str(BIN / "doctor"), "--dry-run")[-1] == f"+ {pub400} probe connect journal_check"
     assert dry(str(BIN / "doctor"), "--dry-run", "--offline")[-1].endswith("tests odbcinst -q -d")
 
 

@@ -1,0 +1,540 @@
+{
+  "probe": "library_journal",
+  "utc": "20261024T164251Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "default": {
+    "library_info": {
+      "label": "<DEFAULT_LIBRARY>: LIBRARY_INFO",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, INHERIT_JOURNALING FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, DETAILED_INFO => 'NO')) L",
+      "params": [
+        "<DEFAULT_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "JOURNALED": "NO",
+          "JOURNAL_LIBRARY": null,
+          "JOURNAL_NAME": null,
+          "INHERIT_JOURNALING": "NO"
+        }
+      ],
+      "seconds": 0.103
+    },
+    "library_info_ignore_errors": {
+      "label": "<DEFAULT_LIBRARY>: LIBRARY_INFO, IGNORE_ERRORS",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, INHERIT_JOURNALING FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, IGNORE_ERRORS => 'YES', DETAILED_INFO => 'NO')) L",
+      "params": [
+        "<DEFAULT_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "JOURNALED": "NO",
+          "JOURNAL_LIBRARY": null,
+          "JOURNAL_NAME": null,
+          "INHERIT_JOURNALING": "NO"
+        }
+      ],
+      "seconds": 0.083
+    },
+    "qsqjrn": {
+      "label": "<DEFAULT_LIBRARY>: QSQJRN",
+      "sql": "SELECT OBJNAME, OBJTYPE, JOURNALED FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*JRN', 'QSQJRN')) X",
+      "params": [
+        "<DEFAULT_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "OBJNAME": "QSQJRN",
+          "OBJTYPE": "*JRN",
+          "JOURNALED": "NO"
+        }
+      ],
+      "seconds": 0.104
+    },
+    "qdftjrn": {
+      "label": "<DEFAULT_LIBRARY>: QDFTJRN",
+      "sql": "SELECT OBJNAME FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*DTAARA', 'QDFTJRN')) X",
+      "params": [
+        "<DEFAULT_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.153
+    },
+    "table_journals": {
+      "label": "<DEFAULT_LIBRARY>: table journals",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, COUNT(*) AS FILES FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*FILE')) X GROUP BY JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME",
+      "params": [
+        "<DEFAULT_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE",
+          "FILES": 6
+        }
+      ],
+      "seconds": 0.1
+    },
+    "files": {
+      "label": "<DEFAULT_LIBRARY>: files",
+      "sql": "SELECT OBJNAME, OBJATTRIBUTE, SQL_OBJECT_TYPE, JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*FILE')) X ORDER BY OBJNAME",
+      "params": [
+        "<DEFAULT_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "OBJNAME": "SYSCHKCST",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        },
+        {
+          "OBJNAME": "SYSCST",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        },
+        {
+          "OBJNAME": "SYSCSTCOL",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        },
+        {
+          "OBJNAME": "SYSCSTDEP",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        },
+        {
+          "OBJNAME": "SYSKEYCST",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        },
+        {
+          "OBJNAME": "SYSREFCST",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        }
+      ],
+      "seconds": 0.102
+    },
+    "journaled_to_qsqjrn": {
+      "label": "<DEFAULT_LIBRARY>: journaled to QSQJRN",
+      "sql": "SELECT OBJECT_NAME, OBJECT_TYPE, FILE_TYPE FROM QSYS2.JOURNALED_OBJECTS WHERE JOURNAL_LIBRARY = ? AND JOURNAL_NAME = 'QSQJRN' ORDER BY OBJECT_NAME",
+      "params": [
+        "<DEFAULT_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "OBJECT_NAME": "QSQJRN0025",
+          "OBJECT_TYPE": "*JRNRCV",
+          "FILE_TYPE": null
+        }
+      ],
+      "seconds": 1.324
+    },
+    "check": {
+      "label": "<DEFAULT_LIBRARY>: check query",
+      "sql": "SELECT L.JOURNALED, L.JOURNAL_LIBRARY, L.JOURNAL_NAME, L.INHERIT_JOURNALING, (SELECT COUNT(*) FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*JRN', 'QSQJRN')) J) AS QSQJRN FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, IGNORE_ERRORS => 'YES', DETAILED_INFO => 'NO')) L",
+      "params": [
+        "<DEFAULT_LIBRARY>",
+        "<DEFAULT_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "JOURNALED": "NO",
+          "JOURNAL_LIBRARY": null,
+          "JOURNAL_NAME": null,
+          "INHERIT_JOURNALING": "NO",
+          "QSQJRN": 1
+        }
+      ],
+      "seconds": 0.1
+    }
+  },
+  "other": {
+    "library_info": {
+      "label": "<OTHER_LIBRARY>: LIBRARY_INFO",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, INHERIT_JOURNALING FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, DETAILED_INFO => 'NO')) L",
+      "params": [
+        "<OTHER_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "JOURNALED": "NO",
+          "JOURNAL_LIBRARY": null,
+          "JOURNAL_NAME": null,
+          "INHERIT_JOURNALING": "NO"
+        }
+      ],
+      "seconds": 0.08
+    },
+    "library_info_ignore_errors": {
+      "label": "<OTHER_LIBRARY>: LIBRARY_INFO, IGNORE_ERRORS",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, INHERIT_JOURNALING FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, IGNORE_ERRORS => 'YES', DETAILED_INFO => 'NO')) L",
+      "params": [
+        "<OTHER_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "JOURNALED": "NO",
+          "JOURNAL_LIBRARY": null,
+          "JOURNAL_NAME": null,
+          "INHERIT_JOURNALING": "NO"
+        }
+      ],
+      "seconds": 0.079
+    },
+    "qsqjrn": {
+      "label": "<OTHER_LIBRARY>: QSQJRN",
+      "sql": "SELECT OBJNAME, OBJTYPE, JOURNALED FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*JRN', 'QSQJRN')) X",
+      "params": [
+        "<OTHER_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "OBJNAME": "QSQJRN",
+          "OBJTYPE": "*JRN",
+          "JOURNALED": "NO"
+        }
+      ],
+      "seconds": 0.09
+    },
+    "qdftjrn": {
+      "label": "<OTHER_LIBRARY>: QDFTJRN",
+      "sql": "SELECT OBJNAME FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*DTAARA', 'QDFTJRN')) X",
+      "params": [
+        "<OTHER_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.132
+    },
+    "table_journals": {
+      "label": "<OTHER_LIBRARY>: table journals",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, COUNT(*) AS FILES FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*FILE')) X GROUP BY JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME",
+      "params": [
+        "<OTHER_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE",
+          "FILES": 6
+        }
+      ],
+      "seconds": 0.097
+    },
+    "files": {
+      "label": "<OTHER_LIBRARY>: files",
+      "sql": "SELECT OBJNAME, OBJATTRIBUTE, SQL_OBJECT_TYPE, JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*FILE')) X ORDER BY OBJNAME",
+      "params": [
+        "<OTHER_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "OBJNAME": "SYSCHKCST",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        },
+        {
+          "OBJNAME": "SYSCST",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        },
+        {
+          "OBJNAME": "SYSCSTCOL",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        },
+        {
+          "OBJNAME": "SYSCSTDEP",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        },
+        {
+          "OBJNAME": "SYSKEYCST",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        },
+        {
+          "OBJNAME": "SYSREFCST",
+          "OBJATTRIBUTE": "LF",
+          "SQL_OBJECT_TYPE": "VIEW",
+          "JOURNALED": "YES",
+          "JOURNAL_LIBRARY": "QRECOVERY",
+          "JOURNAL_NAME": "QDBJRNFILE"
+        }
+      ],
+      "seconds": 0.098
+    },
+    "journaled_to_qsqjrn": {
+      "label": "<OTHER_LIBRARY>: journaled to QSQJRN",
+      "sql": "SELECT OBJECT_NAME, OBJECT_TYPE, FILE_TYPE FROM QSYS2.JOURNALED_OBJECTS WHERE JOURNAL_LIBRARY = ? AND JOURNAL_NAME = 'QSQJRN' ORDER BY OBJECT_NAME",
+      "params": [
+        "<OTHER_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "OBJECT_NAME": "QSQJRN0001",
+          "OBJECT_TYPE": "*JRNRCV",
+          "FILE_TYPE": null
+        }
+      ],
+      "seconds": 1.108
+    },
+    "check": {
+      "label": "<OTHER_LIBRARY>: check query",
+      "sql": "SELECT L.JOURNALED, L.JOURNAL_LIBRARY, L.JOURNAL_NAME, L.INHERIT_JOURNALING, (SELECT COUNT(*) FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*JRN', 'QSQJRN')) J) AS QSQJRN FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, IGNORE_ERRORS => 'YES', DETAILED_INFO => 'NO')) L",
+      "params": [
+        "<OTHER_LIBRARY>",
+        "<OTHER_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "JOURNALED": "NO",
+          "JOURNAL_LIBRARY": null,
+          "JOURNAL_NAME": null,
+          "INHERIT_JOURNALING": "NO",
+          "QSQJRN": 1
+        }
+      ],
+      "seconds": 0.101
+    }
+  },
+  "missing": {
+    "library_info": {
+      "label": "DJDB2INONE: LIBRARY_INFO",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, INHERIT_JOURNALING FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, DETAILED_INFO => 'NO')) L",
+      "params": [
+        "DJDB2INONE"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.141
+    },
+    "library_info_ignore_errors": {
+      "label": "DJDB2INONE: LIBRARY_INFO, IGNORE_ERRORS",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, INHERIT_JOURNALING FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, IGNORE_ERRORS => 'YES', DETAILED_INFO => 'NO')) L",
+      "params": [
+        "DJDB2INONE"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.13
+    },
+    "qsqjrn": {
+      "label": "DJDB2INONE: QSQJRN",
+      "sql": "SELECT OBJNAME, OBJTYPE, JOURNALED FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*JRN', 'QSQJRN')) X",
+      "params": [
+        "DJDB2INONE"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.132
+    },
+    "qdftjrn": {
+      "label": "DJDB2INONE: QDFTJRN",
+      "sql": "SELECT OBJNAME FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*DTAARA', 'QDFTJRN')) X",
+      "params": [
+        "DJDB2INONE"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.122
+    },
+    "table_journals": {
+      "label": "DJDB2INONE: table journals",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, COUNT(*) AS FILES FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*FILE')) X GROUP BY JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME",
+      "params": [
+        "DJDB2INONE"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.123
+    },
+    "files": {
+      "label": "DJDB2INONE: files",
+      "sql": "SELECT OBJNAME, OBJATTRIBUTE, SQL_OBJECT_TYPE, JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*FILE')) X ORDER BY OBJNAME",
+      "params": [
+        "DJDB2INONE"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.127
+    },
+    "journaled_to_qsqjrn": {
+      "label": "DJDB2INONE: journaled to QSQJRN",
+      "sql": "SELECT OBJECT_NAME, OBJECT_TYPE, FILE_TYPE FROM QSYS2.JOURNALED_OBJECTS WHERE JOURNAL_LIBRARY = ? AND JOURNAL_NAME = 'QSQJRN' ORDER BY OBJECT_NAME",
+      "params": [
+        "DJDB2INONE"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 1.167
+    },
+    "check": {
+      "label": "DJDB2INONE: check query",
+      "sql": "SELECT L.JOURNALED, L.JOURNAL_LIBRARY, L.JOURNAL_NAME, L.INHERIT_JOURNALING, (SELECT COUNT(*) FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*JRN', 'QSQJRN')) J) AS QSQJRN FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, IGNORE_ERRORS => 'YES', DETAILED_INFO => 'NO')) L",
+      "params": [
+        "DJDB2INONE",
+        "DJDB2INONE"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.133
+    }
+  },
+  "qtemp": {
+    "library_info": {
+      "label": "QTEMP: LIBRARY_INFO",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, INHERIT_JOURNALING FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, DETAILED_INFO => 'NO')) L",
+      "params": [
+        "QTEMP"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "JOURNALED": "NO",
+          "JOURNAL_LIBRARY": null,
+          "JOURNAL_NAME": null,
+          "INHERIT_JOURNALING": "NO"
+        }
+      ],
+      "seconds": 0.081
+    },
+    "library_info_ignore_errors": {
+      "label": "QTEMP: LIBRARY_INFO, IGNORE_ERRORS",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, INHERIT_JOURNALING FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, IGNORE_ERRORS => 'YES', DETAILED_INFO => 'NO')) L",
+      "params": [
+        "QTEMP"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "JOURNALED": "NO",
+          "JOURNAL_LIBRARY": null,
+          "JOURNAL_NAME": null,
+          "INHERIT_JOURNALING": "NO"
+        }
+      ],
+      "seconds": 0.091
+    },
+    "qsqjrn": {
+      "label": "QTEMP: QSQJRN",
+      "sql": "SELECT OBJNAME, OBJTYPE, JOURNALED FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*JRN', 'QSQJRN')) X",
+      "params": [
+        "QTEMP"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.131
+    },
+    "qdftjrn": {
+      "label": "QTEMP: QDFTJRN",
+      "sql": "SELECT OBJNAME FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*DTAARA', 'QDFTJRN')) X",
+      "params": [
+        "QTEMP"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.135
+    },
+    "table_journals": {
+      "label": "QTEMP: table journals",
+      "sql": "SELECT JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME, COUNT(*) AS FILES FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*FILE')) X GROUP BY JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME",
+      "params": [
+        "QTEMP"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.12
+    },
+    "files": {
+      "label": "QTEMP: files",
+      "sql": "SELECT OBJNAME, OBJATTRIBUTE, SQL_OBJECT_TYPE, JOURNALED, JOURNAL_LIBRARY, JOURNAL_NAME FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*FILE')) X ORDER BY OBJNAME",
+      "params": [
+        "QTEMP"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 0.132
+    },
+    "journaled_to_qsqjrn": {
+      "label": "QTEMP: journaled to QSQJRN",
+      "sql": "SELECT OBJECT_NAME, OBJECT_TYPE, FILE_TYPE FROM QSYS2.JOURNALED_OBJECTS WHERE JOURNAL_LIBRARY = ? AND JOURNAL_NAME = 'QSQJRN' ORDER BY OBJECT_NAME",
+      "params": [
+        "QTEMP"
+      ],
+      "ok": true,
+      "rows": [],
+      "seconds": 1.131
+    },
+    "check": {
+      "label": "QTEMP: check query",
+      "sql": "SELECT L.JOURNALED, L.JOURNAL_LIBRARY, L.JOURNAL_NAME, L.INHERIT_JOURNALING, (SELECT COUNT(*) FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*JRN', 'QSQJRN')) J) AS QSQJRN FROM TABLE(QSYS2.LIBRARY_INFO(LIBRARY_NAME => ?, IGNORE_ERRORS => 'YES', DETAILED_INFO => 'NO')) L",
+      "params": [
+        "QTEMP",
+        "QTEMP"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "JOURNALED": "NO",
+          "JOURNAL_LIBRARY": null,
+          "JOURNAL_NAME": null,
+          "INHERIT_JOURNALING": "NO",
+          "QSQJRN": 0
+        }
+      ],
+      "seconds": 0.098
+    }
+  }
+}
