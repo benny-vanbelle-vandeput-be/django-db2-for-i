@@ -17,7 +17,7 @@ any name) and new objects inherit that. Both are read from catalog services,
 read-only (probe library_journal, docs/IBMI_NOTES.md). A library that does not
 exist is not reported here. The STRJRNLIB case rests on IBM's documentation
 and is not yet tested on IBM i. creation.py still accepts only QSQJRN for the
-test library.
+test library (#156).
 
 Model checks for Db2 for i limits (e.g. identifier length) come in a later
 phase.
