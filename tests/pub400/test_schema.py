@@ -772,6 +772,38 @@ def test_failed_migration_leaves_nothing_behind(live) -> None:
                 cursor.execute(f'DROP TABLE "{HALFWAY_TABLE}"')
 
 
+def test_failing_deferred_statement_rolls_the_migration_back(live) -> None:
+    """A deferred statement that fails (an index on an NCLOB column: SQL0350)
+    rolls the schema editor's transaction back: no table is left, the
+    connection is no longer in an atomic block and stays usable. Django's own
+    __exit__ skipped the rollback, and the connection was closed later."""
+    from django.apps import apps
+    from django.db import DatabaseError
+
+    class DeferredProbe(models.Model):
+        text = models.TextField(db_index=True)
+
+        class Meta:
+            app_label = "testapp"
+
+    table = "TESTAPP_DEFERREDPROBE"
+    try:
+        with pytest.raises(DatabaseError, match="SQL0350"), live.schema_editor() as editor:
+            editor.create_model(DeferredProbe)
+        assert not live.in_atomic_block
+        assert _tables(live, table) == set()
+        with live.cursor() as cursor:
+            cursor.execute("SELECT 1 FROM SYSIBM.SYSDUMMY1")
+            assert cursor.fetchone() == (1,)
+    finally:
+        replace_if_unusable(live)
+        if _tables(live, table):
+            with live.cursor() as cursor:
+                cursor.execute(f'DROP TABLE "{table}"')
+        apps.all_models["testapp"].pop("deferredprobe", None)
+        apps.clear_cache()
+
+
 # --- Check constraints --------------------------------------------------------------
 
 

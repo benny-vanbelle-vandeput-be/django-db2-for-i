@@ -137,6 +137,25 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         "RESTART WITH ' CONCAT VARCHAR(NEXT_ID); END"
     )
 
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Roll the migration's transaction back when a deferred statement fails.
+
+        Django runs the deferred SQL (indexes, foreign keys) before it leaves
+        the atomic block, so an error there skips ``atomic.__exit__``: with
+        can_rollback_ddl the transaction stays open and the connection stays
+        in an atomic block (Django's test teardown then closes it, and every
+        later statement fails with "Attempt to use a closed connection").
+        """
+        if exc_type is None and self.atomic_migration:
+            try:
+                for sql in self.deferred_sql:
+                    self.execute(sql, None)
+            except BaseException as error:
+                self.atomic.__exit__(type(error), error, error.__traceback__)
+                raise
+            self.deferred_sql = []
+        return super().__exit__(exc_type, exc_value, traceback)
+
     def execute(self, sql, params=()):
         """Explain an ALTER TABLE that Db2 for i cancelled (CPA32B2, see inquiry.py)."""
         try:
