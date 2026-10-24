@@ -226,6 +226,10 @@ def test_cancelled_alter_table_is_explained(failing_execute) -> None:
     assert "ADDRPYLE SEQNBR(<free number>) MSGID(CPA32B2) RPY('I')" in message
     assert "OPTIONS['inquiry_message_reply'] = '*SYSRPYL'" in message
     assert "is not set to '*SYSRPYL'" in message
+    assert "making a column NOT NULL" in message
+    assert message.endswith(
+        'See "ALTER TABLE that may lose data" in docs/user/IBM-i-Requirements.md.'
+    )
     assert isinstance(info.value.__cause__, OperationalError)
 
 

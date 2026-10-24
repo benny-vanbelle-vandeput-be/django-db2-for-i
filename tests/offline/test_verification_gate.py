@@ -101,4 +101,4 @@ def test_the_real_allow_list() -> None:
     assert entries, "the allow-list is read by the IBM i golden check"
     assert all(e.reason and e.verifiable_when for e in entries)
     assert gate.reasons("6.1")["ddl/remove_field"].startswith("DROP COLUMN is cancelled")
-    assert gate.summary() == 3
+    assert gate.summary() == 9

@@ -123,12 +123,13 @@ prs = [134, 135, 136]
 
 [[phases.steps]]
 step = "B: introspection"
-status = "in progress"
-prs = [138, 140, 141, 142]
+status = "done"
+prs = [138, 140, 141, 142, 143, 144, 145]
 
 [[phases.steps]]
 step = "C: schema editor"
-status = "planned"
+status = "in progress"
+prs = [146]
 
 [[phases.steps]]
 step = "D: inspectdb"

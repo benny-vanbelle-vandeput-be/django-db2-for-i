@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2507 | 2 | 0 | 0 | 2026-10-23 18:54:13 UTC |
+| Offline · own tests | 2574 | 2 | 0 | 0 | 2026-10-24 08:06:49 UTC |
 | IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 03:02:59 UTC |
 | IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-22 21:00:55 UTC |
-| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-23 18:54:29 UTC |
+| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-24 08:07:26 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2508 | 1 | 0 | 0 | 2026-10-23 18:52:04 UTC |
+| Offline · own tests | 2575 | 1 | 0 | 0 | 2026-10-24 08:03:53 UTC |
 | IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 01:55:40 UTC |
 | IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-21 01:03:38 UTC |
-| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-23 18:52:19 UTC |
+| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-24 08:04:30 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2506 | 1 | 0 | 0 | 2026-10-23 18:49:29 UTC |
+| Offline · own tests | 2573 | 1 | 0 | 0 | 2026-10-24 08:00:53 UTC |
 | IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-21 00:42:24 UTC |
 | IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 23:51:07 UTC |
-| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-23 18:49:47 UTC |
+| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-24 08:01:31 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -148,4 +148,4 @@ The IBM i · Django test suite per module and Django version.
 
 ## Golden files
 
-466 goldens, 3 unverified; unverifiable on PUB400: 3 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
+481 goldens, 9 unverified; unverifiable on PUB400: 9 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
