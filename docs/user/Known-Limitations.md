@@ -205,9 +205,10 @@ raises `NotSupportedError` for such an `AlterField` before it sends any SQL.
 Instead: add a new field with the new type, copy the data in a data migration
 (`RunPython`), then remove the old field (and rename the new one only on the
 Python side, see "Renaming a column"). Removing the old field needs the reply
-list entry described below. Within a family, narrowing changes (a shorter
-`max_length`, a smaller integer type) and changes to `FloatField` are possible
-only with that reply list entry.
+list entry of "Dropping, narrowing or making a column NOT NULL needs a reply
+list entry" above. Within a family, narrowing changes (a shorter `max_length`,
+a smaller integer type) and changes to `FloatField` are possible only with
+that reply list entry.
 
 ## Renaming a column
 
