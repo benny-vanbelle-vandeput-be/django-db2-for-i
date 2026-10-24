@@ -1,0 +1,196 @@
+{
+  "probe": "alter_column",
+  "utc": "20261024T070240Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "inquiry message reply": "*RQD",
+  "INTEGER -> BIGINT on an indexed column": {
+    "result": "ok",
+    "job log": [
+      "CPC2955",
+      "SQL0204",
+      "SQL0204",
+      "SQL0204",
+      "SQL799C"
+    ],
+    "after": {
+      "type": "int",
+      "size": 20,
+      "precision": 20,
+      "scale": 0,
+      "nullable": true,
+      "values": [
+        "1",
+        "2"
+      ]
+    },
+    "check": {
+      "index objects": [
+        [
+          "PACI"
+        ]
+      ]
+    }
+  },
+  "NVARCHAR(10) -> NVARCHAR(20) with a unique index": {
+    "result": "ok",
+    "job log": [
+      "CPC2955",
+      "CPC2955",
+      "SQL0204",
+      "SQL0204",
+      "SQL0204"
+    ],
+    "after": {
+      "type": "str",
+      "size": 20,
+      "precision": 20,
+      "scale": 0,
+      "nullable": true,
+      "values": [
+        "'a'",
+        "'b'"
+      ]
+    },
+    "check": {
+      "duplicate insert": {
+        "result": "error",
+        "sqlstate": "23000",
+        "sqlcode": -803,
+        "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+      },
+      "longer value insert": {
+        "result": "ok"
+      }
+    }
+  },
+  "DECIMAL(5, 2) -> DECIMAL(7, 3)": {
+    "result": "ok",
+    "job log": [
+      "CPC2955",
+      "SQL0803",
+      "CPF5034",
+      "CPF5034",
+      "CPF5009"
+    ],
+    "after": {
+      "type": "Decimal",
+      "size": 7,
+      "precision": 7,
+      "scale": 3,
+      "nullable": true,
+      "values": [
+        "Decimal('123.450')",
+        "Decimal('-0.010')"
+      ]
+    },
+    "check": {}
+  },
+  "SET DEFAULT with a UX literal": {
+    "result": "ok",
+    "job log": [
+      "CPC2955",
+      "CPC2955",
+      "SQL0803",
+      "CPF5034",
+      "CPF5034"
+    ],
+    "after": {
+      "type": "str",
+      "size": 30,
+      "precision": 30,
+      "scale": 0,
+      "nullable": true,
+      "values": [
+        "'one'",
+        "'two'"
+      ]
+    },
+    "check": {
+      "insert without V": {
+        "result": "ok"
+      },
+      "V": [
+        [
+          "O'Brien 100% Ж"
+        ]
+      ],
+      "matches": true,
+      "expected": "O'Brien 100% Ж"
+    }
+  },
+  "identity INTEGER -> BIGINT, SET DATA TYPE BIGINT": {
+    "result": "ok",
+    "job log": [
+      "CPC2955",
+      "CPC2955",
+      "CPC2955",
+      "SQL0803",
+      "CPF5034"
+    ],
+    "after": {
+      "type": "int",
+      "size": 20,
+      "precision": 20,
+      "scale": 0,
+      "nullable": false,
+      "values": [
+        "1",
+        "2"
+      ]
+    },
+    "check": {
+      "insert without ID": {
+        "result": "ok"
+      },
+      "IDs": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    }
+  },
+  "identity INTEGER -> BIGINT, with the identity clause": {
+    "result": "ok",
+    "job log": [
+      "CPC2955",
+      "CPC2955",
+      "CPC2955",
+      "CPC2955",
+      "SQL0803"
+    ],
+    "after": {
+      "type": "int",
+      "size": 20,
+      "precision": 20,
+      "scale": 0,
+      "nullable": false,
+      "values": [
+        "1",
+        "2"
+      ]
+    },
+    "check": {
+      "insert without ID": {
+        "result": "ok"
+      },
+      "IDs": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    }
+  }
+}
