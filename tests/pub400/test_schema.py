@@ -14,6 +14,7 @@ from django.db import models
 
 from django_db2_for_i import compat
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
+from tests import table_registry
 from tests.pub400.connection_guard import replace_if_unusable
 from tests.pub400.testapp_tables import MODELS, TABLES
 from tests.testapp.models import Article, Author, Book, Defaults, Document, Node, Tag
@@ -522,7 +523,7 @@ def test_alter_field_and_back(live, alter_model) -> None:
 def rename_model(live):
     """A model of its own (testapp_renameprobe) with an integer primary key and a
     named index; created for the test and dropped after it. The test renames the
-    table back before it ends, so bin/ibmi-cleanup's list still names it."""
+    table back before it ends; bin/ibmi-cleanup's list follows each rename."""
     from django.apps import apps
 
     class RenameProbe(models.Model):
@@ -552,11 +553,41 @@ def _index_names(live, table: str) -> set[str]:
     return {name for name, info in constraints.items() if info["index"]}
 
 
+RENAME_NAMES = ("TESTAPP_RENAMEPROBE", "TESTAPP_RENAMED_PROBE")
+
+
+def _listed(live) -> set[tuple[str, str]]:
+    """(name, renamed_from) of the cleanup list entries of the rename probe table."""
+    library = live.settings_dict["NAME"].upper()
+    return {
+        (entry.name, entry.renamed_from)
+        for entry in table_registry.read(table_registry.list_path())
+        if entry.library == library and entry.names & set(RENAME_NAMES)
+    }
+
+
 def test_rename_table_index_and_identity(live, rename_model) -> None:
     """RenameIndex, IntegerField -> AutoField on a table with rows (the identity
     continues after the largest key), RenameModel with the ORM working on the new
-    name, and AutoField -> IntegerField (DROP IDENTITY: no generated keys)."""
+    name, and AutoField -> IntegerField (DROP IDENTITY: no generated keys).
+
+    The cleanup list follows the renames (CLAUDE.md, bin/ibmi-cleanup): while
+    each RENAME TABLE runs its entry holds both names, afterwards only the new
+    one; after the rename back no entry names the renamed table. The list may
+    hold older entries of the same table from earlier runs, hence the subset
+    checks.
+    """
     from django.db import IntegrityError
+
+    assert table_registry.list_path() is not None, "IBM i runs go through scripts/pub400.sh"
+    old, new = RENAME_NAMES
+    during = []
+
+    def capture(execute, sql, params, many, context):
+        # Inside the list's own wrapper: the list as the statement runs.
+        if sql.lstrip().upper().startswith("RENAME TABLE"):
+            during.append(_listed(live))
+        return execute(sql, params, many, context)
 
     model = rename_model
     model.objects.bulk_create([model(id=1, name="one"), model(id=2, name="two")])
@@ -579,10 +610,14 @@ def test_rename_table_index_and_identity(live, rename_model) -> None:
     with live.cursor() as cursor:
         cursor.execute('INSERT INTO "TESTAPP_RENAMEPROBE" ("NAME") VALUES (%s)', ["three"])
 
+    assert (old, "") in _listed(live)
     try:
-        with live.schema_editor() as editor:
+        with live.execute_wrapper(capture), live.schema_editor() as editor:
             editor.alter_db_table(model, "testapp_renameprobe", "testapp_renamed_probe")
         model._meta.db_table = "testapp_renamed_probe"
+        assert (new, old) in during[0]
+        assert (new, "") in _listed(live)
+        assert not any(renamed_from for _name, renamed_from in _listed(live))
         assert list(model.objects.order_by("id").values_list("id", "name")) == [
             (1, "one"),
             (2, "two"),
@@ -596,9 +631,12 @@ def test_rename_table_index_and_identity(live, rename_model) -> None:
             assert cursor.fetchone() == (4,)
     finally:
         if model._meta.db_table != "testapp_renameprobe":
-            with live.schema_editor() as editor:
+            with live.execute_wrapper(capture), live.schema_editor() as editor:
                 editor.alter_db_table(model, "testapp_renamed_probe", "testapp_renameprobe")
             model._meta.db_table = "testapp_renameprobe"
+    assert (old, new) in during[1]
+    assert not any(name == new or renamed_from for name, renamed_from in _listed(live))
+    assert (old, "") in _listed(live)
 
     with live.schema_editor() as editor:
         editor.alter_field(model, auto, plain, strict=True)
