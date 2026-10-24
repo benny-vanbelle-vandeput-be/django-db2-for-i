@@ -166,16 +166,26 @@ views and foreign keys that depend on its table**, including objects created
 outside Django. Check for dependent objects before deleting a model whose
 table is used by other applications.
 
-## Dropping or narrowing a column needs a reply list entry
+## Dropping, narrowing or making a column NOT NULL needs a reply list entry
 
-`RemoveField` (`ALTER TABLE ... DROP COLUMN`) and changes that narrow a column
-(a shorter `max_length`, a smaller integer type) make Db2 for i send inquiry
+`RemoveField` (`ALTER TABLE ... DROP COLUMN`), changes that narrow a column
+(a shorter `max_length`, a smaller integer type) and `AlterField` from
+`null=True` to `null=False` make Db2 for i send inquiry
 message CPA32B2 ("Change of file may cause data to be lost"), also on an empty
 table. Its default reply cancels the change, and the backend raises
 `OperationalError` with an explanation. To allow such changes, an
 administrator adds a system reply list entry and the database settings set
 `OPTIONS["inquiry_message_reply"] = "*SYSRPYL"`, see
 [IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data).
+
+**A cancelled change to `NOT NULL` can still change rows.** For a field that
+goes from `null=True` to `null=False` with a `default` or `db_default`,
+Django first sets the existing NULLs to that default (`UPDATE ... WHERE ...
+IS NULL`), then sends `SET NOT NULL`. Migrations on Db2 for i do not run in a
+transaction yet (`can_rollback_ddl` is off), so when CPA32B2 cancels
+`SET NOT NULL` the column stays nullable but the NULLs have already been
+replaced by the default. Run such a migration only where the reply list entry
+is in place, or check for NULLs first.
 
 The backend writes `DROP COLUMN` without `CASCADE` or `RESTRICT` on every
 Django version (Django 5.2's own text adds `CASCADE`). What Db2 for i does

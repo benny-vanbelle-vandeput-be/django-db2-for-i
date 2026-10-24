@@ -89,6 +89,11 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     # CASCADE, 6.0+ does not): Db2 for i's default for dependent objects is not
     # known yet (probe 23, docs/IBMI_NOTES.md), so the SQL does not depend on it.
     sql_delete_column = "ALTER TABLE %(table)s DROP COLUMN %(column)s"
+    # Db2 for i knows only SET DATA TYPE, not Django's TYPE (SQL0199, probe 24).
+    # Widening keeps the data, also with an index or identity on the column;
+    # narrowing is cancelled by CPA32B2 (qtemp_alter_column, docs/IBMI_NOTES.md).
+    # The NULL and DEFAULT templates of the base class are Db2 for i syntax.
+    sql_alter_column_type = "ALTER COLUMN %(column)s SET DATA TYPE %(type)s%(collation)s"
 
     def execute(self, sql, params=()):
         """Explain an ALTER TABLE that Db2 for i cancelled (CPA32B2, see inquiry.py)."""

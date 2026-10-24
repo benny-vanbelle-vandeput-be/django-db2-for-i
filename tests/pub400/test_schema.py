@@ -14,6 +14,7 @@ from django.db import models
 
 from django_db2_for_i import compat
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
+from tests.pub400.connection_guard import replace_if_unusable
 from tests.pub400.testapp_tables import MODELS, TABLES
 from tests.testapp.models import Article, Author, Book, Defaults, Document, Node, Tag
 
@@ -389,3 +390,126 @@ def test_add_not_null_field_with_python_default(live, empty) -> None:
             "AND TABLE_NAME = 'TESTAPP_DEFAULTS' AND COLUMN_NAME = 'NICKNAME'"
         )
         assert cursor.fetchone()[0] == "N"
+
+
+# --- AlterField ---------------------------------------------------------------------
+
+ALTER_COLUMNS = (
+    "SELECT COLUMN_NAME, DATA_TYPE, LENGTH, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT "
+    "FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA = CURRENT SCHEMA "
+    "AND TABLE_NAME = 'TESTAPP_ALTERFIELD' AND COLUMN_NAME IN ('TEXT', 'NUMBER', 'AMOUNT') "
+    "ORDER BY COLUMN_NAME"
+)
+ALTER_ROWS = 'SELECT "ID", "TEXT", "NUMBER", "AMOUNT" FROM "TESTAPP_ALTERFIELD" ORDER BY "ID"'
+
+
+@pytest.fixture
+def alter_model(live):
+    """A model of its own (testapp_alterfield), so the ALTERs meet no column
+    another test added; created for the test and dropped after it."""
+    from django.apps import apps
+
+    class AlterField(models.Model):
+        text = models.CharField(max_length=20, db_default="O'Brien 100%")
+        number = models.IntegerField(db_default=-1)
+        amount = models.DecimalField(max_digits=5, decimal_places=2, db_default=Decimal("1.50"))
+
+        class Meta:
+            app_label = "testapp"
+
+    try:
+        with live.schema_editor() as editor:
+            editor.create_model(AlterField)
+        yield AlterField
+    finally:
+        replace_if_unusable(live)
+        with live.cursor() as cursor:
+            cursor.execute('DROP TABLE "TESTAPP_ALTERFIELD"')
+        apps.all_models["testapp"].pop("alterfield", None)
+        apps.clear_cache()
+
+
+def _rebuilt(model, name, cls=None, **changes):
+    """``model``'s field rebuilt with ``changes``, as a migration's AlterField has it."""
+    old = model._meta.get_field(name)
+    _name, _path, args, kwargs = old.deconstruct()
+    field = (cls or type(old))(*args, **{**kwargs, **changes})
+    field.set_attributes_from_name(name)
+    field.model = model
+    return field
+
+
+def _stripped(rows) -> list[tuple]:
+    return [tuple(v.rstrip() if isinstance(v, str) else v for v in row) for row in rows]
+
+
+def _ux(text: str) -> str:
+    return "UX'" + text.encode("utf-16-be").hex().upper() + "'"
+
+
+def test_alter_field_and_back(live, alter_model) -> None:
+    """A migration that widens columns, makes one nullable and changes a default,
+    and its way back.
+
+    Forward: SET DATA TYPE (widening), DROP NOT NULL and SET DEFAULT work on a
+    table with rows, and the rows keep their values. Back: narrowing and NOT NULL
+    are cancelled by CPA32B2 on PUB400 (no system reply list entry, IBMI_NOTES);
+    the error explains it, and the table is unchanged. The rows are unchanged
+    too, except that the way back to NOT NULL first sets NULLs to the default
+    (Django's UPDATE before SET NOT NULL) and that UPDATE stays: without
+    can_rollback_ddl the schema editor runs no transaction (Known limitations;
+    phase 4 item 11a).
+    """
+    from django.db import OperationalError
+
+    model = alter_model
+    with live.cursor() as cursor:
+        cursor.execute(
+            'INSERT INTO "TESTAPP_ALTERFIELD" ("TEXT", "NUMBER", "AMOUNT") '
+            "VALUES ('first', 7, 123.45)"
+        )
+        cursor.execute('INSERT INTO "TESTAPP_ALTERFIELD" ("NUMBER") VALUES (DEFAULT)')
+    text, number, amount = (_rebuilt(model, name) for name in ("text", "number", "amount"))
+    wide_text = _rebuilt(model, "text", max_length=40, db_default="Ж € ✓")
+    wide_number = _rebuilt(model, "number", models.BigIntegerField, null=True)
+    wide_amount = _rebuilt(model, "amount", max_digits=7, decimal_places=3)
+    with live.schema_editor() as editor:
+        editor.alter_field(model, text, wide_text, strict=True)
+        editor.alter_field(model, number, wide_number, strict=True)
+        editor.alter_field(model, amount, wide_amount, strict=True)
+
+    forward = [
+        ("AMOUNT", "DECIMAL", 7, 3, "N", "1.50"),
+        ("NUMBER", "BIGINT", 8, 0, "Y", "-1"),
+        ("TEXT", "VARG", 40, None, "N", _ux("Ж € ✓")),
+    ]
+    rows = [
+        (1, "first", 7, Decimal("123.450")),
+        (2, "O'Brien 100%", -1, Decimal("1.500")),
+    ]
+    with live.cursor() as cursor:
+        cursor.execute(ALTER_COLUMNS)
+        assert _stripped(cursor.fetchall()) == forward
+        cursor.execute(ALTER_ROWS)
+        assert [tuple(row) for row in cursor.fetchall()] == rows
+        # The new default, and a NULL the column now accepts: the way back
+        # (NOT NULL) would first set it to the default.
+        cursor.execute('INSERT INTO "TESTAPP_ALTERFIELD" ("NUMBER") VALUES (NULL)')
+    rows.append((3, "Ж € ✓", None, Decimal("1.500")))
+
+    after_not_null = [*rows[:2], (3, "Ж € ✓", -1, Decimal("1.500"))]
+    for old, new, rows_after in (
+        (wide_text, _rebuilt(model, "text", max_length=20), rows),  # narrowing
+        (wide_number, _rebuilt(model, "number", models.BigIntegerField), after_not_null),
+    ):
+        with pytest.raises(OperationalError) as info, live.schema_editor() as editor:
+            editor.alter_field(model, old, new, strict=True)
+        message = str(info.value)
+        assert "CPA32B2" in message
+        assert "OPTIONS['inquiry_message_reply'] = '*SYSRPYL'" in message
+        assert "docs/user/IBM-i-Requirements.md" in message
+        with live.cursor() as cursor:
+            cursor.execute(ALTER_COLUMNS)
+            assert _stripped(cursor.fetchall()) == forward
+            cursor.execute(ALTER_ROWS)
+            assert [tuple(row) for row in cursor.fetchall()] == rows_after

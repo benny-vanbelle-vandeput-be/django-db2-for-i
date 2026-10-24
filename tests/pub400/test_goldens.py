@@ -73,7 +73,7 @@ def live(django_db_blocker):
 def execute(cursor, sql, params, kind) -> None:
     # DDL and flush goldens are final SQL (collected without parameters);
     # query and DML goldens use %s placeholders.
-    if kind in ("create", "drop", "flush"):
+    if kind in ("create", "alter", "drop", "flush"):
         cursor.execute(sql)
     else:
         cursor.execute(sql, list(params))

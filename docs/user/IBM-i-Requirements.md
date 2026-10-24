@@ -58,12 +58,15 @@ minimum object authorities for an application that only reads and writes data.
 
 ## ALTER TABLE that may lose data
 
-`DROP COLUMN` and narrowing column changes (for example a shorter
-`max_length`, or `IntegerField` to `SmallIntegerField`) make Db2 for i send
+`DROP COLUMN`, narrowing column changes (for example a shorter
+`max_length`, or `IntegerField` to `SmallIntegerField`) and making a column
+`NOT NULL` (`null=True` to `null=False`) make Db2 for i send
 the inquiry message **CPA32B2** ("Change of file may cause data to be lost"),
 also for an empty table. Its default reply is "cancel", so such migrations
 fail (see [Troubleshooting](Troubleshooting.md#alter-table-cancelled-cpa32b2-hy008)).
-Widening changes and adding columns are not affected.
+Widening changes (a longer `max_length`, a larger integer or decimal type),
+making a column nullable, changing its default and adding columns are not
+affected.
 
 To allow them:
 

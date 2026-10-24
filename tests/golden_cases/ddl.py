@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from django.db.models import (
+    NOT_PROVIDED,
+    BigIntegerField,
     CharField,
 )
 
@@ -74,6 +76,30 @@ def _remove_field(model, name):
     return build
 
 
+def _field(model, name, cls=None, **changes):
+    """``model``'s field ``name``, rebuilt with ``changes`` (NOT_PROVIDED removes one)."""
+    old = model._meta.get_field(name)
+    _name, _path, args, kwargs = old.deconstruct()
+    kwargs.update(changes)
+    kwargs = {key: value for key, value in kwargs.items() if value is not NOT_PROVIDED}
+    field = (cls or type(old))(*args, **kwargs)
+    field.set_attributes_from_name(name)
+    field.model = model
+    return field
+
+
+def _alter(model, *changes):
+    """AlterField, one ``(old, new)`` pair of fields per change (built by _field)."""
+
+    def build(connection):
+        with connection.schema_editor(collect_sql=True) as editor:
+            for old, new in changes:
+                editor.alter_field(model, old(), new(), strict=True)
+        return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
+
+    return build
+
+
 def _drop(model):
     def build(connection):
         with connection.schema_editor(collect_sql=True) as editor:
@@ -113,6 +139,67 @@ CASES: tuple[Case, ...] = (
         "ddl/add_field_not_null_default",
         "create",
         _add_not_null_with_python_default,
+        (DEFAULTS,),
+    ),
+    # AlterField: ALTER COLUMN ... SET DATA TYPE (Db2 for i has no TYPE form)
+    # for widening changes, DROP NOT NULL, SET / DROP DEFAULT; they run after
+    # the queries ("alter"), on the emptied table.
+    Case(
+        "ddl/alter_field_widen",
+        "alter",
+        _alter(
+            Defaults,
+            (lambda: _field(Defaults, "text"), lambda: _field(Defaults, "text", max_length=40)),
+            (
+                lambda: _field(Defaults, "number"),
+                lambda: _field(Defaults, "number", BigIntegerField),
+            ),
+            (
+                lambda: _field(Defaults, "amount"),
+                lambda: _field(Defaults, "amount", max_digits=7, decimal_places=3),
+            ),
+        ),
+        (DEFAULTS,),
+    ),
+    Case(
+        "ddl/alter_field_null",
+        "alter",
+        _alter(
+            Defaults,
+            (lambda: _field(Defaults, "number"), lambda: _field(Defaults, "number", null=True)),
+        ),
+        (DEFAULTS,),
+    ),
+    Case(
+        "ddl/alter_field_default",
+        "alter",
+        _alter(
+            Defaults,
+            (lambda: _field(Defaults, "text"), lambda: _field(Defaults, "text", db_default="Ж €")),
+            (
+                lambda: _field(Defaults, "flag"),
+                lambda: _field(Defaults, "flag", db_default=NOT_PROVIDED),
+            ),
+        ),
+        (DEFAULTS,),
+    ),
+    # The way back: narrowing and NOT NULL are cancelled by CPA32B2 (unverifiable.toml).
+    Case(
+        "ddl/alter_field_narrow",
+        "alter",
+        _alter(
+            Defaults,
+            (lambda: _field(Defaults, "text", max_length=40), lambda: _field(Defaults, "text")),
+        ),
+        (DEFAULTS,),
+    ),
+    Case(
+        "ddl/alter_field_not_null",
+        "alter",
+        _alter(
+            Defaults,
+            (lambda: _field(Defaults, "number", null=True), lambda: _field(Defaults, "number")),
+        ),
         (DEFAULTS,),
     ),
     # DROP COLUMN without CASCADE / RESTRICT on every Django version (probe 23).

@@ -13,7 +13,8 @@ from django.db.models import OuterRef
 from django_db2_for_i import capabilities
 from tests.testapp.models import Author, Book
 
-KINDS = ("create", "query", "dml", "flush", "drop")
+# "alter" runs after the queries and DML: it changes tables they use.
+KINDS = ("create", "query", "dml", "flush", "alter", "drop")
 
 AWARE = dt.datetime(2026, 10, 17, 15, 30, 0, 123456, tzinfo=dt.timezone(dt.timedelta(hours=2)))
 

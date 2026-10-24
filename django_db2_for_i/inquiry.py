@@ -37,6 +37,8 @@ JOB_LOG_SQL = (
 )
 
 ADDRPYLE = "ADDRPYLE SEQNBR(<free number>) MSGID(CPA32B2) RPY('I')"
+# Where the user documentation explains it (docs/user/, mirrored to the wiki).
+DOCS = '"ALTER TABLE that may lose data" in docs/user/IBM-i-Requirements.md'
 
 
 class InquiryReplyError(Exception):
@@ -101,8 +103,9 @@ def cancelled_ddl_message(active_reply: str | None) -> str:
         state = f"OPTIONS['{OPTION}'] is not set to '*SYSRPYL' for this database."
     return (
         "Db2 for i cancelled this ALTER TABLE because it may lose data (inquiry message "
-        "CPA32B2, default reply C; job log CPD32CE). This happens for DROP COLUMN and for "
-        "narrowing column changes, also on empty tables. To allow such changes, an "
-        f"administrator adds a system reply list entry once:\n  {ADDRPYLE}\nand the "
-        f"database settings set OPTIONS['{OPTION}'] = '*SYSRPYL'. {state}"
+        "CPA32B2, default reply C; job log CPD32CE). This happens for DROP COLUMN, for "
+        "narrowing column changes and for making a column NOT NULL, also on empty "
+        "tables. To allow such changes, an administrator adds a system reply list "
+        f"entry once:\n  {ADDRPYLE}\nand the database settings set "
+        f"OPTIONS['{OPTION}'] = '*SYSRPYL'. {state} See {DOCS}."
     )
