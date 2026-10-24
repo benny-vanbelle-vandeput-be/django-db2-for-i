@@ -1026,6 +1026,33 @@ sends any statement (`alter_field()`; Django drops the column's foreign keys,
 unique constraints and indexes before the type change, and without
 `can_rollback_ddl` a later error would leave them dropped).
 
+### DDL under commitment control: what ROLLBACK undoes (`lib_rollback_ddl`)
+2026-10-24, PUB400 (IBM i 7.5), write probe in the journaled default library,
+approved by the maintainer on issue #149 (started via `bin/probe --approved`).
+Phase 4 step C item 11a, `probes/lib_rollback_ddl.py`, result in
+`probes/results/lib_rollback_ddl.json`. One connection, `CMT=1`; each case on
+a fresh two-row table: autocommit off, a marker row into a helper table, the
+DDL as the schema editor writes it, `ROLLBACK`.
+
+- **Every form is undone and none commits implicitly** (the marker row was
+  gone after every `ROLLBACK`): `CREATE TABLE`, `DROP TABLE`, `ADD COLUMN`;
+  `ALTER COLUMN` `SET DATA TYPE` (widening), `DROP NOT NULL`, `SET DEFAULT`,
+  `DROP DEFAULT`, `DROP IDENTITY`, `SET DATA TYPE ... AS IDENTITY` with the
+  compound `RESTART` statement; `CREATE [UNIQUE] INDEX`, `DROP INDEX`,
+  `RENAME INDEX`, `RENAME TABLE`; `ADD CONSTRAINT` (unique, check, foreign
+  key), `DROP CONSTRAINT`; `LABEL ON COLUMN`, `COMMENT ON TABLE`.
+- **A migration cancelled by CPA32B2 halfway** (`CREATE TABLE`, `ADD
+  COLUMN`, `CREATE INDEX`, then a narrowing `SET DATA TYPE`): after
+  `ROLLBACK` the table and the index are gone; the transaction and the
+  connection stay usable after the cancel (HY008).
+- **`UPDATE ... WHERE ... IS NULL`, then a cancelled `SET NOT NULL`**: after
+  `ROLLBACK` the NULLs are back and the column is still nullable.
+- `DROP COLUMN` is cancelled by CPA32B2 (nothing to undo).
+
+So `can_rollback_ddl` can be True: with it the schema editor runs a migration
+in one transaction, and a statement cancelled by CPA32B2 leaves nothing of
+the migration behind (item 11a).
+
 ### Catalog views for introspection (`probe -- catalog`)
 2026-10-22, PUB400 (IBM i 7.5), read-only outside QTEMP; phase 4 step A,
 probe 25. The views' columns, from their own `QSYS2.SYSCOLUMNS` rows:
