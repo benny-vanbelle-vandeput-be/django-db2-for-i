@@ -319,7 +319,7 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
     everything = set().union(*cls.expected_failures.values())
     assert cls.django_test_expected_failures == everything - compat.PASSING_ON_THIS_VERSION
     # The per-version exceptions are expected failures of the other versions.
-    assert compat.PASSING_ON_THIS_VERSION <= cls.expected_failures[features.REASON_CPA32B2]
+    assert compat.PASSING_ON_THIS_VERSION.issubset(cls.expected_failures[features.REASON_CPA32B2])
 
 
 def test_table_list_leaves_out_system_catalog_views() -> None:
