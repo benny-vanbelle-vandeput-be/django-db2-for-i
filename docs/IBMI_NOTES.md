@@ -1523,6 +1523,43 @@ MNGRCV(*SYSTEM) DLTRCV(*YES)`), both accepted without messages. Result:
 (`JOURNALED` = `YES`) and dropped; the library has no tables afterwards. The
 `other` alias opens a second connection to PUB400 only when a test uses it.
 
+### Reading a library's journaling state (`probe -- library_journal`)
+
+2026-10-24, PUB400 (IBM i 7.5), read-only: only catalog services, nothing
+created, also not in QTEMP. Run on the `default` and `other` libraries, a
+library that does not exist (`DJDB2INONE`) and `QTEMP`. Raw result:
+`probes/results/library_journal.json`. For the system check
+`django_db2_for_i.W001` (validation.py, `bin/doctor`).
+
+| Library | `LIBRARY_INFO`: `JOURNALED` / `INHERIT_JOURNALING` | `QSQJRN` (`OBJECT_STATISTICS`) | `QDFTJRN` |
+|---|---|---|---|
+| `default`, `other` | `NO` / `NO`, journal columns null | yes | no |
+| does not exist | no row | no row | no row |
+| `QTEMP` | `NO` / `NO` | no row | no row |
+
+- **The library's own journaling state** (STRJRNLIB) is in
+  `QSYS2.LIBRARY_INFO(LIBRARY_NAME => ..., DETAILED_INFO => 'NO')`: `JOURNALED`,
+  `JOURNAL_LIBRARY`, `JOURNAL_NAME` and `INHERIT_JOURNALING` (IBM docs: whether
+  new journal-eligible objects inherit journaling from the library, by its
+  inherit rules). `DETAILED_INFO => 'NO'` skips the library size. It needs
+  `*READ` authority to the library.
+- **A library that does not exist** gives no row and no error, both with and
+  without `IGNORE_ERRORS => 'YES'`; `OBJECT_STATISTICS` on it gives no row either.
+  Parameter markers worked in every query here; the check still uses the
+  validated name as a literal (a failing service with parameters poisons the
+  connection, `drivers/pyodbc.py`).
+- **Every query takes about 0.1 s**, also the combined query the check runs
+  (`LIBRARY_INFO` with a scalar subquery on `OBJECT_STATISTICS` for `QSQJRN`).
+- **Files already in the libraries:** only the six SQL catalog views
+  (`SYSCHKCST`, `SYSCST`, `SYSCSTCOL`, `SYSCSTDEP`, `SYSKEYCST`, `SYSREFCST`;
+  `LF`, `VIEW`), which `OBJECT_STATISTICS` shows as journaled to
+  `QRECOVERY/QDBJRNFILE`. `QSYS2.JOURNALED_OBJECTS` lists only the receiver for
+  `QSQJRN`, which matches: no test tables were left.
+- **Not probed:** a library journaled with `STRJRNLIB` (that changes a library
+  and would need a `lib_` probe). That new tables then journal to the
+  library's journal by its inherit rules is from IBM's STRJRNLIB documentation
+  (default `INHRULES`: all object types, all operations, `*INCLUDE`).
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

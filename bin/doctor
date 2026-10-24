@@ -10,7 +10,9 @@
 # Checks: Docker answers; the tests image has the IBM i Access ODBC Driver;
 # .env exists (it is never read or printed here); the vendor/django-<version>
 # checkouts are at the commits of the corpus manifests; then one connection
-# (scripts/pub400.sh probe connect). Exit code 1 if a check failed.
+# (scripts/pub400.sh probe connect journal_check), which also checks that new
+# tables in both .env libraries are journaled (the system check
+# django_db2_for_i.W001). Exit code 1 if a check failed.
 
 source "$(dirname "$0")/_common.sh"
 common_args "$@"
@@ -62,6 +64,10 @@ for manifest in "$ROOT"/tests/offline/corpus/*/*/manifest.toml; do
 done
 
 if [ "$offline" = 0 ]; then
-    if pub400 probe connect; then result ok "one connection to PUB400"; else result FAIL "no connection to PUB400 (see above)"; fi
+    if pub400 probe connect journal_check; then
+        result ok "one connection to PUB400; new tables in both libraries are journaled"
+    else
+        result FAIL "no connection to PUB400, or a library not journaled (see above)"
+    fi
 fi
 exit "$failed"

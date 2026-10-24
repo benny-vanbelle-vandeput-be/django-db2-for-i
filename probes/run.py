@@ -3,7 +3,8 @@
 Usage (inside the "tests" container):
     nox -s probe -- [reachability|connect|sysinfo|libraries|packages|features|
                      string_limits|extract|queries|listagg|trunc|durations|in_subquery|
-                     tuple_in|tuple_lookups|compound_parts|selected_predicates|catalog|all] ...
+                     tuple_in|tuple_lookups|compound_parts|selected_predicates|catalog|
+                     library_journal|journal_check|all] ...
     nox -s probe -- fetch_errors | mapping_errors | long_string_params |
                     numeric_params | constraint_errors | drop_column | alter_table |
                     alter_column | renames | type_changes | check_journal
@@ -34,7 +35,9 @@ import qtemp_extract
 import qtemp_features
 import qtemp_fetch_errors
 import qtemp_in_subquery
+import qtemp_journal_check
 import qtemp_libraries
+import qtemp_library_journal
 import qtemp_listagg
 import qtemp_long_string_params
 import qtemp_mapping_errors
@@ -84,6 +87,8 @@ PROBES = {
     "type_changes": qtemp_type_changes,
     "check_journal": qtemp_check_journal,
     "catalog": qtemp_catalog,
+    "library_journal": qtemp_library_journal,
+    "journal_check": qtemp_journal_check,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
