@@ -711,8 +711,9 @@ def _column_checks(live, table: str) -> list[str]:
 
 def test_positive_field_to_integer_and_back(live, check_model) -> None:
     """#151: PositiveIntegerField -> IntegerField drops the column check Db2 for
-    i named, on a table with rows; the way back adds a named check."""
-    from django.db import IntegrityError
+    i named, on a table with rows; the way back adds a named check, once no
+    row violates it."""
+    from django.db import DatabaseError, IntegrityError
 
     model = check_model
     model.objects.bulk_create([model(count=0), model(count=5)])
@@ -729,7 +730,15 @@ def test_positive_field_to_integer_and_back(live, check_model) -> None:
     model.objects.create(count=-1)
     assert sorted(model.objects.values_list("count", flat=True)) == [-1, 0, 5]
 
-    model.objects.filter(count=-1).delete()
+    # The way back while a row has a negative value: SQL0544, nothing changed.
+    with pytest.raises(DatabaseError, match="SQL0544"), live.schema_editor() as editor:
+        editor.alter_field(model, integer, positive, strict=True)
+    assert _column_checks(live, "testapp_checkprobe") == []
+
+    # filter(count=-1) on the PositiveIntegerField would match nothing (Django
+    # leaves out values below the field's range), so plain SQL.
+    with live.cursor() as cursor:
+        cursor.execute('DELETE FROM "TESTAPP_CHECKPROBE" WHERE "COUNT" < 0')
     with live.schema_editor() as editor:
         editor.alter_field(model, integer, positive, strict=True)
     [named] = _column_checks(live, "testapp_checkprobe")

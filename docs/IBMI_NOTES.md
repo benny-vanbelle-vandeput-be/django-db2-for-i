@@ -1052,6 +1052,10 @@ schema editor writes, in autocommit mode and in a transaction (rolled back):
 - A table in a user library without a journal was not probed with constraints
   (that needs approval); it gave the same SQL7008 for a transaction in
   probe `w01_commitment` ("Commitment control on an unjournaled table").
+- Adding a CHECK that a row already violates fails with `SQL0544 - CHECK
+  constraint ... cannot be added` (SQLSTATE `HY000`, DatabaseError), and the
+  table is unchanged (pub400 test `test_positive_field_to_integer_and_back`,
+  journaled library).
 
 ### DDL under commitment control: what ROLLBACK undoes (`lib_rollback_ddl`)
 2026-10-24, PUB400 (IBM i 7.5), write probe in the journaled default library,
