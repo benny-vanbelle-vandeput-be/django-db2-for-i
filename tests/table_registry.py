@@ -91,10 +91,12 @@ def parse_rename(sql: str, default_library: str) -> tuple[str, str, str] | None:
 
 
 def _update(path: Path, library: str, current: str, **changes) -> bool:
-    """Change the TABLE entry ``library.current``; False (and no change) when it
-    is not on the list. The entry keeps its creation time."""
+    """Change the TABLE entry ``library.current`` (the newest, if a name was
+    created more than once: the table that exists now); False (and no change)
+    when it is not on the list. The entry keeps its creation time."""
     entries = read(path)
-    for index, entry in enumerate(entries):
+    for index in reversed(range(len(entries))):
+        entry = entries[index]
         if (entry.kind, entry.library, entry.name) == ("TABLE", library, current):
             entries[index] = dataclasses.replace(entry, **changes)
             write(path, entries)

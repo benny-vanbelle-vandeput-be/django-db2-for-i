@@ -276,3 +276,12 @@ def test_cleanup_drops_whichever_name_exists_after_a_crash_during_the_rename(
     inventory = {existing: "T", "DJDB2I_TEST_MARKER": "T", "KEEP": "T"}
     drop, unlisted = cleanup.plan(entries, "TESTLIB", inventory, {"KEEP"}, "DJDB2I_TEST_MARKER")
     assert (drop, unlisted) == ([existing], [])
+
+
+def test_a_rename_updates_the_newest_entry_of_a_name(tmp_path, monkeypatch) -> None:
+    """Every run appends a CREATE; the rename belongs to the table that exists now."""
+    path = tmp_path / "created-objects.txt"
+    monkeypatch.setenv(registry.ENV, str(path))
+    _run(['CREATE TABLE "T" (X INT)', 'CREATE TABLE "T" (X INT)'], path)
+    _run(['RENAME TABLE "T" TO "T_NEW"'], path)
+    assert [e.name for e in registry.read(path)] == ["T", "T_NEW"]
