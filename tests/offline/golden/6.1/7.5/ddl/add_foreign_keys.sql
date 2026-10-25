@@ -3,7 +3,7 @@
 -- profile: 7.5
 -- depends: ddl/create_link, ddl/create_author, ddl/create_code, ddl/create_tag, ddl/create_profile
 -- params: [[], [], [], [], [], [], [], []]
--- verified: unverified
+-- verified: IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.1.2, 2026-10-25
 ALTER TABLE "TESTAPP_LINK" DROP CONSTRAINT "TESTAPP_LINK_AUTHOR_ID_2F0C1395_FK_TESTAPP_AUTHOR_ID";
 ALTER TABLE "TESTAPP_LINK" DROP CONSTRAINT "TESTAPP_LINK_CODE_ID_5641DA71_FK_TESTAPP_CODE_CODE";
 ALTER TABLE "TESTAPP_LINK" DROP CONSTRAINT "TESTAPP_LINK_TAG_ID_F7B03B94_FK_TESTAPP_TAG_ID";
