@@ -27,12 +27,6 @@ REASON_UNTYPED_RAW_SQL_PARAMETER = (
     "a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the "
     "select list (SQL0418); cast it in the SQL"
 )
-REASON_CPA32B2 = (
-    "Db2 for i asks CPA32B2 before a change that may lose data (DROP COLUMN, narrowing, "
-    "SET NOT NULL), and the test system's reply list has no entry for it; the test passes "
-    "on a system with the CPA32B2 reply list entry and "
-    "OPTIONS['inquiry_message_reply'] = '*SYSRPYL'"
-)
 REASON_NO_COLUMN_RENAME = "Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6)"
 REASON_TYPE_NOT_IN_PLACE = "Db2 for i cannot change this column type in place (SQL0190)"
 
@@ -236,30 +230,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "queries.tests.Queries1Tests.test_tickets_1878_2939",
             # RawSQL("%s", ...) annotation.
             "queries.test_query.TestQueryNoModel.test_rawsql_annotation",
-        },
-        # DROP COLUMN, a narrowing ALTER COLUMN or SET NOT NULL on PUB400.
-        # test_get_relations removes a column (#17785).
-        # test_alter_auto_field_to_integer_field and
-        # test_alter_implicit_id_to_explicit narrow BIGINT to INTEGER only from
-        # Django 6.0 on (BigAutoField default): compat.PASSING_ON_THIS_VERSION.
-        REASON_CPA32B2: {
-            "introspection.tests.IntrospectionTests.test_get_relations",
-            "schema.tests.SchemaTests.test_add_field_remove_field",
-            "schema.tests.SchemaTests.test_alter",
-            "schema.tests.SchemaTests.test_alter_auto_field_to_integer_field",
-            "schema.tests.SchemaTests.test_alter_autofield_pk_to_smallautofield_pk",
-            "schema.tests.SchemaTests.test_alter_field_default_dropped",
-            "schema.tests.SchemaTests.test_alter_implicit_id_to_explicit",
-            "schema.tests.SchemaTests.test_alter_not_unique_field_to_primary_key",
-            "schema.tests.SchemaTests.test_alter_null_to_not_null",
-            "schema.tests.SchemaTests.test_alter_null_to_not_null_keeping_default",
-            "schema.tests.SchemaTests.test_alter_null_with_default_value_deferred_constraints",
-            "schema.tests.SchemaTests.test_alter_primary_key_the_same_name",
-            "schema.tests.SchemaTests.test_alter_text_field_to_not_null_with_default_value",
-            "schema.tests.SchemaTests.test_alter_textual_field_keep_null_status",
-            "schema.tests.SchemaTests.test_primary_key",
-            "schema.tests.SchemaTests.test_remove_field",
-            "schema.tests.SchemaTests.test_remove_indexed_field",
         },
         # RenameField / a new db_column: NotSupportedError (schema.py).
         REASON_NO_COLUMN_RENAME: {

@@ -98,9 +98,15 @@ def run_golden(live, kind, golden) -> None:
                 execute(cursor, sql, params, kind)
             transaction.set_rollback(True, using=live.alias)
         return
-    with live.cursor() as cursor:
-        for sql, params in golden.statements:
-            execute(cursor, sql, params, kind)
+    # DDL as migrations run it: CPA32B2 suppressed for the job (inquiry.py).
+    if kind in ("alter", "drop"):
+        live.suppress_cpa32b2()
+    try:
+        with live.cursor() as cursor:
+            for sql, params in golden.statements:
+                execute(cursor, sql, params, kind)
+    finally:
+        live.end_cpa32b2_suppression()
 
 
 @pytest.fixture(scope="module")

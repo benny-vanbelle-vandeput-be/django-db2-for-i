@@ -264,7 +264,7 @@ def test_render_and_collect(tmp_path) -> None:
     assert "`uses_savepoints`" in text
     assert "identity restart deferred in TestCase (SQL0910)" in text
     assert "goldens," in text
-    assert "unverifiable on PUB400: 9" in text
+    assert "unverifiable on PUB400: 0" in text
 
 
 def test_collect_ignores_logs_outside_the_run_set(tmp_path, capsys) -> None:

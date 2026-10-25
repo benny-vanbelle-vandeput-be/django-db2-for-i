@@ -454,14 +454,13 @@ def test_alter_field_and_back(live, alter_model) -> None:
 
     Forward: SET DATA TYPE (widening), DROP NOT NULL and SET DEFAULT work on a
     table with rows, and the rows keep their values. Back: narrowing and NOT NULL
-    are cancelled by CPA32B2 on PUB400 (no system reply list entry, IBMI_NOTES);
-    the error explains it, and the table is unchanged. The rows are unchanged
-    too: the way back to NOT NULL first sets NULLs to the default (Django's
-    UPDATE before SET NOT NULL), and with can_rollback_ddl the schema editor's
-    transaction rolls that UPDATE back when CPA32B2 cancels SET NOT NULL
-    (phase 4 item 11a).
+    send CPA32B2, which the schema editor suppresses for its job (inquiry.py).
+    A narrowing that would truncate a value is refused first, and the table is
+    unchanged; the way back to the original lengths works, and the way back to
+    NOT NULL first sets the NULL to the default (Django's UPDATE before SET NOT
+    NULL).
     """
-    from django.db import OperationalError
+    from django.db import DataError
 
     model = alter_model
     with live.cursor() as cursor:
@@ -498,21 +497,34 @@ def test_alter_field_and_back(live, alter_model) -> None:
         cursor.execute('INSERT INTO "TESTAPP_ALTERFIELD" ("NUMBER") VALUES (NULL)')
     rows.append((3, "Ж € ✓", None, Decimal("1.500")))
 
-    for old, new in (
-        (wide_text, _rebuilt(model, "text", max_length=20)),  # narrowing
-        (wide_number, _rebuilt(model, "number", models.BigIntegerField)),  # NOT NULL
+    # "O'Brien 100%" has 12 characters.
+    with (
+        pytest.raises(DataError, match="longer than 10 UTF-16 code units"),
+        live.schema_editor() as editor,
     ):
-        with pytest.raises(OperationalError) as info, live.schema_editor() as editor:
-            editor.alter_field(model, old, new, strict=True)
-        message = str(info.value)
-        assert "CPA32B2" in message
-        assert "OPTIONS['inquiry_message_reply'] = '*SYSRPYL'" in message
-        assert "docs/user/IBM-i-Requirements.md" in message
-        with live.cursor() as cursor:
-            cursor.execute(ALTER_COLUMNS)
-            assert _stripped(cursor.fetchall()) == forward
-            cursor.execute(ALTER_ROWS)
-            assert [tuple(row) for row in cursor.fetchall()] == rows
+        editor.alter_field(model, wide_text, _rebuilt(model, "text", max_length=10))
+    with live.cursor() as cursor:
+        cursor.execute(ALTER_COLUMNS)
+        assert _stripped(cursor.fetchall()) == forward
+        cursor.execute(ALTER_ROWS)
+        assert [tuple(row) for row in cursor.fetchall()] == rows
+
+    with live.schema_editor() as editor:
+        editor.alter_field(model, wide_text, text, strict=True)
+        editor.alter_field(model, wide_number, number, strict=True)
+    with live.cursor() as cursor:
+        cursor.execute(ALTER_COLUMNS)
+        assert _stripped(cursor.fetchall()) == [
+            ("AMOUNT", "DECIMAL", 7, 3, "N", "1.50"),
+            ("NUMBER", "INTEGER", 4, 0, "N", "-1"),
+            ("TEXT", "VARG", 20, None, "N", _ux("O'Brien 100%")),
+        ]
+        cursor.execute(ALTER_ROWS)
+        assert [tuple(row) for row in cursor.fetchall()] == [
+            *rows[:2],
+            (3, "Ж € ✓", -1, Decimal("1.500")),
+        ]
+    assert not live._inquiry_override_pending
 
 
 # --- Renames and identity changes ---------------------------------------------------
@@ -719,10 +731,11 @@ HALFWAY_TABLE = "ROLLBACKPROBE_HALFWAY"
 
 
 def test_failed_migration_leaves_nothing_behind(live) -> None:
-    """An atomic migration that CPA32B2 cancels halfway (a narrowing AlterField
-    after CreateModel, AddField, AddIndex and AddConstraint), applied by
-    Django's MigrationExecutor: with can_rollback_ddl nothing of it is left, no
-    table, column, index or constraint, and no django_migrations row."""
+    """An atomic migration that CPA32B2 cancels halfway (a DROP COLUMN in
+    RunSQL, where CPA32B2 is not suppressed, after CreateModel, AddField,
+    AddIndex and AddConstraint), applied by Django's MigrationExecutor: with
+    can_rollback_ddl nothing of it is left, no table, column, index or
+    constraint, and no django_migrations row."""
     from django.db import OperationalError, migrations
     from django.db.migrations.executor import MigrationExecutor
     from django.db.migrations.recorder import MigrationRecorder
@@ -744,7 +757,8 @@ def test_failed_migration_leaves_nothing_behind(live) -> None:
         migrations.AddConstraint(
             "halfway", CheckConstraint(condition=Q(count__gte=0), name="rbp_halfway_count_gte_0")
         ),
-        migrations.AlterField("halfway", "name", models.CharField(max_length=10)),  # CPA32B2
+        # CPA32B2: RunSQL is not a field change, so it is not suppressed.
+        migrations.RunSQL(f'ALTER TABLE "{HALFWAY_TABLE}" DROP COLUMN "EXTRA"'),
     ]
     executor = MigrationExecutor(live)
     try:

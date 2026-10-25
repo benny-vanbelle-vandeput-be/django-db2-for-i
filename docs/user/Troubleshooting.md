@@ -126,16 +126,63 @@ The driver itself only reports `[HY008] ... Operation cancelled. (30071)`; the
 backend checks the job log and replaces it with this explanation.
 
 **Cause:** `DROP COLUMN`, a narrowing column change or making a column
-`NOT NULL` (also on an empty table) sends inquiry message CPA32B2, and its default reply cancels the
-change.
+`NOT NULL` (also on an empty table) sends inquiry message CPA32B2, and its
+default reply cancels the change. Migrations suppress it while they remove
+or alter a field, so the message says why it was not suppressed here:
 
-**Fix:** an administrator adds `ADDRPYLE SEQNBR(<free number>) MSGID(CPA32B2)
-RPY('I')`, and the database settings set `OPTIONS["inquiry_message_reply"] =
-"*SYSRPYL"`, see [IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data).
+- **"this statement ran outside them (RunSQL or a cursor of your own)":**
+  write the change as a field change (`RemoveField`, `AlterField`) instead,
+  or allow it with a reply list entry (below).
+- **"OPTIONS['suppress_inquiry_messages'] is False":** the suppression is
+  turned off in the database settings; remove the option (the default is
+  True), or use a reply list entry.
+- **"could not suppress it for this job":** `QSYS2.OVERRIDE_QAQQINI` failed;
+  the warning in the log (logger `django_db2_for_i`) has the error.
+
+**Fix with a reply list entry:** an administrator adds `ADDRPYLE
+SEQNBR(<free number>) MSGID(CPA32B2) RPY('I')`, and the database settings set
+`OPTIONS["inquiry_message_reply"] = "*SYSRPYL"`, see
+[IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data).
 If the message says the connection already uses `*SYSRPYL`, the reply list
-entry is missing or does not match. When a change to `NOT NULL` was
-cancelled, NULLs in that column may already have been set to the field's
-default (see [Known limitations](Known-Limitations.md#dropping-narrowing-or-making-a-column-not-null-needs-a-reply-list-entry)).
+entry is missing or does not match. When a change to `NOT NULL` with
+`atomic = False` was cancelled, NULLs in that column may already have been
+set to the field's default (see
+[Known limitations](Known-Limitations.md#narrowing-a-column)).
+
+## A narrowing change refused (DataError)
+
+```
+DataError: Cannot change app.Model.name ("APP_MODEL"."NAME") from NVARCHAR(20)
+to NVARCHAR(5): the table has a value longer than 5 UTF-16 code units, which
+Db2 for i would truncate or round without an error. ...
+```
+
+**Cause:** an `AlterField` narrows a column (a shorter `max_length`, fewer
+decimals or digits, a smaller number type), and at least one row has a value
+that the new type cannot hold unchanged. Db2 for i would truncate or round
+it silently, so the backend refuses before anything changes.
+
+**Fix:** change those values first in a data migration (shorten, round or
+move them), then narrow the field. How the lengths are counted (an emoji is
+2 UTF-16 code units in a `CharField`) is in
+[Known limitations](Known-Limitations.md#narrowing-a-column).
+
+## CPA32B2 could not be turned back on (connection closed)
+
+```
+OperationalError: Database 'default': CPA32B2 could not be turned back on for
+this job (QSYS2.OVERRIDE_QAQQINI(3) failed: ...), so the connection was closed
+```
+
+**Cause:** after a migration the backend discards the job's copy of the query
+options that suppresses CPA32B2. That failed while the connection still
+worked, so the backend closed the connection: an `ALTER TABLE` outside
+migrations must never run with CPA32B2 suppressed. The migration itself has
+finished (or failed with its own error, which then carries this text as a
+note).
+
+**Fix:** none needed for the data; Django opens a new connection (a new job)
+for the next query. If it happens again, the log has the IBM i error.
 
 ## Test library refused
 

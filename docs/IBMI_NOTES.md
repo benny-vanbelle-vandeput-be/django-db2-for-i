@@ -664,6 +664,41 @@ only (result: `probes/results/qaqqini_inquiry.json`).
   control (`atomic` migrations) on a journaled table, and on a reused
   prestart job.
 
+### OVERRIDE_QAQQINI around transactions, and how narrowing measures (`probe -- qaqqini_lifecycle`)
+2026-10-26, PUB400 (IBM i 7.5), QTEMP and the probe's own job only, under
+commitment control (isolation `*CS`). The result is in
+`probes/results/qaqqini_lifecycle.json`.
+
+- **Repeated and unpaired calls:**
+  - operation 3 without a copy succeeds;
+  - operation 1 twice succeeds (the copy stays);
+  - operation 3 twice succeeds.
+- **Not transactional:**
+  - operations 1 and 2, then ROLLBACK: the copy and its `*YES` stay, and a
+    DROP COLUMN afterwards goes through;
+  - operation 3, then ROLLBACK: the copy stays gone, and DROP COLUMN is
+    cancelled (HY008) again.
+
+  So the suppression is ended explicitly, after the transaction, and
+  operation 3 can run whenever operation 1 may have run.
+- **`LENGTH` counts in the column's units:**
+
+  | Value | NVARCHAR | VARCHAR CCSID 1208 | NCLOB |
+  |---|---|---|---|
+  | `abc` | 3 | 3 | |
+  | an emoji (U+1F600) | 2 | 4 | |
+  | `é` | 1 | 2 | |
+  | `a` + an emoji | | | 3 |
+
+- **CAST to fewer decimals or to an integer truncates:**
+  - DECIMAL 1.2355 → (9, 2) gives 1.23, and -1.2355 gives -1.23;
+  - DECIMAL 2.7 → INTEGER gives 2, and so does DOUBLE 2.7;
+  - DOUBLE 0.29 → DECIMAL(5, 2) gives **0.28**, because the double nearest
+    0.29 is just below it.
+- **An overflowing CAST gives NULL, not an error:** DECIMAL 999.99 →
+  DECIMAL(4, 2) returned NULL. A check like `col <> CAST(col AS ...)` would
+  miss it, so the backend checks the range first.
+
 ### Savepoints (`nox -s probe_savepoints -- --execute`)
 2026-10-17, one connection with the backend's settings (CMT=1, autocommit
 off), one table in the `default` library (created and dropped by the probe).

@@ -17,12 +17,18 @@ Settings::
                 "driver_attributes": {},     # extra driver keywords, e.g. {"XDYNAMIC": "1"}
                 "capabilities": None,        # profile name and/or overrides
                 "inquiry_message_reply": None,  # e.g. "*SYSRPYL" (see inquiry.py)
+                "suppress_inquiry_messages": True,  # CPA32B2 in migrations (inquiry.py)
             },
         }
     }
 
 ``PORT`` is not supported: the driver connects to the database host server
 port (8471, or 9471 with TLS).
+
+``suppress_inquiry_messages`` (default True): the schema editor suppresses
+inquiry message CPA32B2 for its own job while it removes or alters a field,
+so migrations can drop columns, narrow them and make them NOT NULL without
+a system reply list entry (inquiry.py). False keeps CPA32B2 everywhere.
 
 ``inquiry_message_reply`` (opt-in): the job's INQMSGRPY for the whole
 connection, so that an administrator's system reply list entry can allow
@@ -38,7 +44,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from django.core.exceptions import ImproperlyConfigured
-from django.db import DatabaseError, NotSupportedError
+from django.db import DatabaseError, NotSupportedError, OperationalError
 from django.db.backends.base.base import NO_DB_ALIAS, BaseDatabaseWrapper
 from django.utils.functional import cached_property
 
@@ -67,6 +73,7 @@ OPTION_NAMES = frozenset(
         "driver_attributes",
         "capabilities",
         inquiry.OPTION,
+        inquiry.SUPPRESS_OPTION,
     }
 )
 
@@ -220,6 +227,13 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         # job (None: unchanged); restored at close.
         self._inquiry_reply_original: str | None = None
         self._inquiry_reply_active: str | None = None
+        # CPA32B2 suppression for this connection's job (inquiry.py): the
+        # QAQQINI copy may exist (OVERRIDE_QAQQINI(3) still to run), the
+        # option is set; schema editors that are open (the outermost one
+        # discards the copy when it exits).
+        self._inquiry_override_pending = False
+        self._inquiry_suppressed = False
+        self._schema_editor_depth = 0
 
     # --- Configuration ---------------------------------------------------------
 
@@ -273,6 +287,16 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             raise ImproperlyConfigured(f"OPTIONS['{inquiry.OPTION}']: {exc}") from None
 
     @cached_property
+    def suppress_inquiry_messages(self) -> bool:
+        """OPTIONS['suppress_inquiry_messages'], validated; True when not set."""
+        value = self.options.get(inquiry.SUPPRESS_OPTION, True)
+        if not isinstance(value, bool):
+            raise ImproperlyConfigured(
+                f"OPTIONS['{inquiry.SUPPRESS_OPTION}']: use True or False, not {value!r}."
+            )
+        return value
+
+    @cached_property
     def driver(self) -> Database.Driver:
         try:
             return get_driver(self.options.get("driver", "pyodbc"))
@@ -301,6 +325,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         except ValueError as exc:
             raise ImproperlyConfigured(f"OPTIONS['isolation_level']: {exc}") from None
         _ = self.inquiry_message_reply  # validate before connecting
+        _ = self.suppress_inquiry_messages
         params = Database.ConnectionParams(
             host=settings_dict["HOST"],
             user=settings_dict["USER"],
@@ -316,6 +341,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     def get_new_connection(self, conn_params: dict[str, Any]) -> Database.Connection:
         # A new connection is a new job: nothing to restore from the old one.
         self._inquiry_reply_original = self._inquiry_reply_active = None
+        self._inquiry_override_pending = self._inquiry_suppressed = False
         try:
             return self.driver.connect(
                 conn_params["params"], autocommit=self.settings_dict["AUTOCOMMIT"]
@@ -388,7 +414,87 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             self._inquiry_reply_original,
         )
 
+    # --- CPA32B2 suppression (inquiry.py) -------------------------------------------
+
+    def suppress_cpa32b2(self) -> str | None:
+        """Suppress CPA32B2 for this connection's job; None when it is suppressed.
+
+        Otherwise the reason it is not (inquiry.SUPPRESSION_OFF,
+        SUPPRESSION_UNAVAILABLE, SUPPRESSION_FAILED). Called by the schema
+        editor before an ALTER TABLE of a field change; the outermost schema
+        editor ends it (end_cpa32b2_suppression()).
+        """
+        if self._inquiry_suppressed:
+            return None
+        if not self.suppress_inquiry_messages:
+            return inquiry.SUPPRESSION_OFF
+        if not self.capabilities.can_suppress_inquiry_messages:
+            return inquiry.SUPPRESSION_UNAVAILABLE
+        if self.connection is None:
+            self.ensure_connection()
+        # Pending before the first call: OVERRIDE_QAQQINI(3) is harmless
+        # without a copy, and a failure halfway may leave one.
+        self._inquiry_override_pending = True
+        try:
+            with self.connection.cursor() as cursor:
+                for sql in inquiry.SUPPRESS_SQL:
+                    cursor.execute(sql)
+        except Database.Error as exc:
+            logger.warning(
+                "Database '%s': could not suppress inquiry message CPA32B2 for this job "
+                "(QSYS2.OVERRIDE_QAQQINI): %s",
+                self.alias,
+                exc,
+            )
+            return inquiry.SUPPRESSION_FAILED
+        self._inquiry_suppressed = True
+        logger.debug("Database '%s': CPA32B2 suppressed for this job.", self.alias)
+        return None
+
+    def end_cpa32b2_suppression(self, error: BaseException | None = None) -> None:
+        """Discard the job's QAQQINI copy (OVERRIDE_QAQQINI(3)) if there may be one.
+
+        If that fails on a connection that still works, the suppression could
+        reach ALTER TABLE statements outside migrations, so the connection is
+        marked unusable and closed. The failure is raised, or added as a note
+        to ``error`` (the exception already on its way out). On a connection
+        that is already broken it is only logged: the copy is in QTEMP and
+        goes with the job.
+        """
+        if not self._inquiry_override_pending:
+            return
+        self._inquiry_override_pending = self._inquiry_suppressed = False
+        if self.connection is None:
+            return
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute(inquiry.DISCARD_SQL)
+        except Database.Error as exc:
+            if not self.is_usable():
+                logger.debug(
+                    "Database '%s': the connection is broken; its job's QAQQINI copy goes "
+                    "with it (%s).",
+                    self.alias,
+                    exc,
+                )
+                return
+            self.connection.usable = False
+            self.close()
+            message = (
+                f"Database '{self.alias}': CPA32B2 could not be turned back on for this job "
+                f"(QSYS2.OVERRIDE_QAQQINI(3) failed: {exc}), so the connection was closed: "
+                "ALTER TABLE statements outside migrations must keep CPA32B2."
+            )
+            logger.error(message)
+            if error is not None:
+                error.add_note(message)
+                return
+            raise OperationalError(message) from exc
+        logger.debug("Database '%s': CPA32B2 no longer suppressed.", self.alias)
+
     def _close(self):
+        # The job ends with the connection, and its QTEMP with it.
+        self._inquiry_override_pending = self._inquiry_suppressed = False
         if self.connection is not None and self._inquiry_reply_original is not None:
             try:
                 self.restore_inquiry_message_reply()

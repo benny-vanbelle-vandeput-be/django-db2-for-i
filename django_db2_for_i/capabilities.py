@@ -49,6 +49,10 @@ class ServerCapabilities:
     has_offset_fetch: bool
     # JSON_OBJECT, JSON_VALUE, JSON_TABLE.
     has_json_functions: bool
+    # QSYS2.OVERRIDE_QAQQINI with the QAQQINI option SUPPRESS_INQUIRY_MESSAGES:
+    # a job can skip inquiry message CPA32B2 for its own ALTER TABLE (7.5 and
+    # 7.6 base; 7.4 needs SF99704 levels 4 and 7).
+    can_suppress_inquiry_messages: bool
     # Longest SQL name for tables, columns, indexes and constraints.
     max_name_length: int
     # Longest system (object) name, e.g. for schemas/libraries.
@@ -69,7 +73,8 @@ CAPABILITY_FIELDS = {
 
 # Profiles per OS release. Values must be backed by evidence:
 # 7.5: probe `features` on PUB400 (IBM i 7.5, TR level not readable),
-#      2026-10-17; name lengths from SQLGetInfo and IBM i system names.
+#      2026-10-17; name lengths from SQLGetInfo and IBM i system names;
+#      can_suppress_inquiry_messages from probe `qaqqini_inquiry`, 2026-10-25.
 PROFILES: Mapping[str, Mapping[str, Any]] = {
     "7.5": {
         "release": (7, 5),
@@ -77,6 +82,7 @@ PROFILES: Mapping[str, Mapping[str, Any]] = {
         "has_limit_offset": True,
         "has_offset_fetch": True,
         "has_json_functions": True,
+        "can_suppress_inquiry_messages": True,
         "max_name_length": 128,
         "max_system_name_length": 10,
     },

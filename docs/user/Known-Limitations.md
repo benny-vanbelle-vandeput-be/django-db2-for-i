@@ -166,32 +166,62 @@ views and foreign keys that depend on its table**, including objects created
 outside Django. Check for dependent objects before deleting a model whose
 table is used by other applications.
 
-## Dropping, narrowing or making a column NOT NULL needs a reply list entry
+## Narrowing a column
 
-`RemoveField` (`ALTER TABLE ... DROP COLUMN`), changes that narrow a column
-(a shorter `max_length`, a smaller integer type) and `AlterField` from
-`null=True` to `null=False` make Db2 for i send inquiry
-message CPA32B2 ("Change of file may cause data to be lost"), also on an empty
-table. Its default reply cancels the change, and the backend raises
-`OperationalError` with an explanation. To allow such changes, an
-administrator adds a system reply list entry and the database settings set
-`OPTIONS["inquiry_message_reply"] = "*SYSRPYL"`, see
-[IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data).
+Migrations drop columns, narrow them and make them `NOT NULL` without any
+setup: the backend suppresses inquiry message CPA32B2 for its own job while
+it removes or alters a field (see
+[IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data)).
+
+**A narrowing change that would change a value is refused.** Without CPA32B2,
+Db2 for i truncates a string that is too long and drops decimals that no
+longer fit, without an error (only warning SQL0460). So before a narrowing
+`AlterField` the backend looks for such a value and raises `DataError`
+("the table has a value longer than 5 UTF-16 code units, which Db2 for i
+would truncate or round without an error"); nothing is changed. It measures
+as Db2 for i does:
+
+- `CharField` (`NVARCHAR`): UTF-16 code units, so an emoji counts 2;
+- a `VARCHAR ... CCSID 1208` column: UTF-8 bytes (`é` counts 2, an emoji 4);
+  other `VARCHAR` and `CHAR` columns: bytes in their CCSID (trailing blanks
+  of a `CHAR` value do not count);
+- `TextField` to `CharField`: the same, as for `CharField`;
+- `DecimalField` with fewer decimals or digits, a decimal or float field to
+  an integer field, and a smaller integer type: any value that would change,
+  also by a single dropped decimal (Db2 for i truncates: 1.2345 would become
+  1.23, and the double nearest 0.29 would become 0.28).
+
+Change such values first, in a data migration, then narrow the field. In a
+migration's transaction the table is locked before the check, so no such
+value can arrive in between; with `atomic = False` there is no lock.
+
+Not checked: a change **to** `FloatField` (`DOUBLE`) rounds to the nearest
+double, as on other databases (a `BigIntegerField` above 2^53 loses its last
+digits). A `SET NOT NULL` with NULLs in the column is refused by Db2 for i
+itself (SQL0407).
+
+**CPA32B2 outside field changes.** An `ALTER TABLE` in `RunSQL` or on a cursor
+of your own is not covered: there CPA32B2 still cancels the statement, and the
+backend raises `OperationalError` with an explanation (see
+[Troubleshooting](Troubleshooting.md#alter-table-cancelled-cpa32b2-hy008)).
+`OPTIONS["suppress_inquiry_messages"] = False` keeps CPA32B2 for migrations
+too; then only a system reply list entry with
+`OPTIONS["inquiry_message_reply"] = "*SYSRPYL"` allows such changes.
 
 **A migration cancelled halfway is rolled back.** Migrations run in one
-transaction (`can_rollback_ddl`), so when CPA32B2 cancels a statement, the
-earlier operations of the same migration are undone too: tables, columns,
-indexes, constraints and data changes such as Django's `UPDATE ... WHERE ...
-IS NULL` before `SET NOT NULL`. This needs journaled tables (see
+transaction (`can_rollback_ddl`), so when a statement fails (for example
+CPA32B2 in `RunSQL`, or the `DataError` above), the earlier operations of the
+same migration are undone too: tables, columns, indexes, constraints and data
+changes such as Django's `UPDATE ... WHERE ... IS NULL` before `SET NOT
+NULL`. This needs journaled tables (see
 [IBM i requirements](IBM-i-Requirements.md#journaling-required)). A migration
-with `atomic = False` runs without a transaction: there, a cancelled
-`SET NOT NULL` leaves the column nullable but the NULLs already replaced by
-the default.
+with `atomic = False` runs without a transaction: there, a failed `SET NOT
+NULL` leaves the column nullable but the NULLs already replaced by the
+default.
 
 The backend writes `DROP COLUMN` without `CASCADE` or `RESTRICT` on every
 Django version (Django 5.2's own text adds `CASCADE`). What Db2 for i does
-with views or indexes that depend on the column is not verified yet: on a
-system without the reply list entry the statement is always cancelled first.
+with views or indexes that depend on the column is not verified yet.
 
 ## Adding a NOT NULL column without a default
 
