@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**29 flags enabled on Django 6.1.**
+**30 flags enabled on Django 6.1.**
 
-## Enabled (29)
+## Enabled (30)
 
 On in at least one supported Django version.
 
@@ -33,6 +33,7 @@ On in at least one supported Django version.
 | `supports_any_value` | The `AnyValue` aggregate (one value of a column per group). | – | ✅ | ✅ |
 | `supports_boolean_expr_in_select_clause` | Conditions such as `Exists()` or `Q()` can be selected and grouped by. | ✅ | ✅ | ✅ |
 | `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | ✅ | ✅ | ✅ |
+| `supports_foreign_keys` | Foreign keys are enforced by the database. | ✅ | ✅ | ✅ |
 | `supports_parentheses_in_compound` | Parts of a compound query may have their own `ORDER BY` / slice. | ✅ | ✅ | ✅ |
 | `supports_regex_backreferencing` | `regex` / `iregex` lookups support backreferences (ICU regular expressions). | ✅ | ✅ | ✅ |
 | `supports_select_difference` | `QuerySet.difference()` (`EXCEPT`). | ✅ | ✅ | ✅ |
@@ -46,7 +47,7 @@ On in at least one supported Django version.
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (32)
+## Intentionally off (33)
 
 Off on purpose, with the reason.
 
@@ -64,6 +65,7 @@ Off on purpose, with the reason.
 | `has_native_json_field` | `JSONField` is a native JSON column type. | ❌ | ❌ | ❌ | Db2 for i 7.5 has no JSON column type; JSON is stored as text (not verified on IBM i). |
 | `has_native_uuid_field` | `UUIDField` is a native UUID column. | ❌ | ❌ | ❌ | A `UUIDField` is stored as `CHAR(32)` (probe column types); Db2 for i has no UUID type (not verified on IBM i). |
 | `has_zoneinfo_database` | The database has its own time zone database. | ❌ | ❌ | ❌ | Db2 for i has no time zone names; conversions happen in Python. |
+| `indexes_foreign_keys` | Foreign key columns get an index. | ❌ | ❌ | ❌ | A foreign key gets no SQL index on Db2 for i; Django creates its own index on the column. |
 | `order_by_nulls_first` | NULL sorts first in ascending order. | ❌ | ❌ | ❌ | Db2 for i sorts NULL as the largest value: last in ascending order (probe queries). |
 | `supports_aggregate_filter_clause` | Aggregates with a `filter` are written with SQL `FILTER (WHERE ...)`. | ❌ | ❌ | ❌ | Db2 for i rejects `FILTER (WHERE ...)` (SQL0104, probe queries); Django writes the filter as a `CASE`. |
 | `supports_bit_aggregations` | The `BitAnd`, `BitOr` and `BitXor` aggregates (Django 6.1+). | – | – | ❌ | Db2 for i has no `BIT_AND` aggregate (SQL0204, probe queries). |
@@ -85,7 +87,7 @@ Off on purpose, with the reason.
 | `supports_uuid7_function` | The `UUID7()` database function (Django 6.1+). | – | – | ❌ | Db2 for i has no function that generates a time-ordered UUID (not verified on IBM i). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (67)
+## Planned (65)
 
 Off for now; planned for the phase shown.
 
@@ -110,7 +112,6 @@ Off for now; planned for the phase shown.
 | `has_select_for_update_skip_locked` | `select_for_update(skip_locked=True)` skips locked rows. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `ignores_table_name_case` | Table names that differ only in case are the same table. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `ignores_unnecessary_order_by_in_subqueries` | Django may leave an `ORDER BY` in a subquery; the database accepts and ignores it. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `indexes_foreign_keys` | Foreign key columns get an index. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `related_fields_match_type` | A foreign key column must have exactly the type of the column it references. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `rounds_to_even` | `Round()` rounds halves to even. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `select_for_update_of_column` | `select_for_update(of=...)` is written with column names, not table names. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
@@ -127,7 +128,6 @@ Off for now; planned for the phase shown.
 | `supports_default_keyword_in_insert` | An insert writes `DEFAULT` for fields with a `db_default`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_deferrable_unique_constraints` | `UniqueConstraint(deferrable=...)`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_expression_indexes` | Indexes on expressions (`Index(Lower('name'))`). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
-| `supports_foreign_keys` | Foreign keys are enforced by the database. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_frame_exclusion` | Window frames with `exclusion` (`EXCLUDE ...`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_frame_range_fixed_distance` | Window `RANGE` frames with a fixed distance (`ValueRange(start=-5)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_functions_in_partial_indexes` | Functions in the `condition` of a partial index. | 🗓️ | 🗓️ | 🗓️ | phase 5 |

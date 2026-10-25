@@ -58,17 +58,14 @@ from tests.testapp.models import (
 )
 
 
-def _ddl(*models, foreign_keys: bool = False):
+def _ddl(*models):
+    """CREATE TABLE as create_model() writes it, with the deferred foreign
+    keys (ALTER TABLE ... ADD CONSTRAINT) and indexes."""
+
     def build(connection):
-        features = connection.features
-        saved = features.supports_foreign_keys
-        features.supports_foreign_keys = foreign_keys
-        try:
-            with connection.schema_editor(collect_sql=True, atomic=False) as editor:
-                for model in models:
-                    editor.create_model(model)
-        finally:
-            features.supports_foreign_keys = saved
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+            for model in models:
+                editor.create_model(model)
         return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
 
     return build
@@ -156,54 +153,41 @@ def _add_and_remove_constraint(model, constraint):
     return build
 
 
-def _foreign_keys_on(connection):
-    """Foreign key DDL while supports_foreign_keys is off (as in _ddl)."""
-    features = connection.features
-    saved = features.supports_foreign_keys
-    features.supports_foreign_keys = True
-    return lambda: setattr(features, "supports_foreign_keys", saved)
-
-
-def _add_and_drop_foreign_keys(model):
-    """The ADD CONSTRAINT ... FOREIGN KEY that create_model() defers for each of
-    ``model``'s foreign keys, then DROP CONSTRAINT by the same name. (Dropping
+def _drop_and_add_foreign_keys(model):
+    """DROP CONSTRAINT of each of ``model``'s foreign keys (create_model() added
+    them), then ADD CONSTRAINT ... FOREIGN KEY again by the same name. (Dropping
     one in RemoveField / AlterField finds the name by introspection, which needs
-    a connection; the pub400 introspection tests cover that part.)"""
+    a connection; the pub400 tests cover that part.)"""
 
     def build(connection):
         suffix = "_fk_%(to_table)s_%(to_column)s"
         fields = [field for field in model._meta.local_fields if field.remote_field]
         with connection.schema_editor(collect_sql=True, atomic=False) as editor:
             for field in fields:
-                editor.execute(editor._create_fk_sql(model, field, suffix))
-            for field in fields:
                 name = editor._fk_constraint_name(model, field, suffix)
                 editor.execute(editor._delete_fk_sql(model, str(name)))
+            for field in fields:
+                editor.execute(editor._create_fk_sql(model, field, suffix))
         return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
 
     return build
 
 
 def _add_relation(model, name, make_field):
-    """AddField of a relation with foreign keys on: ADD COLUMN, ADD CONSTRAINT and
-    (except for a OneToOneField) Django's index, then DROP CONSTRAINT of the
-    foreign key again, so no constraint is left that refers to the parent table
-    (later goldens change it). The column stays: DROP COLUMN is cancelled by
-    CPA32B2 on PUB400."""
+    """AddField of a relation: ADD COLUMN, ADD CONSTRAINT and (except for a
+    OneToOneField) Django's index, then DROP CONSTRAINT of the foreign key
+    again, so no constraint is left that refers to the parent table. The
+    column stays: DROP COLUMN is cancelled by CPA32B2 on PUB400."""
 
     def build(connection):
         field = make_field()
         field.set_attributes_from_name(name)
         field.model = model
-        restore = _foreign_keys_on(connection)
-        try:
-            with connection.schema_editor(collect_sql=True, atomic=False) as editor:
-                editor.add_field(model, field)
-                fk_name = editor._fk_constraint_name(model, field, "_fk_%(to_table)s_%(to_column)s")
-                # The foreign key is deferred SQL: drop it after it.
-                editor.deferred_sql.append(editor._delete_fk_sql(model, str(fk_name)))
-        finally:
-            restore()
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+            editor.add_field(model, field)
+            fk_name = editor._fk_constraint_name(model, field, "_fk_%(to_table)s_%(to_column)s")
+            # The foreign key is deferred SQL: drop it after it.
+            editor.deferred_sql.append(editor._delete_fk_sql(model, str(fk_name)))
         return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
 
     return build
@@ -236,8 +220,8 @@ CASES: tuple[Case, ...] = (
     # DDL types: identity columns, NVARCHAR, TIMESTAMP(6), TIME, BOOLEAN,
     # CHECK, UUID as CHAR(32), UNIQUE, indexes, NO ACTION foreign key.
     Case(AUTHOR, "create", _ddl(Author)),
-    Case(BOOK, "create", _ddl(Book)),
-    Case(NODE, "create", _ddl(Node, foreign_keys=True)),
+    Case(BOOK, "create", _ddl(Book), (AUTHOR,)),
+    Case(NODE, "create", _ddl(Node)),
     Case(TAG, "create", _ddl(Tag)),
     # Column DEFAULT literals, one per prepare_default() rule (no CAST).
     Case(DEFAULTS, "create", _ddl(Defaults)),
@@ -247,8 +231,8 @@ CASES: tuple[Case, ...] = (
     Case(SCHEDULE, "create", _ddl(Schedule)),
     # Foreign keys to integer, CharField, UUID and key primary keys; an IP.
     Case(CODE, "create", _ddl(Code)),
-    Case(PROFILE, "create", _ddl(Profile)),
-    Case(LINK, "create", _ddl(Link)),
+    Case(PROFILE, "create", _ddl(Profile), (AUTHOR,)),
+    Case(LINK, "create", _ddl(Link), (AUTHOR, CODE, TAG, PROFILE)),
     # A composite UNIQUE key, the target of a two-column ForeignObject.
     Case(ACCOUNT, "create", _ddl(Account)),
     Case(CONTACT, "create", _ddl(Contact)),
@@ -261,18 +245,18 @@ CASES: tuple[Case, ...] = (
     Case(RATING, "create", _ddl(Rating)),
     # Fields from an abstract mixin and an abstract base: column order (#23).
     Case("ddl/create_article", "create", _ddl(Article)),
-    # Foreign keys (supports_foreign_keys is still off): each foreign key of
-    # Link as create_model() defers it, to an INTEGER, NVARCHAR, CHAR(32) (UUID)
-    # and key-to-a-key primary key, added and dropped again; AddField of a
-    # nullable ForeignKey, of one to a non-primary-key UNIQUE column (to_field),
-    # and of a OneToOneField (UNIQUE, no extra index), each foreign key dropped
-    # again. Before the alter goldens: alter_field_identity leaves
-    # TESTAPP_AUTHOR.ID a BIGINT, and Db2 for i rejects a foreign key whose
-    # column type differs from the parent key's (SQL0538).
+    # Foreign keys: each foreign key of Link (create_link added them), to an
+    # INTEGER, NVARCHAR, CHAR(32) (UUID) and key-to-a-key primary key, dropped
+    # and added again; AddField of a nullable ForeignKey, of one to a
+    # non-primary-key UNIQUE column (to_field), and of a OneToOneField (UNIQUE,
+    # no extra index), each foreign key dropped again, so no later golden
+    # changes a table a foreign key refers to (Db2 for i rejects a foreign key
+    # whose column type differs from the parent key's, SQL0538, and silently
+    # stops enforcing one whose column changes type: IBMI_NOTES).
     Case(
         "ddl/add_foreign_keys",
         "alter",
-        _add_and_drop_foreign_keys(Link),
+        _drop_and_add_foreign_keys(Link),
         (LINK, AUTHOR, CODE, TAG, PROFILE),
     ),
     Case(
@@ -383,17 +367,18 @@ CASES: tuple[Case, ...] = (
     ),
     # Identity changes: AutoField -> IntegerField drops the identity;
     # IntegerField -> AutoField adds it and restarts after MAX(); AutoField ->
-    # BigAutoField widens it.
+    # BigAutoField widens it. On Measure, which no foreign key refers to (a
+    # primary key with incoming foreign keys: own IBM i tests, migrations).
     Case(
         "ddl/alter_field_identity",
         "alter",
         _alter(
-            Author,
-            (lambda: _field(Author, "id"), lambda: _field(Author, "id", IntegerField)),
-            (lambda: _field(Author, "id", IntegerField), lambda: _field(Author, "id")),
-            (lambda: _field(Author, "id"), lambda: _field(Author, "id", BigAutoField)),
+            Measure,
+            (lambda: _field(Measure, "id"), lambda: _field(Measure, "id", IntegerField)),
+            (lambda: _field(Measure, "id", IntegerField), lambda: _field(Measure, "id")),
+            (lambda: _field(Measure, "id"), lambda: _field(Measure, "id", BigAutoField)),
         ),
-        (AUTHOR, BOOK),
+        (MEASURE,),
     ),
     # The way back: narrowing and NOT NULL are cancelled by CPA32B2 (unverifiable.toml).
     Case(

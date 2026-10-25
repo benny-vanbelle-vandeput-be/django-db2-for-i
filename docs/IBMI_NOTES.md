@@ -942,6 +942,17 @@ on creates them; dropped after each test). Input for switching the flag on.
 - **d. AlterField of a ForeignKey to a plain IntegerField** finds the foreign
   key by introspection and drops it; the values stay, and a value without a
   parent is accepted afterwards.
+- **With `supports_foreign_keys` on, every type-change path keeps the foreign
+  keys enforced** (`SYSCST` `ENABLED` `YES`, a row without a parent refused
+  with SQL0530), as migrations (`MigrationExecutor`): a primary key
+  `AutoField` -> `BigAutoField` with an incoming foreign key; the same with a
+  child whose primary key is a OneToOneField to the parent and a grandchild
+  that refers to the child (Django changes the grandchild's column too and
+  adds its foreign key again); a `to_field` target (a unique `CharField`) made
+  wider; a foreign key moved to a parent with a different key type.
+  Introspection (`get_constraints()`, `get_relations()`) reads only enforced
+  foreign keys: one in the state of fact b is marked `"enforced": False`
+  without `foreign_key`.
 
 ### DROP COLUMN with and without CASCADE (`nox -s probe -- drop_column`)
 2026-10-20, PUB400 (IBM i 7.5), the backend's connection attributes, QTEMP,

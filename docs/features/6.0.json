@@ -84,7 +84,7 @@
     "supports_explaining_query_execution": false,
     "supports_expression_defaults": false,
     "supports_expression_indexes": false,
-    "supports_foreign_keys": false,
+    "supports_foreign_keys": true,
     "supports_forward_references": false,
     "supports_frame_exclusion": false,
     "supports_frame_range_fixed_distance": false,

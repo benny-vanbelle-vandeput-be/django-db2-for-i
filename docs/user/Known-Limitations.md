@@ -217,6 +217,53 @@ so the column ends up NOT NULL without a default, as on PostgreSQL.
 - **`sqlmigrate`** has no database to check: it shows the `DEFAULT NOT NULL`
   and `DROP DEFAULT` statements without the check.
 
+## Foreign keys
+
+Migrations create a foreign key constraint for each `ForeignKey` and
+`OneToOneField`, as a separate `ALTER TABLE ... ADD CONSTRAINT` statement,
+with no `ON DELETE` clause (Db2 for i: `NO ACTION`); Django's `on_delete`
+runs in Python, as on the other databases. Violations raise `IntegrityError`
+(SQL0530, SQL0531, SQL0532).
+
+- **The column types must match exactly.** Db2 for i refuses a foreign key
+  whose column type differs from the parent key's (**SQL0538**). Migrations
+  keep them equal, also when a primary key changes type (Django drops the
+  foreign keys, changes both columns, and adds them again).
+- **A column changed outside Django can leave a foreign key not enforced.**
+  `ALTER TABLE ... ALTER COLUMN ... SET DATA TYPE` on a column of a foreign
+  key, while the foreign key exists, is accepted, but Db2 for i then no
+  longer enforces it, without any message: rows without a parent are
+  accepted. Migrations are not affected (Django drops the foreign key first).
+  To check a library:
+
+  ```sql
+  SELECT TABLE_NAME, CONSTRAINT_NAME, ENABLED, CHECK_PENDING
+  FROM QSYS2.SYSCST
+  WHERE TABLE_SCHEMA = 'MYLIB' AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+    AND (ENABLED IS NULL OR ENABLED <> 'YES' OR CHECK_PENDING = 'YES')
+  ```
+
+  Such a foreign key is not reported as one by the backend's introspection
+  (`inspectdb`, Django's schema editor). Drop it
+  (`ALTER TABLE ... DROP CONSTRAINT ...`) and add it again with the matching
+  types; Db2 for i then checks the existing rows.
+- **Nothing is deferrable, and constraint checks cannot be switched off.** A
+  row must have its parent when it is written. Django's
+  `constraint_checks_disabled()` does nothing on Db2 for i (there is no
+  per-connection switch; `CHGPFCST` would change the constraint for every
+  job).
+- **`loaddata` with fixtures that refer to rows loaded later fails** with
+  `IntegrityError` (SQL0530): the rows are inserted in fixture order, and
+  each one needs its parent already. Put the parents first (one fixture per
+  model, in dependency order, or the parent models first in the fixture), or
+  write the fixtures with `dumpdata --natural-foreign --natural-primary`,
+  which orders the objects so that dependencies come first. A fixture that
+  refers to itself (a tree) needs the rows in parent-before-child order.
+- **Foreign keys get no index of their own on Db2 for i**; Django's index on
+  the column is created as usual.
+- **Database-level `on_delete`** (`db_on_delete`, Django 6.1) is not
+  available yet (phase 6).
+
 ## Changing a column to an incompatible type
 
 Db2 for i changes a column's type in place only within the numeric types
@@ -383,7 +430,7 @@ fractional seconds (see "TimeField has no fractional seconds").
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and
-enabled one at a time: foreign key constraints in the database, bulk insert,
+enabled one at a time: bulk insert,
 returning columns, JSONField, window functions, `select_for_update`,
 `inspectdb`, and creating test schemas (tests
 run in an existing library, see [Configuration](Configuration.md#test-database-test)).

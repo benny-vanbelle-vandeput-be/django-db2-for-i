@@ -81,16 +81,26 @@ IntegrityError: [HY000] ... SQL0532 - Delete prevented by referential constraint
 - SQL0531: a parent key that rows still refer to is changed;
 - SQL0532: a parent row that rows still refer to is deleted.
 
-The backend does not create foreign key constraints yet
-(`supports_foreign_keys` is off), so these come from constraints that exist
-in the database already, for example on tables that are not managed by
-Django migrations. The driver reports SQLSTATE `HY000` instead of `23503`;
-the backend raises `IntegrityError` by SQLCODE, as for the other constraint
-violations.
+Migrations create a foreign key constraint for every `ForeignKey` and
+`OneToOneField` (with `db_constraint=True`, the default). The driver reports
+SQLSTATE `HY000` instead of `23503`; the backend raises `IntegrityError` by
+SQLCODE, as for the other constraint violations.
 
 **Fix:** save the parent row first, or delete or repoint the child rows
 first. A raw `DELETE` or a `QuerySet.update()` of a key does not run
 Django's `on_delete` handling.
+
+## SQL0538 (-538): "FOREIGN key ... not same as the parent key"
+
+**Cause:** an `ALTER TABLE ... ADD CONSTRAINT ... FOREIGN KEY` whose column
+type differs from the parent key's (for example `INTEGER` against `BIGINT`).
+Db2 for i requires exactly the same type. Django's migrations keep the types
+equal; this comes from SQL written by hand, or from a column whose type was
+changed outside a migration.
+
+**Fix:** change the column to the parent key's type (in a migration, or with
+`ALTER TABLE ... ALTER COLUMN ... SET DATA TYPE`), then add the foreign key.
+See [Known limitations](Known-Limitations.md#foreign-keys).
 
 ## IntegrityError: "Cannot add NOT NULL column ... the table has rows"
 

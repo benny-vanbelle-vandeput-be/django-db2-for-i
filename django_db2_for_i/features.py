@@ -27,10 +27,6 @@ REASON_UNTYPED_RAW_SQL_PARAMETER = (
     "a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the "
     "select list (SQL0418); cast it in the SQL"
 )
-REASON_NO_DATABASE_FOREIGN_KEYS = (
-    "supports_foreign_keys is off: Django's test tables have no foreign key "
-    "constraints to introspect (phase 4, item 10)"
-)
 REASON_CPA32B2 = (
     "Db2 for i asks CPA32B2 before a change that may lose data (DROP COLUMN, narrowing, "
     "SET NOT NULL), and the test system's reply list has no entry for it; the test passes "
@@ -151,8 +147,15 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_nullable_unique_constraints = False
     supports_partially_nullable_unique_constraints = False
     supports_sequence_reset = False
-    supports_foreign_keys = False
+    # Foreign keys (phase 4 step C): separate ALTER TABLE ... ADD CONSTRAINT
+    # statements (decision 4), violations SQL0530-0532 -> IntegrityError
+    # (drivers/base.py), the column types must match exactly (SQL0538), and a
+    # SET DATA TYPE on a foreign key's column silently stops enforcing it, so
+    # Django's drop and re-add around a type change matters (IBMI_NOTES,
+    # "Foreign keys through the schema editor"). Nothing is deferrable.
+    supports_foreign_keys = True
     can_create_inline_fk = False
+    # A foreign key gets no SQL index on Db2 for i: Django adds its own (decision 5).
     indexes_foreign_keys = False
     # CHECK constraints (phase 4 item 11): the column check of the positive
     # integer fields and model CheckConstraints. A violation is SQL0545 with
@@ -233,9 +236,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "queries.test_query.TestQueryNoModel.test_rawsql_annotation",
         },
         # Expects the foreign keys of its models; get_relations() finds none.
-        REASON_NO_DATABASE_FOREIGN_KEYS: {
-            "introspection.tests.IntrospectionTests.test_get_relations",
-        },
         # DROP COLUMN, a narrowing ALTER COLUMN or SET NOT NULL on PUB400.
         # test_alter_auto_field_to_integer_field and
         # test_alter_implicit_id_to_explicit narrow BIGINT to INTEGER only from
