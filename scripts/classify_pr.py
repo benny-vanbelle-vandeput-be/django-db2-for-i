@@ -12,8 +12,9 @@ Every file gets one of three classes; the pull request gets the most demanding:
   (``django_commit`` of a corpus manifest; ``vendor/`` itself is not in git) or
   the supported Django versions (``DJANGO_PYTHONS`` in noxfile.py, the
   dependencies in pyproject.toml), and the IBM i gate itself
-  (``.github/workflows/ibmi-gate.yml``, ``scripts/ibmi_gate.py``; the comment
-  names them for the maintainer's review). Label ``needs-full-tier``.
+  (``.github/workflows/ibmi-gate.yml``, ``scripts/ibmi_gate.py`` and this
+  script, which decides the gate's verdict; the comment names them for the
+  maintainer's review). Label ``needs-full-tier``.
 - **SQL-affecting**: any other backend code, a golden without a verification
   stamp, or corpus entries without one (new or changed SQL). Label ``run-ibmi``.
 - **docs/tests only**: the paths listed in ``DOCS_PATHS`` and
@@ -31,9 +32,10 @@ no new IBM i run when it only adds verification stamps and files generated from
 them, when its own files are docs/tests that need no label and are no goldens or
 corpus entries (a stamp is only trusted from the run itself; e.g. a renamed
 changelog fragment), or when it is a rebase whose own changes are identical
-(``git range-diff``) and whose new base commits are docs/tests only or change
-only the IBM i gate (reviewed in their own pull request, it runs nowhere on
-IBM i). Otherwise the labels apply again.
+(``git range-diff``; a commit with only the run's verification stamps may come
+along) and whose new base commits are docs/tests only or change only the IBM
+i gate (reviewed in their own pull request, it runs nowhere on IBM i).
+Otherwise the labels apply again.
 
 In CI the previous head is not the push's ``before`` but the head the last
 *completed* classification handled: the PR comment's marker names it
@@ -82,6 +84,8 @@ FULL_TIER_PATHS = {
 GATE_PATHS = {
     ".github/workflows/ibmi-gate.yml": "the IBM i gate (the maintainer reviews it)",
     "scripts/ibmi_gate.py": "the IBM i gate (the maintainer reviews it)",
+    # It decides the gate's verdict (classification and push exceptions).
+    "scripts/classify_pr.py": "the IBM i gate's classification (the maintainer reviews it)",
 }
 # The environment of every IBM i run: the image with the ODBC driver.
 ENVIRONMENT_PATHS = {
@@ -140,7 +144,6 @@ DOCS_PATHS = {
     "scripts/assemble_changelog.py": "offline tooling",
     "scripts/build_corpus.py": "offline tooling",
     "scripts/changelog_section.py": "offline tooling",
-    "scripts/classify_pr.py": "offline tooling",
     "scripts/features.py": "offline tooling",
     "scripts/update_test_status.py": "offline tooling",
     "scripts/verify_release_tag.py": "offline tooling",
@@ -181,7 +184,7 @@ GENERATED = (
 )
 # The manifest keys a capture on another level or day changes.
 STAMP_KEYS = {"captured", "level"}
-RANGE_DIFF_LINE = re.compile(r"^\s*(?:\d+|-):\s+\S+\s+(?P<mark>[=!<>])\s+(?:\d+|-):")
+RANGE_DIFF_LINE = re.compile(r"^\s*(?:\d+|-):\s+\S+\s+(?P<mark>[=!<>])\s+(?:\d+|-):\s+(?P<new>\S+)")
 
 Reader = Callable[[str], bytes | None]
 
@@ -423,10 +426,20 @@ def docs_only(changes: Iterable[Change], old: Reader, new: Reader) -> bool:
     )
 
 
-def range_diff_identical(output: str) -> bool:
-    """``git range-diff`` output in which every commit pair is marked ``=``."""
-    marks = [m["mark"] for line in output.splitlines() if (m := RANGE_DIFF_LINE.match(line))]
-    return bool(marks) and all(mark == "=" for mark in marks)
+def range_diff_identical(output: str, extra_allowed: Callable[[str], bool] | None = None) -> bool:
+    """``git range-diff`` output in which every commit pair is marked ``=``;
+    a commit only on the new side (``>``) is allowed if ``extra_allowed(sha)``
+    (the run's verification stamps, committed before a rebase)."""
+    lines = [m for line in output.splitlines() if (m := RANGE_DIFF_LINE.match(line))]
+    return bool(lines) and all(
+        m["mark"] == "=" or (m["mark"] == ">" and extra_allowed and extra_allowed(m["new"]))
+        for m in lines
+    )
+
+
+def stamps_commit(sha: str) -> bool:
+    """A commit with only verification stamps and files generated from them."""
+    return stamps_only(changes_between(f"{sha}^", sha), reader(f"{sha}^"), reader(sha))
 
 
 # --- Git ------------------------------------------------------------------------------
@@ -475,10 +488,10 @@ def check_push(before: str, head: str, base: str) -> PushCheck:
         git("merge-base", before, base).strip(),
         git("merge-base", head, base).strip(),
     )
-    if not range_diff_identical(
-        git("range-diff", "--no-color", f"{old_base}..{before}", f"{new_base}..{head}")
-    ):
+    diff = git("range-diff", "--no-color", f"{old_base}..{before}", f"{new_base}..{head}")
+    if not range_diff_identical(diff, extra_allowed=stamps_commit):
         return PushCheck(True, "a rewrite whose own changes differ (git range-diff)")
+    stamps = "" if range_diff_identical(diff) else " plus the run's verification stamps"
     main = classify_refs(old_base, new_base)
     # The gate's files are the strictest class for the maintainer's review in
     # their own pull request; once merged they change neither the SQL nor the
@@ -490,7 +503,7 @@ def check_push(before: str, head: str, base: str) -> PushCheck:
     onto = "docs/tests-only commits"
     if any(f.path in GATE_PATHS for f in main.findings):
         onto += " and IBM i gate changes"
-    return PushCheck(False, f"a rebase with identical changes (git range-diff) onto {onto}")
+    return PushCheck(False, f"a rebase with identical changes (git range-diff){stamps} onto {onto}")
 
 
 # --- Output ---------------------------------------------------------------------------

@@ -349,8 +349,10 @@ made when no other PRs are open.
   starts with the marker `<!-- ibmi-run sha=<full sha> tier=targeted|full -->`
   (`full` for the full tier); only markers by the machine account or the
   maintainer count, and the maintainer may waive a commit with
-  `<!-- ibmi-run sha=<full sha> waived -->`. Changes to the gate's two files are
-  "needs full tier", and the PR comment names them for the maintainer's review.
+  `<!-- ibmi-run sha=<full sha> waived -->`. Changes to the gate's files
+  (`ibmi-gate.yml`, `scripts/ibmi_gate.py`, and `scripts/classify_pr.py`, which decides
+  the verdict) are "needs full tier", and the PR comment names them for the
+  maintainer's review.
   `ibmi-gate` is a required check on `main`. The maintainer (only) can re-evaluate one
   PR with the workflow's `workflow_dispatch` (input: the PR number; it runs only from
   `main`); Claude never triggers it (`.claude/settings.json` denies it).
@@ -367,7 +369,8 @@ made when no other PRs are open.
   - a conflict-free rebase whose own changes are identical (`git range-diff`) onto new
     `main` commits that the classification marks as docs/tests only, or that change
     only the IBM i gate's files (strictest class in their own PR, for the maintainer's
-    review; they run nowhere on IBM i).
+    review; they run nowhere on IBM i). The rebase may also carry the run's
+    verification stamps commit (the first exception) along.
 - Before review, and whenever a PR branch is behind `main`, Claude rebases it
   onto `main` and pushes it itself (`git push --force-with-lease`, PR branches
   only), so every PR is up to date and its commits stay signed (whether the
