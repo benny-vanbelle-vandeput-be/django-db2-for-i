@@ -1,0 +1,93 @@
+# The IBM i gate: the commit status "ibmi-gate" on a pull request's head
+# (scripts/ibmi_gate.py). Red while the classification needs an IBM i run and
+# no posted run result (a comment with the ibmi-run marker, by the machine
+# account or the maintainer) covers the current content; green otherwise.
+# Labels can be missing; this status cannot (CLAUDE.md, "Git workflow").
+#
+# pull_request_target and issue_comment both run THIS file and the scripts
+# from main, never from the pull request: the pull request is only data. Its
+# commits are fetched and read with git (file list, diff, range-diff); no
+# code from the pull request branch is checked out or executed. A posted or
+# edited comment re-evaluates the gate, so a run result turns it green.
+#
+# Rollout: not a required check at first; the maintainer then adds the
+# context "ibmi-gate" (exactly this name) as a required status check.
+name: ibmi-gate
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  statuses: write
+
+concurrency:
+  group: ibmi-gate-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    if: github.event_name == 'pull_request_target' || github.event.issue.pull_request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number || github.event.issue.number }}
+      CONTEXT: ibmi-gate
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      # main's files only: the default branch, no credentials kept.
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Pull request data
+        run: |
+          gh api "repos/$REPO/pulls/$PR" > pr.json
+          echo "HEAD_SHA=$(jq -r .head.sha pr.json)" >> "$GITHUB_ENV"
+          echo "BASE_REF=$(jq -r .base.ref pr.json)" >> "$GITHUB_ENV"
+          gh api --paginate "repos/$REPO/issues/$PR/comments" --jq '.[]' | jq -s . > comments.json
+
+      - name: Pending
+        run: |
+          gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=pending -f context="$CONTEXT" \
+            -f description="checking the IBM i runs" -f target_url="$RUN_URL" > /dev/null
+
+      # Objects only (no checkout): the head, the base and every commit a run
+      # result names. A commit that cannot be fetched counts as not covered.
+      - name: Fetch the commits
+        run: |
+          git fetch --quiet --no-tags origin "$BASE_REF" "+refs/pull/$PR/head:refs/remotes/pr/head"
+          for sha in $(jq -r '.[].body // "" | split("\n")[0] | capture("^<!-- ibmi-run sha=(?<s>[0-9a-f]{40}) ").s // empty' comments.json | sort -u); do
+            git fetch --quiet --no-tags origin "$sha" || true
+          done
+
+      - name: Decide
+        run: |
+          python3 scripts/ibmi_gate.py --base "origin/$BASE_REF" --head "$HEAD_SHA" \
+            --comments comments.json > verdict.json
+          cat verdict.json
+          {
+            echo "### ibmi-gate: $(jq -r .state verdict.json)"
+            jq -r .description verdict.json
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Status
+        run: |
+          gh api "repos/$REPO/statuses/$HEAD_SHA" -f state="$(jq -r .state verdict.json)" \
+            -f context="$CONTEXT" -f description="$(jq -r .description verdict.json)" \
+            -f target_url="$RUN_URL" > /dev/null
+
+      - name: Status on error
+        if: failure()
+        run: |
+          gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=error -f context="$CONTEXT" \
+            -f description="the gate itself failed; rerun it" -f target_url="$RUN_URL" > /dev/null || true

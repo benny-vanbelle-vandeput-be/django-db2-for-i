@@ -11,7 +11,9 @@ Every file gets one of three classes; the pull request gets the most demanding:
   ``base.py``, ``creation.py``, the capabilities, the pinned Django commit
   (``django_commit`` of a corpus manifest; ``vendor/`` itself is not in git) or
   the supported Django versions (``DJANGO_PYTHONS`` in noxfile.py, the
-  dependencies in pyproject.toml). Label ``needs-full-tier``.
+  dependencies in pyproject.toml), and the IBM i gate itself
+  (``.github/workflows/ibmi-gate.yml``, ``scripts/ibmi_gate.py``; the comment
+  names them for the maintainer's review). Label ``needs-full-tier``.
 - **SQL-affecting**: any other backend code, a golden without a verification
   stamp, or corpus entries without one (new or changed SQL). Label ``run-ibmi``.
 - **docs/tests only**: the paths listed in ``DOCS_PATHS`` and
@@ -72,6 +74,13 @@ FULL_TIER_PATHS = {
     "django_db2_for_i/base.py": "the connection (base.py)",
     "django_db2_for_i/creation.py": "the test database setup (creation.py)",
     "django_db2_for_i/capabilities.py": "the server capabilities",
+}
+# The IBM i gate (ibmi-gate.yml runs main's copy, never the pull request's):
+# the strictest class, and the comment names them, so the maintainer reviews
+# every change to them.
+GATE_PATHS = {
+    ".github/workflows/ibmi-gate.yml": "the IBM i gate (the maintainer reviews it)",
+    "scripts/ibmi_gate.py": "the IBM i gate (the maintainer reviews it)",
 }
 # The environment of every IBM i run: the image with the ODBC driver.
 ENVIRONMENT_PATHS = {
@@ -293,6 +302,8 @@ def corpus_entries(data: bytes | None) -> list[dict]:
 def judge(change: Change, old: Reader, new: Reader) -> Finding:
     path, deleted = change.path, change.status == "D"
     before, after = _text(old(path)), _text(new(path))
+    if path in GATE_PATHS:
+        return Finding(path, FULL, GATE_PATHS[path])
     if prefix := _under(path, FULL_TIER_PATHS):
         return Finding(path, FULL, FULL_TIER_PATHS[prefix])
     if path == f"{BACKEND}__init__.py" and only_version_changed(before, after):
@@ -525,6 +536,12 @@ def as_markdown(result: Classification, push: PushCheck | None, head_sha: str | 
         f"Labels: {labels}",
     ]
     lines.append(f"IBM i run needed: **{run_verdict(result, push)}**.")
+    gate = [f"`{f.path}`" for f in result.findings if f.path in GATE_PATHS]
+    if gate:
+        lines += [
+            "",
+            f"**Changes the IBM i gate ({', '.join(gate)}): the maintainer reviews these files.**",
+        ]
     lines += ["", "| File | Class | Why |", "|---|---|---|"]
     lines += [
         f"| `{f.path}` | {f.cls} | {f.reason} |"

@@ -341,6 +341,17 @@ made when no other PRs are open.
   other PUB400 job, posts the result on the PR (the SHA it ran on, the counts) and only
   then removes the label; the run must be on the PR's **latest** commit. The maintainer
   does not merge a PR that carries either label. Nothing in CI reacts to the labels.
+- **The IBM i gate (`ibmi-gate`)**: a commit status on the PR's head, set by
+  `.github/workflows/ibmi-gate.yml` (`scripts/ibmi_gate.py`, always main's copy:
+  `pull_request_target` and `issue_comment`; the PR is only data, its code never runs).
+  Red while the classification needs an IBM i run and no posted result covers the
+  current content, by the same exceptions as below. Every run result comment
+  starts with the marker `<!-- ibmi-run sha=<full sha> tier=targeted|full -->`
+  (`full` for the full tier); only markers by the machine account or the
+  maintainer count, and the maintainer may waive a commit with
+  `<!-- ibmi-run sha=<full sha> waived -->`. Changes to the gate's two files are
+  "needs full tier", and the PR comment names them for the maintainer's review.
+  Not a required check at first; the maintainer then requires `ibmi-gate`.
 - **A later push puts the labels back** (CI adds them again), with three exceptions that
   need no new run:
   - a push that only contains the verification stamps written by the run

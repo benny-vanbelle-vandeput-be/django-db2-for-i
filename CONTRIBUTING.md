@@ -108,6 +108,11 @@ summary.
 - The labels are removed only after the run on the pull request's latest
   commit has passed and its result (the commit, the counts) is posted on the
   pull request. A pull request with either label is not merged.
+- The status `ibmi-gate` checks the same independently of the labels: it is
+  red while an IBM i run is needed and no posted result covers the pull
+  request's current content. A result comment starts with
+  `<!-- ibmi-run sha=<full sha> tier=targeted|full -->` and counts only from
+  the machine account or the maintainer (`scripts/ibmi_gate.py`).
 - A later push brings the labels back, except a push that only adds the
   verification stamps written by the run (and files generated from them), a
   push whose own files are docs/tests that do not run on IBM i (such as a
