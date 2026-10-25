@@ -183,6 +183,10 @@ JOURNAL_REQUIRED_HINT = (
 _SQLCODE_ERRORS: dict[int, tuple[type[Error], str | None]] = {
     -7008: (OperationalError, JOURNAL_REQUIRED_HINT),  # object not valid for operation
     -545: (IntegrityError, None),  # CHECK constraint violated (reported as HY000)
+    -544: (IntegrityError, None),  # CHECK constraint not added: existing rows violate it (HY000)
+    -530: (IntegrityError, None),  # FOREIGN KEY: child row without a parent row (HY000)
+    -531: (IntegrityError, None),  # FOREIGN KEY: update of a referenced parent key (HY000)
+    -532: (IntegrityError, None),  # FOREIGN KEY: delete of a referenced parent row (HY000)
 }
 
 # SQLSTATE class (first two characters) -> exception class.

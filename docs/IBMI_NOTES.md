@@ -804,8 +804,9 @@ connection, through the PUB400 lock, all dropped at the end (checked: no
   | update another column of a referenced parent | (works) | |
 
   As SQL0545 (CHECK), they arrive with `HY000`, not `23503`, so the
-  SQLSTATE class mapping misses them; the driver layer must map SQLCODE
-  -530 / -531 / -532 to IntegrityError (#96). `SYSREFCST` records
+  SQLSTATE class mapping misses them; the driver layer maps SQLCODE
+  -530 / -531 / -532 to IntegrityError (#96; own IBM i test
+  `tests/pub400/test_foreign_keys.py`). `SYSREFCST` records
   `UPDATE_RULE` and `DELETE_RULE` `NO ACTION` and the parent's primary key as
   `UNIQUE_CONSTRAINT_NAME`.
 - **No visible index for a foreign key:** `SYSINDEXES` lists nothing for the
@@ -1053,7 +1054,8 @@ schema editor writes, in autocommit mode and in a transaction (rolled back):
   (that needs approval); it gave the same SQL7008 for a transaction in
   probe `w01_commitment` ("Commitment control on an unjournaled table").
 - Adding a CHECK that a row already violates fails with `SQL0544 - CHECK
-  constraint ... cannot be added` (SQLSTATE `HY000`, DatabaseError), and the
+  constraint ... cannot be added` (SQLSTATE `HY000`; the driver layer maps
+  SQLCODE -544 to IntegrityError, as PostgreSQL reports such a check), and the
   table is unchanged (pub400 test `test_positive_field_to_integer_and_back`,
   journaled library).
 

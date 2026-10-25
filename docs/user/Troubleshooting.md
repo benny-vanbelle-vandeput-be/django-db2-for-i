@@ -51,6 +51,47 @@ violations (duplicate key SQL0803, NOT NULL SQL0407).
 **Fix:** correct the value; validate the model (`full_clean()`) to catch it
 before saving.
 
+## SQL0544 (-544): "CHECK constraint ... cannot be added"
+
+```
+IntegrityError: [HY000] ... SQL0544 - CHECK constraint ... cannot be added. (-544)
+```
+
+**Cause:** a migration adds a CHECK constraint (for example `AlterField` to
+a `PositiveIntegerField`, or `AddConstraint` with a `CheckConstraint`) that
+rows already in the table violate. The table is left unchanged.
+
+The driver reports SQLSTATE `HY000`; the backend raises `IntegrityError` by
+SQLCODE.
+
+**Fix:** correct or remove the violating rows first, for example in a data
+migration before the one that adds the constraint.
+
+## SQL0530, SQL0531, SQL0532: "... referential constraint ..."
+
+```
+IntegrityError: [HY000] ... SQL0530 - Operation not allowed by referential constraint ... (-530)
+IntegrityError: [HY000] ... SQL0531 - Update prevented by referential constraint ... (-531)
+IntegrityError: [HY000] ... SQL0532 - Delete prevented by referential constraint ... (-532)
+```
+
+**Cause:** a foreign key constraint in the database is violated:
+
+- SQL0530: a row is inserted or updated with a key that has no parent row;
+- SQL0531: a parent key that rows still refer to is changed;
+- SQL0532: a parent row that rows still refer to is deleted.
+
+The backend does not create foreign key constraints yet
+(`supports_foreign_keys` is off), so these come from constraints that exist
+in the database already, for example on tables that are not managed by
+Django migrations. The driver reports SQLSTATE `HY000` instead of `23503`;
+the backend raises `IntegrityError` by SQLCODE, as for the other constraint
+violations.
+
+**Fix:** save the parent row first, or delete or repoint the child rows
+first. A raw `DELETE` or a `QuerySet.update()` of a key does not run
+Django's `on_delete` handling.
+
 ## ALTER TABLE cancelled (CPA32B2, HY008)
 
 ```
