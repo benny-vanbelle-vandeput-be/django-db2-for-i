@@ -162,7 +162,7 @@ def test_the_backend_commit_comes_from_the_host_when_given(monkeypatch) -> None:
     assert runner.backend_commit() == f"read {runner.ROOT.name}"
     script = (SCRIPTS / "pub400.sh").read_text()
     assert "commit=$(git log -1 --format='%h %cs'" in script
-    assert 'docker compose run --rm -e DB2I_BACKEND_COMMIT="$commit"' in script
+    assert 'docker compose run --rm --name "$container" -e DB2I_BACKEND_COMMIT="$commit"' in script
 
 
 def test_scrubber_removes_the_password() -> None:

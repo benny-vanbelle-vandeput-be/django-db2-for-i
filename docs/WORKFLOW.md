@@ -218,6 +218,14 @@ releases; `bin/release-prepare` only prints steps 3 and 4.
 - **"PUB400 busy: <holder>"**: another job holds the lock; wait with
   `--wait`. The OS releases the lock when its process dies, so a lock is
   never stale: `python3 scripts/pub400_lock.py --status` shows the holder.
+- **A stopped PUB400 run** (Ctrl-C, a stopped task, SIGTERM or SIGHUP): the
+  lock stops the run's container (`docker stop`, then `docker kill`) before
+  it releases the lock, so no second job starts while the old connection is
+  still open. A SIGKILL can't be caught; it leaves the `db2i-pub400-<pid>`
+  container running, and the next run then stops with "PUB400 busy: a PUB400
+  container from an earlier run still runs". Stop that container, then run
+  `bin/ibmi-cleanup` for the tables it left behind. An exited container of an
+  earlier run is removed before a new run starts.
 - **An unverified golden or corpus entry** (`bin/check` exit 3, the gate):
   run `bin/verify`, or add the `run-ibmi` label to the pull request.
 - **"no .env in this checkout"** in a worktree: link it (topic `branch`),
