@@ -3,7 +3,7 @@
 -- profile: 7.5
 -- depends: ddl/create_schedule, ddl/create_tag
 -- params: [[], [], [], []]
--- verified: unverified
+-- verified: IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.1.2, 2026-10-24
 ALTER TABLE "TESTAPP_SCHEDULE" ADD COLUMN "TAG_ID" NVARCHAR(50);
 ALTER TABLE "TESTAPP_SCHEDULE" ADD CONSTRAINT "TESTAPP_SCHEDULE_TAG_ID_EB229223_FK_TESTAPP_TAG_LABEL" FOREIGN KEY ("TAG_ID") REFERENCES "TESTAPP_TAG" ("LABEL");
 CREATE INDEX "TESTAPP_SCHEDULE_TAG_ID_EB229223" ON "TESTAPP_SCHEDULE" ("TAG_ID");
