@@ -200,6 +200,10 @@ def main(argv: list[str]) -> int:
         if missing:
             print(f"error: no description in docs/features.toml for: {', '.join(missing)}")
             return 1
+        errors = classification_errors(values, descriptions)
+        if errors:
+            print("error: docs/features.toml: " + "; ".join(errors))
+            return 1
         OUTPUT.write_text(render(values, descriptions))
         print(f"wrote {OUTPUT.relative_to(ROOT)}")
         return 0

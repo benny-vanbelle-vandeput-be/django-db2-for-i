@@ -32,6 +32,13 @@ def test_every_enabled_off_or_planned_flag_has_a_description() -> None:
     assert features.missing_descriptions(features.load_values(), features.load_descriptions()) == []
 
 
+def test_every_flag_that_is_off_is_off_planned_or_not_applicable() -> None:
+    """No flag is left "not yet evaluated", and none is in two groups."""
+    assert (
+        features.classification_errors(features.load_values(), features.load_descriptions()) == []
+    )
+
+
 def test_the_page_is_up_to_date() -> None:
     expected = features.render(features.load_values(), features.load_descriptions())
     assert features.OUTPUT.read_text() == expected, "run: nox -s features"
