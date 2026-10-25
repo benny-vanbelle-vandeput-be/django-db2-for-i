@@ -61,6 +61,30 @@ def test_cells_and_groups() -> None:
     assert features.missing_descriptions(values, {"flags": info}) == ["a", "b", "c"]
 
 
+def test_not_applicable_group_and_classification_errors() -> None:
+    values = {
+        "5.2": {"a": True},
+        "6.1": {"a": False, "b": False, "c": False, "d": False, "e": False},
+    }
+    info = {
+        "a": {"description": "x"},
+        "b": {"description": "x", "not_applicable": "PostgreSQL only"},
+        "c": {"description": "x", "off": "reason"},
+        "d": {"description": "x", "off": "reason", "planned": "phase 5"},
+    }
+    assert features.group_of("b", values, info["b"]) == "not_applicable"
+    assert features.cell("b", values["6.1"], info["b"]) == features.OFF
+    assert features.classification_errors(values, {"flags": info}) == [
+        "d: off, marked off and planned",
+        "e: off, but not off / planned / not_applicable",
+    ]
+    info["a"]["planned"] = "phase 4"
+    assert features.classification_errors(values, {"flags": info})[0] == "a: on, but marked planned"
+    page = features.render(values, {"flags": info})
+    assert "## Not applicable (1)" in page
+    assert f"| `b` | x | {features.MISSING} | {features.OFF} | PostgreSQL only |" in page
+
+
 def test_development_versions_are_supported_versions() -> None:
     descriptions = features.load_descriptions()
     assert set(descriptions.get("development", [])) <= set(features.load_values())

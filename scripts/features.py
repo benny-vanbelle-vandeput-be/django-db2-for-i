@@ -9,8 +9,10 @@ the value the backend reports under the offline capability profile (no IBM i,
 no connection) into docs/features/<django-series>.json. The files are
 committed, so ``render`` and the offline test work in any single Django
 environment. ``render`` groups the flags (enabled; intentionally off, with the
-reason; planned, with the phase; not yet evaluated) and takes each flag's
-one-line description from docs/features.toml.
+reason; planned, with the phase; not applicable, with the database it belongs
+to; not yet evaluated) and takes each flag's one-line description from
+docs/features.toml. A flag that is off in every supported Django version must
+be in exactly one of the groups off / planned / not applicable (offline test).
 """
 
 from __future__ import annotations
@@ -31,8 +33,18 @@ GROUPS = [
     ("enabled", "Enabled", "On in at least one supported Django version."),
     ("off", "Intentionally off", "Off on purpose, with the reason."),
     ("planned", "Planned", "Off for now; planned for the phase shown."),
+    (
+        "not_applicable",
+        "Not applicable",
+        "Off: the flag describes another database's behaviour or a feature of its driver.",
+    ),
     ("unevaluated", "Not yet evaluated", "Off: Django's default or not looked at yet."),
 ]
+
+
+# The keys that put a flag that is off everywhere into a group.
+CLASSIFICATIONS = ("off", "planned", "not_applicable")
+EXTRA_COLUMN = {"off": "Reason", "planned": "Phase", "not_applicable": "Why"}
 
 
 def _version_key(version: str) -> tuple[int, ...]:
@@ -89,6 +101,8 @@ def group_of(name: str, values: dict[str, dict[str, bool]], info: dict) -> str:
         return "off"
     if info.get("planned"):
         return "planned"
+    if info.get("not_applicable"):
+        return "not_applicable"
     return "unevaluated"
 
 
@@ -101,7 +115,7 @@ def cell(name: str, flags: dict[str, bool], info: dict) -> str:
 
 
 def missing_descriptions(values: dict, descriptions: dict) -> list[str]:
-    """Flags that are on, intentionally off or planned but have no description."""
+    """Flags that are on, intentionally off, planned or not applicable but have no description."""
     entries = descriptions.get("flags", {})
     names = {name for flags in values.values() for name in flags}
     return sorted(
@@ -110,6 +124,26 @@ def missing_descriptions(values: dict, descriptions: dict) -> list[str]:
         if group_of(name, values, entries.get(name, {})) != "unevaluated"
         and not entries.get(name, {}).get("description")
     )
+
+
+def classification_errors(values: dict, descriptions: dict) -> list[str]:
+    """A flag off in every version is in exactly one of off / planned / not
+    applicable; a flag that is on in some version is in none of them."""
+    entries = descriptions.get("flags", {})
+    names = sorted({name for flags in values.values() for name in flags})
+    errors = []
+    for name in names:
+        keys = [key for key in CLASSIFICATIONS if entries.get(name, {}).get(key)]
+        if any(flags.get(name) for flags in values.values()):
+            if keys:
+                errors.append(f"{name}: on, but marked {' and '.join(keys)}")
+        elif len(keys) != 1:
+            errors.append(
+                f"{name}: off, marked {' and '.join(keys)}"
+                if keys
+                else f"{name}: off, but not off / planned / not_applicable"
+            )
+    return errors
 
 
 def render(values: dict | None = None, descriptions: dict | None = None) -> str:
@@ -140,7 +174,7 @@ def render(values: dict | None = None, descriptions: dict | None = None) -> str:
         rows = [name for name in names if group_of(name, values, entries.get(name, {})) == key]
         if not rows:
             continue
-        extra = {"off": "Reason", "planned": "Phase"}.get(key)
+        extra = EXTRA_COLUMN.get(key)
         lines += ["", f"## {title} ({len(rows)})", "", note, ""]
         lines.append(
             "| Flag | Description | " + " | ".join(headers) + (f" | {extra} |" if extra else " |")
@@ -151,7 +185,7 @@ def render(values: dict | None = None, descriptions: dict | None = None) -> str:
             cells = [cell(name, values[v], info) for v in versions]
             row = [f"`{name}`", info.get("description", ""), *cells]
             if extra:
-                row.append(info.get("off" if key == "off" else "planned", ""))
+                row.append(info.get(key, ""))
             lines.append("| " + " | ".join(row) + " |")
     return "\n".join(lines) + "\n"
 
