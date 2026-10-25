@@ -562,8 +562,10 @@ only its own job and uses two connections, strictly one after the other.
 - QAQQINI: `CRTDUPOBJ` of `QSYS/QAQQINI` is not allowed for our profile
   (CPF2130); `CALL QSYS2.OVERRIDE_QAQQINI(1, '', '')` makes a job-level copy
   in QTEMP without any library (`OVERRIDE_QAQQINI(3, '', '')` removes it).
-  None of its 49 options controls inquiry messages (only `MESSAGES_DEBUG`
-  mentions messages).
+  None of its 49 rows controls inquiry messages (only `MESSAGES_DEBUG`
+  mentions messages). **Corrected 2026-10-25:** the copy only lists rows
+  that are set; IBM documents the option `SUPPRESS_INQUIRY_MESSAGES`, and it
+  works for our profile (next section).
 - A mistake in the first `probe_inquiry` run: the original value was read
   with a wrong column name, so the reset did not run and that server job
   disconnected with `*SYSRPYL`. Afterwards no `QUSER` server job had
@@ -582,6 +584,85 @@ value explicitly at close either way.
 and the error message for a cancelled ALTER TABLE (`inquiry.py`). DROP COLUMN
 with the option stays an expected failure on PUB400 ("no CPA32B2 entry in the
 system reply list") until a dedicated IBM i with the entry is available.
+
+### CPA32B2 suppressed per job: QAQQINI `SUPPRESS_INQUIRY_MESSAGES` (`probe -- qaqqini_inquiry`)
+2026-10-25, PUB400 (IBM i 7.5), two runs, QTEMP and the probe's own job
+only (result: `probes/results/qaqqini_inquiry.json`).
+
+**IBM's documentation:**
+- QAQQINI query options table, 7.5 and 7.6 ("Specifies that certain inquiry
+  messages will not be issued"):
+  - `*DEFAULT` = `*NO`;
+  - `*YES`: "System inquiry message CPA32B2 will not be issued when altering
+    a table";
+  - `*NO`: "No system inquiry messages will be suppressed."
+
+  Sources: https://www.ibm.com/docs/en/ssw_ibm_i_75/rzajq/qryopt.htm and
+  https://www.ibm.com/docs/en/ssw_ibm_i_76/rzajq/qryopt.htm.
+- IBM support "Add SUPPRESS_INQUIRY_MESSAGES"
+  (https://www.ibm.com/support/pages/add-suppressinquirymessages): it "has
+  been added to avoid getting the CPA32B2 inquiry message from an Alter
+  table statement".
+- Availability (Db2 for i DBE Enhancements,
+  https://www.ibm.com/support/pages/db2-i-database-engineer-dbe-enhancements):
+  - the option: 7.5 and 7.6 base, 7.4 SF99704 level 4;
+  - `OVERRIDE_QAQQINI`: 7.5 and 7.6 base, 7.4 SF99704 level 7.
+- IBM uses the option itself. IBM i 7.6 TR1, ACS Schemas
+  (https://www.ibm.com/support/pages/ibm-i-76-tr1-enhancements): its Table
+  Definition dialog uses it "when dropping columns (instead of requiring
+  authority to the CHGRPLYE command)".
+- `QSYS2.OVERRIDE_QAQQINI`
+  (https://www.ibm.com/docs/en/i/7.5?topic=services-override-qaqqini-procedure):
+  - operation 1 creates the job's temporary QAQQINI in QTEMP, which
+    "inherits all query options that are already in place for the job";
+  - operation 2 sets one option;
+  - operation 3 discards the copy and reverts "to using the job's version of
+    the QAQQINI file".
+  - Authority: "For most QAQQINI options, none is required". `*JOBCTL` or
+    QIBM_DB_SQLADM is only needed for QUERY_TIME_LIMIT, STORAGE_LIMIT,
+    PARALLEL_DEGREE and PARALLEL_MAX_SYSTEM_CPU.
+
+**On PUB400:**
+- **Our profile:** no special authorities, group profile `*NONE`.
+  `OVERRIDE_QAQQINI(1, '', '')` and
+  `(2, 'SUPPRESS_INQUIRY_MESSAGES', '*YES')` both succeed. The row then
+  reads back as `*YES` in `QTEMP.QAQQINI`.
+- **Before the override:** neither QTEMP nor QUSRSYS has a QAQQINI, so the
+  job ran on the defaults. After it, the copy has no row other than this
+  option that is not `*DEFAULT`. So the job's other query options stay as
+  they were.
+- **Outside QTEMP:** the only new object is `QTEMP/QAQQINI *FILE`. The two
+  test libraries are unchanged (object lists compared before, during and
+  after).
+- **Baseline and with the override,** each on a one-row QTEMP table:
+
+  | Change | Without the override | With the override |
+  |---|---|---|
+  | `DROP COLUMN` | `HY008` (CPD32CE) | done (job log CPC2955) |
+  | `SET DATA TYPE` INTEGER -> SMALLINT, the value fits | `HY008` | done |
+  | `SET NOT NULL`, no NULLs | `HY008` | done |
+
+- **With the override, data that does not fit:**
+
+  | Change | Result | Rows afterwards |
+  |---|---|---|
+  | INTEGER -> SMALLINT, a value 100000 | **SQL0406** (`22018`), not changed | unchanged |
+  | `SET NOT NULL`, a NULL row | **SQL0407** (`23000`), not changed | unchanged |
+  | VARCHAR(10) -> VARCHAR(3), a value `abcdef` | **done**, warning SQL0460 only | `abcdef` is now `abc` |
+  | DECIMAL(9, 4) -> DECIMAL(9, 2), a value 1.2345 | **done**, warning SQL0460 only | `1.2345` is now `1.23` |
+
+  So the option is not a reply "only if nothing is lost":
+  - numbers that do not fit and NULLs are still refused;
+  - strings are truncated and decimals rounded silently.
+
+  This is the same CPA32B2 that a reply list entry with `RPY('I')` answers,
+  so the `inquiry_message_reply` path is assumed to behave the same. That
+  path was not measured here, because PUB400 has no such entry.
+- **After `OVERRIDE_QAQQINI(3, '', '')`:** the three changes are cancelled
+  with `HY008` again, and QTEMP has no QAQQINI.
+- **Not measured** (QTEMP has no journal): the option inside commitment
+  control (`atomic` migrations) on a journaled table, and on a reused
+  prestart job.
 
 ### Savepoints (`nox -s probe_savepoints -- --execute`)
 2026-10-17, one connection with the backend's settings (CMT=1, autocommit

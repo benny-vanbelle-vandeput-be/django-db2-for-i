@@ -500,6 +500,11 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   (rejected by the project owner: connection level is simpler and the value is
   restored at close); a QAQQINI option (none exists); rebuilding tables for
   data-losing changes (large; phase 4 only if needed).
+- **Corrected 2026-10-25:** "none exists" was wrong. Probe w08 only listed
+  the rows in the QTEMP copy. IBM documents `SUPPRESS_INQUIRY_MESSAGES`
+  (`*YES`: no CPA32B2 when altering a table), and on PUB400 it works per job
+  without special authorities (IBMI_NOTES, "CPA32B2 suppressed per job").
+  Whether the backend uses it is a separate decision.
 
 ## 2026-10-17: Open question for phase 4: table rebuild for data-losing ALTER TABLE
 - **Status:** open; decide in phase 4 from the `schema` and `migrations` test
