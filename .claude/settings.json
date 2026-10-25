@@ -14,7 +14,10 @@
       "Bash(. .env*)",
       "Bash(docker compose config*)",
       "Bash(docker compose run * env)",
-      "Bash(docker compose run * printenv*)"
+      "Bash(docker compose run * printenv*)",
+      "Bash(gh workflow run ibmi-gate*)",
+      "Bash(gh workflow run *ibmi-gate*)",
+      "Bash(gh api *ibmi-gate.yml/dispatches*)"
     ]
   }
 }

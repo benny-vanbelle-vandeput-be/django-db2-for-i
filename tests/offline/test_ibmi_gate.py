@@ -228,9 +228,20 @@ def test_the_workflow_runs_mains_files_only() -> None:
     assert "ref: ${{ github.event.repository.default_branch }}" in WORKFLOW
     assert "persist-credentials: false" in WORKFLOW
     # The pull request's commits are fetched as objects, never checked out.
-    assert "head.ref" not in WORKFLOW and "head.sha }}" not in WORKFLOW
+    assert "head.ref" not in WORKFLOW
+    # The head commit from the payload only names where an error status goes.
+    [line] = [line for line in WORKFLOW.splitlines() if "head.sha }}" in line]
+    assert line.strip() == "EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}"
     assert "git checkout" not in WORKFLOW and "git switch" not in WORKFLOW
     assert 'python3 scripts/ibmi_gate.py --base "origin/$BASE_REF"' in WORKFLOW
+
+
+def test_the_job_check_is_not_named_like_the_status() -> None:
+    """The job's check ("ibmi-gate-check") and the status it sets ("ibmi-gate",
+    the required one) have different names, and neither is the verification
+    gate (nox -s gate) of the offline workflow."""
+    assert "\n  ibmi-gate-check:\n" in WORKFLOW
+    assert "\n  gate:\n" not in WORKFLOW
 
 
 def test_the_status_context_is_the_required_check_name() -> None:
@@ -249,3 +260,65 @@ def test_gate_files_are_the_strictest_class(path) -> None:
 
 def test_other_changes_do_not_mention_the_gate() -> None:
     assert "IBM i gate" not in cp.as_markdown(classification(SQL_CHANGE), None)
+
+
+# --- workflow_dispatch: the maintainer's re-evaluation of one pull request -----------
+
+
+def test_a_dispatch_runs_only_from_main() -> None:
+    """A dispatch from another branch would run that branch's (modified) gate
+    with this token: the job refuses unless the ref is main."""
+    job_if = WORKFLOW.split("    if: >-\n", 1)[1].split("    runs-on:", 1)[0]
+    conditions = [c.strip().removeprefix("|| ") for c in job_if.strip().splitlines()]
+    assert conditions == [
+        "github.event_name == 'pull_request_target'",
+        "(github.event_name == 'issue_comment' && github.event.issue.pull_request)",
+        "(github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')",
+    ]
+
+
+def test_the_only_input_is_the_pull_request_number() -> None:
+    dispatch = WORKFLOW.split("  workflow_dispatch:\n", 1)[1].split("\npermissions:", 1)[0]
+    assert dispatch.count("description:") == 1
+    assert "      pr:\n" in dispatch and "type: number" in dispatch
+    # It selects the pull request (and its concurrency group), nothing else.
+    uses = [line.strip() for line in WORKFLOW.splitlines() if "inputs." in line]
+    assert uses == [
+        "group: ibmi-gate-${{ github.event.pull_request.number || github.event.issue.number"
+        " || inputs.pr }}",
+        "PR: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}",
+    ]
+    # The number is checked before it reaches the API.
+    assert "''|*[!0-9]*) echo \"not a pull request number: $PR\" >&2; exit 1 ;;" in WORKFLOW
+
+
+def test_no_input_reaches_the_verdict(monkeypatch) -> None:
+    """The verdict depends on the classification, the head and the comments
+    only; a waiver stays a comment by the maintainer."""
+    import argparse
+
+    seen: list[str] = []
+    original = argparse.ArgumentParser.add_argument
+
+    def record(self, *names, **kwargs):
+        seen.extend(names)
+        return original(self, *names, **kwargs)
+
+    monkeypatch.setattr(argparse.ArgumentParser, "add_argument", record)
+    with pytest.raises(SystemExit):
+        gate.main(["--help"])
+    assert [name for name in seen if name not in ("-h", "--help")] == [
+        "--base",
+        "--head",
+        "--comments",
+    ]
+    assert (
+        'python3 scripts/ibmi_gate.py --base "origin/$BASE_REF" --head "$HEAD_SHA" \\' in WORKFLOW
+    )
+    assert "--comments comments.json > verdict.json" in WORKFLOW
+
+
+def test_an_error_status_needs_no_api_call() -> None:
+    error_step = WORKFLOW.split("- name: Status on error", 1)[1]
+    assert 'sha="${HEAD_SHA:-$EVENT_HEAD_SHA}"' in error_step
+    assert 'gh api "repos/$REPO/statuses/$sha" -f state=error' in error_step

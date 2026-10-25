@@ -401,6 +401,102 @@ def test_rebase_onto_docs_commits_needs_no_new_run(repo) -> None:
     )
 
 
+def test_rebase_onto_gate_commits_needs_no_new_run(repo) -> None:
+    """The gate's files are the strictest class in their own pull request
+    (#163 needed a full run again after #161), not for a rebase over them."""
+    _git(repo, "switch", "-q", "-c", "pr")
+    before = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat: x")
+    _git(repo, "switch", "-q", "main")
+    _commit(repo, {"scripts/ibmi_gate.py": b"g = 1\n", "docs/a.md": b"b\n"}, "ci: gate")
+    _git(repo, "switch", "-q", "pr")
+    _git(repo, "rebase", "-q", "main")
+    check = cp.check_push(before, _git(repo, "rev-parse", "HEAD"), "main")
+    assert check == cp.PushCheck(
+        False,
+        "a rebase with identical changes (git range-diff) onto docs/tests-only commits "
+        "and IBM i gate changes",
+    )
+
+
+def _stamped_rebase(repo, extra: dict[str, bytes]) -> tuple[str, str]:
+    """A pull request with an unverified golden; its run, then main moves on
+    (docs only), then the PR is rebased and a commit with ``extra`` follows."""
+    _git(repo, "switch", "-q", "-c", "pr")
+    before = _commit(
+        repo,
+        {"django_db2_for_i/schema.py": b"x = 2\n", GOLDEN: golden(UNVERIFIED)},
+        "feat: x",
+    )
+    _git(repo, "switch", "-q", "main")
+    _commit(repo, {"docs/a.md": b"b\n"}, "docs: a")
+    _git(repo, "switch", "-q", "pr")
+    _git(repo, "rebase", "-q", "main")
+    head = _commit(repo, extra, "after the run")
+    return before, head
+
+
+def test_a_rebase_may_carry_the_runs_stamps(repo) -> None:
+    """#164: the run's stamps commit and a rebase onto docs-only commits, each
+    an exception on its own, also together."""
+    before, head = _stamped_rebase(repo, {GOLDEN: golden(STAMP)})
+    assert cp.check_push(before, head, "main") == cp.PushCheck(
+        False,
+        "a rebase with identical changes (git range-diff) plus the run's verification "
+        "stamps onto docs/tests-only commits",
+    )
+
+
+def test_a_rebase_with_another_extra_commit_needs_a_new_run(repo) -> None:
+    before, head = _stamped_rebase(repo, {"django_db2_for_i/schema.py": b"x = 3\n"})
+    check = cp.check_push(before, head, "main")
+    assert check == cp.PushCheck(True, "a rewrite whose own changes differ (git range-diff)")
+
+
+def test_an_extra_commit_with_stamps_and_more_needs_a_new_run(repo) -> None:
+    before, head = _stamped_rebase(repo, {GOLDEN: golden(STAMP), "docs/c.md": b"c\n"})
+    assert cp.check_push(before, head, "main").new_run_needed
+
+
+def test_range_diff_extra_commits() -> None:
+    same = "1:  1111111 = 1:  2222222 feat: x\n"
+    extra = same + "-:  ------- > 2:  3333333 test(golden): stamps\n"
+    dropped = same + "2:  4444444 < -:  ------- feat: dropped\n"
+    assert cp.range_diff_identical(same)
+    assert not cp.range_diff_identical(extra)
+    assert cp.range_diff_identical(extra, extra_allowed=lambda sha: sha == "3333333")
+    assert not cp.range_diff_identical(extra, extra_allowed=lambda sha: False)
+    assert not cp.range_diff_identical(dropped, extra_allowed=lambda sha: True)
+
+
+def test_classify_pr_is_a_gate_file() -> None:
+    """It decides the gate's verdict: the strictest class, flagged for review."""
+    result = run({"scripts/classify_pr.py": (b"a", b"b")})
+    assert (result.cls, result.labels) == (cp.FULL, [cp.FULL_TIER_LABEL])
+    assert "**Changes the IBM i gate (`scripts/classify_pr.py`)" in cp.as_markdown(result, None)
+
+
+def test_rebase_onto_gate_and_backend_commits_needs_a_new_run(repo) -> None:
+    _git(repo, "switch", "-q", "-c", "pr")
+    before = _commit(repo, {"docs/b.md": b"b\n"}, "docs: b")
+    _git(repo, "switch", "-q", "main")
+    _commit(
+        repo,
+        {".github/workflows/ibmi-gate.yml": b"on: {}\n", "django_db2_for_i/operations.py": b"y\n"},
+        "mixed",
+    )
+    _git(repo, "switch", "-q", "pr")
+    _git(repo, "rebase", "-q", "main")
+    check = cp.check_push(before, _git(repo, "rev-parse", "HEAD"), "main")
+    assert check == cp.PushCheck(
+        True, f"a rebase onto main commits that need an IBM i run ({cp.SQL})"
+    )
+
+
+def test_a_gate_file_in_the_pull_request_itself_stays_the_strictest_class() -> None:
+    result = run({"scripts/ibmi_gate.py": (b"a", b"b")})
+    assert (result.cls, result.labels) == (cp.FULL, [cp.FULL_TIER_LABEL])
+
+
 def test_rebase_onto_backend_commits_needs_a_new_run(repo) -> None:
     _git(repo, "switch", "-q", "-c", "pr")
     before = _commit(repo, {"docs/b.md": b"b\n"}, "docs: b")
