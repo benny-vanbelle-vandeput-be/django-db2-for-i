@@ -32,6 +32,13 @@ def test_every_enabled_off_or_planned_flag_has_a_description() -> None:
     assert features.missing_descriptions(features.load_values(), features.load_descriptions()) == []
 
 
+def test_every_flag_that_is_off_is_off_planned_or_not_applicable() -> None:
+    """No flag is left "not yet evaluated", and none is in two groups."""
+    assert (
+        features.classification_errors(features.load_values(), features.load_descriptions()) == []
+    )
+
+
 def test_the_page_is_up_to_date() -> None:
     expected = features.render(features.load_values(), features.load_descriptions())
     assert features.OUTPUT.read_text() == expected, "run: nox -s features"
@@ -59,6 +66,30 @@ def test_cells_and_groups() -> None:
     assert features.cell("c", values["6.1"], info["c"]) == features.PLANNED
     assert features.cell("d", values["6.1"], {}) == features.OFF
     assert features.missing_descriptions(values, {"flags": info}) == ["a", "b", "c"]
+
+
+def test_not_applicable_group_and_classification_errors() -> None:
+    values = {
+        "5.2": {"a": True},
+        "6.1": {"a": False, "b": False, "c": False, "d": False, "e": False},
+    }
+    info = {
+        "a": {"description": "x"},
+        "b": {"description": "x", "not_applicable": "PostgreSQL only"},
+        "c": {"description": "x", "off": "reason"},
+        "d": {"description": "x", "off": "reason", "planned": "phase 5"},
+    }
+    assert features.group_of("b", values, info["b"]) == "not_applicable"
+    assert features.cell("b", values["6.1"], info["b"]) == features.OFF
+    assert features.classification_errors(values, {"flags": info}) == [
+        "d: off, marked off and planned",
+        "e: off, but not off / planned / not_applicable",
+    ]
+    info["a"]["planned"] = "phase 4"
+    assert features.classification_errors(values, {"flags": info})[0] == "a: on, but marked planned"
+    page = features.render(values, {"flags": info})
+    assert "## Not applicable (1)" in page
+    assert f"| `b` | x | {features.MISSING} | {features.OFF} | PostgreSQL only |" in page
 
 
 def test_development_versions_are_supported_versions() -> None:
