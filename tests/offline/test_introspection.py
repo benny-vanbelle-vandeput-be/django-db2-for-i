@@ -34,11 +34,11 @@ def test_constraints_of_every_kind() -> None:
     constraints, _ = get_constraints(
         {
             introspection.CONSTRAINTS_SQL: [
-                ("Q_TESTAPP_BOOK_ID_00001", "PRIMARY KEY", "ID        ", 1),
-                ("TESTAPP_BOOK_AUTHOR_ID_FK", "FOREIGN KEY", "AUTHOR_ID", 1),
-                ("TESTAPP_BOOK_PAGES_CHECK", "CHECK      ", "PAGES", 0),
-                ("TESTAPP_BOOK_UNIQ", "UNIQUE", "TITLE", 1),
-                ("TESTAPP_BOOK_UNIQ", "UNIQUE", "AUTHOR_ID", 2),
+                ("Q_TESTAPP_BOOK_ID_00001", "PRIMARY KEY", "ID        ", 1, "Y"),
+                ("TESTAPP_BOOK_AUTHOR_ID_FK", "FOREIGN KEY", "AUTHOR_ID", 1, "Y"),
+                ("TESTAPP_BOOK_PAGES_CHECK", "CHECK      ", "PAGES", 0, "Y"),
+                ("TESTAPP_BOOK_UNIQ", "UNIQUE", "TITLE", 1, "Y"),
+                ("TESTAPP_BOOK_UNIQ", "UNIQUE", "AUTHOR_ID", 2, "Y"),
             ],
             introspection.FOREIGN_KEYS_SQL: [
                 ("TESTAPP_BOOK_AUTHOR_ID_FK", "TESTAPP_AUTHOR  ", "ID  "),
@@ -106,10 +106,57 @@ def test_constraints_of_every_kind() -> None:
     }
 
 
+def test_a_foreign_key_db2_no_longer_enforces_is_not_reported_as_one() -> None:
+    """Fact b (docs/IBMI_NOTES.md): after SET DATA TYPE on one of its columns
+    the foreign key stays in SYSCST (ENABLED and CHECK_PENDING empty) but is
+    not enforced. It is marked, without foreign_key: its target comes from
+    FOREIGN_KEYS_SQL, which reads enforced foreign keys only."""
+    constraints, _ = get_constraints(
+        {
+            introspection.CONSTRAINTS_SQL: [
+                ("TESTAPP_BOOK_AUTHOR_ID_FK", "FOREIGN KEY", "AUTHOR_ID", 1, "N"),
+                ("TESTAPP_BOOK_TAG_ID_FK", "FOREIGN KEY", "TAG_ID", 1, "Y"),
+            ],
+            introspection.FOREIGN_KEYS_SQL: [("TESTAPP_BOOK_TAG_ID_FK", "TESTAPP_TAG", "ID")],
+        }
+    )
+    assert constraints["testapp_book_author_id_fk"] == {
+        "columns": ["author_id"],
+        "primary_key": False,
+        "unique": False,
+        "foreign_key": None,
+        "check": False,
+        "index": False,
+        "enforced": False,
+    }
+    assert constraints["testapp_book_tag_id_fk"]["foreign_key"] == ("testapp_tag", "id")
+    assert "enforced" not in constraints["testapp_book_tag_id_fk"]
+
+
+def test_a_dead_foreign_key_without_key_columns_is_marked_too() -> None:
+    """After a change of the child's column the key columns may be gone too
+    (LEFT JOIN: no SYSKEYCST row)."""
+    constraints, _ = get_constraints(
+        {introspection.CONSTRAINTS_SQL: [("FK", "FOREIGN KEY", None, None, "N")]}
+    )
+    assert constraints["fk"]["columns"] == []
+    assert constraints["fk"]["foreign_key"] is None
+    assert constraints["fk"]["enforced"] is False
+
+
+def test_only_enforced_foreign_keys_have_a_target_or_a_relation() -> None:
+    for sql in (introspection.FOREIGN_KEYS_SQL, introspection.RELATIONS_SQL):
+        assert f"AND {introspection.ENFORCED_FK} " in sql
+    assert introspection.ENFORCED_FK == (
+        "C.ENABLED = 'YES' AND COALESCE(C.CHECK_PENDING, 'NO') <> 'YES'"
+    )
+    assert "THEN 'Y' ELSE 'N' END" in introspection.CONSTRAINTS_SQL
+
+
 def test_check_without_columns() -> None:
     # A check that references no column (LEFT JOIN: no SYSCSTCOL row).
     constraints, _ = get_constraints(
-        {introspection.CONSTRAINTS_SQL: [("TESTAPP_BOOK_TRUE", "CHECK", None, 0)]}
+        {introspection.CONSTRAINTS_SQL: [("TESTAPP_BOOK_TRUE", "CHECK", None, 0, "Y")]}
     )
     assert constraints["testapp_book_true"]["columns"] == []
     assert constraints["testapp_book_true"]["check"] is True
@@ -119,8 +166,8 @@ def test_composite_foreign_key_takes_the_first_referenced_column() -> None:
     constraints, _ = get_constraints(
         {
             introspection.CONSTRAINTS_SQL: [
-                ("FK", "FOREIGN KEY", "A", 1),
-                ("FK", "FOREIGN KEY", "B", 2),
+                ("FK", "FOREIGN KEY", "A", 1, "Y"),
+                ("FK", "FOREIGN KEY", "B", 2, "Y"),
             ],
             introspection.FOREIGN_KEYS_SQL: [("FK", "T", "X"), ("FK", "T", "Y")],
         }

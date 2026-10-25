@@ -27,14 +27,22 @@ DUPLICATES_ALLOWED = "D"
 # columns (SYSKEYCST) for primary, unique and foreign keys, the referenced
 # columns (SYSCSTCOL) for checks. Only the constraint name and the table go
 # in as parameters.
+# A foreign key Db2 for i enforces: SET DATA TYPE on one of its columns
+# while it exists leaves it in SYSCST with ENABLED and CHECK_PENDING empty,
+# and rows without a parent are then accepted (docs/IBMI_NOTES.md, "Foreign
+# keys through the schema editor", fact b). Such a foreign key is not reported
+# as one: get_constraints() marks it "enforced": False, get_relations() and
+# the foreign_key of get_constraints() leave it out.
+ENFORCED_FK = "C.ENABLED = 'YES' AND COALESCE(C.CHECK_PENDING, 'NO') <> 'YES'"
 CONSTRAINTS_SQL = (
-    "SELECT C.CONSTRAINT_NAME, C.CONSTRAINT_TYPE, K.COLUMN_NAME, K.ORDINAL_POSITION "
+    "SELECT C.CONSTRAINT_NAME, C.CONSTRAINT_TYPE, K.COLUMN_NAME, K.ORDINAL_POSITION, "
+    f"CASE WHEN C.CONSTRAINT_TYPE <> 'FOREIGN KEY' OR ({ENFORCED_FK}) THEN 'Y' ELSE 'N' END "
     "FROM QSYS2.SYSCST C LEFT JOIN QSYS2.SYSKEYCST K "
     "ON K.CONSTRAINT_SCHEMA = C.CONSTRAINT_SCHEMA AND K.CONSTRAINT_NAME = C.CONSTRAINT_NAME "
     "WHERE C.TABLE_SCHEMA = CURRENT SCHEMA AND C.TABLE_NAME = %s "
     "AND C.CONSTRAINT_TYPE IN ('PRIMARY KEY', 'UNIQUE', 'FOREIGN KEY') "
     "UNION ALL "
-    "SELECT C.CONSTRAINT_NAME, C.CONSTRAINT_TYPE, S.COLUMN_NAME, 0 "
+    "SELECT C.CONSTRAINT_NAME, C.CONSTRAINT_TYPE, S.COLUMN_NAME, 0, 'Y' "
     "FROM QSYS2.SYSCST C LEFT JOIN QSYS2.SYSCSTCOL S "
     "ON S.CONSTRAINT_SCHEMA = C.CONSTRAINT_SCHEMA AND S.CONSTRAINT_NAME = C.CONSTRAINT_NAME "
     "WHERE C.TABLE_SCHEMA = CURRENT SCHEMA AND C.TABLE_NAME = %s "
@@ -54,7 +62,7 @@ FOREIGN_KEYS_SQL = (
     "JOIN QSYS2.SYSKEYCST PK "
     "ON PK.CONSTRAINT_SCHEMA = P.CONSTRAINT_SCHEMA AND PK.CONSTRAINT_NAME = P.CONSTRAINT_NAME "
     "WHERE C.TABLE_SCHEMA = CURRENT SCHEMA AND C.TABLE_NAME = %s "
-    "AND C.CONSTRAINT_TYPE = 'FOREIGN KEY' "
+    f"AND C.CONSTRAINT_TYPE = 'FOREIGN KEY' AND {ENFORCED_FK} "
     "ORDER BY C.CONSTRAINT_NAME, PK.ORDINAL_POSITION"
 )
 # QSYS2.SYSREFCST.DELETE_RULE -> the name of Django's db_on_delete constant,
@@ -84,7 +92,7 @@ RELATIONS_SQL = (
     "ON PK.CONSTRAINT_SCHEMA = P.CONSTRAINT_SCHEMA AND PK.CONSTRAINT_NAME = P.CONSTRAINT_NAME "
     "AND PK.ORDINAL_POSITION = K.ORDINAL_POSITION "
     "WHERE C.TABLE_SCHEMA = CURRENT SCHEMA AND C.TABLE_NAME = %s "
-    "AND C.CONSTRAINT_TYPE = 'FOREIGN KEY' "
+    f"AND C.CONSTRAINT_TYPE = 'FOREIGN KEY' AND {ENFORCED_FK} "
     "ORDER BY C.CONSTRAINT_NAME, K.ORDINAL_POSITION"
 )
 # The SQL indexes of a table with their key columns in order. The access
@@ -239,7 +247,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         table = table_name.upper()
         constraints: dict[str, dict] = {}
         cursor.execute(CONSTRAINTS_SQL, [table, table])
-        for name, kind, column, _position in cursor.fetchall():
+        for name, kind, column, _position, enforced in cursor.fetchall():
             kind = kind.rstrip()
             entry = constraints.setdefault(
                 self.identifier_converter(name.rstrip()),
@@ -254,6 +262,8 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             )
             if column is not None:
                 entry["columns"].append(self.identifier_converter(column.rstrip()))
+            if enforced.rstrip() != "Y":
+                entry["enforced"] = False  # a foreign key Db2 for i no longer enforces
         cursor.execute(FOREIGN_KEYS_SQL, [table])
         for name, target_table, target_column in cursor.fetchall():
             entry = constraints.get(self.identifier_converter(name.rstrip()))
