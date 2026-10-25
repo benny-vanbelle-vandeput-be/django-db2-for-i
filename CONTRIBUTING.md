@@ -117,7 +117,8 @@ summary.
   verification stamps written by the run (and files generated from them), a
   push whose own files are docs/tests that do not run on IBM i (such as a
   renamed changelog fragment), and a conflict-free rebase whose own changes are identical (`git range-diff`)
-  onto docs/tests-only commits of `main`.
+  onto docs/tests-only commits of `main` (or commits that change only the IBM
+  i gate, `.github/workflows/ibmi-gate.yml` and `scripts/ibmi_gate.py`).
 - Pull requests are rebased onto `main` whenever they are behind it (the
   `main` ruleset requires the `offline` check on an up-to-date branch).
 

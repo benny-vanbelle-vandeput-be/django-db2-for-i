@@ -31,8 +31,9 @@ no new IBM i run when it only adds verification stamps and files generated from
 them, when its own files are docs/tests that need no label and are no goldens or
 corpus entries (a stamp is only trusted from the run itself; e.g. a renamed
 changelog fragment), or when it is a rebase whose own changes are identical
-(``git range-diff``) and whose new base commits are docs/tests only. Otherwise
-the labels apply again.
+(``git range-diff``) and whose new base commits are docs/tests only or change
+only the IBM i gate (reviewed in their own pull request, it runs nowhere on
+IBM i). Otherwise the labels apply again.
 
 In CI the previous head is not the push's ``before`` but the head the last
 *completed* classification handled: the PR comment's marker names it
@@ -479,11 +480,17 @@ def check_push(before: str, head: str, base: str) -> PushCheck:
     ):
         return PushCheck(True, "a rewrite whose own changes differ (git range-diff)")
     main = classify_refs(old_base, new_base)
-    if main.labels:
-        return PushCheck(True, f"a rebase onto main commits that need an IBM i run ({main.cls})")
-    return PushCheck(
-        False, "a rebase with identical changes (git range-diff) onto docs/tests-only commits"
-    )
+    # The gate's files are the strictest class for the maintainer's review in
+    # their own pull request; once merged they change neither the SQL nor the
+    # backend, so a rebase over them needs no IBM i run.
+    needing = [f for f in main.findings if f.labels and f.path not in GATE_PATHS]
+    if needing:
+        cls = max((f.cls for f in needing), key=RANK.__getitem__)
+        return PushCheck(True, f"a rebase onto main commits that need an IBM i run ({cls})")
+    onto = "docs/tests-only commits"
+    if any(f.path in GATE_PATHS for f in main.findings):
+        onto += " and IBM i gate changes"
+    return PushCheck(False, f"a rebase with identical changes (git range-diff) onto {onto}")
 
 
 # --- Output ---------------------------------------------------------------------------

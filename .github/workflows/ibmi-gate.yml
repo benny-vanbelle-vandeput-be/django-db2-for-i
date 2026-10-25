@@ -31,7 +31,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  gate:
+  # The job's check is "ibmi-gate-check"; the status it sets, "ibmi-gate", is
+  # the one the ruleset requires.
+  ibmi-gate-check:
     if: github.event_name == 'pull_request_target' || github.event.issue.pull_request
     runs-on: ubuntu-24.04
     timeout-minutes: 10

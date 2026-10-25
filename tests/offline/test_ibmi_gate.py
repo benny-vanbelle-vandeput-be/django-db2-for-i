@@ -233,6 +233,14 @@ def test_the_workflow_runs_mains_files_only() -> None:
     assert 'python3 scripts/ibmi_gate.py --base "origin/$BASE_REF"' in WORKFLOW
 
 
+def test_the_job_check_is_not_named_like_the_status() -> None:
+    """The job's check ("ibmi-gate-check") and the status it sets ("ibmi-gate",
+    the required one) have different names, and neither is the verification
+    gate (nox -s gate) of the offline workflow."""
+    assert "\n  ibmi-gate-check:\n" in WORKFLOW
+    assert "\n  gate:\n" not in WORKFLOW
+
+
 def test_the_status_context_is_the_required_check_name() -> None:
     assert gate.CONTEXT == "ibmi-gate"
     assert "CONTEXT: ibmi-gate\n" in WORKFLOW

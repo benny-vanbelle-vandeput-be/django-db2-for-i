@@ -363,7 +363,9 @@ made when no other PRs are open.
     without an IBM i run, goldens and corpus entries excluded (e.g. renaming the
     changelog fragment to the PR number);
   - a conflict-free rebase whose own changes are identical (`git range-diff`) onto new
-    `main` commits that the classification marks as docs/tests only.
+    `main` commits that the classification marks as docs/tests only, or that change
+    only the IBM i gate's files (strictest class in their own PR, for the maintainer's
+    review; they run nowhere on IBM i).
 - Before review, and whenever a PR branch is behind `main`, Claude rebases it
   onto `main` and pushes it itself (`git push --force-with-lease`, PR branches
   only), so every PR is up to date and its commits stay signed (whether the

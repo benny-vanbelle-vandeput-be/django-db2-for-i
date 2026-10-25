@@ -401,6 +401,45 @@ def test_rebase_onto_docs_commits_needs_no_new_run(repo) -> None:
     )
 
 
+def test_rebase_onto_gate_commits_needs_no_new_run(repo) -> None:
+    """The gate's files are the strictest class in their own pull request
+    (#163 needed a full run again after #161), not for a rebase over them."""
+    _git(repo, "switch", "-q", "-c", "pr")
+    before = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat: x")
+    _git(repo, "switch", "-q", "main")
+    _commit(repo, {"scripts/ibmi_gate.py": b"g = 1\n", "docs/a.md": b"b\n"}, "ci: gate")
+    _git(repo, "switch", "-q", "pr")
+    _git(repo, "rebase", "-q", "main")
+    check = cp.check_push(before, _git(repo, "rev-parse", "HEAD"), "main")
+    assert check == cp.PushCheck(
+        False,
+        "a rebase with identical changes (git range-diff) onto docs/tests-only commits "
+        "and IBM i gate changes",
+    )
+
+
+def test_rebase_onto_gate_and_backend_commits_needs_a_new_run(repo) -> None:
+    _git(repo, "switch", "-q", "-c", "pr")
+    before = _commit(repo, {"docs/b.md": b"b\n"}, "docs: b")
+    _git(repo, "switch", "-q", "main")
+    _commit(
+        repo,
+        {".github/workflows/ibmi-gate.yml": b"on: {}\n", "django_db2_for_i/operations.py": b"y\n"},
+        "mixed",
+    )
+    _git(repo, "switch", "-q", "pr")
+    _git(repo, "rebase", "-q", "main")
+    check = cp.check_push(before, _git(repo, "rev-parse", "HEAD"), "main")
+    assert check == cp.PushCheck(
+        True, f"a rebase onto main commits that need an IBM i run ({cp.SQL})"
+    )
+
+
+def test_a_gate_file_in_the_pull_request_itself_stays_the_strictest_class() -> None:
+    result = run({"scripts/ibmi_gate.py": (b"a", b"b")})
+    assert (result.cls, result.labels) == (cp.FULL, [cp.FULL_TIER_LABEL])
+
+
 def test_rebase_onto_backend_commits_needs_a_new_run(repo) -> None:
     _git(repo, "switch", "-q", "-c", "pr")
     before = _commit(repo, {"docs/b.md": b"b\n"}, "docs: b")
