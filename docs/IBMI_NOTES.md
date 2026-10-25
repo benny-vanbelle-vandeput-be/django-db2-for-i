@@ -828,6 +828,40 @@ connection, through the PUB400 lock, all dropped at the end (checked: no
   and the column are gone (both runs). `can_rollback_ddl` can be True, with
   its own test when it is switched on.
 
+### Foreign keys through the schema editor (own IBM i tests, facts a-d)
+2026-10-25, PUB400 (IBM i 7.5), the test library, own IBM i tests in
+`tests/pub400/test_foreign_keys.py` (a parent and a child model of their own,
+created with foreign keys enabled, as a migration with `supports_foreign_keys`
+on creates them; dropped after each test). Input for switching the flag on.
+
+- **a. A primary key type change with an incoming foreign key works as a
+  migration.** `MigrationExecutor`: CreateModel parent and child, then
+  AlterField of the parent's `AutoField` to `BigAutoField`. Django drops the
+  incoming foreign key, changes the parent key and the child's column (both
+  `BIGINT` afterwards) and adds the foreign key again (`..._fk`); a row without
+  a parent is refused (SQL0530). Django keeps the types equal through the
+  migration state, so `related_fields_match_type` is not needed for this.
+  (Done with the schema editor directly on the old model classes instead, the
+  child's column keeps its old type, Django's re-added foreign key fails with
+  SQL0538: the migration state is what makes it work.)
+- **b. A type change of a column in a foreign key silently disables it.**
+  `ALTER COLUMN ... SET DATA TYPE` (INTEGER to BIGINT) on the child's column,
+  or on the parent key, while the foreign key exists, is accepted. Afterwards
+  the foreign key is still in `QSYS2.SYSCST`, but with `ENABLED` and
+  `CHECK_PENDING` empty (before: `YES` / `NO`), and **a row without a parent
+  is accepted**: it is no longer enforced, without any message. After the
+  change of the child's column introspection no longer lists it; after the
+  change of the parent key it still does. Django drops a foreign key before a
+  type change of its column (and the incoming ones before a change of a
+  referenced key) and adds it again, so migrations are not affected; the
+  backend must never change such a column without that.
+- **c. RENAME TABLE keeps foreign keys.** After `alter_db_table` of the parent
+  and of the child, the foreign key refers to the parent's new name and is
+  still enforced (SQL0530).
+- **d. AlterField of a ForeignKey to a plain IntegerField** finds the foreign
+  key by introspection and drops it; the values stay, and a value without a
+  parent is accepted afterwards.
+
 ### DROP COLUMN with and without CASCADE (`nox -s probe -- drop_column`)
 2026-10-20, PUB400 (IBM i 7.5), the backend's connection attributes, QTEMP,
 the job's inquiry message reply set to `*DFT` for the run (set back to
