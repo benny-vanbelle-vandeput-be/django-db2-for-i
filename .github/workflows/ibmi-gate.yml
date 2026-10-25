@@ -10,8 +10,13 @@
 # code from the pull request branch is checked out or executed. A posted or
 # edited comment re-evaluates the gate, so a run result turns it green.
 #
-# Rollout: not a required check at first; the maintainer then adds the
-# context "ibmi-gate" (exactly this name) as a required status check.
+# workflow_dispatch (the maintainer only, e.g. after a GitHub outage left a
+# pull request without a status): re-evaluates one pull request. It runs only
+# from main (github.ref), so a dispatch from another branch cannot run a
+# modified gate with this token; its only input is the pull request number,
+# which selects the pull request and nothing else (a waiver stays a comment).
+#
+# The context "ibmi-gate" (exactly this name) is a required status check.
 name: ibmi-gate
 
 on:
@@ -19,6 +24,12 @@ on:
     types: [opened, synchronize, reopened]
   issue_comment:
     types: [created, edited]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "The pull request to re-evaluate (its number)"
+        required: true
+        type: number
 
 permissions:
   contents: read
@@ -27,20 +38,26 @@ permissions:
   statuses: write
 
 concurrency:
-  group: ibmi-gate-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: ibmi-gate-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}
   cancel-in-progress: false
 
 jobs:
   # The job's check is "ibmi-gate-check"; the status it sets, "ibmi-gate", is
   # the one the ruleset requires.
   ibmi-gate-check:
-    if: github.event_name == 'pull_request_target' || github.event.issue.pull_request
+    if: >-
+      github.event_name == 'pull_request_target'
+      || (github.event_name == 'issue_comment' && github.event.issue.pull_request)
+      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
-      PR: ${{ github.event.pull_request.number || github.event.issue.number }}
+      PR: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}
+      # Known before any API call (pull_request_target), so a failure in the
+      # first step still gets an error status; the API's head is used otherwise.
+      EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       CONTEXT: ibmi-gate
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
@@ -53,6 +70,9 @@ jobs:
 
       - name: Pull request data
         run: |
+          case "$PR" in
+            ''|*[!0-9]*) echo "not a pull request number: $PR" >&2; exit 1 ;;
+          esac
           gh api "repos/$REPO/pulls/$PR" > pr.json
           echo "HEAD_SHA=$(jq -r .head.sha pr.json)" >> "$GITHUB_ENV"
           echo "BASE_REF=$(jq -r .base.ref pr.json)" >> "$GITHUB_ENV"
@@ -91,5 +111,7 @@ jobs:
       - name: Status on error
         if: failure()
         run: |
-          gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=error -f context="$CONTEXT" \
+          sha="${HEAD_SHA:-$EVENT_HEAD_SHA}"
+          [ -n "$sha" ] || { echo "no head commit known: no status set" >&2; exit 1; }
+          gh api "repos/$REPO/statuses/$sha" -f state=error -f context="$CONTEXT" \
             -f description="the gate itself failed; rerun it" -f target_url="$RUN_URL" > /dev/null || true

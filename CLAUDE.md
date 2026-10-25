@@ -351,7 +351,9 @@ made when no other PRs are open.
   maintainer count, and the maintainer may waive a commit with
   `<!-- ibmi-run sha=<full sha> waived -->`. Changes to the gate's two files are
   "needs full tier", and the PR comment names them for the maintainer's review.
-  Not a required check at first; the maintainer then requires `ibmi-gate`.
+  `ibmi-gate` is a required check on `main`. The maintainer (only) can re-evaluate one
+  PR with the workflow's `workflow_dispatch` (input: the PR number; it runs only from
+  `main`); Claude never triggers it (`.claude/settings.json` denies it).
 - **A later push puts the labels back** (CI adds them again), with three exceptions that
   need no new run:
   - a push that only contains the verification stamps written by the run

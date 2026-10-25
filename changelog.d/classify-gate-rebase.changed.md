@@ -3,3 +3,6 @@ CI: a conflict-free rebase over `main` commits that change only the IBM i gate
 new IBM i run. In their own pull request those files still count as "needs
 full tier" for the maintainer's review. The gate workflow's job is now called
 `ibmi-gate-check`. The status it sets, `ibmi-gate`, is unchanged.
+A failure before the gate knows the head still gets an error status, and the
+maintainer can re-evaluate one pull request with `workflow_dispatch` (main
+only; its only input is the pull request number).
