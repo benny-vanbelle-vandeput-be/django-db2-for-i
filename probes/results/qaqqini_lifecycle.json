@@ -1,0 +1,151 @@
+{
+  "probe": "qaqqini_lifecycle",
+  "utc": "20261025T230751Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "inquiry message reply": "*RQD",
+  "a. (3) without a copy": {
+    "result": "ok"
+  },
+  "a. (1) first": {
+    "result": "ok"
+  },
+  "a. (1) again": {
+    "result": "ok"
+  },
+  "a. copy after (1) twice": {
+    "copy exists": true,
+    "option": []
+  },
+  "a. (3) first": {
+    "result": "ok"
+  },
+  "a. (3) again": {
+    "result": "ok"
+  },
+  "a. copy after (3) twice": {
+    "copy exists": false
+  },
+  "b. (1)": {
+    "result": "ok"
+  },
+  "b. (2)": {
+    "result": "ok"
+  },
+  "b. copy before ROLLBACK": {
+    "copy exists": true,
+    "option": [
+      [
+        "*YES"
+      ]
+    ]
+  },
+  "b. copy after ROLLBACK": {
+    "copy exists": true,
+    "option": [
+      [
+        "*YES"
+      ]
+    ]
+  },
+  "b. DROP COLUMN after ROLLBACK": {
+    "result": "ok"
+  },
+  "c. copy before": {
+    "copy exists": true,
+    "option": [
+      [
+        "*YES"
+      ]
+    ]
+  },
+  "c. (3)": {
+    "result": "ok"
+  },
+  "c. copy after ROLLBACK": {
+    "copy exists": false
+  },
+  "c. DROP COLUMN after ROLLBACK": {
+    "result": "error",
+    "sqlstate": "HY008",
+    "sqlcode": 30071,
+    "message": "Operation cancelled. (30071) (SQLExecDirectW)"
+  },
+  "final (3)": {
+    "result": "ok"
+  },
+  "final copy": {
+    "copy exists": false
+  },
+  "final DROP COLUMN (baseline)": {
+    "result": "error",
+    "sqlstate": "HY008",
+    "sqlcode": 30071,
+    "message": "Operation cancelled. (30071) (SQLExecDirectW)"
+  },
+  "d. NVARCHAR 'abc'": [
+    [
+      3
+    ]
+  ],
+  "d. NVARCHAR emoji U+1F600": [
+    [
+      2
+    ]
+  ],
+  "d. NVARCHAR 'é'": [
+    [
+      1
+    ]
+  ],
+  "d. VARCHAR CCSID 1208 'abc'": [
+    [
+      3
+    ]
+  ],
+  "d. VARCHAR CCSID 1208 emoji U+1F600": [
+    [
+      4
+    ]
+  ],
+  "d. VARCHAR CCSID 1208 'é'": [
+    [
+      2
+    ]
+  ],
+  "d. NCLOB emoji": [
+    [
+      3
+    ]
+  ],
+  "d. DECIMAL 1.2355 -> (9, 2)": [
+    [
+      "1.23"
+    ]
+  ],
+  "d. DECIMAL -1.2355 -> (9, 2)": [
+    [
+      "-1.23"
+    ]
+  ],
+  "d. DOUBLE 0.29 -> DECIMAL(5, 2)": [
+    [
+      "0.28"
+    ]
+  ],
+  "d. DECIMAL 2.7 -> INTEGER": [
+    [
+      2
+    ]
+  ],
+  "d. DOUBLE 2.7 -> INTEGER": [
+    [
+      2
+    ]
+  ],
+  "d. DECIMAL 999.99 -> (4, 2)": [
+    [
+      null
+    ]
+  ]
+}
