@@ -1,0 +1,778 @@
+{
+  "probe": "add_column_default",
+  "utc": "20261025T055800Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "table": "QTEMP.PANN",
+  "connection": {
+    "CMT": "1",
+    "TRUEAUTOCOMMIT": "1",
+    "NAM": "0",
+    "DFT": "5",
+    "TFT": "2"
+  },
+  "types": {
+    "SMALLINT": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "INTEGER": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "BIGINT": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "DECIMAL(9, 2)": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "DOUBLE": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "BOOLEAN": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "CHAR(32)": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "VARCHAR(39)": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "NVARCHAR(40)": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "NCLOB": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "BLOB": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "DATE": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "TIME": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    },
+    "TIMESTAMP(6)": {
+      "no default, empty": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "no default, one row": {
+        "add": "SQL0109 (42000)",
+        "message": "SQL0109 - NOT NULL clause not allowed. (-109) (SQLExecDirectW)"
+      },
+      "DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "NOT NULL WITH DEFAULT, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, empty": {
+        "add": "ok",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      },
+      "WITH DEFAULT NOT NULL, one row": {
+        "add": "ok",
+        "existing row": "no row",
+        "drop default": "ok",
+        "insert without C afterwards": "SQL0407 (23000)"
+      }
+    }
+  },
+  "locks": {
+    "EXCLUSIVE MODE, autocommit": "ok",
+    "EXCLUSIVE MODE, transaction": "ok",
+    "SHARE MODE, autocommit": "ok",
+    "SHARE MODE, transaction": "ok"
+  }
+}

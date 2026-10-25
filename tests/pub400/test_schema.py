@@ -804,6 +804,78 @@ def test_failing_deferred_statement_rolls_the_migration_back(live) -> None:
         apps.clear_cache()
 
 
+# --- AddField of a NOT NULL column without a default ---------------------------------
+
+
+@pytest.fixture
+def not_null_model(live):
+    """A model of its own (testapp_addnotnull); created for the test, dropped after."""
+    from django.apps import apps
+
+    class AddNotNull(models.Model):
+        name = models.CharField(max_length=20)
+
+        class Meta:
+            app_label = "testapp"
+
+    try:
+        with live.schema_editor() as editor:
+            editor.create_model(AddNotNull)
+        yield AddNotNull
+    finally:
+        replace_if_unusable(live)
+        with live.cursor() as cursor:
+            cursor.execute('DROP TABLE "TESTAPP_ADDNOTNULL"')
+        apps.all_models["testapp"].pop("addnotnull", None)
+        apps.clear_cache()
+
+
+def _not_null_column(model, name="position"):
+    field = models.BigIntegerField()
+    field.set_attributes_from_name(name)
+    field.model = model
+    return field
+
+
+def _column(live, name: str):
+    with live.cursor() as cursor:
+        cursor.execute(
+            "SELECT IS_NULLABLE, HAS_DEFAULT FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA = "
+            "CURRENT SCHEMA AND TABLE_NAME = 'TESTAPP_ADDNOTNULL' AND COLUMN_NAME = %s",
+            [name],
+        )
+        row = cursor.fetchone()
+    return tuple(value.strip() for value in row) if row else None
+
+
+def test_not_null_column_without_default_on_an_empty_table(live, not_null_model) -> None:
+    """ADD COLUMN ... DEFAULT NOT NULL, then DROP DEFAULT (SQL0109 otherwise):
+    the column is NOT NULL without a default, like on PostgreSQL."""
+    from django.db import IntegrityError
+
+    with live.schema_editor() as editor:
+        editor.add_field(not_null_model, _not_null_column(not_null_model))
+    assert _column(live, "POSITION") == ("N", "N")
+    with pytest.raises(IntegrityError), live.cursor() as cursor:
+        cursor.execute('INSERT INTO "TESTAPP_ADDNOTNULL" ("NAME") VALUES (%s)', ["no position"])
+
+
+def test_not_null_column_without_default_refused_on_a_table_with_rows(live, not_null_model) -> None:
+    """The rows would get the system default: refused, as PostgreSQL refuses
+    it; the migration's transaction leaves the table as it was."""
+    from django.db import IntegrityError
+
+    not_null_model.objects.create(name="first")
+    with (
+        pytest.raises(IntegrityError, match="the table has rows"),
+        live.schema_editor() as editor,
+    ):
+        editor.add_field(not_null_model, _not_null_column(not_null_model))
+    assert not live.in_atomic_block
+    assert _column(live, "POSITION") is None
+    assert list(not_null_model.objects.values_list("name", flat=True)) == ["first"]
+
+
 # --- Check constraints --------------------------------------------------------------
 
 

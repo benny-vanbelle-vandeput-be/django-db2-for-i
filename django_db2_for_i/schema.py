@@ -18,7 +18,7 @@ import math
 import re
 from decimal import Decimal
 
-from django.db import DatabaseError, NotSupportedError, OperationalError, models
+from django.db import DatabaseError, IntegrityError, NotSupportedError, OperationalError, models
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
 from . import inquiry
@@ -126,6 +126,9 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     # (SQL0199, probe 24). It has no statement to rename a column (see
     # _rename_field_sql()).
     sql_rename_table = "RENAME TABLE %(old_table)s TO %(new_table)s"
+    # Held until the migration's transaction ends: no row can be added between
+    # the check for rows and the ADD COLUMN of a NOT NULL column (add_field()).
+    sql_lock_table = "LOCK TABLE %(table)s IN EXCLUSIVE MODE"
     sql_rename_index = "RENAME INDEX %(old_name)s TO %(new_name)s"
     # A column that becomes an identity numbers from 1, below the keys it
     # already holds; RESTART WITH takes only a constant, so a dynamic compound
@@ -178,6 +181,49 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         except DatabaseError:
             return False
         return bool(messages & set(inquiry.CANCEL_MESSAGES))
+
+    def add_field(self, model, field):
+        """A NOT NULL column without any default: Db2 for i needs a DEFAULT with
+        NOT NULL (SQL0109, probe add_column_default), so the column gets a bare
+        DEFAULT (the type's system default), which is dropped right after.
+
+        Existing rows would silently get that system default, so a table with
+        rows is refused, as PostgreSQL refuses it; in a transaction the table is
+        locked first, so no row can arrive in between. Collected SQL
+        (sqlmigrate) has no database to ask: it shows the DEFAULT form.
+        """
+        if not self._needs_temporary_default(field):
+            return super().add_field(model, field)
+        table = self.quote_name(model._meta.db_table)
+        if not self.collect_sql:
+            if self.connection.in_atomic_block:
+                self.execute(self.sql_lock_table % {"table": table})
+            with self.connection.cursor() as cursor:
+                cursor.execute(f"SELECT 1 FROM {table} FETCH FIRST 1 ROW ONLY")
+                has_rows = cursor.fetchone() is not None
+            if has_rows:
+                raise IntegrityError(
+                    f"Cannot add NOT NULL column {self.quote_name(field.column)} without a "
+                    f"default to table {table}: the table has rows. Give the field a default "
+                    "or db_default, or add it with null=True first and fill it."
+                )
+        self._bare_default_field = field
+        try:
+            super().add_field(model, field)
+        finally:
+            self._bare_default_field = None
+        changes, params = self._alter_column_default_sql(model, None, field, drop=True)
+        self.execute(self.sql_alter_column % {"table": table, "changes": changes}, params)
+
+    _bare_default_field = None
+
+    def _needs_temporary_default(self, field) -> bool:
+        """A NOT NULL column for which Django writes no DEFAULT at all."""
+        if field.column is None or field.many_to_many or field.null or field.generated:
+            return False
+        if "AS IDENTITY" in (field.db_parameters(connection=self.connection)["type"] or ""):
+            return False
+        return not field.has_db_default() and self.effective_default(field) is None
 
     def alter_field(self, model, old_field, new_field, strict=False):
         """Refuse a type change Db2 for i cannot make in place (SQL0190) before
@@ -297,4 +343,8 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             # NOT NULL column would reject).
             if part == "DEFAULT NULL":
                 continue
+            # A NOT NULL column without a default (add_field()): the type's
+            # system default, dropped right after the ADD COLUMN.
+            if part == "NOT NULL" and field is self._bare_default_field:
+                yield "DEFAULT"
             yield part

@@ -193,6 +193,30 @@ Django version (Django 5.2's own text adds `CASCADE`). What Db2 for i does
 with views or indexes that depend on the column is not verified yet: on a
 system without the reply list entry the statement is always cancelled first.
 
+## Adding a NOT NULL column without a default
+
+Db2 for i needs a DEFAULT with NOT NULL. For a field with `null=False` and no
+`default`, `db_default` or blank default, the backend adds the column with the
+type's system default (`DEFAULT NOT NULL`) and drops that default right after,
+so the column ends up NOT NULL without a default, as on PostgreSQL.
+
+- **A table with rows is refused:** the rows would silently get the system
+  default (0, an empty string, the current date, ...). `migrate` raises
+  `IntegrityError` ("Cannot add NOT NULL column ... the table has rows")
+  before any change. Give the field a `default` or `db_default`, or add it
+  with `null=True`, fill it in a data migration, then make it NOT NULL.
+- **The table is locked while the migration runs:** in a migration's
+  transaction (`atomic`, the default) the backend runs `LOCK TABLE ... IN
+  EXCLUSIVE MODE` before it checks for rows, so no row can be added in
+  between. The lock lasts until the migration commits. What other jobs can
+  still do with the table meanwhile (read it?) is not verified yet; expect
+  other jobs that write to the table to wait until the migration ends.
+- **`atomic = False`:** without a transaction the lock ends at once, so a row
+  inserted by another job between the check and the `ADD COLUMN` would get
+  the system default.
+- **`sqlmigrate`** has no database to check: it shows the `DEFAULT NOT NULL`
+  and `DROP DEFAULT` statements without the check.
+
 ## Changing a column to an incompatible type
 
 Db2 for i changes a column's type in place only within the numeric types

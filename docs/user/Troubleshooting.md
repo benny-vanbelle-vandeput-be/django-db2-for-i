@@ -92,6 +92,18 @@ violations.
 first. A raw `DELETE` or a `QuerySet.update()` of a key does not run
 Django's `on_delete` handling.
 
+## IntegrityError: "Cannot add NOT NULL column ... the table has rows"
+
+A migration adds a field with `null=False` and no `default`, `db_default` or
+blank default to a table that has rows. Db2 for i needs a DEFAULT with NOT
+NULL (it would otherwise fail with **SQL0109**, "NOT NULL clause not
+allowed"), and the existing rows would get the type's system default, so the
+backend refuses it, as PostgreSQL does. Nothing was changed.
+
+**Fix:** give the field a `default` or `db_default`, or add it with
+`null=True`, fill it in a data migration, then change it to NOT NULL. See
+[Known limitations](Known-Limitations.md#adding-a-not-null-column-without-a-default).
+
 ## ALTER TABLE cancelled (CPA32B2, HY008)
 
 ```
