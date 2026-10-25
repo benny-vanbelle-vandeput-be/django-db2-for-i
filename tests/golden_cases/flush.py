@@ -11,11 +11,19 @@ from tests.golden_cases.base import AUTHOR, BOOK, NODE, TAG, Case
 TESTAPP_TABLES = ["testapp_author", "testapp_book", "testapp_node", "testapp_tag"]
 
 # The catalog metadata sql_flush() reads, as the create goldens define it:
-# only TESTAPP_NODE has a foreign key (to itself); every model except Tag has
-# an identity primary key starting at 1. The IBM i verification compares this
+# the foreign keys that refer to the four tables (Book, Profile and Link to
+# Author, Link to Tag, Node to itself; the create goldens of Profile and Link
+# run before the flush); every model except Tag has an identity primary key
+# starting at 1. The IBM i verification compares this
 # with the real catalog before it executes the flush golden.
 FLUSH_METADATA = (
-    {("TESTAPP_NODE", "TESTAPP_NODE")},
+    {
+        ("TESTAPP_BOOK", "TESTAPP_AUTHOR"),
+        ("TESTAPP_LINK", "TESTAPP_AUTHOR"),
+        ("TESTAPP_LINK", "TESTAPP_TAG"),
+        ("TESTAPP_NODE", "TESTAPP_NODE"),
+        ("TESTAPP_PROFILE", "TESTAPP_AUTHOR"),
+    },
     {
         "TESTAPP_AUTHOR": ("ID", 1),
         "TESTAPP_BOOK": ("ID", 1),

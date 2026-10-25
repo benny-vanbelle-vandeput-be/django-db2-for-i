@@ -1315,6 +1315,13 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   migrations of existing projects.
 - **Alternatives:** inline foreign keys in `CREATE TABLE`; dropping Django's
   index when Db2 for i creates or shares one.
+- **Amended 2026-10-25 (project owner):** `indexes_foreign_keys = True`.
+  Probe w13 shows that Db2 for i creates no index for a foreign key, but
+  Django reads the flag only in its tests (5.2, 6.0 and 6.1: no other use in
+  `django/`), as "a foreign key column ends up with an index", whoever made
+  it. No Django backend sets it to False, PostgreSQL included, which also
+  creates none of its own. Django's own index is there, so True matches what
+  the tests check. The DDL is unchanged (the FK goldens did not change).
 
 ## 2026-10-21: supports_comments only if Unicode text works
 - **Decision (project owner):** `COMMENT ON ... IS UX'...'` (the Unicode

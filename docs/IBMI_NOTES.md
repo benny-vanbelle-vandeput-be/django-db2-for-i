@@ -894,8 +894,10 @@ connection, through the PUB400 lock, all dropped at the end (checked: no
   child table after the foreign key (nor for the primary keys); the access
   paths constraints use are not SQL indexes. Django's own index on the column
   (`CREATE INDEX ... (P_ID)`) works next to the foreign key and is listed
-  with `IS_UNIQUE` `D` (duplicates allowed). So `indexes_foreign_keys` is
-  False, and the backend keeps creating its own index (decision 5).
+  with `IS_UNIQUE` `D` (duplicates allowed). The backend keeps creating its
+  own index (decision 5), so a foreign key column does end up with an index:
+  `indexes_foreign_keys` is True (amended 2026-10-25; Django reads it only in
+  its tests).
 - **Two constraints on the same columns:** a unique index next to a unique
   constraint works, and so does a second foreign key on the same column; a
   **second unique constraint on the same column fails with SQL0541**
@@ -942,6 +944,17 @@ on creates them; dropped after each test). Input for switching the flag on.
 - **d. AlterField of a ForeignKey to a plain IntegerField** finds the foreign
   key by introspection and drops it; the values stay, and a value without a
   parent is accepted afterwards.
+- **With `supports_foreign_keys` on, every type-change path keeps the foreign
+  keys enforced** (`SYSCST` `ENABLED` `YES`, a row without a parent refused
+  with SQL0530), as migrations (`MigrationExecutor`): a primary key
+  `AutoField` -> `BigAutoField` with an incoming foreign key; the same with a
+  child whose primary key is a OneToOneField to the parent and a grandchild
+  that refers to the child (Django changes the grandchild's column too and
+  adds its foreign key again); a `to_field` target (a unique `CharField`) made
+  wider; a foreign key moved to a parent with a different key type.
+  Introspection (`get_constraints()`, `get_relations()`) reads only enforced
+  foreign keys: one in the state of fact b is marked `"enforced": False`
+  without `foreign_key`.
 
 ### DROP COLUMN with and without CASCADE (`nox -s probe -- drop_column`)
 2026-10-20, PUB400 (IBM i 7.5), the backend's connection attributes, QTEMP,

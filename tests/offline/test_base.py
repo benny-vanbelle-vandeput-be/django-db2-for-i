@@ -303,7 +303,6 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
         features.REASON_UNTYPED_NULL,
         features.REASON_TYPED_PARAMETER_MARKERS,
         features.REASON_UNTYPED_RAW_SQL_PARAMETER,
-        features.REASON_NO_DATABASE_FOREIGN_KEYS,
         features.REASON_CPA32B2,
         features.REASON_NO_COLUMN_RENAME,
         features.REASON_TYPE_NOT_IN_PLACE,

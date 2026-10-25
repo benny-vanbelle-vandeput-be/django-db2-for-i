@@ -31,11 +31,9 @@ def _close_connections_at_end(django_db_blocker):
 @pytest.fixture(scope="module")
 def testapp_tables(django_db_blocker, request):
     with django_db_blocker.unblock(), marked_library(request.node.nodeid):
-        with pytest.MonkeyPatch.context() as patch:
-            patch.setattr(connection.features, "supports_foreign_keys", True)
-            with connection.schema_editor() as editor:
-                for model in MODELS:
-                    editor.create_model(model)
+        with connection.schema_editor() as editor:
+            for model in MODELS:
+                editor.create_model(model)
         yield
 
 

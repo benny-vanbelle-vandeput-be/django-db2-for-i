@@ -11,6 +11,11 @@ from tests.testapp.models import Author, Book
 
 
 def _insert_book(connection):
+    # The author first (an explicit primary key): Book's foreign key needs it.
+    author = Author(id=1, name="IBM i")
+    query = InsertQuery(Author)
+    query.insert_values(Author._meta.local_concrete_fields, [author])
+    statements = list(query.get_compiler(connection.alias).as_sql())
     book = Book(
         author_id=1,
         title="Db2 for i",
@@ -22,7 +27,8 @@ def _insert_book(connection):
     fields = [f for f in Book._meta.local_concrete_fields if not f.primary_key]
     query = InsertQuery(Book)
     query.insert_values(fields, [book])
-    return [(sql, params) for sql, params in query.get_compiler(connection.alias).as_sql()]
+    statements += query.get_compiler(connection.alias).as_sql()
+    return [(sql, params) for sql, params in statements]
 
 
 def _update_boolean(connection):
@@ -63,7 +69,7 @@ def _savepoints(connection):
 
 
 CASES: tuple[Case, ...] = (
-    Case("dml/insert_book", "dml", _insert_book, (BOOK,)),
+    Case("dml/insert_book", "dml", _insert_book, (AUTHOR, BOOK)),
     Case("dml/update_boolean", "dml", _update_boolean, (BOOK,)),
     Case("dml/delete_filtered", "dml", _delete_filtered, (AUTHOR,)),
     # The outer query's WHERE is a search condition too (no CASE WHEN around the IN).

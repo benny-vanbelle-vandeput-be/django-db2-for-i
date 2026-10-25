@@ -526,6 +526,17 @@ PR boundaries, in this order:
     `indexes_foreign_keys` / `can_create_inline_fk` as decided (open
     questions 4 and 5). The seven supported modules rerun on 6.1 before the
     PR is ready, since database foreign keys change their behaviour.
+    *Added 2026-10-25 (maintainer approval):* facts first (#168: a primary
+    key type change with an incoming foreign key works as a migration; SET
+    DATA TYPE on a foreign key's column silently stops enforcing it; RENAME
+    TABLE keeps foreign keys; AlterField to a plain field drops it), then the
+    flag (#163 mapped SQL0530-0532 and SQL0544). The flag PR tests that
+    every type-change path leaves the foreign keys enforced, makes
+    introspection skip a foreign key Db2 for i no longer enforces, and
+    documents fixtures with forward references (parents first, or dumpdata
+    --natural-foreign --natural-primary). `indexes_foreign_keys` is on
+    (Django's own index; decision 5 amended 2026-10-25); the seven modules on
+    6.1 only, the migrations labels in item 14.
 11. `feat(schema)`: check constraints: `supports_column_check_constraints`
     and `supports_table_check_constraints`, plus
     `allows_multiple_constraints_on_same_fields` if w13 allows it. Each with a

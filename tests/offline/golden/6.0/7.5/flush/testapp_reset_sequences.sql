@@ -2,10 +2,11 @@
 -- django: 6.0
 -- profile: 7.5
 -- depends: ddl/create_author, ddl/create_book, ddl/create_node_fk, ddl/create_tag
--- params: [[], [], [], [], []]
--- verified: IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.0.9, 2026-10-20
-TRUNCATE TABLE "TESTAPP_AUTHOR" RESTART IDENTITY;
+-- params: [[], [], [], [], [], []]
+-- verified: IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.0.9, 2026-10-25
 TRUNCATE TABLE "TESTAPP_BOOK" RESTART IDENTITY;
-TRUNCATE TABLE "TESTAPP_TAG" RESTART IDENTITY;
+DELETE FROM "TESTAPP_AUTHOR";
+ALTER TABLE "TESTAPP_AUTHOR" ALTER COLUMN "ID" RESTART WITH 1;
 DELETE FROM "TESTAPP_NODE";
 ALTER TABLE "TESTAPP_NODE" ALTER COLUMN "ID" RESTART WITH 1;
+DELETE FROM "TESTAPP_TAG";

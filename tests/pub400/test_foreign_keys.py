@@ -238,28 +238,21 @@ def _catalog_constraints(live, table: str) -> list[tuple]:
 
 
 @pytest.mark.parametrize(
-    ("label", "sql", "introspected"),
+    ("label", "sql"),
     [
         (
             "child column",
             'ALTER TABLE "TESTAPP_FKCHILD" ALTER COLUMN "PARENT_ID" SET DATA TYPE BIGINT',
-            False,
         ),
-        (
-            "parent key",
-            'ALTER TABLE "TESTAPP_FKPARENT" ALTER COLUMN "ID" SET DATA TYPE BIGINT',
-            True,
-        ),
+        ("parent key", 'ALTER TABLE "TESTAPP_FKPARENT" ALTER COLUMN "ID" SET DATA TYPE BIGINT'),
     ],
 )
-def test_fact_b_type_change_of_a_column_in_a_foreign_key(
-    live, fk_models, label, sql, introspected
-) -> None:
+def test_fact_b_type_change_of_a_column_in_a_foreign_key(live, fk_models, label, sql) -> None:
     """SET DATA TYPE on a column that is part of a foreign key, while the
     foreign key exists, is accepted, but Db2 for i silently stops enforcing
     the foreign key: it stays in SYSCST with ENABLED and CHECK_PENDING empty
-    (before: YES / NO), and a row without a parent is accepted. Only after a
-    change of the child's column introspection stops listing it. Django drops
+    (before: YES / NO), and a row without a parent is accepted. Introspection
+    reads that state and no longer lists it as a foreign key. Django drops
     the foreign key before a type change and adds it again (fact a); the
     backend must never change such a column without that."""
     fk = ("FOREIGN KEY", "YES", "NO")
@@ -271,7 +264,7 @@ def test_fact_b_type_change_of_a_column_in_a_foreign_key(
     assert [c[1:] for c in _catalog_constraints(live, "TESTAPP_FKCHILD")][1:] == [
         ("FOREIGN KEY", None, None)
     ]
-    assert bool(_foreign_keys(live, "testapp_fkchild")) is introspected
+    assert _foreign_keys(live, "testapp_fkchild") == {}
     assert _orphan_insert(live) == "accepted"
 
 
@@ -323,3 +316,170 @@ def test_fact_d_foreign_key_to_plain_field(live, fk_models) -> None:
         cursor.execute(
             'INSERT INTO "TESTAPP_FKCHILD" ("PARENT_ID", "NOTE") VALUES (%s, %s)', [999, "x"]
         )
+
+
+# --- Foreign keys stay enforced after every type-change path (supports_foreign_keys) ---
+#
+# Fact b: SET DATA TYPE on a column of a foreign key silently stops enforcing
+# it. Django drops a foreign key around a type change and adds it again; these
+# migrations check, for each path, that every foreign key is enforced
+# afterwards (SYSCST ENABLED = YES and a row without a parent refused), not
+# only visible in introspection.
+
+PATH_TABLES = ("TESTAPP_FKGRAND", "TESTAPP_FKCHILD", "TESTAPP_FKOTHER", "TESTAPP_FKPARENT")
+
+
+@pytest.fixture
+def path_cleanup(live):
+    from tests.pub400.connection_guard import replace_if_unusable
+
+    yield MigrationRunner(live)
+    replace_if_unusable(live)
+    for table in PATH_TABLES:  # children first
+        if _existing(live, table):
+            with live.cursor() as cursor:
+                cursor.execute(f'DROP TABLE "{table}"')
+
+
+class MigrationRunner:
+    """Applies migrations of the app "testapp" in order, as migrate does."""
+
+    def __init__(self, live):
+        from django.db.migrations.executor import MigrationExecutor
+        from django.db.migrations.state import ProjectState
+
+        self.executor = MigrationExecutor(live)
+        self.state = ProjectState()
+        self.count = 0
+
+    def apply(self, *operations):
+        from django.db import migrations
+
+        self.count += 1
+        migration = migrations.Migration(f"{self.count:04d}_step", "testapp")
+        migration.operations = list(operations)
+        self.state = self.executor.apply_migration(self.state, migration)
+
+
+def _assert_enforced(live, child_table: str, column: str, value) -> None:
+    """The child's foreign keys are enabled in SYSCST and refuse a value
+    without a parent."""
+    states = [c[1:3] for c in _catalog_constraints(live, child_table) if c[1] == "FOREIGN KEY"]
+    assert states and all(state == ("FOREIGN KEY", "YES") for state in states), states
+    with pytest.raises(IntegrityError, match="SQL0530"), live.cursor() as cursor:
+        cursor.execute(f'INSERT INTO "{child_table}" ("{column}") VALUES (%s)', [value])
+
+
+def test_enforced_after_primary_key_type_change(live, path_cleanup) -> None:
+    from django.db import migrations, models
+
+    runner = path_cleanup
+    runner.apply(
+        migrations.CreateModel("FkParent", [("id", models.AutoField(primary_key=True))]),
+        migrations.CreateModel(
+            "FkChild",
+            [
+                ("id", models.AutoField(primary_key=True)),
+                ("parent", models.ForeignKey("testapp.FkParent", models.PROTECT)),
+            ],
+        ),
+    )
+    runner.apply(migrations.AlterField("fkparent", "id", models.BigAutoField(primary_key=True)))
+    assert _column_type(live, "TESTAPP_FKCHILD", "PARENT_ID") == "BIGINT"
+    _assert_enforced(live, "TESTAPP_FKCHILD", "PARENT_ID", 999)
+
+
+def test_enforced_after_a_transitive_primary_key_type_change(live, path_cleanup) -> None:
+    """The child's primary key is a OneToOneField to the parent (like Profile
+    to Author), and a grandchild refers to the child (like Link to Profile):
+    the parent's key change also changes the child's key, which the
+    grandchild's foreign key refers to."""
+    from django.db import migrations, models
+
+    runner = path_cleanup
+    runner.apply(
+        migrations.CreateModel("FkParent", [("id", models.AutoField(primary_key=True))]),
+        migrations.CreateModel(
+            "FkChild",
+            [
+                (
+                    "parent",
+                    models.OneToOneField(
+                        "testapp.FkParent", models.CASCADE, primary_key=True, serialize=False
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            "FkGrand",
+            [
+                ("id", models.AutoField(primary_key=True)),
+                ("child", models.ForeignKey("testapp.FkChild", models.PROTECT)),
+            ],
+        ),
+    )
+    runner.apply(migrations.AlterField("fkparent", "id", models.BigAutoField(primary_key=True)))
+    types = [
+        _column_type(live, "TESTAPP_FKCHILD", "PARENT_ID"),
+        _column_type(live, "TESTAPP_FKGRAND", "CHILD_ID"),
+    ]
+    print(
+        f"\nTRANSITIVE: child PARENT_ID {types[0]}, grandchild CHILD_ID {types[1]}; "
+        f"grandchild SYSCST {_catalog_constraints(live, 'TESTAPP_FKGRAND')}"
+    )
+    _assert_enforced(live, "TESTAPP_FKCHILD", "PARENT_ID", 999)
+    _assert_enforced(live, "TESTAPP_FKGRAND", "CHILD_ID", 999)
+
+
+def test_enforced_after_a_to_field_target_widens(live, path_cleanup) -> None:
+    from django.db import migrations, models
+
+    runner = path_cleanup
+    runner.apply(
+        migrations.CreateModel(
+            "FkParent",
+            [
+                ("id", models.AutoField(primary_key=True)),
+                ("code", models.CharField(max_length=10, unique=True)),
+            ],
+        ),
+        migrations.CreateModel(
+            "FkChild",
+            [
+                ("id", models.AutoField(primary_key=True)),
+                (
+                    "parent",
+                    models.ForeignKey("testapp.FkParent", models.PROTECT, to_field="code"),
+                ),
+            ],
+        ),
+    )
+    runner.apply(
+        migrations.AlterField("fkparent", "code", models.CharField(max_length=20, unique=True))
+    )
+    assert _column_type(live, "TESTAPP_FKCHILD", "PARENT_ID") == "VARG"
+    _assert_enforced(live, "TESTAPP_FKCHILD", "PARENT_ID", "MISSING")
+
+
+def test_enforced_after_a_foreign_key_moves_to_another_parent_type(live, path_cleanup) -> None:
+    from django.db import migrations, models
+
+    runner = path_cleanup
+    runner.apply(
+        migrations.CreateModel("FkParent", [("id", models.AutoField(primary_key=True))]),
+        migrations.CreateModel("FkOther", [("id", models.BigAutoField(primary_key=True))]),
+        migrations.CreateModel(
+            "FkChild",
+            [
+                ("id", models.AutoField(primary_key=True)),
+                ("parent", models.ForeignKey("testapp.FkParent", models.PROTECT)),
+            ],
+        ),
+    )
+    runner.apply(
+        migrations.AlterField(
+            "fkchild", "parent", models.ForeignKey("testapp.FkOther", models.PROTECT)
+        )
+    )
+    assert _column_type(live, "TESTAPP_FKCHILD", "PARENT_ID") == "BIGINT"
+    _assert_enforced(live, "TESTAPP_FKCHILD", "PARENT_ID", 999)

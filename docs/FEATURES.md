@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**29 flags enabled on Django 6.1.**
+**31 flags enabled on Django 6.1.**
 
-## Enabled (29)
+## Enabled (31)
 
 On in at least one supported Django version.
 
@@ -25,6 +25,7 @@ On in at least one supported Django version.
 | `can_rollback_ddl` | Schema changes inside a transaction are rolled back with it: a migration that fails halfway leaves nothing behind. | ✅ | ✅ | ✅ |
 | `has_native_boolean_field` | `BooleanField` is a native `BOOLEAN` column (IBM i 7.5). | – | – | ✅ |
 | `implied_column_null` | Columns are nullable unless `NOT NULL` is written; no bare `NULL` keyword in DDL. | ✅ | ✅ | ✅ |
+| `indexes_foreign_keys` | Foreign key columns get an index (on Db2 for i Django's own: the constraint creates none). | ✅ | ✅ | ✅ |
 | `nulls_order_largest` | NULL sorts as the largest value: last in ascending order, first in descending. | ✅ | ✅ | ✅ |
 | `pattern_lookup_needs_param_pattern` | `contains`, `startswith` and friends are written with `LIKE` patterns. | – | – | ✅ |
 | `requires_compound_order_by_subquery` | An ordered `union()` / `intersection()` / `difference()` is wrapped in a subquery to order it. | ✅ | ✅ | ✅ |
@@ -33,6 +34,7 @@ On in at least one supported Django version.
 | `supports_any_value` | The `AnyValue` aggregate (one value of a column per group). | – | ✅ | ✅ |
 | `supports_boolean_expr_in_select_clause` | Conditions such as `Exists()` or `Q()` can be selected and grouped by. | ✅ | ✅ | ✅ |
 | `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | ✅ | ✅ | ✅ |
+| `supports_foreign_keys` | Foreign keys are enforced by the database. | ✅ | ✅ | ✅ |
 | `supports_parentheses_in_compound` | Parts of a compound query may have their own `ORDER BY` / slice. | ✅ | ✅ | ✅ |
 | `supports_regex_backreferencing` | `regex` / `iregex` lookups support backreferences (ICU regular expressions). | ✅ | ✅ | ✅ |
 | `supports_select_difference` | `QuerySet.difference()` (`EXCEPT`). | ✅ | ✅ | ✅ |
@@ -85,7 +87,7 @@ Off on purpose, with the reason.
 | `supports_uuid7_function` | The `UUID7()` database function (Django 6.1+). | – | – | ❌ | Db2 for i has no function that generates a time-ordered UUID (not verified on IBM i). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (67)
+## Planned (65)
 
 Off for now; planned for the phase shown.
 
@@ -110,7 +112,6 @@ Off for now; planned for the phase shown.
 | `has_select_for_update_skip_locked` | `select_for_update(skip_locked=True)` skips locked rows. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `ignores_table_name_case` | Table names that differ only in case are the same table. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `ignores_unnecessary_order_by_in_subqueries` | Django may leave an `ORDER BY` in a subquery; the database accepts and ignores it. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `indexes_foreign_keys` | Foreign key columns get an index. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `related_fields_match_type` | A foreign key column must have exactly the type of the column it references. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `rounds_to_even` | `Round()` rounds halves to even. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `select_for_update_of_column` | `select_for_update(of=...)` is written with column names, not table names. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
@@ -127,7 +128,6 @@ Off for now; planned for the phase shown.
 | `supports_default_keyword_in_insert` | An insert writes `DEFAULT` for fields with a `db_default`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_deferrable_unique_constraints` | `UniqueConstraint(deferrable=...)`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_expression_indexes` | Indexes on expressions (`Index(Lower('name'))`). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
-| `supports_foreign_keys` | Foreign keys are enforced by the database. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_frame_exclusion` | Window frames with `exclusion` (`EXCLUDE ...`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_frame_range_fixed_distance` | Window `RANGE` frames with a fixed distance (`ValueRange(start=-5)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_functions_in_partial_indexes` | Functions in the `condition` of a partial index. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
