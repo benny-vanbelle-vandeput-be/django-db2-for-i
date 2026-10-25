@@ -1,0 +1,394 @@
+{
+  "probe": "qaqqini_inquiry",
+  "utc": "20261025T200256Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "inquiry message reply": "*RQD",
+  "special authorities": [
+    [
+      null,
+      "*NONE"
+    ]
+  ],
+  "a. baseline": {
+    "DROP COLUMN": {
+      "result": "error",
+      "sqlstate": "HY008",
+      "sqlcode": 30071,
+      "message": "Operation cancelled. (30071) (SQLExecDirectW)",
+      "job log": [
+        "SQL0952",
+        "CPF7304",
+        "CPD32CE",
+        "CPD32CC",
+        "SQL0204",
+        "SQL799C"
+      ],
+      "took effect": false
+    },
+    "SET DATA TYPE INTEGER -> SMALLINT (narrowing, value fits)": {
+      "result": "error",
+      "sqlstate": "HY008",
+      "sqlcode": 30071,
+      "message": "Operation cancelled. (30071) (SQLExecDirectW)",
+      "job log": [
+        "SQL0952",
+        "CPF7304",
+        "CPD32CE",
+        "CPD32CC",
+        "SQL0204",
+        "SQL0952"
+      ],
+      "took effect": false
+    },
+    "SET NOT NULL (no NULLs)": {
+      "result": "error",
+      "sqlstate": "HY008",
+      "sqlcode": 30071,
+      "message": "Operation cancelled. (30071) (SQLExecDirectW)",
+      "job log": [
+        "SQL0952",
+        "CPF7304",
+        "CPD32CE",
+        "CPD32CC",
+        "SQL0204",
+        "SQL0952"
+      ],
+      "took effect": false
+    }
+  },
+  "b. QAQQINI files before": {
+    "QTEMP": {
+      "file": [],
+      "option row": [
+        [
+          "error",
+          "42S02"
+        ]
+      ]
+    },
+    "QUSRSYS": {
+      "file": [],
+      "option row": [
+        [
+          "error",
+          "42S02"
+        ]
+      ]
+    },
+    "QSYS": {
+      "file": [
+        [
+          "QAQQINI",
+          "*FILE",
+          "2021-06-11 15:31:08"
+        ]
+      ],
+      "option row": []
+    }
+  },
+  "b. objects before (counts)": {
+    "QTEMP": 0,
+    "<DEFAULT_LIBRARY>": 9,
+    "<OTHER_LIBRARY>": 8
+  },
+  "c. OVERRIDE_QAQQINI(1)": {
+    "result": "ok"
+  },
+  "c. OVERRIDE_QAQQINI(2)": {
+    "result": "ok"
+  },
+  "c. option row read back": [
+    [
+      "SUPPRESS_INQUIRY_MESSAGES",
+      "*YES"
+    ]
+  ],
+  "d. with the override": {
+    "DROP COLUMN": {
+      "result": "ok",
+      "job log": [
+        "CPC2955",
+        "CPD32CC",
+        "SQL0204",
+        "SQL0204",
+        "SQL0204",
+        "SQL0952"
+      ],
+      "took effect": true
+    },
+    "SET DATA TYPE INTEGER -> SMALLINT (narrowing, value fits)": {
+      "result": "ok",
+      "job log": [
+        "CPC2955",
+        "CPD32CC",
+        "SQL0204",
+        "SQL0206",
+        "SQL0205",
+        "CPC2955"
+      ],
+      "took effect": true
+    },
+    "SET NOT NULL (no NULLs)": {
+      "result": "ok",
+      "job log": [
+        "CPC2955",
+        "CPI2828",
+        "CPD32CC",
+        "SQL0204",
+        "SQL0406",
+        "CPC2955"
+      ],
+      "took effect": true
+    }
+  },
+  "d. with the override, data does not fit": {
+    "SET DATA TYPE INTEGER -> SMALLINT, a value does not fit": {
+      "result": "error",
+      "sqlstate": "22018",
+      "sqlcode": -406,
+      "message": "SQL0406 - Conversion error on assignment to column B. (-406) (SQLExecDirectW)",
+      "job log": [
+        "SQL0406",
+        "CPF7304",
+        "CPF2958",
+        "CPD32CC",
+        "SQL0204",
+        "SQL0407"
+      ],
+      "rows after": [
+        [
+          "1",
+          "2"
+        ],
+        [
+          "2",
+          "100000"
+        ]
+      ]
+    },
+    "SET DATA TYPE VARCHAR(10) -> VARCHAR(3), a value is longer": {
+      "result": "ok",
+      "job log": [
+        "SQL0460",
+        "CPC2955",
+        "CPD32CC",
+        "SQL0204",
+        "SQL0406",
+        "CPF7304"
+      ],
+      "rows after": [
+        [
+          "1",
+          "abc"
+        ],
+        [
+          "2",
+          "abc"
+        ]
+      ]
+    },
+    "SET DATA TYPE DECIMAL(9, 4) -> DECIMAL(9, 2), a value has 4 decimals": {
+      "result": "ok",
+      "job log": [
+        "CPC2955",
+        "CPD32CC",
+        "SQL0204",
+        "SQL0460",
+        "CPC2955",
+        "CPD32CC"
+      ],
+      "rows after": [
+        [
+          "1",
+          "1.50"
+        ],
+        [
+          "2",
+          "1.23"
+        ]
+      ]
+    },
+    "SET NOT NULL, a row has NULL": {
+      "result": "error",
+      "sqlstate": "23000",
+      "sqlcode": -407,
+      "message": "SQL0407 - Null values not allowed in column or variable B. (-407) (SQLExecDirectW)",
+      "job log": [
+        "SQL0407",
+        "CPF7304",
+        "CPF2958",
+        "CPI2828",
+        "CPD32CC",
+        "SQL0204"
+      ],
+      "rows after": [
+        [
+          "1",
+          "2"
+        ],
+        [
+          "2",
+          "None"
+        ]
+      ]
+    }
+  },
+  "e. QAQQINI files with the override": {
+    "QTEMP": {
+      "file": [
+        [
+          "QAQQINI",
+          "*FILE",
+          "2026-10-25 20:02:45"
+        ]
+      ],
+      "option row": [
+        [
+          "SUPPRESS_INQUIRY_MESSAGES",
+          "*YES"
+        ]
+      ]
+    },
+    "QUSRSYS": {
+      "file": [],
+      "option row": [
+        [
+          "error",
+          "42S02"
+        ]
+      ]
+    },
+    "QSYS": {
+      "file": [
+        [
+          "QAQQINI",
+          "*FILE",
+          "2021-06-11 15:31:08"
+        ]
+      ],
+      "option row": []
+    }
+  },
+  "e. objects compared": {
+    "QTEMP": {
+      "added": [
+        "QAQQINI *FILE"
+      ],
+      "removed": []
+    },
+    "<DEFAULT_LIBRARY>": {
+      "added": [],
+      "removed": []
+    },
+    "<OTHER_LIBRARY>": {
+      "added": [],
+      "removed": []
+    }
+  },
+  "g. non-default rows": [
+    [
+      "SUPPRESS_INQUIRY_MESSAGES",
+      "*YES"
+    ]
+  ],
+  "g. row count": [
+    [
+      50
+    ]
+  ],
+  "f. OVERRIDE_QAQQINI(3)": {
+    "result": "ok"
+  },
+  "f. QAQQINI files after": {
+    "QTEMP": {
+      "file": [],
+      "option row": [
+        [
+          "error",
+          "42S02"
+        ]
+      ]
+    },
+    "QUSRSYS": {
+      "file": [],
+      "option row": [
+        [
+          "error",
+          "42S02"
+        ]
+      ]
+    },
+    "QSYS": {
+      "file": [
+        [
+          "QAQQINI",
+          "*FILE",
+          "2021-06-11 15:31:08"
+        ]
+      ],
+      "option row": []
+    }
+  },
+  "f. objects compared": {
+    "QTEMP": {
+      "added": [],
+      "removed": []
+    },
+    "<DEFAULT_LIBRARY>": {
+      "added": [],
+      "removed": []
+    },
+    "<OTHER_LIBRARY>": {
+      "added": [],
+      "removed": []
+    }
+  },
+  "f. baseline again": {
+    "DROP COLUMN": {
+      "result": "error",
+      "sqlstate": "HY008",
+      "sqlcode": 30071,
+      "message": "Operation cancelled. (30071) (SQLExecDirectW)",
+      "job log": [
+        "SQL0952",
+        "CPF7304",
+        "CPD32CE",
+        "CPD32CC",
+        "SQL0204",
+        "SQL0204"
+      ],
+      "took effect": false
+    },
+    "SET DATA TYPE INTEGER -> SMALLINT (narrowing, value fits)": {
+      "result": "error",
+      "sqlstate": "HY008",
+      "sqlcode": 30071,
+      "message": "Operation cancelled. (30071) (SQLExecDirectW)",
+      "job log": [
+        "SQL0952",
+        "CPF7304",
+        "CPD32CE",
+        "CPD32CC",
+        "SQL0204",
+        "SQL0952"
+      ],
+      "took effect": false
+    },
+    "SET NOT NULL (no NULLs)": {
+      "result": "error",
+      "sqlstate": "HY008",
+      "sqlcode": 30071,
+      "message": "Operation cancelled. (30071) (SQLExecDirectW)",
+      "job log": [
+        "SQL0952",
+        "CPF7304",
+        "CPD32CE",
+        "CPD32CC",
+        "SQL0204",
+        "SQL0952"
+      ],
+      "took effect": false
+    }
+  }
+}
