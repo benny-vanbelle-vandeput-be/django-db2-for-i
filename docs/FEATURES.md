@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**30 flags enabled on Django 6.1.**
+**31 flags enabled on Django 6.1.**
 
-## Enabled (30)
+## Enabled (31)
 
 On in at least one supported Django version.
 
@@ -25,6 +25,7 @@ On in at least one supported Django version.
 | `can_rollback_ddl` | Schema changes inside a transaction are rolled back with it: a migration that fails halfway leaves nothing behind. | ✅ | ✅ | ✅ |
 | `has_native_boolean_field` | `BooleanField` is a native `BOOLEAN` column (IBM i 7.5). | – | – | ✅ |
 | `implied_column_null` | Columns are nullable unless `NOT NULL` is written; no bare `NULL` keyword in DDL. | ✅ | ✅ | ✅ |
+| `indexes_foreign_keys` | Foreign key columns get an index (on Db2 for i Django's own: the constraint creates none). | ✅ | ✅ | ✅ |
 | `nulls_order_largest` | NULL sorts as the largest value: last in ascending order, first in descending. | ✅ | ✅ | ✅ |
 | `pattern_lookup_needs_param_pattern` | `contains`, `startswith` and friends are written with `LIKE` patterns. | – | – | ✅ |
 | `requires_compound_order_by_subquery` | An ordered `union()` / `intersection()` / `difference()` is wrapped in a subquery to order it. | ✅ | ✅ | ✅ |
@@ -47,7 +48,7 @@ On in at least one supported Django version.
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (33)
+## Intentionally off (32)
 
 Off on purpose, with the reason.
 
@@ -65,7 +66,6 @@ Off on purpose, with the reason.
 | `has_native_json_field` | `JSONField` is a native JSON column type. | ❌ | ❌ | ❌ | Db2 for i 7.5 has no JSON column type; JSON is stored as text (not verified on IBM i). |
 | `has_native_uuid_field` | `UUIDField` is a native UUID column. | ❌ | ❌ | ❌ | A `UUIDField` is stored as `CHAR(32)` (probe column types); Db2 for i has no UUID type (not verified on IBM i). |
 | `has_zoneinfo_database` | The database has its own time zone database. | ❌ | ❌ | ❌ | Db2 for i has no time zone names; conversions happen in Python. |
-| `indexes_foreign_keys` | Foreign key columns get an index. | ❌ | ❌ | ❌ | A foreign key gets no SQL index on Db2 for i; Django creates its own index on the column. |
 | `order_by_nulls_first` | NULL sorts first in ascending order. | ❌ | ❌ | ❌ | Db2 for i sorts NULL as the largest value: last in ascending order (probe queries). |
 | `supports_aggregate_filter_clause` | Aggregates with a `filter` are written with SQL `FILTER (WHERE ...)`. | ❌ | ❌ | ❌ | Db2 for i rejects `FILTER (WHERE ...)` (SQL0104, probe queries); Django writes the filter as a `CASE`. |
 | `supports_bit_aggregations` | The `BitAnd`, `BitOr` and `BitXor` aggregates (Django 6.1+). | – | – | ❌ | Db2 for i has no `BIT_AND` aggregate (SQL0204, probe queries). |

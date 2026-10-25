@@ -238,28 +238,21 @@ def _catalog_constraints(live, table: str) -> list[tuple]:
 
 
 @pytest.mark.parametrize(
-    ("label", "sql", "introspected"),
+    ("label", "sql"),
     [
         (
             "child column",
             'ALTER TABLE "TESTAPP_FKCHILD" ALTER COLUMN "PARENT_ID" SET DATA TYPE BIGINT',
-            False,
         ),
-        (
-            "parent key",
-            'ALTER TABLE "TESTAPP_FKPARENT" ALTER COLUMN "ID" SET DATA TYPE BIGINT',
-            True,
-        ),
+        ("parent key", 'ALTER TABLE "TESTAPP_FKPARENT" ALTER COLUMN "ID" SET DATA TYPE BIGINT'),
     ],
 )
-def test_fact_b_type_change_of_a_column_in_a_foreign_key(
-    live, fk_models, label, sql, introspected
-) -> None:
+def test_fact_b_type_change_of_a_column_in_a_foreign_key(live, fk_models, label, sql) -> None:
     """SET DATA TYPE on a column that is part of a foreign key, while the
     foreign key exists, is accepted, but Db2 for i silently stops enforcing
     the foreign key: it stays in SYSCST with ENABLED and CHECK_PENDING empty
-    (before: YES / NO), and a row without a parent is accepted. Only after a
-    change of the child's column introspection stops listing it. Django drops
+    (before: YES / NO), and a row without a parent is accepted. Introspection
+    reads that state and no longer lists it as a foreign key. Django drops
     the foreign key before a type change and adds it again (fact a); the
     backend must never change such a column without that."""
     fk = ("FOREIGN KEY", "YES", "NO")
@@ -271,7 +264,7 @@ def test_fact_b_type_change_of_a_column_in_a_foreign_key(
     assert [c[1:] for c in _catalog_constraints(live, "TESTAPP_FKCHILD")][1:] == [
         ("FOREIGN KEY", None, None)
     ]
-    assert bool(_foreign_keys(live, "testapp_fkchild")) is introspected
+    assert _foreign_keys(live, "testapp_fkchild") == {}
     assert _orphan_insert(live) == "accepted"
 
 

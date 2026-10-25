@@ -894,8 +894,10 @@ connection, through the PUB400 lock, all dropped at the end (checked: no
   child table after the foreign key (nor for the primary keys); the access
   paths constraints use are not SQL indexes. Django's own index on the column
   (`CREATE INDEX ... (P_ID)`) works next to the foreign key and is listed
-  with `IS_UNIQUE` `D` (duplicates allowed). So `indexes_foreign_keys` is
-  False, and the backend keeps creating its own index (decision 5).
+  with `IS_UNIQUE` `D` (duplicates allowed). The backend keeps creating its
+  own index (decision 5), so a foreign key column does end up with an index:
+  `indexes_foreign_keys` is True (amended 2026-10-25; Django reads it only in
+  its tests).
 - **Two constraints on the same columns:** a unique index next to a unique
   constraint works, and so does a second foreign key on the same column; a
   **second unique constraint on the same column fails with SQL0541**

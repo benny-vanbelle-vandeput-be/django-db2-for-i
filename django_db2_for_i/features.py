@@ -155,8 +155,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # "Foreign keys through the schema editor"). Nothing is deferrable.
     supports_foreign_keys = True
     can_create_inline_fk = False
-    # A foreign key gets no SQL index on Db2 for i: Django adds its own (decision 5).
-    indexes_foreign_keys = False
+    # A foreign key column ends up with an index: Db2 for i creates none for
+    # the constraint, so the index is Django's own (decision 5, amended
+    # 2026-10-25). Django reads this flag only in its tests.
+    indexes_foreign_keys = True
     # CHECK constraints (phase 4 item 11): the column check of the positive
     # integer fields and model CheckConstraints. A violation is SQL0545 with
     # SQLSTATE HY000, mapped to IntegrityError by its SQLCODE (#96).
@@ -235,12 +237,13 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             # RawSQL("%s", ...) annotation.
             "queries.test_query.TestQueryNoModel.test_rawsql_annotation",
         },
-        # Expects the foreign keys of its models; get_relations() finds none.
         # DROP COLUMN, a narrowing ALTER COLUMN or SET NOT NULL on PUB400.
+        # test_get_relations removes a column (#17785).
         # test_alter_auto_field_to_integer_field and
         # test_alter_implicit_id_to_explicit narrow BIGINT to INTEGER only from
         # Django 6.0 on (BigAutoField default): compat.PASSING_ON_THIS_VERSION.
         REASON_CPA32B2: {
+            "introspection.tests.IntrospectionTests.test_get_relations",
             "schema.tests.SchemaTests.test_add_field_remove_field",
             "schema.tests.SchemaTests.test_alter",
             "schema.tests.SchemaTests.test_alter_auto_field_to_integer_field",
@@ -261,6 +264,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         # RenameField / a new db_column: NotSupportedError (schema.py).
         REASON_NO_COLUMN_RENAME: {
             "schema.tests.SchemaTests.test_alter_pk_with_self_referential_field",
+            # A column author becomes ForeignKey author (column author_id).
+            "schema.tests.SchemaTests.test_alter_to_fk",
             "schema.tests.SchemaTests.test_autofield_to_o2o",
             "schema.tests.SchemaTests.test_m2m_rename_field_in_target_model",
             "schema.tests.SchemaTests.test_referenced_field_without_constraint_rename_inside_atomic_block",
@@ -279,6 +284,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "schema.tests.SchemaTests.test_alter_text_field_to_datetime_field",
             "schema.tests.SchemaTests.test_alter_text_field_to_time_field",
             "schema.tests.SchemaTests.test_char_field_pk_to_auto_field",
+            # CharField to a ForeignKey to an AutoField (NVARCHAR to BIGINT).
+            "schema.tests.SchemaTests.test_char_field_with_db_index_to_fk",
         },
     }
     # Per Django version: the entries above that pass on the running version

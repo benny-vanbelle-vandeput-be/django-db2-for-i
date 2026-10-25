@@ -534,9 +534,9 @@ PR boundaries, in this order:
     every type-change path leaves the foreign keys enforced, makes
     introspection skip a foreign key Db2 for i no longer enforces, and
     documents fixtures with forward references (parents first, or dumpdata
-    --natural-foreign --natural-primary). `indexes_foreign_keys` stays off
-    (no SQL index on Db2 for i); the seven modules on 6.1 only, the migrations
-    labels in item 14.
+    --natural-foreign --natural-primary). `indexes_foreign_keys` is on
+    (Django's own index; decision 5 amended 2026-10-25); the seven modules on
+    6.1 only, the migrations labels in item 14.
 11. `feat(schema)`: check constraints: `supports_column_check_constraints`
     and `supports_table_check_constraints`, plus
     `allows_multiple_constraints_on_same_fields` if w13 allows it. Each with a
