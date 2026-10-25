@@ -1104,6 +1104,30 @@ Under commitment control the transaction starts with the first statement
 `start_transaction_sql()` returns `""`: that is what `sqlmigrate` prints
 before an atomic migration once `can_rollback_ddl` is on.
 
+### ADD COLUMN ... NOT NULL without a default (`probe -- add_column_default`)
+2026-10-25, PUB400 (IBM i 7.5), QTEMP only, the backend's connection
+attributes. Result in `probes/results/add_column_default.json`. For each base
+type the backend writes (SMALLINT, INTEGER, BIGINT, DECIMAL, DOUBLE, BOOLEAN,
+CHAR, VARCHAR, NVARCHAR, NCLOB, BLOB, DATE, TIME, TIMESTAMP):
+
+- `ADD COLUMN c <type> NOT NULL` fails with **SQL0109** (42000), "NOT NULL
+  clause not allowed", also on an empty table: Db2 for i needs a DEFAULT with
+  NOT NULL (IBM's SQL reference: unless the column is an identity column).
+  This is what Django's AddField of a NOT NULL field without any default
+  writes (Django's `test_indexes`, `test_remove_constraints_capital_letters`,
+  `test_unique_together_with_fk_with_existing_index`).
+- A bare DEFAULT (the type's system default) is accepted in every spelling:
+  `DEFAULT NOT NULL`, `NOT NULL DEFAULT`, `NOT NULL WITH DEFAULT`, `WITH DEFAULT
+  NOT NULL`, for every type including NCLOB and BLOB. `ALTER COLUMN c DROP
+  DEFAULT` works afterwards; an INSERT without the column then fails with
+  SQL0407 (23000): the column is NOT NULL without a default.
+- What value existing rows get was not recorded: an INSERT into the QTEMP
+  table is not possible under commitment control (QTEMP is not journaled).
+  The backend refuses a table with rows anyway (schema.py `add_field()`).
+- `LOCK TABLE ... IN EXCLUSIVE MODE` and `IN SHARE MODE` are accepted, in a
+  transaction and in autocommit. What the lock allows other jobs needs a table
+  outside QTEMP (`lib_lock_table`, #162, not run yet).
+
 ### Catalog views for introspection (`probe -- catalog`)
 2026-10-22, PUB400 (IBM i 7.5), read-only outside QTEMP; phase 4 step A,
 probe 25. The views' columns, from their own `QSYS2.SYSCOLUMNS` rows:
