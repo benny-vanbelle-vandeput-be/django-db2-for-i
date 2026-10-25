@@ -209,6 +209,20 @@ def _add_relation(model, name, make_field):
     return build
 
 
+def _add_column(model, name, make_field):
+    """AddField without foreign keys (as a migration's AddField has it)."""
+
+    def build(connection):
+        field = make_field()
+        field.set_attributes_from_name(name)
+        field.model = model
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+            editor.add_field(model, field)
+        return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
+
+    return build
+
+
 def _drop(model):
     def build(connection):
         with connection.schema_editor(collect_sql=True, atomic=False) as editor:
@@ -280,6 +294,29 @@ CASES: tuple[Case, ...] = (
         "alter",
         _add_relation(Switch, "author", lambda: OneToOneField(Author, PROTECT, null=True)),
         (SWITCH, AUTHOR),
+    ),
+    # AddField of a NOT NULL column without any default: Db2 for i needs a
+    # DEFAULT with NOT NULL (SQL0109), so a bare DEFAULT (the system default),
+    # dropped right after; at migrate time a table with rows is refused first
+    # (schema.py add_field(); sqlmigrate shows this form). Also UNIQUE, and a
+    # NOT NULL foreign key (dropped again, like the foreign key goldens above).
+    Case(
+        "ddl/add_field_not_null_no_default",
+        "alter",
+        _add_column(Schedule, "position", lambda: BigIntegerField()),
+        (SCHEDULE,),
+    ),
+    Case(
+        "ddl/add_field_not_null_unique",
+        "alter",
+        _add_column(Schedule, "slug", lambda: CharField(max_length=20, unique=True)),
+        (SCHEDULE,),
+    ),
+    Case(
+        "ddl/add_field_foreign_key_not_null",
+        "alter",
+        _add_relation(Schedule, "owner", lambda: ForeignKey(Author, PROTECT)),
+        (SCHEDULE, AUTHOR),
     ),
     Case(
         "ddl/add_field_not_null_default",

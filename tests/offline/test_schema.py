@@ -423,3 +423,128 @@ def test_an_error_in_the_block_skips_the_deferred_statements(monkeypatch) -> Non
     editor.__exit__(ValueError, error, None)
     assert executed == []
     assert editor.atomic.exits == [(ValueError, error)]
+
+
+# --- AddField of a NOT NULL column without a default (SQL0109) -----------------------
+
+
+def _new_field(field, name="extra"):
+    field.set_attributes_from_name(name)
+    field.model = Book
+    return field
+
+
+def _add_field_sql(field) -> list[str]:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.add_field(Book, field)
+    assert connection.connection is None, "collecting SQL must not connect"
+    return editor.collected_sql
+
+
+@pytest.mark.parametrize(
+    ("field", "column"),
+    [
+        (models.BigIntegerField(), '"EXTRA" BIGINT DEFAULT NOT NULL'),
+        (models.DateTimeField(), '"EXTRA" TIMESTAMP(6) DEFAULT NOT NULL'),
+        (models.TextField(), '"EXTRA" NCLOB DEFAULT NOT NULL'),
+        (
+            models.CharField(max_length=20, unique=True),
+            '"EXTRA" NVARCHAR(20) DEFAULT NOT NULL UNIQUE',
+        ),
+    ],
+)
+def test_not_null_without_default_gets_a_bare_default_dropped_right_after(field, column) -> None:
+    """sqlmigrate's form (no database to check for rows): Db2 for i needs a
+    DEFAULT with NOT NULL (SQL0109, probe add_column_default)."""
+    assert _add_field_sql(_new_field(field)) == [
+        f'ALTER TABLE "TESTAPP_BOOK" ADD COLUMN {column};',
+        'ALTER TABLE "TESTAPP_BOOK" ALTER COLUMN "EXTRA" DROP DEFAULT;',
+    ]
+
+
+@pytest.mark.parametrize(
+    ("field", "column"),
+    [
+        (models.BigIntegerField(null=True), '"EXTRA" BIGINT'),
+        (models.BigIntegerField(db_default=5), '"EXTRA" BIGINT DEFAULT 5 NOT NULL'),
+        (models.CharField(max_length=20, blank=True), "\"EXTRA\" NVARCHAR(20) DEFAULT '' NOT NULL"),
+    ],
+)
+def test_other_columns_keep_their_sql(field, column) -> None:
+    assert (
+        _add_field_sql(_new_field(field))[0] == f'ALTER TABLE "TESTAPP_BOOK" ADD COLUMN {column};'
+    )
+
+
+def test_a_python_default_keeps_djangos_temporary_default() -> None:
+    sql = _add_field_sql(_new_field(models.BigIntegerField(default=7)))
+    assert sql == [
+        'ALTER TABLE "TESTAPP_BOOK" ADD COLUMN "EXTRA" BIGINT DEFAULT 7 NOT NULL;',
+        'ALTER TABLE "TESTAPP_BOOK" ALTER COLUMN "EXTRA" DROP DEFAULT;',
+    ]
+
+
+def test_an_identity_column_needs_no_default() -> None:
+    editor = connection.schema_editor(collect_sql=True, atomic=False)
+    assert not editor._needs_temporary_default(_new_field(models.BigAutoField(primary_key=True)))
+    assert editor._needs_temporary_default(_new_field(models.BigIntegerField()))
+
+
+class RowsCursor:
+    """Answers the check for rows; records every statement."""
+
+    def __init__(self, executed, has_rows):
+        self.executed = executed
+        self.has_rows = has_rows
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def execute(self, sql, params=None):
+        self.executed.append(sql)
+
+    def fetchone(self):
+        return (1,) if self.has_rows else None
+
+
+def _executing_editor(monkeypatch, *, has_rows, in_atomic_block=True):
+    """A schema editor that executes (no collect_sql) against a fake cursor."""
+    executed: list[str] = []
+    editor = connection.schema_editor(atomic=False)
+    editor.deferred_sql = []  # what __enter__ sets up, without a connection
+    monkeypatch.setattr(connection, "in_atomic_block", in_atomic_block)
+    monkeypatch.setattr(connection, "cursor", lambda: RowsCursor(executed, has_rows))
+    monkeypatch.setattr(editor, "execute", lambda sql, params=(): executed.append(str(sql)))
+    return editor, executed
+
+
+def test_a_table_with_rows_is_refused(monkeypatch) -> None:
+    import django.db
+
+    editor, executed = _executing_editor(monkeypatch, has_rows=True)
+    with pytest.raises(django.db.IntegrityError, match="the table has rows"):
+        editor.add_field(Book, _new_field(models.BigIntegerField()))
+    assert executed == [
+        'LOCK TABLE "TESTAPP_BOOK" IN EXCLUSIVE MODE',
+        'SELECT 1 FROM "TESTAPP_BOOK" FETCH FIRST 1 ROW ONLY',
+    ]
+
+
+def test_an_empty_table_gets_the_column(monkeypatch) -> None:
+    editor, executed = _executing_editor(monkeypatch, has_rows=False)
+    editor.add_field(Book, _new_field(models.BigIntegerField()))
+    assert executed == [
+        'LOCK TABLE "TESTAPP_BOOK" IN EXCLUSIVE MODE',
+        'SELECT 1 FROM "TESTAPP_BOOK" FETCH FIRST 1 ROW ONLY',
+        'ALTER TABLE "TESTAPP_BOOK" ADD COLUMN "EXTRA" BIGINT DEFAULT NOT NULL',
+        'ALTER TABLE "TESTAPP_BOOK" ALTER COLUMN "EXTRA" DROP DEFAULT',
+    ]
+
+
+def test_without_a_transaction_there_is_no_lock(monkeypatch) -> None:
+    editor, executed = _executing_editor(monkeypatch, has_rows=False, in_atomic_block=False)
+    editor.add_field(Book, _new_field(models.BigIntegerField()))
+    assert not any(sql.startswith("LOCK TABLE") for sql in executed)

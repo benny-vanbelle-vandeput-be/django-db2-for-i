@@ -169,6 +169,10 @@ def allowed_identifiers() -> set[str]:
         "G1",
         # The derived table of a rewritten IN (subquery) (compiler.py).
         "DJDB2I_IN",
+        # Columns the AddField goldens add (tests/golden_cases/ddl.py).
+        "POSITION",
+        "SLUG",
+        "OWNER_ID",
     }
     models = (
         Account,
