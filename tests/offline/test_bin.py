@@ -262,7 +262,36 @@ def test_a_running_container_of_an_earlier_run_refuses_the_run(tmp_path):
         process.stderr.read()
     )
     assert not marker.exists()
-    assert _calls(log) == ["ps -a lock=held"]
+    # Before the lock is released its own container is checked too (never started).
+    assert _calls(log) == ["ps -a lock=held", "ps -q lock=held"]
+
+
+@pytest.mark.parametrize("signum", [signal.SIGTERM, signal.SIGHUP, signal.SIGINT])
+def test_a_signal_before_the_command_starts_skips_it_and_still_cleans_up(
+    tmp_path, monkeypatch, signum
+):
+    """The race #167's test found: a stopped task signals the whole process
+    group, possibly right after the lock was taken and before the command
+    started. The handlers are in place from then on: the command does not
+    start, and the container is still checked and stopped before the lock
+    is released."""
+    calls = []
+    marker = tmp_path / "ran"
+
+    def signal_now():
+        os.kill(os.getpid(), signum)  # arrives in the window
+        return None
+
+    monkeypatch.setattr(lock, "clear_earlier_containers", signal_now)
+    monkeypatch.setattr(lock, "container_running", lambda name: calls.append(name) or False)
+    before = {s: signal.getsignal(s) for s in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)}
+    code = lock.run(["touch", str(marker)], directory=tmp_path, container="db2i-pub400-1")
+    assert code == 128 + signum
+    assert not marker.exists()
+    assert calls == ["db2i-pub400-1"]  # stop_container() ran
+    assert lock.status(tmp_path) == "PUB400 lock: free"
+    assert (tmp_path / lock.HOLDER_NAME).read_text() == ""
+    assert {s: signal.getsignal(s) for s in before} == before
 
 
 def test_without_a_container_docker_is_not_called(tmp_path, monkeypatch):
