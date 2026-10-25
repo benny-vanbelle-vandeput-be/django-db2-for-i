@@ -17,6 +17,8 @@
 # checkout): one PUB400 job at a time on this machine, whatever the worktree.
 # A second run stops with "PUB400 busy: <holder>", or waits with --wait (or
 # DB2I_LOCK_WAIT=1, which also reaches runs started by scripts/runtests.sh).
+# The lock is released only after the run's container is gone: when the run
+# is stopped, the lock stops the container first (docker stop, then kill).
 set -eu
 
 wait=
@@ -48,10 +50,13 @@ commit=$(git log -1 --format='%h %cs' 2>/dev/null || echo unknown)
 # of objects test runs create (tests/table_registry.py, bin/ibmi-cleanup).
 state=$(python3 scripts/pub400_lock.py --dir)
 mkdir -p "$state"
-set -- docker compose run --rm -e DB2I_BACKEND_COMMIT="$commit" \
+# A named container: the lock stops it before it is released (a stopped run
+# would otherwise leave the container and its PUB400 connection behind).
+container="db2i-pub400-$$"
+set -- docker compose run --rm --name "$container" -e DB2I_BACKEND_COMMIT="$commit" \
     -v "$state:/db2i-state" -e DB2I_TABLE_LIST=/db2i-state/created-objects.txt \
     tests nox -s "$session" -- "$@"
 if command -v caffeinate >/dev/null 2>&1; then
     set -- caffeinate -i -s "$@"
 fi
-exec python3 scripts/pub400_lock.py $wait -- "$@"
+exec python3 scripts/pub400_lock.py $wait --container "$container" -- "$@"

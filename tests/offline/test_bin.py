@@ -118,7 +118,9 @@ def test_the_lock_runs_with_the_hosts_python_39() -> None:
 
 def test_pub400_sh_runs_every_job_under_the_lock() -> None:
     text = (ROOT / "scripts" / "pub400.sh").read_text()
-    assert 'exec python3 scripts/pub400_lock.py $wait -- "$@"' in text
+    assert 'exec python3 scripts/pub400_lock.py $wait --container "$container" -- "$@"' in text
+    assert 'container="db2i-pub400-$$"' in text
+    assert 'docker compose run --rm --name "$container"' in text
     assert 'if [ "${1:-}" = --wait ]; then' in text
     assert 'if [ "${DB2I_LOCK_WAIT:-}" = 1 ]; then' in text
 
@@ -127,6 +129,147 @@ def test_pub400_sh_gives_runs_the_cleanup_list_outside_the_checkout() -> None:
     text = (ROOT / "scripts" / "pub400.sh").read_text()
     assert "state=$(python3 scripts/pub400_lock.py --dir)" in text
     assert '-v "$state:/db2i-state" -e DB2I_TABLE_LIST=/db2i-state/created-objects.txt' in text
+
+
+# --- The lock stops the run's container before it is released --------------------------
+
+FAKE_DOCKER = """#!/bin/sh
+# A fake docker: one container, running while $STATE exists. Every call is
+# logged with whether the PUB400 lock was held at that moment.
+held=$(python3 - "$DB2I_LOCK_DIR/pub400.lock" <<'PY'
+import fcntl, sys
+with open(sys.argv[1], "a") as handle:
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        print("free")
+    except OSError:
+        print("held")
+PY
+)
+echo "$1 $2 lock=$held" >> "$LOG"
+case "$1 $2" in
+    "ps -a") [ -f "$EARLIER" ] && cat "$EARLIER" ;;
+    "ps -q") [ -f "$STATE" ] && echo 0123456789ab ;;
+    "stop -t") [ -n "$STOP_FAILS" ] || rm -f "$STATE" ;;
+    "kill "*) rm -f "$STATE" ;;
+    "rm -f") rm -f "$EARLIER" ;;
+esac
+exit 0
+"""
+
+
+def _locked_run(tmp_path, *, running=True, stop_fails=False, command=("sleep", "30"), earlier=""):
+    fake = tmp_path / "fakebin"
+    fake.mkdir()
+    (fake / "docker").write_text(FAKE_DOCKER)
+    (fake / "docker").chmod(0o755)
+    state, log = tmp_path / "running", tmp_path / "docker.log"
+    if running:
+        state.touch()
+    if earlier:
+        (tmp_path / "earlier").write_text(earlier)
+    env = {
+        **os.environ,
+        "PATH": f"{fake}:{os.environ['PATH']}",
+        "DB2I_LOCK_DIR": str(tmp_path),
+        "STATE": str(state),
+        "LOG": str(log),
+        "EARLIER": str(tmp_path / "earlier"),
+        "STOP_FAILS": "1" if stop_fails else "",
+    }
+    process = subprocess.Popen(
+        [sys.executable, str(LOCK_SCRIPT), "--container", "db2i-pub400-1", "--", *command],
+        env=env,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    return process, state, log
+
+
+def _wait_for_holder(tmp_path) -> None:
+    holder = tmp_path / lock.HOLDER_NAME
+    for _ in range(100):
+        if holder.exists() and holder.read_text().strip():
+            return
+        time.sleep(0.05)
+    raise AssertionError("the lock was not taken")
+
+
+def _calls(log) -> list[str]:
+    return log.read_text().split("\n")[:-1] if log.exists() else []
+
+
+@pytest.mark.parametrize("signum", [signal.SIGTERM, signal.SIGHUP])
+def test_a_stopped_run_stops_its_container_before_the_lock_is_released(tmp_path, signum):
+    process, state, log = _locked_run(tmp_path)
+    _wait_for_holder(tmp_path)
+    process.send_signal(signum)
+    process.wait(timeout=30)
+    assert _calls(log) == [
+        "ps -a lock=held",
+        "ps -q lock=held",
+        "stop -t lock=held",
+        "ps -q lock=held",
+    ]
+    assert not state.exists()
+    assert "stopping container db2i-pub400-1" in process.stderr.read()
+    assert lock.status(tmp_path) == "PUB400 lock: free"
+
+
+def test_a_container_that_does_not_stop_is_killed_before_the_lock_is_released(tmp_path):
+    process, state, log = _locked_run(tmp_path, stop_fails=True)
+    _wait_for_holder(tmp_path)
+    process.send_signal(signal.SIGTERM)
+    process.wait(timeout=30)
+    assert _calls(log) == [
+        "ps -a lock=held",
+        "ps -q lock=held",
+        "stop -t lock=held",
+        "ps -q lock=held",
+        "kill db2i-pub400-1 lock=held",
+        "ps -q lock=held",
+    ]
+    assert not state.exists()
+
+
+def test_a_finished_run_whose_container_is_gone_only_checks(tmp_path):
+    process, _state, log = _locked_run(tmp_path, running=False, command=("true",))
+    assert process.wait(timeout=30) == 0
+    assert _calls(log) == ["ps -a lock=held", "ps -q lock=held"]
+
+
+def test_an_exited_container_of_an_earlier_run_is_removed_first(tmp_path):
+    """A crash can leave db2i-pub400-<pid> behind; a reused PID must not
+    collide with it."""
+    process, _state, log = _locked_run(
+        tmp_path, running=False, command=("true",), earlier="db2i-pub400-1\texited\n"
+    )
+    assert process.wait(timeout=30) == 0
+    assert _calls(log) == ["ps -a lock=held", "rm -f lock=held", "ps -q lock=held"]
+
+
+def test_a_running_container_of_an_earlier_run_refuses_the_run(tmp_path):
+    """It still holds a PUB400 connection (e.g. after a SIGKILL)."""
+    marker = tmp_path / "ran"
+    process, _state, log = _locked_run(
+        tmp_path,
+        running=False,
+        command=("touch", str(marker)),
+        earlier="db2i-pub400-77\trunning\n",
+    )
+    assert process.wait(timeout=30) == lock.BUSY
+    assert "a PUB400 container from an earlier run still runs: db2i-pub400-77" in (
+        process.stderr.read()
+    )
+    assert not marker.exists()
+    assert _calls(log) == ["ps -a lock=held"]
+
+
+def test_without_a_container_docker_is_not_called(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr(lock, "_docker", lambda *args, **kwargs: calls.append(args))
+    assert lock.run(["true"], directory=tmp_path) == 0
+    assert calls == []
 
 
 def test_the_state_directory(monkeypatch, capsys) -> None:
