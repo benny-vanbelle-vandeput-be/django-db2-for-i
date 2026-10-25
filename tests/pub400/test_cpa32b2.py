@@ -1,7 +1,9 @@
 """CPA32B2 suppressed by the schema editor (inquiry.py), against the IBM i.
 
-Each test creates its own table (testapp_narrowing, or the migration's
-cpa32b2probe_shrink) in the test library and drops it again. The QAQQINI copy
+Each test creates its own table (testapp_narrowing, or the migrations'
+cpa32b2probe_shrink) in the test library and drops it again; the module owns
+the library's marker (marked_library.py), which also covers the
+django_migrations table the migration test needs. The QAQQINI copy
 that OVERRIDE_QAQQINI creates lives in QTEMP of this run's own job. Never more
 than one connection at a time: the option test closes the default connection
 before it opens its own.
@@ -18,6 +20,7 @@ from django.db import DataError, IntegrityError, OperationalError, models
 
 from django_db2_for_i.base import DatabaseWrapper
 from tests.pub400.connection_guard import replace_if_unusable
+from tests.pub400.marked_library import marked_library
 
 TABLE = "TESTAPP_NARROWING"
 QAQQINI_COPY = "SELECT COUNT(*) FROM TABLE(QSYS2.OBJECT_STATISTICS('QTEMP', '*FILE', 'QAQQINI')) X"
@@ -25,6 +28,12 @@ COLUMN = (
     "SELECT DATA_TYPE, LENGTH, NUMERIC_SCALE, IS_NULLABLE FROM QSYS2.SYSCOLUMNS "
     "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s AND COLUMN_NAME = %s"
 )
+
+
+@pytest.fixture(scope="module", autouse=True)
+def marked_empty_library(django_db_blocker, request):
+    with django_db_blocker.unblock(), marked_library(request.node.nodeid):
+        yield
 
 
 class Utf8CharField(models.CharField):
@@ -211,9 +220,12 @@ def test_nested_editors_end_with_the_outermost(live, narrowing) -> None:
 SHRINK_TABLE = "CPA32B2PROBE_SHRINK"
 
 
-def test_migration_narrows_and_removes_and_back(live) -> None:
-    """A migration applied by Django's MigrationExecutor (atomic) narrows a
-    column and drops one of a table with a row, then is unapplied again."""
+def test_migrations_narrow_and_remove_and_back(live) -> None:
+    """Migrations applied by Django's MigrationExecutor (atomic): the first
+    creates the table and adds a row, the second narrows a column and drops
+    one; then both are unapplied again. Two migrations, since Db2 for i
+    refuses an ALTER TABLE on a table created and changed in the same
+    transaction (SQL0910)."""
     from django.db import migrations
     from django.db.migrations.executor import MigrationExecutor
     from django.db.migrations.recorder import MigrationRecorder
@@ -222,8 +234,8 @@ def test_migration_narrows_and_removes_and_back(live) -> None:
     def add_row(apps, schema_editor):
         apps.get_model("cpa32b2probe", "Shrink").objects.create(name="abc", extra=1)
 
-    migration = migrations.Migration("0001_shrink", "cpa32b2probe")
-    migration.operations = [
+    create = migrations.Migration("0001_create", "cpa32b2probe")
+    create.operations = [
         migrations.CreateModel(
             "Shrink",
             [
@@ -233,19 +245,25 @@ def test_migration_narrows_and_removes_and_back(live) -> None:
             ],
         ),
         migrations.RunPython(add_row, migrations.RunPython.noop),
+    ]
+    shrink = migrations.Migration("0002_shrink", "cpa32b2probe")
+    shrink.operations = [
         migrations.AlterField("shrink", "name", models.CharField(max_length=10)),
         migrations.RemoveField("shrink", "extra"),
     ]
     executor = MigrationExecutor(live)
     try:
-        executor.apply_migration(ProjectState(), migration)
+        created = executor.apply_migration(ProjectState(), create)
+        executor.apply_migration(created.clone(), shrink)
         assert _column(live, "name", SHRINK_TABLE) == ("VARG", 10, None, "N")
         assert _column(live, "extra", SHRINK_TABLE) is None
         _assert_suppression_ended(live)
         with live.cursor() as cursor:
             cursor.execute(f'SELECT "NAME" FROM "{SHRINK_TABLE}"')
             assert cursor.fetchall() == [("abc",)]
-        executor.unapply_migration(ProjectState(), migration)
+        executor.unapply_migration(created.clone(), shrink)
+        assert _column(live, "name", SHRINK_TABLE) == ("VARG", 20, None, "N")
+        assert _column(live, "extra", SHRINK_TABLE) is not None
         _assert_suppression_ended(live)
     finally:
         replace_if_unusable(live)
@@ -257,12 +275,15 @@ def test_migration_narrows_and_removes_and_back(live) -> None:
             )
             if cursor.fetchone()[0]:
                 cursor.execute(f'DROP TABLE "{SHRINK_TABLE}"')
-        MigrationRecorder(live).record_unapplied("cpa32b2probe", "0001_shrink")
+        recorder = MigrationRecorder(live)
+        for name in ("0001_create", "0002_shrink"):
+            recorder.record_unapplied("cpa32b2probe", name)
 
 
 def test_option_off_keeps_cpa32b2(live, narrowing) -> None:
     """OPTIONS['suppress_inquiry_messages'] = False: DROP COLUMN in a field
-    change is cancelled by CPA32B2 again, and the error names the option."""
+    change is cancelled by CPA32B2 again, and the error names the option.
+    atomic=False: an atomic block needs a connection in django.db.connections."""
     live.close()  # one connection at a time
     settings_dict = {
         **live.settings_dict,
@@ -272,7 +293,7 @@ def test_option_off_keeps_cpa32b2(live, narrowing) -> None:
     try:
         with (
             pytest.raises(OperationalError, match="is False for this database"),
-            wrapper.schema_editor() as editor,
+            wrapper.schema_editor(atomic=False) as editor,
         ):
             editor.remove_field(narrowing, narrowing._meta.get_field("number"))
         assert not _copy_exists(wrapper)
