@@ -166,34 +166,53 @@ def run(
                 return BUSY
             print(f"PUB400 busy: {holder}; waiting (--wait)", file=sys.stderr, flush=True)
             fcntl.flock(handle, fcntl.LOCK_EX)
+        # Signals are handled from here on, while the lock is held: one that
+        # arrives before the command starts skips it, and the container is
+        # still cleaned up below (a stopped task sends SIGTERM or SIGHUP to the
+        # whole process group, possibly before the child exists).
+        received: list[int] = []
+        child: subprocess.Popen | None = None
+
+        def on_signal(signum, _frame) -> None:
+            received.append(signum)
+            # Ctrl-C (SIGINT) reaches the whole process group: the child
+            # handles it itself; SIGTERM and SIGHUP are passed on.
+            if child is not None and signum != signal.SIGINT:
+                child.terminate()
+
+        handled = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
+        previous = {signum: signal.signal(signum, on_signal) for signum in handled}
         holder_path = directory / HOLDER_NAME
-        if container and (running := clear_earlier_containers()):
-            print(
-                f"PUB400 busy: a PUB400 container from an earlier run still runs: {running}; "
-                f"stop it (docker stop {running}), then run bin/ibmi-cleanup",
-                file=sys.stderr,
-            )
-            return BUSY
-        holder_path.write_text(describe(command) + "\n")
         try:
+            if container and (running := clear_earlier_containers()):
+                print(
+                    f"PUB400 busy: a PUB400 container from an earlier run still runs: "
+                    f"{running}; stop it (docker stop {running}), then run bin/ibmi-cleanup",
+                    file=sys.stderr,
+                )
+                return BUSY
+            holder_path.write_text(describe(command) + "\n")
+            if received:
+                return 128 + received[0]
             try:
                 child = subprocess.Popen(command)
             except FileNotFoundError:
                 print(f"error: command not found: {command[0]}", file=sys.stderr)
                 return 127
-            # Ctrl-C reaches the whole process group: the child handles it, and
-            # this process stays to clean up; SIGTERM and SIGHUP are passed on.
-            signal.signal(signal.SIGINT, signal.SIG_IGN)
-            for signum in (signal.SIGTERM, signal.SIGHUP):
-                signal.signal(signum, lambda *_: child.terminate())
+            if any(signum != signal.SIGINT for signum in received):
+                child.terminate()  # a signal arrived while the child started
             return child.wait()
         finally:
             # The lock is still held here: the container goes first.
-            if container:
-                for signum in (signal.SIGTERM, signal.SIGHUP):
-                    signal.signal(signum, signal.SIG_IGN)
-                stop_container(container)
-            holder_path.write_text("")
+            for signum in (signal.SIGTERM, signal.SIGHUP):
+                signal.signal(signum, signal.SIG_IGN)
+            try:
+                if container:
+                    stop_container(container)
+                holder_path.write_text("")
+            finally:
+                for signum, handler in previous.items():
+                    signal.signal(signum, handler)
 
 
 def main(argv: list[str]) -> int:
