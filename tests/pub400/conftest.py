@@ -17,8 +17,14 @@ from django.core.management.color import no_style
 from django.db import connection, connections
 
 from tests.pub400.connection_guard import replace_if_unusable
-from tests.pub400.marked_library import marked_library
+from tests.pub400.marked_library import install_guard, marked_library
 from tests.pub400.testapp_tables import MODELS, TABLES
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _tables_only_in_a_marked_library():
+    """Every own IBM i test creates tables inside marked_library() or in QTEMP."""
+    install_guard()
 
 
 @pytest.fixture(scope="session", autouse=True)
