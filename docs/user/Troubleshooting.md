@@ -29,10 +29,11 @@ reset an identity) ran in a transaction that has uncommitted changes on the
 same table.
 
 In a migration it happens for an `AlterField` to `null=False` on a column
-that holds NULLs: Django sets them to the default and then changes the column
-in the same transaction (see
-[Known limitations](Known-Limitations.md#making-a-column-not-null-that-holds-nulls);
-give that migration `atomic = False`).
+that really holds NULLs (Django sets them to the default and then changes the
+column in the same transaction), and for a `RunPython` or `RunSQL` that
+changes rows before a schema change of the same table. Give that migration
+`atomic = False`, or change the rows in a separate data migration first (see
+[Known limitations](Known-Limitations.md#making-a-column-not-null-that-holds-nulls)).
 
 The backend avoids this for its own identity restarts (flush, `loaddata`) by
 running them after the commit. You can still hit it with your own DDL inside
