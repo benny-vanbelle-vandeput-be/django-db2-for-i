@@ -130,7 +130,10 @@ CPA32B2 is back for everything else.
   backend closes that connection, so the suppression can never reach an
   `ALTER TABLE` outside migrations.
 
-**To keep CPA32B2 for migrations too**, turn the suppression off:
+**The fallback: the system reply list.** Use it when `OVERRIDE_QAQQINI` is
+not allowed on your system (for example a site policy that forbids query
+option overrides), when it fails (the warning in the log names the error), or
+when you want to keep CPA32B2 for migrations too. Turn the suppression off:
 
 ```python
 "OPTIONS": {"suppress_inquiry_messages": False}
