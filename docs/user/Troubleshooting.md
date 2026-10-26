@@ -28,6 +28,12 @@ created with `CREATE SCHEMA` are journaled already.
 reset an identity) ran in a transaction that has uncommitted changes on the
 same table.
 
+In a migration it happens for an `AlterField` to `null=False` on a column
+that holds NULLs: Django sets them to the default and then changes the column
+in the same transaction (see
+[Known limitations](Known-Limitations.md#making-a-column-not-null-that-holds-nulls);
+give that migration `atomic = False`).
+
 The backend avoids this for its own identity restarts (flush, `loaddata`) by
 running them after the commit. You can still hit it with your own DDL inside
 `transaction.atomic()`, or in a `TestCase` (see

@@ -456,11 +456,11 @@ def test_alter_field_and_back(live, alter_model) -> None:
     table with rows, and the rows keep their values. Back: narrowing and NOT NULL
     send CPA32B2, which the schema editor suppresses for its job (inquiry.py).
     A narrowing that would truncate a value is refused first, and the table is
-    unchanged; the way back to the original lengths works, and the way back to
-    NOT NULL first sets the NULL to the default (Django's UPDATE before SET NOT
-    NULL).
+    unchanged; the way back to the original lengths works. The way back to NOT
+    NULL first sets the NULL to the default (Django's UPDATE before SET NOT
+    NULL): in a transaction that fails with SQL0910, without one it works.
     """
-    from django.db import DataError
+    from django.db import DatabaseError, DataError
 
     model = alter_model
     with live.cursor() as cursor:
@@ -511,6 +511,19 @@ def test_alter_field_and_back(live, alter_model) -> None:
 
     with live.schema_editor() as editor:
         editor.alter_field(model, wide_text, text, strict=True)
+    back_text = [*forward[:2], ("TEXT", "VARG", 20, None, "N", _ux("O'Brien 100%"))]
+    # Back to NOT NULL: Django sets the NULL to the default (UPDATE), then SET
+    # NOT NULL. In one transaction Db2 for i refuses the ALTER TABLE after the
+    # row change (SQL0910), and the transaction is rolled back; without a
+    # transaction (atomic = False) it works.
+    with pytest.raises(DatabaseError, match="SQL0910"), live.schema_editor() as editor:
+        editor.alter_field(model, wide_number, number, strict=True)
+    with live.cursor() as cursor:
+        cursor.execute(ALTER_COLUMNS)
+        assert _stripped(cursor.fetchall()) == back_text
+        cursor.execute(ALTER_ROWS)
+        assert [tuple(row) for row in cursor.fetchall()] == rows
+    with live.schema_editor(atomic=False) as editor:
         editor.alter_field(model, wide_number, number, strict=True)
     with live.cursor() as cursor:
         cursor.execute(ALTER_COLUMNS)

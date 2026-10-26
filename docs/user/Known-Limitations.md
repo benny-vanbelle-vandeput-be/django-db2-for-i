@@ -223,6 +223,17 @@ The backend writes `DROP COLUMN` without `CASCADE` or `RESTRICT` on every
 Django version (Django 5.2's own text adds `CASCADE`). What Db2 for i does
 with views or indexes that depend on the column is not verified yet.
 
+## Making a column NOT NULL that holds NULLs
+
+An `AlterField` from `null=True` to `null=False` with a `default` or
+`db_default` first sets the NULLs to the default (Django's `UPDATE ... WHERE
+... IS NULL`) and then runs `SET NOT NULL`. Db2 for i refuses an `ALTER TABLE`
+in a transaction that already changed rows of the same table (SQL0910), so in
+an atomic migration this fails when the column holds NULLs, and the migration
+is rolled back. Give that migration `atomic = False`: then the `UPDATE` is
+committed before the `ALTER TABLE` (verified). Without NULLs in the column
+nothing is updated, and the atomic migration works.
+
 ## Adding a NOT NULL column without a default
 
 Db2 for i needs a DEFAULT with NOT NULL. For a field with `null=False` and no
