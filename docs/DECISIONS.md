@@ -1662,3 +1662,28 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
     the copy is an `UPDATE` of every row, so the `DROP COLUMN` in the same
     transaction fails with SQL0910 (probe `lib_pending_change`), it changes
     the column order, and it rebuilds indexes and constraints on the column.
+
+
+## 2026-10-26: supports_comments stays off
+- **Decision (project owner, phase 4 step C plan):** `supports_comments`
+  stays False, so `db_comment` and `db_table_comment` write no `COMMENT ON`
+  / `LABEL ON`, and introspection and inspectdb report no comments. This
+  confirms the condition of 2026-10-21 ("supports_comments only if Unicode
+  text works"), which is not met.
+- **Why:** `COMMENT ON` takes only a plain string constant, and the text
+  is converted to the job CCSID before the statement is parsed:
+  - `COMMENT ON ... IS UX'...'` and `N'...'` are rejected (SQL0104, probe
+    25 in QTEMP);
+  - a plain constant with text in the job CCSID is stored correctly (quotes
+    included), but with `€` or an emoji Db2 for i treats it as a graphic
+    constant and rejects it (SQL0104, own IBM i tests).
+  So a comment would work or fail depending on its characters and the
+  job's CCSID: a migration with `db_comment="Price in €"` would fail on one
+  system and work on another.
+- **When to look again:** a Db2 for i level that accepts a Unicode constant
+  in `COMMENT ON`; then `supports_comments` goes on with
+  `COMMENT ON TABLE/COLUMN` and introspection from `SYSTABLES.LONG_COMMENT`
+  / `SYSCOLUMNS.LONG_COMMENT`.
+- **Alternatives:** on with a documented CCSID limitation (a migration
+  fails for some text); on, writing only the text that fits the job CCSID
+  and dropping the rest (silent data loss); off (chosen).
