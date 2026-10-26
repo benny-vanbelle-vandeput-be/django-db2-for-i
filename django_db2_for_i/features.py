@@ -212,7 +212,20 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # Known failures of Django's own test suite, grouped by one fixed reason
     # string each (see the REASON_* constants). Filled from real runs (phase 1,
     # step 9).
-    django_test_skips: dict[str, set[str]] = {}
+    # Skipped, not expected failures, on every supported Django version.
+    django_test_skips: dict[str, set[str]] = {
+        # Repointing an m2m renames the through table's column (tagm2mtest_id
+        # to uniquetest_id). As expected failures they still error: the
+        # tearDown drops the through table the test never created (SQL0204),
+        # and unittest then drops the expected failure. They become expected
+        # failures again if the table-rebuild decision (phase 4, step C) ever
+        # adds column renames.
+        REASON_NO_COLUMN_RENAME: {
+            "schema.tests.SchemaTests.test_m2m_repoint",
+            "schema.tests.SchemaTests.test_m2m_repoint_custom",
+            "schema.tests.SchemaTests.test_m2m_repoint_inherited",
+        },
+    }
     expected_failures: dict[str, set[str]] = {
         # Subtracts from a TimeField stored with microseconds (TIME has none).
         REASON_TIME_FRACTIONS: {

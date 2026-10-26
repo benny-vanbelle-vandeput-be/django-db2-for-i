@@ -287,10 +287,25 @@ def test_skips_are_grouped_by_fixed_reasons() -> None:
     from django_db2_for_i import features
 
     cls = features.DatabaseFeatures
-    assert set(cls.django_test_skips) == set()
+    assert set(cls.django_test_skips) == {features.REASON_NO_COLUMN_RENAME}
     # Each entry is one test id, never a whole class.
     for test_ids in cls.django_test_skips.values():
         assert all(test_id.count(".") >= 3 and ".test_" in test_id for test_id in test_ids)
+
+
+def test_skips_are_the_same_on_every_django_version() -> None:
+    """Skips are not filtered per version (compat), and a test is never both
+    skipped and an expected failure."""
+    from django_db2_for_i import features
+
+    cls = features.DatabaseFeatures
+    skipped = set().union(*cls.django_test_skips.values())
+    assert skipped == {
+        "schema.tests.SchemaTests.test_m2m_repoint",
+        "schema.tests.SchemaTests.test_m2m_repoint_custom",
+        "schema.tests.SchemaTests.test_m2m_repoint_inherited",
+    }
+    assert not skipped & set().union(*cls.expected_failures.values())
 
 
 def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
