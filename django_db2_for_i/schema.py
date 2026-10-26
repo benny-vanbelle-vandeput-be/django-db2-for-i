@@ -437,6 +437,14 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             return False
         return not field.has_db_default() and self.effective_default(field) is None
 
+    def _field_should_be_indexed(self, model, field):
+        """No index on a LOB column (TextField, BinaryField): Db2 for i refuses
+        it with SQL0350, so db_index=True is skipped there, as the Oracle and
+        MySQL backends do for their limited types (supports_index_on_text_field)."""
+        if base_type(field.db_type(self.connection)) in LOB_TYPES:
+            return False
+        return super()._field_should_be_indexed(model, field)
+
     def alter_field(self, model, old_field, new_field, strict=False):
         """Refuse a type change Db2 for i cannot make in place (SQL0190) before
         any statement runs: Django drops foreign keys, unique constraints and
@@ -454,8 +462,27 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             )
         if old_type and new_type and old_field.column and not self.collect_sql:
             self._refuse_changed_values(model, old_field, new_field, old_type, new_type)
-        with self._field_change():
+        with self._field_change(), self._lob_without_db_index(old_field, new_field):
             return super().alter_field(model, old_field, new_field, strict=strict)
+
+    @contextlib.contextmanager
+    def _lob_without_db_index(self, *fields):
+        """Django's alter_field() adds and drops the db_index index without
+        asking _field_should_be_indexed(): a LOB field counts as db_index=False
+        there, so no index is created on it, and a field that leaves a LOB type
+        gets its index."""
+        lobs = [
+            field
+            for field in fields
+            if field.db_index and base_type(field.db_type(self.connection)) in LOB_TYPES
+        ]
+        for field in lobs:
+            field.db_index = False
+        try:
+            yield
+        finally:
+            for field in lobs:
+                field.db_index = True
 
     def _refuse_changed_values(self, model, old_field, new_field, old_type, new_type):
         """DataError if the type change would truncate or round a value

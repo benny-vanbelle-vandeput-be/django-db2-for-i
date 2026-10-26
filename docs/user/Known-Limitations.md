@@ -106,6 +106,15 @@ used for `UPPER(column)`, so these lookups scan the table. (`icontains` and
 for a later version: a derived index on `UPPER(column)`, or a case-insensitive
 sort sequence for the connection; neither is implemented yet.
 
+## No index on TextField and BinaryField
+
+`TextField` is an `NCLOB` and `BinaryField` a `BLOB`, and Db2 for i cannot
+index a LOB column (SQL0350). `db_index=True` on such a field is skipped:
+the table is created without that index, as Django's Oracle and MySQL
+backends do for their LOB types. An explicit `Index` in `Meta.indexes` on
+such a field still fails with SQL0350. To search a text column with an
+index, use a `CharField` (`NVARCHAR`) instead.
+
 ## Time zones
 
 There is no time zone aware timestamp type. With `USE_TZ = True` (Django's

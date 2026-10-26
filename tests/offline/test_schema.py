@@ -13,6 +13,7 @@ import pytest
 from django.apps import apps
 from django.db import NotSupportedError, connection, models
 from django.db.models.functions import Now
+from django.test.utils import isolate_apps
 
 from tests.testapp.models import Article, Author, Book, Node, Tag
 
@@ -242,6 +243,64 @@ def test_create_table_follows_local_fields_with_inherited_fields() -> None:
     expected = [field.column.upper() for field in Article._meta.local_fields]
     assert columns == expected
     assert expected == ["ID", "CREATED", "TITLE", "SUBTITLE", "BODY", "RANK"]
+
+
+@isolate_apps("tests.testapp")
+def test_no_index_on_a_lob_column() -> None:
+    """NCLOB and BLOB cannot be indexed (SQL0350): db_index=True is skipped
+    there, but kept on the other columns."""
+
+    class Note(models.Model):
+        text = models.TextField(db_index=True)
+        data = models.BinaryField(db_index=True)
+        code = models.CharField(max_length=10, db_index=True)
+
+        class Meta:
+            app_label = "testapp"
+
+    indexes = [sql for sql in collect(("create_model", Note)) if "INDEX" in sql]
+    assert len(indexes) == 1
+    assert indexes[0].endswith('ON "TESTAPP_NOTE" ("CODE");')
+
+
+@isolate_apps("tests.testapp")
+def test_no_index_when_a_lob_field_is_added_or_altered() -> None:
+    class Note(models.Model):
+        code = models.CharField(max_length=10)
+
+        class Meta:
+            app_label = "testapp"
+
+    text = models.TextField(db_index=True, null=True)
+    text.set_attributes_from_name("text")
+    old = Note._meta.get_field("code")
+    new = models.TextField(db_index=True)
+    new.set_attributes_from_name("code")
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.add_field(Note, text)
+        editor.alter_field(Note, old, new, strict=True)
+    assert not [sql for sql in editor.collected_sql if "INDEX" in sql]
+    assert new.db_index, "the field keeps db_index=True"
+    assert connection.connection is None, "collecting SQL must not connect"
+
+
+@isolate_apps("tests.testapp")
+def test_a_field_that_leaves_a_lob_type_gets_its_index() -> None:
+    class Note(models.Model):
+        code = models.TextField(db_index=True)
+
+        class Meta:
+            app_label = "testapp"
+
+    old = Note._meta.get_field("code")
+    new = models.CharField(max_length=10, db_index=True)
+    new.set_attributes_from_name("code")
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.alter_field(Note, old, new, strict=True)
+    indexes = [sql for sql in editor.collected_sql if "INDEX" in sql]
+    assert len(indexes) == 1
+    assert indexes[0].startswith('CREATE INDEX "TESTAPP_NOTE_CODE_')
+    assert old.db_index
 
 
 def test_rename_column_is_not_supported() -> None:
