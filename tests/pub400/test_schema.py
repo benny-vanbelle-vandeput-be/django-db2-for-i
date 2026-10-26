@@ -800,18 +800,20 @@ def test_failed_migration_leaves_nothing_behind(live) -> None:
 
 
 def test_failing_deferred_statement_rolls_the_migration_back(live) -> None:
-    """A deferred statement that fails (an index on an NCLOB column: SQL0350)
-    rolls the schema editor's transaction back: no table is left, the
-    connection is no longer in an atomic block and stays usable. Django's own
-    __exit__ skipped the rollback, and the connection was closed later."""
+    """A deferred statement that fails (an explicit index on an NCLOB column:
+    SQL0350; db_index=True there is skipped) rolls the schema editor's
+    transaction back: no table is left, the connection is no longer in an
+    atomic block and stays usable. Django's own __exit__ skipped the rollback,
+    and the connection was closed later."""
     from django.apps import apps
     from django.db import DatabaseError
 
     class DeferredProbe(models.Model):
-        text = models.TextField(db_index=True)
+        text = models.TextField()
 
         class Meta:
             app_label = "testapp"
+            indexes = (models.Index(fields=["text"], name="testapp_dp_text_idx"),)
 
     table = "TESTAPP_DEFERREDPROBE"
     try:
