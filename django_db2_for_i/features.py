@@ -250,6 +250,13 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "schema.tests.SchemaTests.test_alter_to_fk",
             "schema.tests.SchemaTests.test_autofield_to_o2o",
             "schema.tests.SchemaTests.test_m2m_rename_field_in_target_model",
+            # Repointing an m2m renames the through table's column
+            # (tagm2mtest_id to uniquetest_id). test_m2m_repoint still errors
+            # once in its tearDown: Django drops the through table it never
+            # created (SQL0204), outside the expected failure.
+            "schema.tests.SchemaTests.test_m2m_repoint",
+            "schema.tests.SchemaTests.test_m2m_repoint_custom",
+            "schema.tests.SchemaTests.test_m2m_repoint_inherited",
             "schema.tests.SchemaTests.test_referenced_field_without_constraint_rename_inside_atomic_block",
             "schema.tests.SchemaTests.test_rename",
             "schema.tests.SchemaTests.test_rename_column_renames_deferred_sql_references",
