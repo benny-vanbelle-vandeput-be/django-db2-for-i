@@ -520,7 +520,11 @@ PR boundaries, in this order:
    identity changes, `supports_combined_alters` if probe 24 allows it.
 9. `feat(schema)`: CPA32B2 per the decision on open question 2; with
    option 1, the expected failures with one fixed reason, listed per Django
-   version, and the user docs.
+   version, and the user docs. **2026-10-25:** replaced by the per-job
+   suppression (QAQQINI `SUPPRESS_INQUIRY_MESSAGES`, probes `qaqqini_inquiry`
+   and `qaqqini_lifecycle`; DECISIONS, "CPA32B2 suppressed per job in
+   migrations"): the CPA32B2 expected failures go, a narrowing change that
+   would truncate or round is refused first.
 10. `feat(schema)` + `fix(driver)`: foreign keys: SQL0530 / SQL0531 / SQL0532
     mapped to `IntegrityError` (#96), `supports_foreign_keys` on, and
     `indexes_foreign_keys` / `can_create_inline_fk` as decided (open

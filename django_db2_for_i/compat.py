@@ -31,21 +31,11 @@ if django.VERSION >= (6, 0):
 else:
     StringAgg = None
 
-# Expected failures of features.py that pass on Django 5.2: its
-# DEFAULT_AUTO_FIELD is AutoField, so these schema tests narrow nothing, while
-# from 6.0 on they narrow BigAutoField to INTEGER, which CPA32B2 cancels
-# (docs/DECISIONS.md, "The first per-version expected-failure list"). When 5.2
-# is dropped: delete this set and use an empty one.
-PASSING_ON_THIS_VERSION = (
-    frozenset()
-    if django.VERSION >= (6, 0)
-    else frozenset(
-        {
-            "schema.tests.SchemaTests.test_alter_auto_field_to_integer_field",
-            "schema.tests.SchemaTests.test_alter_implicit_id_to_explicit",
-        }
-    )
-)
+# Expected failures of features.py that pass on this Django version only
+# (docs/DECISIONS.md, "The first per-version expected-failure list"). None
+# since CPA32B2 is suppressed in migrations: the two schema tests that narrowed
+# BigAutoField to INTEGER only from 6.0 on now pass everywhere.
+PASSING_ON_THIS_VERSION: frozenset[str] = frozenset()
 
 # Django 6.0 refuses a composite field compared with a subquery (>, >=, <, <=)
 # when supports_tuple_comparison_against_subquery is off; 5.2 writes a row-value

@@ -2,7 +2,9 @@
 
 Each test starts from a library without tables (only the QSQJRN journal),
 refuses to run otherwise, and leaves the library without tables again. The
-default library is both NAME and TEST['NAME'] on PUB400.
+default library is both NAME and TEST['NAME'] on PUB400. These tests check
+the creation safety gate itself, so they create tables without a marker
+owner (unmarked_creates_allowed(), marked_library.py).
 """
 
 import pytest
@@ -10,6 +12,7 @@ from django.apps import apps
 from django.db import connection
 
 from django_db2_for_i.creation import MARKER_TABLE, TestDatabaseRefused
+from tests.pub400.marked_library import unmarked_creates_allowed
 from tests.testapp.models import Author
 
 
@@ -46,7 +49,8 @@ def empty_library(django_db_blocker):
         if existing:
             pytest.fail(f"{library()} is not empty; remove these first: {sorted(existing)}")
         try:
-            yield
+            with unmarked_creates_allowed():
+                yield
         finally:
             if MARKER_TABLE in tables():  # a failed test left a marked test library
                 connection.creation._destroy_test_db(library(), 0)

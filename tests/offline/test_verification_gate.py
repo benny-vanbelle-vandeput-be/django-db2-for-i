@@ -97,8 +97,8 @@ def test_entries_need_a_reason_and_a_condition(tmp_path) -> None:
 
 
 def test_the_real_allow_list() -> None:
-    entries = gate.load_unverifiable()
-    assert entries, "the allow-list is read by the IBM i golden check"
-    assert all(e.reason and e.verifiable_when for e in entries)
-    assert gate.reasons("6.1")["ddl/remove_field"].startswith("DROP COLUMN is cancelled")
-    assert gate.summary() == 9
+    # Empty since the CPA32B2 goldens run with CPA32B2 suppressed, as migrations
+    # run them; the file stays, read by the gate and the IBM i golden check.
+    assert gate.load_unverifiable() == []
+    assert gate.reasons("6.1") == {}
+    assert gate.summary() == 0

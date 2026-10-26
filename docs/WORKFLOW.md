@@ -213,8 +213,9 @@ releases; `bin/release-prepare` only prints steps 3 and 4.
   CWBCO1034): `scripts/pub400.sh` wraps runs in `caffeinate`; keep the lid
   open, or start again (`bin/release-run` resumes).
 - **CPA32B2 / HY008** (an `ALTER TABLE` that drops data is cancelled):
-  see [Troubleshooting](user/Troubleshooting.md); the fix is a reply list
-  entry an administrator adds, never a change made by a test run.
+  migrations suppress it for their own job; outside a field change (RunSQL,
+  a raw cursor) it still cancels, see [Troubleshooting](user/Troubleshooting.md).
+  Never a reply list entry or another system change made by a test run.
 - **"PUB400 busy: <holder>"**: another job holds the lock; wait with
   `--wait`. The OS releases the lock when its process dies, so a lock is
   never stale: `python3 scripts/pub400_lock.py --status` shows the holder.

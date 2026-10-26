@@ -519,6 +519,10 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   views, triggers, authorities and journaling must be recreated; the copy
   costs time and space for large tables; it must not run silently on
   production data.
+- **Update 2026-10-25:** the CPA32B2 cases no longer need a rebuild: the
+  schema editor suppresses CPA32B2 per job ("CPA32B2 suppressed per job in
+  migrations"). The question stays open for what Db2 for i cannot do in
+  place: column renames (SQL0199) and incompatible type changes (SQL0190).
 
 ## 2026-10-17: pyodbc maxwrite; string parameters up to 1M UTF-16 units
 - **Decision:** the pyodbc driver sets `Connection.maxwrite` to 4 MiB on every
@@ -1548,3 +1552,39 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   checks outside `compat.py`); skipping the tests on every version (hides
   that they pass on 5.2); forcing `AutoField` in the test settings (undone
   by #145).
+
+## 2026-10-25: CPA32B2 suppressed per job in migrations
+- **Decision (project owner, 2026-10-25):** the schema editor suppresses
+  inquiry message CPA32B2 for its own job with `QSYS2.OVERRIDE_QAQQINI`
+  (operation 1, then `SUPPRESS_INQUIRY_MESSAGES` `*YES`), on by default,
+  turned off with `OPTIONS["suppress_inquiry_messages"] = False`, behind the
+  capability `can_suppress_inquiry_messages` (7.5 profile). Conditions:
+  1. Before a narrowing change the backend refuses a value that would change,
+     measured as Db2 for i measures it: `NVARCHAR` in UTF-16 code units (an
+     emoji counts 2), `VARCHAR CCSID 1208` in bytes; decimals on any value
+     that would change with fewer digits or decimals, not only overflow.
+  2. If operation 3 fails on a connection that still works, the connection
+     is marked unusable and closed, so the suppression cannot reach an
+     `ALTER TABLE` outside migrations; the failure is raised (or noted on the
+     error already on its way out). Swallowed only on a broken connection.
+  3. Nested or repeated schema editors: only the outermost one turns it off.
+  4. After the foreign keys PR (both change `schema.py`).
+- **How:** the suppression starts at the first `ALTER TABLE` inside
+  `remove_field()` or `alter_field()`; `RunSQL` and a cursor of your own keep
+  CPA32B2 until then. It ends after the outermost schema editor's
+  transaction (OVERRIDE_QAQQINI is not transactional: a ROLLBACK undoes
+  neither operation, probe `qaqqini_lifecycle`). Operation 3 is harmless
+  without a copy, so it runs whenever operation 1 may have run.
+- **Why:** with the default reply C, CPA32B2 made every `DROP COLUMN`,
+  narrowing and `SET NOT NULL` migration fail without an administrator's
+  system-wide reply list entry; IBM documents the option for exactly this
+  ("CPA32B2 will not be issued when altering a table"), and ACS uses it for
+  dropping columns. A migration's change is deliberate, as on every other
+  database; the pre-check keeps the safety net where Db2 for i would change
+  data silently (SQL0460: truncation and dropped decimals; probe
+  `qaqqini_inquiry`).
+- **Alternatives:** once per connection (also suppresses `ALTER TABLE`
+  outside migrations); opt-in (migrations keep failing by default); only
+  the reply list (`inquiry_message_reply`, needs an administrator); a table
+  rebuild for these changes. Whether `inquiry_message_reply` is deprecated is
+  a separate proposal.

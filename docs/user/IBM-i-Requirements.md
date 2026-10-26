@@ -100,13 +100,44 @@ minimum object authorities for an application that only reads and writes data.
 `max_length`, or `IntegerField` to `SmallIntegerField`) and making a column
 `NOT NULL` (`null=True` to `null=False`) make Db2 for i send
 the inquiry message **CPA32B2** ("Change of file may cause data to be lost"),
-also for an empty table. Its default reply is "cancel", so such migrations
-fail (see [Troubleshooting](Troubleshooting.md#alter-table-cancelled-cpa32b2-hy008)).
-Widening changes (a longer `max_length`, a larger integer or decimal type),
-making a column nullable, changing its default and adding columns are not
-affected.
+also for an empty table. Its default reply is "cancel". Widening changes (a
+longer `max_length`, a larger integer or decimal type), making a column
+nullable, changing its default and adding columns are not affected.
 
-To allow them:
+**Migrations need nothing extra: no reply list entry and no administrator.**
+While a migration (or your own schema editor) removes or alters a field, the
+backend sets the query option `SUPPRESS_INQUIRY_MESSAGES` to `*YES` for its
+own job, so Db2 for i does not send CPA32B2. It does this with
+`QSYS2.OVERRIDE_QAQQINI`, which keeps a copy of the job's query options in
+`QTEMP`. When the outermost schema editor is done, it discards that copy, and
+CPA32B2 is back for everything else.
+
+- This needs IBM i 7.5 or later: the option and `OVERRIDE_QAQQINI` are part
+  of the base release. The user profile needs no special authority (verified
+  on a public test system with a profile without special authorities).
+- Only the job of the connection is affected: no system value, no reply list
+  entry, nothing outside `QTEMP`. Other query options of the job stay as they
+  were.
+- CPA32B2 stays a safety net outside field changes: an `ALTER TABLE` in
+  `RunSQL` or on a cursor of your own is still cancelled (see
+  [Troubleshooting](Troubleshooting.md#alter-table-cancelled-cpa32b2-hy008)).
+- With CPA32B2 out of the way, Db2 for i would truncate a longer string or
+  round away decimals silently. So before a narrowing change the backend
+  looks for a value that would change and refuses the migration with
+  `DataError` if it finds one (see
+  [Known limitations](Known-Limitations.md#narrowing-a-column)).
+- If the copy cannot be discarded on a connection that still works, the
+  backend closes that connection, so the suppression can never reach an
+  `ALTER TABLE` outside migrations.
+
+**To keep CPA32B2 for migrations too**, turn the suppression off:
+
+```python
+"OPTIONS": {"suppress_inquiry_messages": False}
+```
+
+Then such migrations fail with an explanation, unless the system reply list
+answers CPA32B2:
 
 1. An administrator adds a system reply list entry once (pick a free
    sequence number, see `WRKRPYLE`):
@@ -132,7 +163,8 @@ To allow them:
    `connection.restore_inquiry_message_reply()` yourself.
 
 The user profile needs no special authority to change its own job's
-`INQMSGRPY` (verified on a public test system).
+`INQMSGRPY` (verified on a public test system). The check for values that
+would change runs on this path too.
 
 ## Network
 

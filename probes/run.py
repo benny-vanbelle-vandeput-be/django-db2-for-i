@@ -8,7 +8,8 @@ Usage (inside the "tests" container):
     nox -s probe -- fetch_errors | mapping_errors | long_string_params |
                     numeric_params | constraint_errors | drop_column | alter_table |
                     alter_column | renames | type_changes | check_journal |
-                    transaction_start | add_column_default | qaqqini_inquiry
+                    transaction_start | add_column_default | qaqqini_inquiry |
+                    qaqqini_lifecycle
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -46,6 +47,7 @@ import qtemp_mapping_errors
 import qtemp_numeric_params
 import qtemp_packages
 import qtemp_qaqqini_inquiry
+import qtemp_qaqqini_lifecycle
 import qtemp_queries
 import qtemp_reachability
 import qtemp_renames
@@ -96,6 +98,7 @@ PROBES = {
     "transaction_start": qtemp_transaction_start,
     "add_column_default": qtemp_add_column_default,
     "qaqqini_inquiry": qtemp_qaqqini_inquiry,
+    "qaqqini_lifecycle": qtemp_qaqqini_lifecycle,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 

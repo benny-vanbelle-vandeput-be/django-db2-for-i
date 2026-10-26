@@ -380,7 +380,8 @@ CASES: tuple[Case, ...] = (
         ),
         (MEASURE,),
     ),
-    # The way back: narrowing and NOT NULL are cancelled by CPA32B2 (unverifiable.toml).
+    # The way back: narrowing and NOT NULL, which send CPA32B2 (suppressed, as in
+    # migrations: tests/pub400/test_goldens.py).
     Case(
         "ddl/alter_field_narrow",
         "alter",

@@ -35,6 +35,7 @@ def test_profile_7_5() -> None:
         has_limit_offset=True,
         has_offset_fetch=True,
         has_json_functions=True,
+        can_suppress_inquiry_messages=True,
         max_name_length=128,
         max_system_name_length=10,
     )
