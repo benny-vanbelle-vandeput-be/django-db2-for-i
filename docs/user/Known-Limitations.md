@@ -225,14 +225,29 @@ with views or indexes that depend on the column is not verified yet.
 
 ## Making a column NOT NULL that holds NULLs
 
-An `AlterField` from `null=True` to `null=False` with a `default` or
-`db_default` first sets the NULLs to the default (Django's `UPDATE ... WHERE
-... IS NULL`) and then runs `SET NOT NULL`. Db2 for i refuses an `ALTER TABLE`
-in a transaction that already changed rows of the same table (SQL0910), so in
-an atomic migration this fails when the column holds NULLs, and the migration
-is rolled back. Give that migration `atomic = False`: then the `UPDATE` is
-committed before the `ALTER TABLE` (verified). Without NULLs in the column
-nothing is updated, and the atomic migration works.
+Db2 for i refuses an `ALTER TABLE` in a transaction that already changed rows
+of the same table (SQL0910 "has a pending change"). A migration runs in one
+transaction by default (`atomic = True`), so this hits:
+
+- **An `AlterField` from `null=True` to `null=False` with a `default` or
+  `db_default`, when the column really holds NULLs.** Django first sets the
+  NULLs to the default (`UPDATE ... WHERE ... IS NULL`), then runs `SET NOT
+  NULL`. Without NULLs in the column the `UPDATE` changes no rows, and the
+  atomic migration works (verified: only rows that were really changed
+  count; a read or a lock doesn't).
+- **A `RunPython` or `RunSQL` that changes rows, followed by a schema change
+  of the same table in the same migration.**
+
+The migration fails with SQL0910 and is rolled back, so nothing is changed.
+Two ways around it:
+
+- **Give that migration `atomic = False`.** Each statement is then committed
+  on its own, so the `UPDATE` is committed before the `ALTER TABLE`
+  (verified). If it fails halfway, what already ran stays.
+- **Change the rows in a separate data migration before the schema change**,
+  e.g. a `RunPython` that sets the NULLs, then the `AlterField` in the next
+  migration. Django gives the same advice for PostgreSQL: don't combine
+  schema changes and `RunPython` in the same migration.
 
 ## Adding a NOT NULL column without a default
 
