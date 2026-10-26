@@ -1607,3 +1607,18 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   `db_index`, migrations from other databases stop); map `TextField` to
   `NVARCHAR(max)` (a row-length limit for every text column, and the index
   key limit still applies).
+
+
+## 2026-10-26: inquiry_message_reply stays, as the fallback
+- **Decision (project owner):** `OPTIONS["inquiry_message_reply"]` (and
+  `set_inquiry_message_reply()` / `restore_inquiry_message_reply()`) is not
+  deprecated. It is documented as the fallback for systems where
+  `QSYS2.OVERRIDE_QAQQINI` is not allowed or fails, with
+  `suppress_inquiry_messages` set to `False` and an `ADDRPYLE` entry for
+  CPA32B2 (IBM-i-Requirements, Configuration).
+- **Why:** the per-job suppression (2026-10-25) covers migrations, but a
+  site may forbid query option overrides, and the reply list is IBM's other
+  documented way to answer CPA32B2. Removing the option would leave such
+  systems without a way to drop or narrow columns.
+- **Alternatives:** deprecate it now and remove it later (no fallback);
+  keep it without documenting when to use it.
