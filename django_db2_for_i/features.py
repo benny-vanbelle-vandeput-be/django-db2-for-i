@@ -27,6 +27,11 @@ REASON_UNTYPED_RAW_SQL_PARAMETER = (
     "a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the "
     "select list (SQL0418); cast it in the SQL"
 )
+REASON_PENDING_ROW_CHANGES = (
+    "null=True to null=False with a default sets the NULLs (UPDATE) and then runs SET NOT NULL "
+    "in the same transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in "
+    "the transaction (SQL0910)"
+)
 REASON_NO_COLUMN_RENAME = "Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6)"
 REASON_TYPE_NOT_IN_PLACE = "Db2 for i cannot change this column type in place (SQL0190)"
 
@@ -230,6 +235,13 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "queries.tests.Queries1Tests.test_tickets_1878_2939",
             # RawSQL("%s", ...) annotation.
             "queries.test_query.TestQueryNoModel.test_rawsql_annotation",
+        },
+        # Formerly cancelled by CPA32B2, which is now suppressed in migrations.
+        REASON_PENDING_ROW_CHANGES: {
+            "schema.tests.SchemaTests.test_alter_field_default_dropped",
+            "schema.tests.SchemaTests.test_alter_null_to_not_null",
+            "schema.tests.SchemaTests.test_alter_null_with_default_value_deferred_constraints",
+            "schema.tests.SchemaTests.test_alter_text_field_to_not_null_with_default_value",
         },
         # RenameField / a new db_column: NotSupportedError (schema.py).
         REASON_NO_COLUMN_RENAME: {
