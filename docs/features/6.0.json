@@ -90,7 +90,7 @@
     "supports_frame_range_fixed_distance": false,
     "supports_functions_in_partial_indexes": false,
     "supports_ignore_conflicts": false,
-    "supports_index_column_ordering": false,
+    "supports_index_column_ordering": true,
     "supports_index_on_text_field": false,
     "supports_json_field": false,
     "supports_json_field_contains": false,

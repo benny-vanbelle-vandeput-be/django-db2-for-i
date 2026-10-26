@@ -1006,3 +1006,65 @@ def test_positive_field_to_integer_and_back(live, check_model) -> None:
     with pytest.raises(IntegrityError, match="SQL0545"):
         model.objects.create(count=-2)
     assert sorted(model.objects.values_list("count", flat=True)) == [0, 5]
+
+
+# --- Index column ordering (supports_index_column_ordering) -------------------------
+
+
+@pytest.fixture
+def ranking_model(live):
+    """A model of its own (testapp_rankprobe) with a descending index in
+    Meta.indexes; created for the test and dropped after it."""
+    from django.apps import apps
+
+    class RankProbe(models.Model):
+        name = models.CharField(max_length=20)
+        score = models.IntegerField()
+
+        class Meta:
+            app_label = "testapp"
+            indexes = (models.Index(fields=["-score", "name"], name="testapp_rank_score_idx"),)
+
+    try:
+        with live.schema_editor() as editor:
+            editor.create_model(RankProbe)
+        yield RankProbe
+    finally:
+        replace_if_unusable(live)
+        with live.cursor() as cursor:
+            cursor.execute('DROP TABLE "TESTAPP_RANKPROBE"')
+        apps.all_models["testapp"].pop("rankprobe", None)
+        apps.clear_cache()
+
+
+def _orders(live, table: str) -> dict[str, list[str]]:
+    with live.cursor() as cursor:
+        constraints = live.introspection.get_constraints(cursor, table)
+    return {
+        name: info["orders"]
+        for name, info in constraints.items()
+        if info["index"] and not info["primary_key"]
+    }
+
+
+def test_descending_index(live, ranking_model) -> None:
+    """Index(fields=["-score", "name"]) is created DESC, ASC and introspected so;
+    AddIndex / RemoveIndex with a descending column, and the ORM ordering by it."""
+    model = ranking_model
+    assert _orders(live, "testapp_rankprobe") == {"testapp_rank_score_idx": ["DESC", "ASC"]}
+
+    added = models.Index(fields=["name", "-score"], name="testapp_rank_name_idx")
+    with live.schema_editor() as editor:
+        editor.add_index(model, added)
+    assert _orders(live, "testapp_rankprobe")["testapp_rank_name_idx"] == ["ASC", "DESC"]
+    with live.schema_editor() as editor:
+        editor.remove_index(model, added)
+    assert "testapp_rank_name_idx" not in _orders(live, "testapp_rankprobe")
+
+    for name, score in (("b", 2), ("a", 3), ("c", 2)):
+        model.objects.create(name=name, score=score)
+    assert list(model.objects.order_by("-score", "name").values_list("name", flat=True)) == [
+        "a",
+        "b",
+        "c",
+    ]

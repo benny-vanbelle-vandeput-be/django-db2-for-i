@@ -141,6 +141,19 @@ def _rename_index_and_back(model, fields, old_name, new_name):
     return build
 
 
+def _add_and_remove_index(model, index):
+    """AddIndex and RemoveIndex: CREATE INDEX (with DESC columns,
+    supports_index_column_ordering) and DROP INDEX."""
+
+    def build(connection):
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+            editor.add_index(model, index)
+            editor.remove_index(model, index)
+        return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
+
+    return build
+
+
 def _add_and_remove_constraint(model, constraint):
     """AddConstraint and RemoveConstraint: ALTER TABLE ... ADD / DROP CONSTRAINT."""
 
@@ -356,6 +369,14 @@ CASES: tuple[Case, ...] = (
         "alter",
         _rename_table_and_back(Switch, "testapp_lightswitch"),
         (SWITCH,),
+    ),
+    Case(
+        "ddl/add_index_descending",
+        "alter",
+        _add_and_remove_index(
+            Book, Index(fields=["-published", "title"], name="testapp_book_pub_desc")
+        ),
+        (BOOK,),
     ),
     Case(
         "ddl/rename_index",

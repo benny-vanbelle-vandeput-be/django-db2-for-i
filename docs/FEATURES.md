@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**31 flags enabled on Django 6.1.**
+**32 flags enabled on Django 6.1.**
 
-## Enabled (31)
+## Enabled (32)
 
 On in at least one supported Django version.
 
@@ -35,6 +35,7 @@ On in at least one supported Django version.
 | `supports_boolean_expr_in_select_clause` | Conditions such as `Exists()` or `Q()` can be selected and grouped by. | ✅ | ✅ | ✅ |
 | `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | ✅ | ✅ | ✅ |
 | `supports_foreign_keys` | Foreign keys are enforced by the database. | ✅ | ✅ | ✅ |
+| `supports_index_column_ordering` | Index columns can be ordered `DESC` (`Index(fields=["-field"])`). | ✅ | ✅ | ✅ |
 | `supports_parentheses_in_compound` | Parts of a compound query may have their own `ORDER BY` / slice. | ✅ | ✅ | ✅ |
 | `supports_regex_backreferencing` | `regex` / `iregex` lookups support backreferences (ICU regular expressions). | ✅ | ✅ | ✅ |
 | `supports_select_difference` | `QuerySet.difference()` (`EXCEPT`). | ✅ | ✅ | ✅ |
@@ -87,7 +88,7 @@ Off on purpose, with the reason.
 | `supports_uuid7_function` | The `UUID7()` database function (Django 6.1+). | – | – | ❌ | Db2 for i has no function that generates a time-ordered UUID (not verified on IBM i). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (65)
+## Planned (64)
 
 Off for now; planned for the phase shown.
 
@@ -132,7 +133,6 @@ Off for now; planned for the phase shown.
 | `supports_frame_range_fixed_distance` | Window `RANGE` frames with a fixed distance (`ValueRange(start=-5)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_functions_in_partial_indexes` | Functions in the `condition` of a partial index. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_ignore_conflicts` | `bulk_create(ignore_conflicts=True)`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
-| `supports_index_column_ordering` | Index columns can be ordered `DESC`. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_index_on_text_field` | Indexes on `TextField` columns. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `supports_inspectdb` | `manage.py inspectdb` generates models from existing tables. | – | – | 🗓️ | phase 4 |
 | `supports_json_field` | `JSONField`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
