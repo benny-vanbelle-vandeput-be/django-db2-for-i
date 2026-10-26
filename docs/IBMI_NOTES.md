@@ -699,6 +699,32 @@ commitment control (isolation `*CS`). The result is in
   DECIMAL(4, 2) returned NULL. A check like `col <> CAST(col AS ...)` would
   miss it, so the backend checks the range first.
 
+### SQL0910 comes from changed rows only (`lib_pending_change`)
+2026-10-26, PUB400 (IBM i 7.5), approved on issue #173. One table,
+`DJPRB910 (ID INTEGER NOT NULL PRIMARY KEY, C INTEGER)`, in the journaled
+default library, on the cleanup list before each `CREATE` and dropped at the
+end (none left). CPA32B2 suppressed as in a migration (QTEMP copy of QAQQINI,
+discarded at the end). The result is in `probes/results/lib_pending_change.json`.
+
+Each step ran with autocommit off on a fresh table with three rows without
+NULLs, then rolled back. The `UPDATE` and the `ALTER` are the statements of
+golden `ddl/alter_field_not_null`:
+
+| Step | Before `ALTER COLUMN "C" SET NOT NULL` | `SET NOT NULL` |
+|---|---|---|
+| 1 (control) | a committed fourth row with C NULL; `UPDATE ... WHERE "C" IS NULL` changes 1 row | **SQL0910** (HY000) |
+| 2 | `UPDATE ... WHERE "C" IS NULL` changes 0 rows | ok |
+| 3 | `SELECT 1 ... WHERE "C" IS NULL FETCH FIRST 1 ROW ONLY` | ok |
+| 4 | `LOCK TABLE ... IN EXCLUSIVE MODE`, then the `SELECT` of step 3 | ok |
+
+- Only a row that was really changed is a pending change. An `UPDATE` that
+  matches no rows, a read, and an exclusive lock leave none.
+- So Django's null → not-null with a default already works in an atomic
+  migration when the column holds no NULLs: SQL0910 only hits tables that
+  really contain NULLs. Skipping the `UPDATE` after a NULL check would change
+  nothing.
+- Every rollback undid the `SET NOT NULL` (C nullable again).
+
 ### Savepoints (`nox -s probe_savepoints -- --execute`)
 2026-10-17, one connection with the backend's settings (CMT=1, autocommit
 off), one table in the `default` library (created and dropped by the probe).

@@ -1,0 +1,257 @@
+{
+  "probe": "lib_pending_change",
+  "utc": "20261026T053721Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "approved": "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/173#issuecomment-6409013953",
+  "approved_by": "benny-vanbelle-vandeput-be",
+  "steps": {
+    "1. control: UPDATE changes 1 row, then SET NOT NULL": {
+      "statements": [
+        {
+          "sql": "UPDATE <DEFAULT_LIBRARY>.DJPRB910 SET \"C\" = -1 WHERE \"C\" IS NULL",
+          "ok": true,
+          "rows changed": 1
+        },
+        {
+          "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJPRB910 ALTER COLUMN \"C\" SET NOT NULL",
+          "ok": false,
+          "sqlstate": "HY000",
+          "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0910 - Object DJPRB910 in <DEFAULT_LIBRARY> type *FILE has a pending change. (-910) (SQLExecDirectW)"
+        }
+      ],
+      "rollback": "ok",
+      "C nullable after rollback": "Y",
+      "rows with C NULL after rollback": 1
+    },
+    "2. UPDATE changes 0 rows, then SET NOT NULL": {
+      "statements": [
+        {
+          "sql": "UPDATE <DEFAULT_LIBRARY>.DJPRB910 SET \"C\" = -1 WHERE \"C\" IS NULL",
+          "ok": true,
+          "rows changed": 0
+        },
+        {
+          "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJPRB910 ALTER COLUMN \"C\" SET NOT NULL",
+          "ok": true
+        }
+      ],
+      "rollback": "ok",
+      "C nullable after rollback": "Y",
+      "rows with C NULL after rollback": 0
+    },
+    "3. SELECT ... FETCH FIRST 1 ROW ONLY, then SET NOT NULL": {
+      "statements": [
+        {
+          "sql": "SELECT 1 FROM <DEFAULT_LIBRARY>.DJPRB910 WHERE \"C\" IS NULL FETCH FIRST 1 ROW ONLY",
+          "ok": true
+        },
+        {
+          "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJPRB910 ALTER COLUMN \"C\" SET NOT NULL",
+          "ok": true
+        }
+      ],
+      "rollback": "ok",
+      "C nullable after rollback": "Y",
+      "rows with C NULL after rollback": 0
+    },
+    "4. LOCK TABLE EXCLUSIVE, SELECT, then SET NOT NULL": {
+      "statements": [
+        {
+          "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJPRB910 IN EXCLUSIVE MODE",
+          "ok": true
+        },
+        {
+          "sql": "SELECT 1 FROM <DEFAULT_LIBRARY>.DJPRB910 WHERE \"C\" IS NULL FETCH FIRST 1 ROW ONLY",
+          "ok": true
+        },
+        {
+          "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJPRB910 ALTER COLUMN \"C\" SET NOT NULL",
+          "ok": true
+        }
+      ],
+      "rollback": "ok",
+      "C nullable after rollback": "Y",
+      "rows with C NULL after rollback": 0
+    }
+  },
+  "left": [],
+  "statements": [
+    {
+      "label": "suppress",
+      "sql": "CALL QSYS2.OVERRIDE_QAQQINI(1, '', '')",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "suppress",
+      "sql": "CALL QSYS2.OVERRIDE_QAQQINI(2, 'SUPPRESS_INQUIRY_MESSAGES', '*YES')",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "create DJPRB910",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJPRB910 (ID INTEGER NOT NULL PRIMARY KEY, C INTEGER)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "rows",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJPRB910 (ID, C) VALUES (1, 1), (2, 2), (3, 3)",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "NULL row (committed)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJPRB910 (ID, C) VALUES (4, NULL)",
+      "params": [],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "UPDATE (1 row), SET NOT NULL",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJPRB910 SET \"C\" = -1 WHERE \"C\" IS NULL",
+      "params": [],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "UPDATE (1 row), SET NOT NULL",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJPRB910 ALTER COLUMN \"C\" SET NOT NULL",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0910 - Object DJPRB910 in <DEFAULT_LIBRARY> type *FILE has a pending change. (-910) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop DJPRB910",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJPRB910 RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "create DJPRB910",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJPRB910 (ID INTEGER NOT NULL PRIMARY KEY, C INTEGER)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "rows",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJPRB910 (ID, C) VALUES (1, 1), (2, 2), (3, 3)",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "UPDATE (0 rows), SET NOT NULL",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJPRB910 SET \"C\" = -1 WHERE \"C\" IS NULL",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "UPDATE (0 rows), SET NOT NULL",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJPRB910 ALTER COLUMN \"C\" SET NOT NULL",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJPRB910",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJPRB910 RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "create DJPRB910",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJPRB910 (ID INTEGER NOT NULL PRIMARY KEY, C INTEGER)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "rows",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJPRB910 (ID, C) VALUES (1, 1), (2, 2), (3, 3)",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "SELECT, SET NOT NULL",
+      "sql": "SELECT 1 FROM <DEFAULT_LIBRARY>.DJPRB910 WHERE \"C\" IS NULL FETCH FIRST 1 ROW ONLY",
+      "params": [],
+      "ok": true,
+      "rowcount": -1
+    },
+    {
+      "label": "SELECT, SET NOT NULL",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJPRB910 ALTER COLUMN \"C\" SET NOT NULL",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJPRB910",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJPRB910 RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "create DJPRB910",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJPRB910 (ID INTEGER NOT NULL PRIMARY KEY, C INTEGER)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "rows",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJPRB910 (ID, C) VALUES (1, 1), (2, 2), (3, 3)",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "LOCK TABLE, SELECT, SET NOT NULL",
+      "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJPRB910 IN EXCLUSIVE MODE",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "LOCK TABLE, SELECT, SET NOT NULL",
+      "sql": "SELECT 1 FROM <DEFAULT_LIBRARY>.DJPRB910 WHERE \"C\" IS NULL FETCH FIRST 1 ROW ONLY",
+      "params": [],
+      "ok": true,
+      "rowcount": -1
+    },
+    {
+      "label": "LOCK TABLE, SELECT, SET NOT NULL",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJPRB910 ALTER COLUMN \"C\" SET NOT NULL",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJPRB910",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJPRB910 RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "discard the QAQQINI copy",
+      "sql": "CALL QSYS2.OVERRIDE_QAQQINI(3, '', '')",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    }
+  ]
+}
