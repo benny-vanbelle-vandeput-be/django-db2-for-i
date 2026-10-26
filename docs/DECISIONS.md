@@ -1588,3 +1588,22 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   the reply list (`inquiry_message_reply`, needs an administrator); a table
   rebuild for these changes. Whether `inquiry_message_reply` is deprecated is
   a separate proposal.
+
+
+## 2026-10-26: db_index on a TextField or BinaryField is skipped
+- **Decision (project owner):** `db_index=True` on a field stored as a LOB
+  (`TextField` as `NCLOB`, `BinaryField` as `BLOB`) creates no index:
+  `_field_should_be_indexed()` returns False for LOB types, and
+  `alter_field()` treats such a field as `db_index=False`, so no index is
+  added when a field becomes a LOB and one is added when it leaves a LOB
+  type. `supports_index_on_text_field` stays False. Documented in Known
+  Limitations ("No index on TextField and BinaryField").
+- **Why:** Db2 for i cannot index a LOB column (SQL0350). Django's own test
+  (`test_text_field_with_db_index`) expects the backend to skip the index
+  when the flag is False, and the Oracle and MySQL backends do the same for
+  their limited types. A migration from another database then still works.
+- **Alternatives:** skip with a warning on every migration (noisy, cannot be
+  silenced per field); raise `NotSupportedError` (users must remove
+  `db_index`, migrations from other databases stop); map `TextField` to
+  `NVARCHAR(max)` (a row-length limit for every text column, and the index
+  key limit still applies).

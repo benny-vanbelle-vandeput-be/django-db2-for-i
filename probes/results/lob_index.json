@@ -1,0 +1,36 @@
+{
+  "probe": "lob_index",
+  "utc": "20261026T062812Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "create table": {
+    "result": "ok"
+  },
+  "index on NVARCHAR(20)": {
+    "result": "ok"
+  },
+  "index on NCLOB(1M)": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -350,
+    "message": "SQL0350 - Column NC not valid. (-350) (SQLExecDirectW)"
+  },
+  "index on BLOB(1M)": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -350,
+    "message": "SQL0350 - Column BL not valid. (-350) (SQLExecDirectW)"
+  },
+  "index on CLOB(1M)": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -350,
+    "message": "SQL0350 - Column CL not valid. (-350) (SQLExecDirectW)"
+  },
+  "index on DBCLOB(1M)": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -350,
+    "message": "SQL0350 - Column DB not valid. (-350) (SQLExecDirectW)"
+  }
+}
