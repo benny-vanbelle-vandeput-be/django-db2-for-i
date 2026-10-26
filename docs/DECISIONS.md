@@ -507,8 +507,8 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   Whether the backend uses it is a separate decision.
 
 ## 2026-10-17: Open question for phase 4: table rebuild for data-losing ALTER TABLE
-- **Status:** open; decide in phase 4 from the `schema` and `migrations` test
-  results (project owner).
+- **Status:** decided 2026-10-26: no table rebuild ("No table rebuild for
+  column renames and incompatible type changes" below).
 - **Question:** CPA32B2 fires for `DROP COLUMN` also on empty tables and for
   every narrowing `ALTER COLUMN` (probe `probe_inquiry`). On systems without a
   system reply list entry (`ADDRPYLE MSGID(CPA32B2) RPY('I')`), such
@@ -1622,3 +1622,43 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   systems without a way to drop or narrow columns.
 - **Alternatives:** deprecate it now and remove it later (no fallback);
   keep it without documenting when to use it.
+
+
+## 2026-10-26: No table rebuild for column renames and incompatible type changes
+- **Decision (project owner, phase 4 step C plan):** the schema editor gets
+  no table rebuild (create a new table, copy the rows, drop the old one,
+  rename; Django's `_remake_table` on SQLite). Answers the open question of
+  2026-10-17. What Db2 for i cannot do in place keeps failing early, before
+  any statement, with `NotSupportedError` and a hint:
+  - renaming a column (no statement for it on IBM i 7.5 and 7.6, SQL0199):
+    keep the column name with `db_column=` on the renamed field;
+  - changing a column to an incompatible type (SQL0190): add a new field,
+    copy the data in a data migration, then remove the old field.
+  Both are in Known Limitations. The Django tests that need them stay on the
+  expected-failure list (`REASON_NO_COLUMN_RENAME`,
+  `REASON_TYPE_NOT_IN_PLACE`), and the three `test_m2m_repoint` tests on the
+  skip list (their tearDown fails after the refused rename).
+- **Why:**
+  - Only these two cases are left: CPA32B2 is suppressed per job in
+    migrations (2026-10-25), so dropping and narrowing columns and `SET NOT
+    NULL` work in place.
+  - A rebuild replaces the table object. On IBM i that loses or has to
+    recreate what Django does not know about: journaling (a new table is
+    journaled only through the library's `QSQJRN`), triggers, object and
+    column authorities, the system (10-character) name that RPG and CL
+    programs use, dependent views and logical files, and foreign keys of
+    other tables. Getting one of those wrong on a production system is
+    worse than a migration that refuses with a clear way around it.
+  - The copy holds an exclusive lock and doubles the space for the whole
+    table, inside the migration's transaction.
+  - Both workarounds are ordinary Django migrations and keep the table.
+- **When to look again:** if a Db2 for i release adds `RENAME COLUMN` (then
+  `_rename_field_sql()` uses it, and the skipped and expected-failure tests
+  run again), or if users ask for an opt-in rebuild with a concrete case.
+- **Alternatives:**
+  - an opt-in rebuild (`OPTIONS`) for both cases: the risks above, only
+    moved behind a switch;
+  - a column rename as ADD COLUMN, copy, DROP COLUMN: keeps the table, but
+    the copy is an `UPDATE` of every row, so the `DROP COLUMN` in the same
+    transaction fails with SQL0910 (probe `lib_pending_change`), it changes
+    the column order, and it rebuilds indexes and constraints on the column.
