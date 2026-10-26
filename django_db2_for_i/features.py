@@ -185,7 +185,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     can_introspect_default = True
     can_introspect_foreign_keys = True
     can_introspect_check_constraints = True
-    supports_index_column_ordering = False
+    # CREATE INDEX ... (a DESC, b ASC) (probe alter_table); introspection reads
+    # QSYS2.SYSKEYS.ORDERING into get_constraints()' "orders".
+    supports_index_column_ordering = True
     supports_inspectdb = False
 
     @cached_property
