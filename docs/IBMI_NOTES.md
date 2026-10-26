@@ -1105,7 +1105,10 @@ order, and `ADD COLUMN` appends at the end.
 **Indexes:** `CREATE INDEX ... (a DESC, b ASC)` works. An index on an `NCLOB`
 column fails with SQL0350 "Column ... not valid" (the baseline's one SQL0350,
 a `TextField` index). A long index name gets a generated system name
-(`P24_A00001`).
+(`P24_A00001`). Probe `lob_index` (2026-10-26, QTEMP,
+`probes/results/lob_index.json`): `BLOB`, `CLOB` and `DBCLOB` columns fail
+the same way (SQL0350, HY000), and an `NVARCHAR` column of the same table is
+indexed. The schema editor skips `db_index` on every LOB type.
 
 **Comments:** `COMMENT ON` takes a plain string literal only: `UX'...'` and
 `N'...'` are rejected (SQL0104), and the `N'...'` error shows the text already
