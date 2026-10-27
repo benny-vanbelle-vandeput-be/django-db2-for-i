@@ -109,7 +109,7 @@ prs = [119, 120]
 [[phases]]
 phase = "4"
 content = "Schema editor completeness"
-status = "in progress"
+status = "done"
 
 [[phases.steps]]
 step = "0: tooling (classification, gate, lock, bin/ scripts)"
@@ -128,8 +128,8 @@ prs = [138, 140, 141, 142, 143, 144, 145]
 
 [[phases.steps]]
 step = "C: schema editor"
-status = "in progress"
-prs = [146, 147, 148, 152]
+status = "done"
+prs = [146, 147, 148, 152, 153, 155, 157, 158, 160, 163, 164, 168, 170, 171, 172, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184]
 
 [[phases.steps]]
 step = "D: inspectdb"
@@ -138,7 +138,8 @@ prs = [186]
 
 [[phases.steps]]
 step = "Close-out: user docs, phase record, changelog"
-status = "planned"
+status = "done"
+prs = [187]
 
 [[phases]]
 phase = "5"
@@ -205,6 +206,10 @@ module = "inspectdb"
 status = "done"
 
 [[modules]]
+module = "migrate_signals"
+status = "done"
+
+[[modules]]
 module = "queries"
 status = "done"
 # Run as these labels (Q1-Q5); the module row sums their logs.
@@ -223,13 +228,7 @@ labels = [
 note = "split into labels Q1–Q5 because of its size"
 
 [[tracks]]
-text = "Offline query corpus: Django 6.1 done (7 modules, 2533 entries, replayed in every offline CI job); 6.0 and 5.2 corpora are still to be captured."
-
-[[tracks]]
 text = "Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82))."
-
-[[tracks]]
-text = "CPA32B2 (`DROP COLUMN`, narrowing, `SET NOT NULL`) is suppressed per job in migrations, without a reply list entry; whether incompatible type changes and column renames get a table rebuild is decided at the end of phase 4 step C (see [IBMI_NOTES](docs/IBMI_NOTES.md))."
 
 [[tracks]]
 text = "Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier."
