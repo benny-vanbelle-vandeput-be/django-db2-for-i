@@ -139,7 +139,7 @@ prs = [186]
 [[phases.steps]]
 step = "Close-out: user docs, phase record, changelog"
 status = "done"
-prs = []
+prs = [187]
 
 [[phases]]
 phase = "5"

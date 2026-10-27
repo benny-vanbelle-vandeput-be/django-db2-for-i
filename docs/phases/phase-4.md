@@ -40,7 +40,7 @@ of the plan).
 The approved plan, with its analysis of the Django modules, the flags and
 the design, is in this file's history (from the merge of
 [#123](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/123),
-with its progress updates, until this record replaced it).
+with its progress updates, until #187 replaced it with this record).
 
 ## What was done
 
@@ -115,7 +115,7 @@ with its progress updates, until this record replaced it).
 - This record; the user docs; `docs/status.toml` (`migrate_signals` added
   to the supported modules, phase 4 done, two stale tracks removed); the
   phase 4 feature flags decided or carried forward in
-  `docs/features.toml`. This PR.
+  `docs/features.toml`. [#187](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/187)
 
 ## Key decisions
 - Phase 4 is what the schema modules need; constraint and index variants
@@ -218,4 +218,4 @@ and test set, from one status run on `main` after this phase, is in
   [Known limitations](../user/Known-Limitations.md),
   [IBM i requirements](../user/IBM-i-Requirements.md).
 - Changelog: the fragments in `changelog.d/` until the next release.
-- The approved plan: this file from the merge of #123 until this PR.
+- The approved plan: this file from the merge of #123 until #187.
