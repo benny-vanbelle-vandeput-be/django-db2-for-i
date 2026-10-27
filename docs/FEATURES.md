@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**32 flags enabled on Django 6.1.**
+**34 flags enabled on Django 6.1.**
 
-## Enabled (32)
+## Enabled (34)
 
 On in at least one supported Django version.
 
@@ -24,6 +24,7 @@ On in at least one supported Django version.
 | `can_rename_index` | `RenameIndex` renames an index in place instead of dropping and recreating it. | ✅ | ✅ | ✅ |
 | `can_rollback_ddl` | Schema changes inside a transaction are rolled back with it: a migration that fails halfway leaves nothing behind. | ✅ | ✅ | ✅ |
 | `has_native_boolean_field` | `BooleanField` is a native `BOOLEAN` column (IBM i 7.5). | – | – | ✅ |
+| `ignores_table_name_case` | Table names that differ only in case are the same table (names are uppercase). | ✅ | ✅ | ✅ |
 | `implied_column_null` | Columns are nullable unless `NOT NULL` is written; no bare `NULL` keyword in DDL. | ✅ | ✅ | ✅ |
 | `indexes_foreign_keys` | Foreign key columns get an index (on Db2 for i Django's own: the constraint creates none). | ✅ | ✅ | ✅ |
 | `nulls_order_largest` | NULL sorts as the largest value: last in ascending order, first in descending. | ✅ | ✅ | ✅ |
@@ -36,6 +37,7 @@ On in at least one supported Django version.
 | `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | ✅ | ✅ | ✅ |
 | `supports_foreign_keys` | Foreign keys are enforced by the database. | ✅ | ✅ | ✅ |
 | `supports_index_column_ordering` | Index columns can be ordered `DESC` (`Index(fields=["-field"])`). | ✅ | ✅ | ✅ |
+| `supports_inspectdb` | `manage.py inspectdb` generates models from existing tables. | – | – | ✅ |
 | `supports_parentheses_in_compound` | Parts of a compound query may have their own `ORDER BY` / slice. | ✅ | ✅ | ✅ |
 | `supports_regex_backreferencing` | `regex` / `iregex` lookups support backreferences (ICU regular expressions). | ✅ | ✅ | ✅ |
 | `supports_select_difference` | `QuerySet.difference()` (`EXCEPT`). | ✅ | ✅ | ✅ |
@@ -88,7 +90,7 @@ Off on purpose, with the reason.
 | `supports_uuid7_function` | The `UUID7()` database function (Django 6.1+). | – | – | ❌ | Db2 for i has no function that generates a time-ordered UUID (not verified on IBM i). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (64)
+## Planned (62)
 
 Off for now; planned for the phase shown.
 
@@ -111,7 +113,6 @@ Off for now; planned for the phase shown.
 | `has_select_for_update_nowait` | `select_for_update(nowait=True)` fails instead of waiting for a lock. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `has_select_for_update_of` | `select_for_update(of=...)` locks rows of the named tables only. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `has_select_for_update_skip_locked` | `select_for_update(skip_locked=True)` skips locked rows. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `ignores_table_name_case` | Table names that differ only in case are the same table. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `ignores_unnecessary_order_by_in_subqueries` | Django may leave an `ORDER BY` in a subquery; the database accepts and ignores it. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `related_fields_match_type` | A foreign key column must have exactly the type of the column it references. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
 | `rounds_to_even` | `Round()` rounds halves to even. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
@@ -134,7 +135,6 @@ Off for now; planned for the phase shown.
 | `supports_functions_in_partial_indexes` | Functions in the `condition` of a partial index. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_ignore_conflicts` | `bulk_create(ignore_conflicts=True)`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_index_on_text_field` | Indexes on `TextField` columns. | 🗓️ | 🗓️ | 🗓️ | phase 4 |
-| `supports_inspectdb` | `manage.py inspectdb` generates models from existing tables. | – | – | 🗓️ | phase 4 |
 | `supports_json_field` | `JSONField`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_field_contains` | `JSONField` `contains` / `contained_by` lookups. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_negative_indexing` | `JSONField` key transforms with a negative array index (Django 6.0+). | – | 🗓️ | 🗓️ | phase 6 |

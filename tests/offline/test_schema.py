@@ -322,6 +322,22 @@ def test_rename_field_with_db_column_writes_nothing() -> None:
     assert editor.collected_sql == []
 
 
+def test_a_change_of_case_only_renames_no_table() -> None:
+    """quote_name() writes every name in uppercase (ignores_table_name_case), so
+    "testapp_author" and "TESTAPP_AUTHOR" are the same table: no RENAME TABLE,
+    which Db2 for i would refuse (the table exists)."""
+    assert connection.features.ignores_table_name_case
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.alter_db_table(Author, "testapp_author", "TESTAPP_AUTHOR")
+    assert editor.collected_sql == []
+
+
+def test_a_real_rename_still_renames_the_table() -> None:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.alter_db_table(Author, "testapp_author", "testapp_writer")
+    assert editor.collected_sql == ['RENAME TABLE "TESTAPP_AUTHOR" TO "TESTAPP_WRITER";']
+
+
 @pytest.mark.parametrize(
     ("old", "new"),
     [
