@@ -360,7 +360,16 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
 
     def execute(self, sql, params=()):
         """Suppress CPA32B2 for the ALTER TABLE of a field change, and explain
-        an ALTER TABLE that Db2 for i cancelled anyway (see inquiry.py)."""
+        an ALTER TABLE that Db2 for i cancelled anyway (see inquiry.py).
+
+        A statement without parameters runs as is (``params=None``), as
+        Django already runs create_model(), add_field(), add_constraint() and
+        deferred SQL: a literal ``%`` (in a DEFAULT, which prepare_default()
+        writes unescaped) is never taken for a placeholder, neither by the
+        cursor nor in collected SQL.
+        """
+        if not params:
+            params = None
         is_alter = inquiry.is_alter_table(str(sql))
         if is_alter and self._field_changes and not self.collect_sql:
             self._suppression = self.connection.suppress_cpa32b2()
@@ -577,10 +586,9 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         is dropped from CREATE/ADD COLUMN in ``_iter_column_sql()`` and
         becomes ``SET DEFAULT NULL`` in ALTER COLUMN, which is the same.
         """
-        literal = "NULL" if value is None else default_literal(value)
-        # The literal ends up in SQL that is executed with (empty) params, so
-        # "%" must be escaped for the %s -> ? conversion.
-        return literal.replace("%", "%%")
+        # Not escaped for "%s" placeholders: DDL without parameters runs as
+        # is (execute()).
+        return "NULL" if value is None else default_literal(value)
 
     def db_default_sql(self, field):
         """``db_default`` as a bare constant, never compiled to CAST(? AS ...).
