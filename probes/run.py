@@ -39,6 +39,7 @@ import qtemp_features
 import qtemp_fetch_errors
 import qtemp_in_subquery
 import qtemp_journal_check
+import qtemp_leftovers
 import qtemp_libraries
 import qtemp_library_journal
 import qtemp_listagg
@@ -99,6 +100,7 @@ PROBES = {
     "transaction_start": qtemp_transaction_start,
     "add_column_default": qtemp_add_column_default,
     "qaqqini_inquiry": qtemp_qaqqini_inquiry,
+    "leftovers": qtemp_leftovers,
     "qaqqini_lifecycle": qtemp_qaqqini_lifecycle,
     "lob_index": qtemp_lob_index,
 }

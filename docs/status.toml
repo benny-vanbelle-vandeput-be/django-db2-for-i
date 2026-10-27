@@ -188,6 +188,10 @@ module = "expressions"
 status = "done"
 
 [[modules]]
+module = "migrations"
+status = "done"
+
+[[modules]]
 module = "queries"
 status = "done"
 # Run as these labels (Q1-Q5); the module row sums their logs.

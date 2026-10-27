@@ -34,6 +34,10 @@ REASON_PENDING_ROW_CHANGES = (
 )
 REASON_NO_COLUMN_RENAME = "Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6)"
 REASON_TYPE_NOT_IN_PLACE = "Db2 for i cannot change this column type in place (SQL0190)"
+REASON_CHECK_LIKE_COLUMN_PATTERN = (
+    "Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546)"
+)
+REASON_JSON_FIELD = "JSONField is not supported yet (phase 6)"
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -257,6 +261,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "schema.tests.SchemaTests.test_alter_null_to_not_null",
             "schema.tests.SchemaTests.test_alter_null_with_default_value_deferred_constraints",
             "schema.tests.SchemaTests.test_alter_text_field_to_not_null_with_default_value",
+            # AlterField null=True to null=False with a db_default, on a table with NULLs.
+            "migrations.test_operations.OperationTests.test_alter_field_change_blank_nullable_database_default_to_not_null",
+            "migrations.test_operations.OperationTests.test_alter_field_change_nullable_to_database_default_not_null",
+            "migrations.test_operations.OperationTests.test_alter_field_change_nullable_to_decimal_database_default_not_null",
         },
         # RenameField / a new db_column: NotSupportedError (schema.py).
         REASON_NO_COLUMN_RENAME: {
@@ -273,6 +281,23 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "schema.tests.SchemaTests.test_rename_field_with_check_to_truncated_name",
             "schema.tests.SchemaTests.test_rename_referenced_field",
             "schema.tests.SchemaTests.test_unique",
+            # RenameField, a renamed or repointed m2m (the through table's
+            # columns), an AlterField to a new column name.
+            "migrations.test_operations.OperationTests.test_alter_fk_non_fk",
+            "migrations.test_operations.OperationTests.test_alter_id_pk_to_uuid_pk",
+            "migrations.test_operations.OperationTests.test_alter_model_table_m2m_field",
+            "migrations.test_operations.OperationTests.test_rename_field",
+            "migrations.test_operations.OperationTests.test_rename_field_add_non_nullable_field_with_composite_pk",
+            "migrations.test_operations.OperationTests.test_rename_field_index_together",
+            "migrations.test_operations.OperationTests.test_rename_field_reloads_state_on_fk_target_changes",
+            "migrations.test_operations.OperationTests.test_rename_field_unique_together",
+            "migrations.test_operations.OperationTests.test_rename_m2m_model_after_rename_field",
+            "migrations.test_operations.OperationTests.test_rename_m2m_target_model",
+            "migrations.test_operations.OperationTests.test_rename_model_with_db_table_rename_m2m",
+            "migrations.test_operations.OperationTests.test_rename_model_with_m2m",
+            "migrations.test_operations.OperationTests.test_rename_model_with_m2m_models_in_different_apps_with_same_name",
+            "migrations.test_operations.OperationTests.test_rename_model_with_self_referential_m2m",
+            "migrations.test_operations.OperationTests.test_repoint_field_m2m",
         },
         # Text to a date or time, AutoField to and from CharField: NotSupportedError.
         REASON_TYPE_NOT_IN_PLACE: {
@@ -283,7 +308,23 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "schema.tests.SchemaTests.test_char_field_pk_to_auto_field",
             # CharField to a ForeignKey to an AutoField (NVARCHAR to BIGINT).
             "schema.tests.SchemaTests.test_char_field_with_db_index_to_fk",
+            # A primary key or to_field target between INTEGER and NVARCHAR;
+            # no table rebuild (docs/DECISIONS.md).
+            "migrations.test_executor.ExecutorTests.test_alter_id_type_with_fk",
+            "migrations.test_operations.OperationTests.test_alter_field_pk_fk_char_to_int",
+            "migrations.test_operations.OperationTests.test_alter_field_reloads_state_fk_with_to_field_related_name_target_type_change",
+            "migrations.test_operations.OperationTests.test_alter_field_reloads_state_on_fk_with_to_field_target_type_change",
         },
+        # ~Q(surname__startswith=F("name")): LIKE REPLACE(...("NAME")...) || '%'.
+        # The other subtests pass on a clean system (docs/IBMI_NOTES.md: PUB400
+        # currently refuses the constraint name "CONSTRAINT" with SQL0601).
+        REASON_CHECK_LIKE_COLUMN_PATTERN: {
+            "migrations.test_operations.OperationTests.test_add_constraint_percent_escaping",
+            "migrations.test_operations.OperationTests.test_create_model_constraint_percent_escaping",
+        },
+        # A JSONField db_default (a dict). On Django 5.2 only: 6.0 and later
+        # skip the test without supports_json_field (compat.py).
+        REASON_JSON_FIELD: set(compat.FAILING_ON_THIS_VERSION_ONLY),
     }
     # Per Django version: the entries above that pass on the running version
     # (compat.PASSING_ON_THIS_VERSION) are left out, since an expected failure

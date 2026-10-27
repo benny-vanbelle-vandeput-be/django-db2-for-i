@@ -37,6 +37,16 @@ else:
 # BigAutoField to INTEGER only from 6.0 on now pass everywhere.
 PASSING_ON_THIS_VERSION: frozenset[str] = frozenset()
 
+# Expected failures of features.py on this Django version only. Django 6.0
+# added skipUnlessDBFeature("supports_json_field") to this test; 5.2 runs it,
+# and it fails on its JSONField db_default (phase 6). When 5.2 is dropped:
+# remove this and the features.py entry.
+FAILING_ON_THIS_VERSION_ONLY: frozenset[str] = (
+    frozenset()
+    if django.VERSION >= (6, 0)
+    else frozenset({"schema.tests.SchemaTests.test_db_default_output_field_resolving"})
+)
+
 # Django 6.0 refuses a composite field compared with a subquery (>, >=, <, <=)
 # when supports_tuple_comparison_against_subquery is off; 5.2 writes a row-value
 # comparison, which Db2 for i rejects (SQL0115). The tuple hook refuses it there.

@@ -1251,6 +1251,41 @@ schema editor writes, in autocommit mode and in a transaction (rolled back):
   table is unchanged (pub400 test `test_positive_field_to_integer_and_back`,
   journaled library).
 
+### CHECK with LIKE against a column pattern: SQL0546 (Django `migrations`)
+2026-10-26, PUB400 (IBM i 7.5), Django `migrations` on 6.1, 6.0 and 5.2, the
+test libraries. `test_add_constraint_percent_escaping` and
+`test_create_model_constraint_percent_escaping` add a CHECK constraint per
+subtest, by `ALTER TABLE ... ADD CONSTRAINT` and in `CREATE TABLE`:
+
+- `~Q(surname__startswith=F("name"))`, written as
+  `CHECK (NOT ("SURNAME" LIKE REPLACE(REPLACE(REPLACE(("NAME"), '\', '\\'),
+  '%', '\%'), '_', '\_') || '%' ESCAPE '\'))`, fails in both statements
+  with `SQL0546 - CHECK condition of constraint CONSTRAINT not valid`
+  (SQLSTATE `HY000`), on all three versions. Which rule of the CHECK
+  condition it breaks (the column in the pattern, or REPLACE) was not
+  probed: a constraint needs a journaled table, so that probe would be a
+  `lib_` probe.
+- Constant patterns pass (6.1 run, before the SQL0601 below):
+  `LIKE 'Albert%' ESCAPE '\'`, `LIKE '%\%' ESCAPE '\'` and `= '%'`.
+
+#### Unresolved: the constraint name "CONSTRAINT" refused with SQL0601
+Since the 6.1 `migrations` run, every `ADD CONSTRAINT "CONSTRAINT"` and every
+`CREATE TABLE` with a constraint of that name in the `default` test library
+fails with `SQL0601 - CONSTRAINT in <library> type *N already exists`, also
+when the test runs alone, on 6.1, 6.0 and 5.2. The same tests passed these
+subtests earlier in that 6.1 run. Unexplained:
+
+- A read-only probe (`probe -- leftovers`, 2026-10-27) found no object of that
+  name: both libraries hold no tables, no constraints in `QSYS2.SYSCST`, and
+  no rows for the name in `SYSCST`, `SYSCHKCST`, `SYSKEYCST`, `SYSCSTCOL` or
+  `SYSCSTDEP` in any schema; `OBJECT_STATISTICS` shows only the journal and
+  its receiver.
+- **A guess, not verified:** an orphaned entry for the constraint in the
+  system's database cross-reference files, which only a system administrator
+  can repair (`RCLDBXREF`). No further action on PUB400.
+- Effect: only the subtests named "constraint" of the two tests above; both
+  are expected failures for SQL0546 anyway.
+
 ### DDL under commitment control: what ROLLBACK undoes (`lib_rollback_ddl`)
 2026-10-24, PUB400 (IBM i 7.5), write probe in the journaled default library,
 approved by the maintainer on issue #149 (started via `bin/probe --approved`).
