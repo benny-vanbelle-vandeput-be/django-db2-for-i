@@ -133,7 +133,8 @@ prs = [146, 147, 148, 152]
 
 [[phases.steps]]
 step = "D: inspectdb"
-status = "planned"
+status = "done"
+prs = [186]
 
 [[phases.steps]]
 step = "Close-out: user docs, phase record, changelog"
@@ -189,6 +190,18 @@ status = "done"
 
 [[modules]]
 module = "migrations"
+status = "done"
+
+[[modules]]
+module = "schema"
+status = "done"
+
+[[modules]]
+module = "introspection"
+status = "done"
+
+[[modules]]
+module = "inspectdb"
 status = "done"
 
 [[modules]]

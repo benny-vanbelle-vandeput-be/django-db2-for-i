@@ -1422,6 +1422,25 @@ the table list before its `CREATE TABLE`, all dropped at the end (none left).
   `BIGINT` 20, `SMALLINT` 5, `DOUBLE` 15), 10 / 8 / 26 for `DATE` / `TIME` /
   `TIMESTAMP(6)`; scale 6 for `TIMESTAMP(6)`, s for `DECIMAL`.
 
+### inspectdb on tables created with plain SQL (`tests/pub400/test_inspectdb.py`)
+2026-10-27, PUB400 (IBM i 7.5), Django 6.1: two tables created with plain
+SQL in the marked test library (own IBM i test, on the cleanup list before
+each `CREATE TABLE`, dropped at the end).
+
+- `QSYS2.SYSCOLUMNS.DATA_TYPE` is **`NUMERIC`** for `NUMERIC(p, s)` and
+  **`CLOB`** for `CLOB(n)`; neither type is written by the backend, so
+  `data_types_reverse` had no entry and `inspectdb` wrote
+  `TextField  # This field type is a guess.` for both. Mapped since step D:
+  `NUMERIC` to `DecimalField` (precision and scale as for `DECIMAL`),
+  `CLOB` to `TextField`.
+- A `CHAR(30)` value `'Acme'` is fetched with its blanks (30 characters);
+  `WHERE NAME = 'Acme'` matches it (Known Limitations, "inspectdb and
+  existing IBM i tables").
+- Primary key (`NUMERIC(7, 0)`, no identity), identity column, single-column
+  `UNIQUE` and the foreign key come out as Django expects; a model generated
+  with `managed = False` reads and writes the rows, also across the foreign
+  key (`select_related`).
+
 ### Numeric values that do not fit the column (`nox -s probe -- numeric_params`)
 2026-10-20, PUB400 (IBM i 7.5), the backend's connection attributes; a QTEMP
 table with `SMALL SMALLINT` and `AMOUNT DECIMAL(5, 2)` whose rows hold the

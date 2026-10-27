@@ -192,7 +192,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # CREATE INDEX ... (a DESC, b ASC) (probe alter_table); introspection reads
     # QSYS2.SYSKEYS.ORDERING into get_constraints()' "orders".
     supports_index_column_ordering = True
-    supports_inspectdb = False
+    # inspectdb (phase 4 step D). quote_name() writes every name in
+    # uppercase, so a table name's case is lost: "PascalCase" and "pascalcase"
+    # are the same table, and introspection reports it in lowercase.
+    supports_inspectdb = True
+    ignores_table_name_case = True
 
     @cached_property
     def introspected_field_types(self) -> dict[str, str]:
