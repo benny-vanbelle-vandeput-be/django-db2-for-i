@@ -1,0 +1,269 @@
+{
+  "probe": "leftovers",
+  "utc": "20261027T012506Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "<DEFAULT_LIBRARY>": {
+    "tables": {
+      "label": "<DEFAULT_LIBRARY>: tables and views",
+      "sql": "SELECT TABLE_NAME, TABLE_TYPE, SYSTEM_TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME",
+      "params": [
+        "<DEFAULT_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "TABLE_NAME": "SYSCHKCST",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSCHKCST"
+        },
+        {
+          "TABLE_NAME": "SYSCST",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSCST"
+        },
+        {
+          "TABLE_NAME": "SYSCSTCOL",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSCSTCOL"
+        },
+        {
+          "TABLE_NAME": "SYSCSTDEP",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSCSTDEP"
+        },
+        {
+          "TABLE_NAME": "SYSKEYCST",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSKEYCST"
+        },
+        {
+          "TABLE_NAME": "SYSREFCST",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSREFCST"
+        }
+      ]
+    },
+    "constraints": {
+      "label": "<DEFAULT_LIBRARY>: constraints",
+      "sql": "SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, TABLE_NAME FROM QSYS2.SYSCST WHERE CONSTRAINT_SCHEMA = ? ORDER BY TABLE_NAME, CONSTRAINT_NAME",
+      "params": [
+        "<DEFAULT_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": []
+    },
+    "objects": {
+      "label": "<DEFAULT_LIBRARY>: objects",
+      "sql": "SELECT OBJNAME, OBJTYPE, OBJATTRIBUTE, OBJCREATED FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*ALL')) X ORDER BY OBJNAME",
+      "params": [
+        "<DEFAULT_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "OBJNAME": "QSQJRN",
+          "OBJTYPE": "*JRN",
+          "OBJATTRIBUTE": "",
+          "OBJCREATED": "2026-10-16 23:49:19"
+        },
+        {
+          "OBJNAME": "QSQJRN0034",
+          "OBJTYPE": "*JRNRCV",
+          "OBJATTRIBUTE": "",
+          "OBJCREATED": "2026-10-26 23:22:39"
+        },
+        {
+          "OBJNAME": "SYSCHKCST",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-17 00:07:26"
+        },
+        {
+          "OBJNAME": "SYSCST",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-17 00:07:25"
+        },
+        {
+          "OBJNAME": "SYSCSTCOL",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-17 00:07:25"
+        },
+        {
+          "OBJNAME": "SYSCSTDEP",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-17 00:07:25"
+        },
+        {
+          "OBJNAME": "SYSKEYCST",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-17 00:07:25"
+        },
+        {
+          "OBJNAME": "SYSREFCST",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-17 00:07:25"
+        }
+      ]
+    }
+  },
+  "<OTHER_LIBRARY>": {
+    "tables": {
+      "label": "<OTHER_LIBRARY>: tables and views",
+      "sql": "SELECT TABLE_NAME, TABLE_TYPE, SYSTEM_TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME",
+      "params": [
+        "<OTHER_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "TABLE_NAME": "SYSCHKCST",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSCHKCST"
+        },
+        {
+          "TABLE_NAME": "SYSCST",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSCST"
+        },
+        {
+          "TABLE_NAME": "SYSCSTCOL",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSCSTCOL"
+        },
+        {
+          "TABLE_NAME": "SYSCSTDEP",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSCSTDEP"
+        },
+        {
+          "TABLE_NAME": "SYSKEYCST",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSKEYCST"
+        },
+        {
+          "TABLE_NAME": "SYSREFCST",
+          "TABLE_TYPE": "V",
+          "SYSTEM_TABLE_NAME": "SYSREFCST"
+        }
+      ]
+    },
+    "constraints": {
+      "label": "<OTHER_LIBRARY>: constraints",
+      "sql": "SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, TABLE_NAME FROM QSYS2.SYSCST WHERE CONSTRAINT_SCHEMA = ? ORDER BY TABLE_NAME, CONSTRAINT_NAME",
+      "params": [
+        "<OTHER_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": []
+    },
+    "objects": {
+      "label": "<OTHER_LIBRARY>: objects",
+      "sql": "SELECT OBJNAME, OBJTYPE, OBJATTRIBUTE, OBJCREATED FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*ALL')) X ORDER BY OBJNAME",
+      "params": [
+        "<OTHER_LIBRARY>"
+      ],
+      "ok": true,
+      "rows": [
+        {
+          "OBJNAME": "QSQJRN",
+          "OBJTYPE": "*JRN",
+          "OBJATTRIBUTE": "",
+          "OBJCREATED": "2026-10-17 15:13:10"
+        },
+        {
+          "OBJNAME": "QSQJRN0003",
+          "OBJTYPE": "*JRNRCV",
+          "OBJATTRIBUTE": "",
+          "OBJCREATED": "2026-10-25 16:11:16"
+        },
+        {
+          "OBJNAME": "SYSCHKCST",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-19 08:48:34"
+        },
+        {
+          "OBJNAME": "SYSCST",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-19 08:48:33"
+        },
+        {
+          "OBJNAME": "SYSCSTCOL",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-19 08:48:33"
+        },
+        {
+          "OBJNAME": "SYSCSTDEP",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-19 08:48:33"
+        },
+        {
+          "OBJNAME": "SYSKEYCST",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-19 08:48:33"
+        },
+        {
+          "OBJNAME": "SYSREFCST",
+          "OBJTYPE": "*FILE",
+          "OBJATTRIBUTE": "LF",
+          "OBJCREATED": "2026-10-19 08:48:33"
+        }
+      ]
+    }
+  },
+  "SYSCST": {
+    "label": "QSYS2.SYSCST: rows of the constraint names given",
+    "sql": "SELECT * FROM QSYS2.SYSCST WHERE CONSTRAINT_NAME IN (?)",
+    "params": [
+      "CONSTRAINT"
+    ],
+    "ok": true,
+    "rows": []
+  },
+  "SYSCHKCST": {
+    "label": "QSYS2.SYSCHKCST: rows of the constraint names given",
+    "sql": "SELECT * FROM QSYS2.SYSCHKCST WHERE CONSTRAINT_NAME IN (?)",
+    "params": [
+      "CONSTRAINT"
+    ],
+    "ok": true,
+    "rows": []
+  },
+  "SYSKEYCST": {
+    "label": "QSYS2.SYSKEYCST: rows of the constraint names given",
+    "sql": "SELECT * FROM QSYS2.SYSKEYCST WHERE CONSTRAINT_NAME IN (?)",
+    "params": [
+      "CONSTRAINT"
+    ],
+    "ok": true,
+    "rows": []
+  },
+  "SYSCSTCOL": {
+    "label": "QSYS2.SYSCSTCOL: rows of the constraint names given",
+    "sql": "SELECT * FROM QSYS2.SYSCSTCOL WHERE CONSTRAINT_NAME IN (?)",
+    "params": [
+      "CONSTRAINT"
+    ],
+    "ok": true,
+    "rows": []
+  },
+  "SYSCSTDEP": {
+    "label": "QSYS2.SYSCSTDEP: rows of the constraint names given",
+    "sql": "SELECT * FROM QSYS2.SYSCSTDEP WHERE CONSTRAINT_NAME IN (?)",
+    "params": [
+      "CONSTRAINT"
+    ],
+    "ok": true,
+    "rows": []
+  }
+}

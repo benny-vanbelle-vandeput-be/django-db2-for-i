@@ -329,6 +329,17 @@ runs in Python, as on the other databases. Violations raise `IntegrityError`
 - **Database-level `on_delete`** (`db_on_delete`, Django 6.1) is not
   available yet (phase 6).
 
+## Check constraints with a LIKE pattern from a column
+
+A `CheckConstraint` whose condition matches one column against a pattern
+built from another column, such as
+`~Q(surname__startswith=F("name"))`, is refused by Db2 for i with
+**SQL0546** (the condition becomes
+`LIKE REPLACE(..."NAME"...) || '%'`), both in `CREATE TABLE` and in
+`ALTER TABLE ... ADD CONSTRAINT`. Patterns with a constant
+(`Q(name__startswith="Albert")`, `Q(rebate__endswith="%")`) work. Check such
+a rule in Python (`Model.clean()`) instead.
+
 ## Changing a column to an incompatible type
 
 Db2 for i changes a column's type in place only within the numeric types
