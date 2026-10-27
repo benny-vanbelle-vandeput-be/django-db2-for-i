@@ -97,6 +97,30 @@ statements in one string, still fail with `SQL0104`: run them one by one.
 Names are created in uppercase (`basic_article` becomes `BASIC_ARTICLE`).
 Mixed-case `db_table` / `db_column` names are not preserved.
 
+`inspectdb` therefore writes the names in lowercase (`db_table =
+'legacy_customer'`, fields `custno`, `name`), and a `db_table` that differs
+only in case names the same table: changing only its case renames nothing.
+
+## inspectdb and existing IBM i tables
+
+`manage.py inspectdb` writes models for tables that were not created by
+Django, with these IBM i specifics:
+
+- **`CHAR` values keep their padding.** A `CHAR(n)` column is fixed-length:
+  Db2 for i pads a shorter value with blanks, and the backend returns it as
+  stored (`"Acme"` in `CHAR(30)` reads back as `"Acme"` followed by 26
+  blanks). Comparisons in queries ignore the padding
+  (`filter(name="Acme")` finds the row). Strip the value in your code where
+  needed; Django's own `CharField` columns are `NVARCHAR` and not padded.
+- **Types:** `NUMERIC` and `DECIMAL` become `DecimalField`, `CHAR`,
+  `VARCHAR` and `NVARCHAR` `CharField`, `CLOB` and `NCLOB` `TextField`, an
+  identity column an `AutoField` (or `BigAutoField` / `SmallAutoField`).
+  A column of any other type is written as `TextField` with Django's
+  comment "This field type is a guess"; check such fields by hand.
+- Foreign keys, primary keys and single-column unique constraints are
+  found; CHECK constraints are not written into models (as on every
+  database).
+
 ## Case-insensitive lookups do not use normal indexes
 
 `iexact`, `icontains`, `istartswith` and `iendswith` compare
@@ -508,5 +532,5 @@ fractional seconds (see "TimeField has no fractional seconds").
 The backend is in early development; these are switched off for now and
 enabled one at a time: bulk insert,
 returning columns, JSONField, window functions, `select_for_update`,
-`inspectdb`, and creating test schemas (tests
+and creating test schemas (tests
 run in an existing library, see [Configuration](Configuration.md#test-database-test)).
