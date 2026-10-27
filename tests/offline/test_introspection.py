@@ -320,6 +320,8 @@ def test_table_description() -> None:
         ("DBCLOB", "NO", "TextField"),
         ("BLOB", "NO", "BinaryField"),
         ("DECIMAL", "NO", "DecimalField"),
+        ("NUMERIC", "NO", "DecimalField"),
+        ("CLOB", "NO", "TextField"),
         ("FLOAT", "NO", "FloatField"),
         ("DATE", "NO", "DateField"),
         ("TIME", "NO", "TimeField"),
@@ -342,11 +344,13 @@ def _one_row_cursor(data_type: str, identity: str):
 
 
 def test_every_backend_type_is_introspected() -> None:
-    """Each column type the backend writes has a reverse entry (w14's codes)."""
+    """Each column type the backend writes has a reverse entry (w14's codes),
+    plus the types of existing tables that inspectdb meets (step D)."""
     codes = connections["default"].introspection.data_types_reverse
     assert set(codes) == {
         "BIGINT", "BLOB", "BOOLEAN", "CHAR", "DATE", "DBCLOB", "DECIMAL",
         "FLOAT", "INTEGER", "SMALLINT", "TIME", "TIMESTMP", "VARCHAR", "VARG",
+        "CLOB", "NUMERIC",
     }  # fmt: skip
 
 
