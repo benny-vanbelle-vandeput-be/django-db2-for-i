@@ -76,10 +76,10 @@ build_corpus = _script("build_corpus")
 
 EXIT_FAILED, EXIT_UNVERIFIED, EXIT_SQL_CHANGED, EXIT_TOO_MANY = 1, 3, 4, 5
 MAX_LABELS, MAX_RUNS = 60, 20
-LABELS_PER_RUN = 3  # scripts/runtests.sh refuses more
+LABELS_PER_RUN = 3  # scripts/django_suite.sh refuses more
 COLLAPSE_ABOVE = 3  # more ids (labels) than this in one class (module, app): one label
 
-OWN_TESTS = "tests/pub400/"
+OWN_TESTS = "tests/ibmi/"
 # Own-test code shared by many tests: a change runs the full own IBM i tier.
 SHARED_OWN_TEST_PATHS = (
     "tests/conftest.py",
@@ -88,9 +88,9 @@ SHARED_OWN_TEST_PATHS = (
     "tests/redaction.py",
     "tests/results_summary.py",
     "tests/table_registry.py",
-    "tests/boolean_condition_scenarios.py",
-    "tests/tuple_lookup_scenarios.py",
-    "tests/django_settings/settings_pub400.py",
+    "tests/scenarios/boolean_condition_scenarios.py",
+    "tests/scenarios/tuple_lookup_scenarios.py",
+    "tests/django_settings/settings_ibmi.py",
 )
 # Where the skip and expected-failure lists live.
 SKIP_LIST_FILES = ("django_db2_for_i/features.py", "django_db2_for_i/compat.py")
@@ -462,7 +462,7 @@ def select(django: str, base: str, max_labels: int = MAX_LABELS, max_runs: int =
         print(
             f"verify: refused: {len(labels)} Django test labels in {len(runs)} runs, more than "
             f"{max_labels} labels or {max_runs} runs on a shared system; run the modules with "
-            "bin/ibmi-test django, or capture them in a release run"
+            "bin/ibmi-test django, or capture them in a status run"
         )
         return EXIT_TOO_MANY
     if not lines:
@@ -568,7 +568,7 @@ def finish(django: str, updated: bool, stamp: bool = True) -> int:
         lines += [
             "WARNING: new SQL was written to the goldens / corpus (--update-goldens,",
             "--update-corpus) but it is NOT verified on IBM i. Review it before committing:",
-            "git diff tests/offline/golden tests/offline/corpus",
+            "git diff tests/offline/golden tests/offline/replay",
             "",
         ]
     lines.append(f"IBM i runs: {len(results)} of {len(planned)}, {len(failed)} failed")

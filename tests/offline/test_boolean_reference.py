@@ -1,4 +1,4 @@
-"""The reference for tests/boolean_condition_scenarios.py: Django writing the
+"""The reference for tests/scenarios/boolean_condition_scenarios.py: Django writing the
 SQL it writes for a backend with native booleans (has_native_boolean_field, as
 on PostgreSQL: ``flag``, ``NOT flag``), evaluated by an in-memory SQLite
 database with standard three-valued logic. Plain SQLite would not do: without
@@ -8,8 +8,8 @@ ELSE 0 END``, which is two-valued."""
 import pytest
 from django.db import connections
 
-from tests import boolean_condition_scenarios as scenarios
 from tests.offline.reference_db import sqlite_reference
+from tests.scenarios import boolean_condition_scenarios as scenarios
 from tests.testapp.models import Switch
 
 

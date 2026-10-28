@@ -128,21 +128,21 @@ ibmi_runs() {
         case $kind in
             goldens)
                 [ "$record" = 1 ] && extra=(--record-verification)
-                set -- pub400 pub400 "$django" tests/pub400/test_goldens.py --goldens-from "$args" \
+                set -- pub400 ibmi "$django" tests/ibmi/test_goldens.py --goldens-from "$args" \
                     ${extra[@]+"${extra[@]}"}
                 ;;
             own)
                 if [ "$args" = full ]; then
-                    set -- pub400 pub400 "$django" --create-db
+                    set -- pub400 ibmi "$django" --create-db
                 else
                     # shellcheck disable=SC2086 # node ids, one word each
-                    set -- pub400 pub400 "$django" --create-db $args
+                    set -- pub400 ibmi "$django" --create-db $args
                 fi
                 ;;
             django)
                 [ "$record" = 1 ] && extra=(--capture)
                 # shellcheck disable=SC2086 # Django test labels, one word each
-                set -- run "$ROOT/scripts/runtests.sh" "$django" --clean ${extra[@]+"${extra[@]}"} $args
+                set -- run "$ROOT/scripts/django_suite.sh" "$django" --clean ${extra[@]+"${extra[@]}"} $args
                 ;;
             *)
                 echo "$(basename "$0"): unknown run in ${runs#"$ROOT"/}: $kind" >&2

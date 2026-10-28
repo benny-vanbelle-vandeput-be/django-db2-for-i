@@ -36,7 +36,7 @@ def hold(directory: Path):
     directory.mkdir(parents=True, exist_ok=True)
     handle = open(directory / lock.LOCK_NAME, "a+")  # noqa: SIM115 (held until the caller closes it)
     fcntl.flock(handle, fcntl.LOCK_EX)
-    (directory / lock.HOLDER_NAME).write_text("pid 1: nox -s pub400 (in /x, since then)\n")
+    (directory / lock.HOLDER_NAME).write_text("pid 1: nox -s ibmi (in /x, since then)\n")
     return handle
 
 
@@ -63,10 +63,8 @@ def test_a_second_job_stops_with_the_holder(tmp_path, capsys) -> None:
     handle = hold(tmp_path)
     try:
         assert lock.run(["true"], directory=tmp_path) == lock.BUSY
-        assert capsys.readouterr().err == (
-            "PUB400 busy: pid 1: nox -s pub400 (in /x, since then)\n"
-        )
-        assert lock.status(tmp_path).startswith("PUB400 busy: pid 1: nox -s pub400")
+        assert capsys.readouterr().err == ("PUB400 busy: pid 1: nox -s ibmi (in /x, since then)\n")
+        assert lock.status(tmp_path).startswith("PUB400 busy: pid 1: nox -s ibmi")
     finally:
         handle.close()
 
@@ -361,7 +359,7 @@ def test_check_runs_lint_offline_corpus_then_the_gate(tmp_path) -> None:
     )
     lines = result.stdout.splitlines()
     assert lines[0].endswith(
-        r"tests nox -s lint offline\(3.14-django6.1\) corpus\(3.14-django6.1\)"
+        r"tests nox -s lint offline\(3.14-django6.1\) replay\(3.14-django6.1\)"
     )
     assert lines[1].endswith("tests nox -s gate")
     assert "scripts/classify_pr.py --base origin/main" in lines[2]
@@ -419,13 +417,13 @@ def test_the_ibmi_scripts_go_through_pub400_sh(tmp_path) -> None:
         f"+ {pub400} probe_qtemp qtemp_encoding --variant x"
     ]
     assert dry(str(BIN / "ibmi-test"), "--dry-run", "own", "-k", "goldens") == [
-        f"+ {pub400} pub400 6.1 --create-db -k goldens"
+        f"+ {pub400} ibmi 6.1 --create-db -k goldens"
     ]
     assert dry(
         str(BIN / "ibmi-test"), "--dry-run", "--django", "6.0", "django", "basic", "lookup"
     ) == [
-        f"+ {ROOT}/scripts/runtests.sh 6.0 --clean basic",
-        f"+ {ROOT}/scripts/runtests.sh 6.0 --clean lookup",
+        f"+ {ROOT}/scripts/django_suite.sh 6.0 --clean basic",
+        f"+ {ROOT}/scripts/django_suite.sh 6.0 --clean lookup",
     ]
     assert dry(str(BIN / "ibmi-cleanup"), "--dry-run") == [f"+ {pub400} ibmi_cleanup"]
     assert dry(str(BIN / "ibmi-cleanup"), "--dry-run", "--yes") == [
@@ -498,7 +496,7 @@ def test_verify_runs_offline_first_then_selects_runs_and_finishes(tmp_path) -> N
         r"tests nox -s offline\(3.14-django6.0\) -- --junitxml=test-results/verify/6.0/offline.xml"
     )
     assert lines[3].endswith(
-        r"tests nox -s corpus\(3.14-django6.0\) -- --junitxml=test-results/verify/6.0/corpus.xml"
+        r"tests nox -s replay\(3.14-django6.0\) -- --junitxml=test-results/verify/6.0/corpus.xml"
     )
     assert lines[4].endswith("scripts/verify.py triage 6.0")
     assert lines[5].endswith("scripts/verify.py select 6.0 --base origin/main")
@@ -550,7 +548,7 @@ def test_ibmi_runs_runs_every_line_and_records_the_results(tmp_path) -> None:
     runs.write_text(
         "goldens\ttest-results/verify/6.1/goldens.txt\n"
         "own\tfull\n"
-        "own\ttests/pub400/test_a.py::test_x\ttests/pub400/test_b.py\n"
+        "own\ttests/ibmi/test_a.py::test_x\ttests/ibmi/test_b.py\n"
         "django\ta.tests.A.test_1\tb.tests\tc\n"
     )
     results = tmp_path / "results.txt"
@@ -565,22 +563,24 @@ def test_ibmi_runs_runs_every_line_and_records_the_results(tmp_path) -> None:
     )
     stamped = run_bin(str(script), "1", str(tmp_path), tmp_path=tmp_path).stdout.splitlines()
     assert stamped == [
-        "pub400 pub400 6.1 tests/pub400/test_goldens.py --goldens-from "
+        "pub400 ibmi 6.1 tests/ibmi/test_goldens.py --goldens-from "
         "test-results/verify/6.1/goldens.txt --record-verification",
-        "pub400 pub400 6.1 --create-db",
-        "pub400 pub400 6.1 --create-db tests/pub400/test_a.py::test_x tests/pub400/test_b.py",
-        f"run {tmp_path}/scripts/runtests.sh 6.1 --clean --capture a.tests.A.test_1 b.tests c",
+        "pub400 ibmi 6.1 --create-db",
+        "pub400 ibmi 6.1 --create-db tests/ibmi/test_a.py::test_x tests/ibmi/test_b.py",
+        f"run {tmp_path}/scripts/django_suite.sh 6.1 --clean --capture a.tests.A.test_1 b.tests c",
         "status=1",
     ]
     assert results.read_text().splitlines() == [
         "goldens\ttest-results/verify/6.1/goldens.txt\t0",
         "own\tfull\t1",
-        "own\ttests/pub400/test_a.py::test_x tests/pub400/test_b.py\t0",
+        "own\ttests/ibmi/test_a.py::test_x tests/ibmi/test_b.py\t0",
         "django\ta.tests.A.test_1 b.tests c\t0",
     ]
     plain = run_bin(str(script), "0", str(tmp_path), tmp_path=tmp_path).stdout.splitlines()
     assert "--record-verification" not in plain[0]
-    assert plain[3] == f"run {tmp_path}/scripts/runtests.sh 6.1 --clean a.tests.A.test_1 b.tests c"
+    assert plain[3] == (
+        f"run {tmp_path}/scripts/django_suite.sh 6.1 --clean a.tests.A.test_1 b.tests c"
+    )
     # Without .env (checked for existence only) no run starts.
     (tmp_path / ".env").unlink()
     refused = run_bin(str(script), "1", str(tmp_path), tmp_path=tmp_path)
@@ -599,17 +599,17 @@ def test_git_never_trusts_every_directory() -> None:
 
 
 @needs_bin
-def test_release_run_runs_each_version_under_the_lock_then_builds_its_corpus(tmp_path) -> None:
+def test_status_run_runs_each_version_under_the_lock_then_builds_its_corpus(tmp_path) -> None:
     result = run_bin(
-        str(BIN / "release-run"), "--dry-run", "--django", "6.0", "--restart", "--limit", "2",
+        str(BIN / "status-run"), "--dry-run", "--django", "6.0", "--restart", "--limit", "2",
         tmp_path=tmp_path,
     )  # fmt: skip
     assert result.returncode == 0, result.stderr
     lines = result.stdout.splitlines()
-    assert lines[0] == f"+ {ROOT}/scripts/pub400.sh release_run 6.0 --restart --limit 2"
+    assert lines[0] == f"+ {ROOT}/scripts/pub400.sh status_run 6.0 --restart --limit 2"
     assert lines[1].endswith("tests uv run --no-project python scripts/build_corpus.py 6.0")
-    every = run_bin(str(BIN / "release-run"), "--dry-run", tmp_path=tmp_path).stdout
-    assert [line.split()[-1] for line in every.splitlines() if "release_run" in line] == [
+    every = run_bin(str(BIN / "status-run"), "--dry-run", tmp_path=tmp_path).stdout
+    assert [line.split()[-1] for line in every.splitlines() if "status_run" in line] == [
         "5.2",
         "6.0",
         "6.1",
@@ -619,7 +619,7 @@ def test_release_run_runs_each_version_under_the_lock_then_builds_its_corpus(tmp
         (("--django", "9.9"), "Django 9.9 is not supported"),
         (("--fast",), "unknown argument: --fast"),
     ]:
-        refused = run_bin(str(BIN / "release-run"), *args, tmp_path=tmp_path)
+        refused = run_bin(str(BIN / "status-run"), *args, tmp_path=tmp_path)
         assert refused.returncode == 2 and message in refused.stderr
     assert not (tmp_path / "docker-called").exists()
 
@@ -633,10 +633,10 @@ def test_ibmi_test_runs_every_django_label_after_a_failure(tmp_path) -> None:
         (root / "bin" / name).write_text((BIN / name).read_text())
     (root / "noxfile.py").write_text((ROOT / "noxfile.py").read_text())
     # A fake runner: the label "bad" fails, every call is recorded.
-    (root / "scripts" / "runtests.sh").write_text(
+    (root / "scripts" / "django_suite.sh").write_text(
         f'#!/bin/sh\necho "$@" >> "{tmp_path}/runs"\nfor last; do :; done\n[ "$last" != bad ]\n'
     )
-    (root / "scripts" / "runtests.sh").chmod(0o755)
+    (root / "scripts" / "django_suite.sh").chmod(0o755)
     result = run_bin(str(root / "bin" / "ibmi-test"), "django", "a", "bad", "c", tmp_path=tmp_path)
     assert result.returncode == 1
     assert "ibmi-test: failed: bad" in result.stderr

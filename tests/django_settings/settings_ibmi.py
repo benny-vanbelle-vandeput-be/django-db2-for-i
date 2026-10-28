@@ -1,4 +1,4 @@
-"""Settings for the pub400 tier: a shared, restricted IBM i.
+"""Settings for the IBM i tests: a shared, restricted IBM i.
 
 Connection settings come from DB2I_* environment variables (compose injects
 them from .env). Only the ``default`` alias is configured; ``other`` is added

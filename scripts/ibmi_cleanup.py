@@ -55,7 +55,7 @@ def main(argv: list[str]) -> int:
     if path is None:
         print(f"refused: {table_registry.ENV} is not set; run through scripts/pub400.sh")
         return 2
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.django_settings.settings_pub400")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.django_settings.settings_ibmi")
     import django
 
     django.setup()

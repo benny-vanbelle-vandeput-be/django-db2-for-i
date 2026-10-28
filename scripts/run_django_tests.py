@@ -1,6 +1,6 @@
 """Run modules of Django's own test suite against IBM i (inside the container).
 
-Called by the ``django_tests`` nox session (see scripts/runtests.sh):
+Called by the ``django_suite`` nox session (see scripts/django_suite.sh):
 
     python scripts/run_django_tests.py <django-version> [--clean] [--debug-sql] <label> ...
 
@@ -41,7 +41,7 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SETTINGS = "tests.django_settings.settings_runtests_pub400"
+SETTINGS = "tests.django_settings.settings_django_suite"
 MAX_LABELS = 3
 # A test module, optionally followed by .Class or .Class.test (no paths).
 LABEL = re.compile(r"^[a-z_][a-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$")

@@ -46,7 +46,7 @@ The workflow, step by step, is in [docs/WORKFLOW.md](docs/WORKFLOW.md)
 | `bin/probe` | IBM i probes by name: `qtemp_` probes (read-only or QTEMP; the ones with their own entry point by file name, e.g. `bin/probe qtemp_encoding`); `lib_` probes only with `--approved <link>` to the maintainer's approval; `--publish` puts a result into the repository |
 | `bin/status` | regenerates the status pages; shows the PUB400 lock and labelled pull requests |
 | `bin/ibmi-cleanup` | lists (`--yes`: drops) the leftover test tables of a crashed run |
-| `bin/release-run` | the release run on IBM i, per Django version, resumable |
+| `bin/status-run` | the status run on IBM i, per Django version, resumable |
 | `bin/release-prepare` | checks the release preconditions and opens the release pull request |
 | `bin/worktree-remove` | removes a merged worktree, keeping its test results in the main checkout |
 
@@ -87,17 +87,16 @@ supported version and the newest pyodbc, the versions users get.
 
 ## Test sets
 
-Four test sets, named the same everywhere (README, TEST_STATUS, this file):
+Four test sets, named the same everywhere, code included (README,
+TEST_STATUS, this file, CLAUDE.md):
 
-| Test set | What and where | Called before (code keeps these names for now) |
+| Test set | What and where | Was |
 |---|---|---|
-| Offline · own tests | this project's unit tests and golden SQL checks, `tests/offline/`; CI on every commit | offline tier, `nox -s offline` |
-| IBM i · own tests | this project's tests against a real Db2 for i, `tests/pub400/`; when the pull request's classification asks for it | pub400 tier, `nox -s pub400` |
-| IBM i · Django test suite | Django's own test modules against Db2 for i; before every release | Django modules on PUB400, `scripts/runtests.sh`, `release_run` |
-| Offline · Django test suite (replay) | the recorded SQL of passing Django tests, compiled again offline; CI on every commit | offline query corpus, `nox -s corpus` |
+| Offline tests | this project's unit tests and golden SQL checks, `tests/offline/`, `nox -s offline`; CI on every commit | offline tier |
+| IBM i tests | this project's tests against a real Db2 for i, `tests/ibmi/`, `nox -s ibmi`; when the pull request's classification asks for it | pub400 tier |
+| Django suite on IBM i | Django's own test modules against Db2 for i, `scripts/django_suite.sh`; before every release (the status run) | Django modules on PUB400 |
+| Replay tests | the recorded SQL of passing Django tests (the corpus), compiled again offline, `nox -s replay`; CI on every commit | offline query corpus |
 
-The nox sessions, `tests/pub400/`, the pytest markers and the
-`needs-full-tier` label keep their names until a separate, mechanical rename.
 Each run of the nox sessions writes its counts to
 `test-results/<django>/sets/` (`--results-summary`); `nox -s test_status`
 turns them, with the Django test logs, into README's "Test status".
@@ -113,11 +112,11 @@ summary.
 
 | Class | What changed | IBM i run | Label |
 |---|---|---|---|
-| needs full tier | `django_db2_for_i/drivers/`, `base.py`, `creation.py`, `capabilities.py`, the core backend (`schema.py`, `introspection.py`, `compiler.py`, `operations.py`, `features.py`, `expressions.py`, `compat.py`), the container image (`docker/`, `compose.yaml`), the pinned Django commit, the supported Django versions, and any path the script does not list | the full own IBM i tests | `needs-full-tier` |
+| needs full IBM i run | `django_db2_for_i/drivers/`, `base.py`, `creation.py`, `capabilities.py`, the core backend (`schema.py`, `introspection.py`, `compiler.py`, `operations.py`, `features.py`, `expressions.py`, `compat.py`), the container image (`docker/`, `compose.yaml`), the pinned Django commit, the supported Django versions, and any path the script does not list | the full own IBM i tests | `needs-full-ibmi-run` |
 | SQL-affecting | other backend code; goldens or corpus entries without a verification stamp | the affected tests | `run-ibmi` |
 | docs/tests only | the paths the script lists as such | only for changes that run on IBM i (own IBM i tests, test models, IBM i settings, the IBM i run tooling such as `scripts/pub400.sh`, the nox sessions, the supported Django test modules) | `run-ibmi` for those |
 
-- The script fails closed: a new file or directory is "needs full tier" until
+- The script fails closed: a new file or directory is "needs full IBM i run" until
   it is added to the script's lists, in the same pull request (an offline test
   checks that every tracked file is listed).
 - Anyone may add `run-ibmi` by hand to request a run.
@@ -153,36 +152,36 @@ with `<type>` one of `added`, `enabled` (a feature flag switched on),
 kebab-case topic (`changelog.d/string-agg.added.md`); a topic gets no
 `(#<number>)` reference. Details in [changelog.d/README.md](changelog.d/README.md);
 `python scripts/assemble_changelog.py check` validates the fragments (the
-Offline · own tests run the same check) and `draft` shows the resulting section.
+Offline tests run the same check) and `draft` shows the resulting section.
 
-## IBM i · own tests (`tests/pub400/`)
+## IBM i tests (`tests/ibmi/`)
 
 Tests that write to the IBM i use the tests.testapp tables: a module asks for
 them with `pytestmark = pytest.mark.usefixtures("testapp_tables")`
-(`tests/pub400/conftest.py`), which creates the tables for that module and
-drops them again. It works in a marked library (`tests/pub400/marked_library.py`):
+(`tests/ibmi/conftest.py`), which creates the tables for that module and
+drops them again. It works in a marked library (`tests/ibmi/marked_library.py`):
 the `DJDB2I_TEST_MARKER` table is written first, so `bin/ibmi-cleanup` can drop
 what a crashed module left, and teardown leaves the library without tables,
 marker included. Put a test in the module of its area (`test_schema.py`,
 `test_queries.py`, `test_aggregates.py`, ...).
 
 Run sessions that connect to PUB400 from the host with `scripts/pub400.sh`
-(`scripts/pub400.sh pub400`, `scripts/pub400.sh probe <name>`). It is
+(`scripts/pub400.sh ibmi`, `scripts/pub400.sh probe <name>`). It is
 `docker compose run --rm tests nox -s <session>`, wrapped in `caffeinate` on
 macOS: a Mac that sleeps during a long run breaks the connection (08S01,
-CWBCO1034). `scripts/runtests.sh` goes through it too.
+CWBCO1034). `scripts/django_suite.sh` goes through it too.
 
 ## Golden files
 
 `tests/offline/golden/<django>/<profile>/<group>/<name>.sql` hold the SQL the
 backend generates for a fixed set of cases (`tests/golden_cases/`), per
-Django series and capability profile. The Offline · own tests compare the generated
+Django series and capability profile. The Offline tests compare the generated
 SQL and params with them on every run.
 
 - **Where cases live:** one module per group, `tests/golden_cases/<group>.py`
   (ddl, queries, values, expressions, aggregates, extract, dml, flush), with
   the shared builders in `base.py`. A case named `<group>/<name>` goes into
-  its group's module; the Offline · own tests check this.
+  its group's module; the Offline tests check this.
 
 - **Scope:** backend-specific SQL only (pagination, quoting, booleans,
   date/time parameters, LIKE escaping, identity handling, flush, DDL types).
@@ -196,7 +195,7 @@ SQL and params with them on every run.
   i"** (the statement executed without an error), **not** "returns correct
   results"; correct results are what the Django test runs check. Any change to
   a golden's SQL **or** params resets it to `unverified`.
-- **Verifying:** `nox -s pub400 -- -k goldens --record-verification` executes
+- **Verifying:** `nox -s ibmi -- -k goldens --record-verification` executes
   every golden on IBM i (create goldens first, in an empty marked test library).
   A golden that passed is stamped only when it was unverified or verified on
   another level (release, TR, PTF Group or Django version); a run on the same
@@ -220,22 +219,22 @@ SQL and params with them on every run.
 - **No system names:** goldens must not contain library or user profile names;
   the verification header names only the release and "PUB400".
 
-## IBM i · Django test suite (Django's own tests)
+## Django suite on IBM i (Django's own tests)
 
 On a shared system such as PUB400 only single, small modules run, never the
 full suite:
 
 ```sh
-scripts/runtests.sh 6.1 basic              # reuse the test library (--keepdb)
-scripts/runtests.sh 6.1 --clean basic      # fully clean run
-scripts/runtests.sh 6.1 --clean --debug-sql basic.tests.ModelTest.test_x
+scripts/django_suite.sh 6.1 basic              # reuse the test library (--keepdb)
+scripts/django_suite.sh 6.1 --clean basic      # fully clean run
+scripts/django_suite.sh 6.1 --clean --debug-sql basic.tests.ModelTest.test_x
                                            # rerun a failing label: log its SQL
 docker compose run --rm tests nox -s test_status   # regenerate docs/TEST_STATUS.md
 ```
 
 - Needs a checkout of Django in `vendor/django-<version>` on
   `stable/<version>.x` (gitignored); the script tells you how to clone it.
-- Settings: `tests/django_settings/settings_runtests_pub400.py`; `default` and
+- Settings: `tests/django_settings/settings_django_suite.py`; `default` and
   `other` are the two journaled libraries from `.env`
   (`DB2I_DEFAULT_LIBRARY`, `DB2I_OTHER_LIBRARY`), each guarded by the test
   marker table. `other` connects only when a selected test uses it.
@@ -252,25 +251,25 @@ docker compose run --rm tests nox -s test_status   # regenerate docs/TEST_STATUS
 - Known failures go into `DatabaseFeatures.expected_failures` /
   `django_test_skips` under one of the fixed `REASON_*` strings.
 
-## Offline · Django test suite (replay)
+## Replay tests
 
 Statements that passing Django tests sent to Db2 for i become offline
-regression checks: the test set "Offline · Django test suite (replay)",
-reference in [docs/OFFLINE_CORPUS.md](docs/OFFLINE_CORPUS.md):
+regression checks: the test set "Replay tests",
+reference in [docs/REPLAY_TESTS.md](docs/REPLAY_TESTS.md):
 
 ```sh
-scripts/runtests.sh 6.1 --clean --capture ordering     # PUB400: record the passing tests' statements
+scripts/django_suite.sh 6.1 --clean --capture ordering     # PUB400: record the passing tests' statements
 docker compose run --rm tests sh -c 'uv run --no-project --python 3.14 python scripts/build_corpus.py 6.1'
-docker compose run --rm tests nox -s "corpus(3.14-django6.1)"   # replay offline, no IBM i
+docker compose run --rm tests nox -s "replay(3.14-django6.1)"   # replay offline, no IBM i
 ```
 
 - `--capture` writes `test-results/<version>/corpus/<label>.jsonl`; only tests
   that passed count (`tests/corpus/capture.py`).
 - `scripts/build_corpus.py` turns the captures into
-  `tests/offline/corpus/<django>/<profile>/` (gzip JSONL per module, a plain SQL
+  `tests/offline/replay/<django>/<profile>/` (gzip JSONL per module, a plain SQL
   index for review, a manifest with the Django commit). Build a module only
   from captures of all of its labels; unchanged modules stay byte-identical.
-- `nox -s corpus` installs Django from exactly the manifest's commit (library
+- `nox -s replay` installs Django from exactly the manifest's commit (library
   and test suite) and compares the SQL and params the backend writes now. A
   mismatch means "no longer the SQL that passed on IBM i"; `--update-corpus`
   (never in CI) rewrites it and clears the stamp. CI runs it as a step of each
@@ -281,34 +280,34 @@ docker compose run --rm tests nox -s "corpus(3.14-django6.1)"   # replay offline
 Releases are alpha releases on GitHub only (no PyPI). **Contributors and
 Claude never create release tags; the maintainer creates and signs them.**
 
-0. **Release run**, for every supported Django version (newest Python):
-   `bin/release-run` (all versions, one after another) or
-   `bin/release-run --django <version>`. Per version, under the PUB400 lock,
+0. **Status run**, for every supported Django version (newest Python):
+   `bin/status-run` (all versions, one after another) or
+   `bin/status-run --django <version>`. Per version, under the PUB400 lock,
    it checks that PUB400's database port answers (otherwise it stops at
    once), runs every supported Django test module (the `[[modules]]` of
    `docs/status.toml`, `queries` as its labels), each with `--clean` and
-   `--capture` in its own run, then the pub400 tier with `--create-db`; logs in
+   `--capture` in its own run, then the IBM i tests with `--create-db`; logs in
    `test-results/<django>/`, raw corpus captures in
    `test-results/<django>/corpus/`. It is **resumable**: each result is
-   recorded at once (`test-results/<django>/release-run/state.json`), and a
+   recorded at once (`test-results/<django>/status-run/state.json`), and a
    later start on the same backend and Django commits skips what passed, so
    the run can be spread over several nights (`--restart` starts over,
    `--limit N` stops after N runs). When every run of a version passed, it
    rebuilds that version's corpus
-   ([OFFLINE_CORPUS.md](docs/OFFLINE_CORPUS.md)) in the working tree.
+   ([REPLAY_TESTS.md](docs/REPLAY_TESTS.md)) in the working tree.
 1. **Release PR**: `bin/release-prepare <version>` in the main checkout (not a
    subagent worktree). It refuses unless HEAD is `origin/main` with only the
-   release runs' corpus changed, CI passed on `main`, the verification gate
+   status runs' corpus changed, CI passed on `main`, the verification gate
    passes, the version is newer than `__version__`, there are changelog
    fragments, and every supported Django version has a complete, passed
-   release run with the backend unchanged since. Then it commits the corpus,
+   status run with the backend unchanged since. Then it commits the corpus,
    sets `__version__` in `django_db2_for_i/__init__.py` (the single source of
    the version), runs `python scripts/assemble_changelog.py release <version>`
    (the fragments in `changelog.d/` become a `## [<version>] - <date>` section
    of `CHANGELOG.md`, the comparison links are updated and the fragments
    deleted), regenerates the status pages and FEATURES.md, runs `bin/check`,
    pushes `chore/release-<version>` and opens the pull request with the
-   release runs and corpus counts. It never tags and never creates releases;
+   status runs and corpus counts. It never tags and never creates releases;
    it ends by printing the steps below.
 2. **The maintainer merges it** and tags the merge commit on `main` from
    their own release clone, signed with their OpenPGP (GPG) key:

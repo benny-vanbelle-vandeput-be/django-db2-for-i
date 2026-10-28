@@ -1,15 +1,15 @@
 """The own IBM i tests create tables only inside a marked library (no server needed).
 
-tests/pub400/marked_library.py's guard() fails a CREATE TABLE / VIEW / ALIAS
+tests/ibmi/marked_library.py's guard() fails a CREATE TABLE / VIEW / ALIAS
 outside QTEMP while no module owns the marker; conftest.py installs it on
-every connection of the pub400 tier.
+every connection of the IBM i tests.
 """
 
 import types
 
 import pytest
 
-from tests.pub400 import marked_library
+from tests.ibmi import marked_library
 
 CONTEXT = {"connection": types.SimpleNamespace(settings_dict={"NAME": "TESTLIB"})}
 
@@ -61,7 +61,7 @@ def test_qtemp_and_other_statements_pass(unowned, sql) -> None:
 
 
 def test_inside_a_marked_library(monkeypatch) -> None:
-    monkeypatch.setattr(marked_library, "_owner", "tests/pub400/test_cpa32b2.py")
+    monkeypatch.setattr(marked_library, "_owner", "tests/ibmi/test_cpa32b2.py")
     sql = 'CREATE TABLE "DJANGO_MIGRATIONS" ("ID" INTEGER)'
     assert run(sql) == [sql]
 

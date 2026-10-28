@@ -2,11 +2,11 @@
 # bin/ibmi-test: run chosen tests on IBM i (PUB400), through the PUB400 lock.
 #
 #   bin/ibmi-test own <selector> [...]      own IBM i tests: test ids or pytest options
-#                                           (bin/ibmi-test own tests/pub400/test_schema.py,
+#                                           (bin/ibmi-test own tests/ibmi/test_schema.py,
 #                                           bin/ibmi-test own -k goldens)
 #   bin/ibmi-test django <label> [...]      Django test modules or ids (--clean), one run per label;
 #                                           every label runs, also after one failed
-#   bin/ibmi-test --full-tier               the full own IBM i tests (needs-full-tier)
+#   bin/ibmi-test --full-tier               the full own IBM i tests (needs-full-ibmi-run)
 #   bin/ibmi-test --affected                the tests bin/verify would select (no stamps
 #                                           written, no corpus capture; scripts/verify.py)
 #   bin/ibmi-test --django 6.0 ...          another supported Django version (default: the newest)
@@ -16,7 +16,7 @@
 #
 # The manual request (label run-ibmi). Own tests run with --create-db (a clean
 # test library). Never the full Django suite: every Django label is its own
-# run, and scripts/runtests.sh refuses a run without labels. --affected runs
+# run, and scripts/django_suite.sh refuses a run without labels. --affected runs
 # what bin/verify selects against origin/main (fetch first), with the goldens
 # and corpus as they are in the working tree.
 
@@ -57,20 +57,20 @@ if [ "$affected" = 1 ]; then
 fi
 if [ "$full" = 1 ]; then
     [ -z "$mode" ] || die "--full-tier runs all own IBM i tests; no own/django selection"
-    pub400 pub400 "$django" --create-db
+    pub400 ibmi "$django" --create-db
     exit
 fi
 case $mode in
     own)
         [ "${#rest[@]}" -gt 0 ] || die "name the tests (or use --full-tier)"
-        pub400 pub400 "$django" --create-db "${rest[@]}"
+        pub400 ibmi "$django" --create-db "${rest[@]}"
         ;;
     django)
         [ "${#rest[@]}" -gt 0 ] || die "name the Django test labels (never the full suite)"
         # Every label runs, also after one failed; the exit code says whether all passed.
         failed=()
         for label in "${rest[@]}"; do
-            run "$ROOT/scripts/runtests.sh" "$django" --clean "$label" || failed+=("$label")
+            run "$ROOT/scripts/django_suite.sh" "$django" --clean "$label" || failed+=("$label")
         done
         if [ "${#failed[@]}" -gt 0 ]; then
             echo "ibmi-test: failed: ${failed[*]}" >&2

@@ -227,7 +227,7 @@ def test_the_hook_is_invisible_to_the_statements_a_test_executes(
     exactly the same statements with the installed hook as without it: an insert,
     a select, an aggregate, a delete, an update over a join that pre-selects its
     pks (update_can_self_select = False, as on Db2 for i) and an update with
-    related updates (multi-table inheritance, tests/offline/corpus_app), the last
+    related updates (multi-table inheritance, tests/offline/replay_app), the last
     two the compilers that execute SQL while compiling."""
     from django.conf import settings
     from django.db import connections

@@ -1,6 +1,6 @@
 # Offline query corpus
 
-The test set **"Offline · Django test suite (replay)"**: every statement that
+The test set **"Replay tests"**: every statement that
 a passing test of Django's own test suite sent to Db2 for i is recorded once on
 IBM i, and GitHub CI compiles it again on every commit, without an IBM i, and
 compares. A difference means "this is no longer the SQL that passed on IBM i".
@@ -11,7 +11,7 @@ This page is the reference. The design was approved on 2026-10-19
 
 ## How it works
 
-1. **Capture, on IBM i.** `scripts/runtests.sh <django> --clean --capture <label>`
+1. **Capture, on IBM i.** `scripts/django_suite.sh <django> --clean --capture <label>`
    runs a Django test module with a capture hook (`tests/corpus/capture.py`).
    Before Django executes a statement, the hook pickles the compiler's query,
    loads a **fresh copy** and compiles it, exactly as the replay will. It
@@ -22,12 +22,12 @@ This page is the reference. The design was approved on 2026-10-19
    SQL changed in the meantime are dropped (see "Volatile" below).
 2. **Build.** `scripts/build_corpus.py <django>` turns the raw captures in
    `test-results/<django>/corpus/` into
-   `tests/offline/corpus/<django>/<profile>/`: per Django test module one gzip
+   `tests/offline/replay/<django>/<profile>/`: per Django test module one gzip
    JSONL file (deduplicated by compiler, normalized SQL, params and settings)
    and one plain-text SQL index for review, plus `manifest.toml` with the
    Django commit and the counts per module. Unchanged modules stay
    byte-identical (gzip with mtime 0).
-3. **Replay, offline.** `nox -s "corpus(<python>-django<django>)"` installs
+3. **Replay, offline.** `nox -s "replay(<python>-django<django>)"` installs
    Django, library and test suite, from **exactly the manifest's commit**
    (vendor checkout or a shallow fetch), loads every pickle, compiles it under
    the offline capability profile with the entry's settings, and compares SQL
@@ -76,7 +76,7 @@ This page is the reference. The design was approved on 2026-10-19
 
 Every entry of the three corpora replays identically on Python 3.12, 3.13 and
 3.14 (0 not loadable, 0 not replayable, 0 different). All three were captured
-by the release runs at the end of phase 3 (backend `4cf4e0e`, every release
+by the status runs at the end of phase 3 (backend `4cf4e0e`, every release
 run captures since #122); the counts differ per version because each
 version's test suite differs.
 
@@ -138,12 +138,12 @@ The manifest records each module's `pickle_format`; the replay loads both.
 ## Refreshing a corpus
 
 1. On IBM i, capture each label of the module, one PUB400 run at a time:
-   `scripts/runtests.sh <django> --clean --capture <label>`. Build a module
+   `scripts/django_suite.sh <django> --clean --capture <label>`. Build a module
    only from captures of **all** its labels (for `queries`, all ten).
 2. Build: `docker compose run --rm tests sh -c 'uv run --no-project --python 3.14
    python scripts/build_corpus.py <django> test-results/<django>/corpus/<module>*.jsonl'`.
    The build refuses captures from different Django commits or pickle formats.
-3. Replay on every Python: `nox -s corpus`. It must pass before the corpus is
+3. Replay on every Python: `nox -s replay`. It must pass before the corpus is
    committed.
 4. Commit one module per commit, with the counts (recorded, unique,
    unpicklable, needs database, no SQL, not compiled, volatile, not

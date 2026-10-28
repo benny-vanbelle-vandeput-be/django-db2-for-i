@@ -3,7 +3,7 @@
     python -m tests.verification_gate      (nox -s gate; CI, as part of the offline check)
 
 Every golden (``tests/offline/golden/``) and every corpus entry
-(``tests/offline/corpus/``) must carry a verification stamp, except the goldens
+(``tests/offline/replay/``) must carry a verification stamp, except the goldens
 in ``tests/offline/golden/unverifiable.toml``, which cannot be verified on the
 test system (each with its reason and the condition under which it becomes
 verifiable). An entry there that is no longer needed (the golden is verified

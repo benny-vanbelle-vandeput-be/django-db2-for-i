@@ -132,7 +132,7 @@ def release_repo(tmp_path, monkeypatch):
     state = SimpleNamespace(root=tmp_path, fragments=fragments, changes=changes)
 
     def run(django, results, backend="abc1234 2026-10-22"):
-        path = tmp_path / "test-results" / django / "release-run" / "state.json"
+        path = tmp_path / "test-results" / django / "status-run" / "state.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"backend": backend, "django": "d" * 40, "results": results}))
 
@@ -140,7 +140,7 @@ def release_repo(tmp_path, monkeypatch):
     return state
 
 
-PASSED = {"basic": "passed", "queries.tests": "passed", "pub400 tier": "passed"}
+PASSED = {"basic": "passed", "queries.tests": "passed", "IBM i tests": "passed"}
 
 
 def test_check_passes_when_every_precondition_holds(release_repo) -> None:
@@ -157,10 +157,10 @@ def test_check_passes_when_every_precondition_holds(release_repo) -> None:
         ({"version": "0.1.0a3"}, "is not newer"),
         ({"version": "v0.1.0a5"}, "is not a release or pre-release version"),
         ({"fragments": []}, "changelog.d/ has no fragments"),
-        ({"missing": "6.0"}, "Django 6.0: no release run (bin/release-run --django 6.0)"),
-        ({"failed": "queries.tests"}, "Django 6.1: the release run is not complete and passed"),
-        ({"not_run": "pub400 tier"}, "(failed: none; not run: 1)"),
-        ({"changed": True}, "Django 6.1: changed since its release run (abc1234)"),
+        ({"missing": "6.0"}, "Django 6.0: no status run (bin/status-run --django 6.0)"),
+        ({"failed": "queries.tests"}, "Django 6.1: the status run is not complete and passed"),
+        ({"not_run": "IBM i tests"}, "(failed: none; not run: 1)"),
+        ({"changed": True}, "Django 6.1: changed since its status run (abc1234)"),
     ],
 )
 def test_check_refuses_each_unmet_precondition(release_repo, change, message) -> None:
@@ -173,7 +173,7 @@ def test_check_refuses_each_unmet_precondition(release_repo, change, message) ->
     release_repo.run("6.1", results)
     if "missing" in change:
         (
-            release_repo.root / "test-results" / change["missing"] / "release-run" / "state.json"
+            release_repo.root / "test-results" / change["missing"] / "status-run" / "state.json"
         ).unlink()
     if "fragments" in change:
         release_repo.fragments.clear()
@@ -211,7 +211,7 @@ def test_backend_changes_use_the_classification(monkeypatch) -> None:
 def test_body_lists_the_runs_and_the_corpus(release_repo) -> None:
     release_repo.run("6.0", PASSED)
     release_repo.run("6.1", {"basic": "passed"})
-    manifest = release_repo.root / "tests" / "offline" / "corpus" / "6.1" / "7.5" / "manifest.toml"
+    manifest = release_repo.root / "tests" / "offline" / "replay" / "6.1" / "7.5" / "manifest.toml"
     manifest.parent.mkdir(parents=True)
     manifest.write_text('django = "6.1"\n\n[modules.basic]\nunique = 187\nlevel = "IBM i 7.5"\n')
     text = prepare.body("0.1.0a5")

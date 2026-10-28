@@ -202,7 +202,7 @@ def render_last_verification(level: str, today: str, results: dict[str, str]) ->
         for outcome in ("passed", "failed", "skipped")
     }
     return (
-        "# Latest golden verification run (tests/pub400/test_goldens.py --record-verification)\n"
+        "# Latest golden verification run (tests/ibmi/test_goldens.py --record-verification)\n"
         f"date: {today}\n"
         f"level: {level}\n"
         f"passed: {counts['passed']}\n"

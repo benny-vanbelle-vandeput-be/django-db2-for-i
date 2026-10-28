@@ -156,7 +156,7 @@ def test_new_and_changed_tests_are_selected_by_node_id() -> None:
         )
         + "\ndef test_new():\n    pass\n"
     )
-    path = "tests/pub400/test_x.py"
+    path = "tests/ibmi/test_x.py"
     assert verify.changed_tests(path, BEFORE, after) == [
         f"{path}::test_changed",
         f"{path}::TestThings::test_other",
@@ -169,7 +169,7 @@ def test_new_and_changed_tests_are_selected_by_node_id() -> None:
 
 
 def test_module_and_class_level_changes_select_the_module_or_class() -> None:
-    path = "tests/pub400/test_x.py"
+    path = "tests/ibmi/test_x.py"
     helper_changed = BEFORE.replace("return 1", "return 2")
     assert verify.changed_tests(path, BEFORE, helper_changed) == [path]
     class_changed = BEFORE.replace("class TestThings:\n", "class TestThings:\n    value = 1\n\n")
@@ -181,12 +181,12 @@ def test_module_and_class_level_changes_select_the_module_or_class() -> None:
 @pytest.mark.parametrize(
     "path",
     [
-        "tests/pub400/conftest.py",
-        "tests/pub400/marked_library.py",
-        "tests/pub400/testapp_tables.py",
+        "tests/ibmi/conftest.py",
+        "tests/ibmi/marked_library.py",
+        "tests/ibmi/testapp_tables.py",
         "tests/conftest.py",
         "tests/testapp/models.py",
-        "tests/django_settings/settings_pub400.py",
+        "tests/django_settings/settings_ibmi.py",
         "django_db2_for_i/base.py",
         "django_db2_for_i/drivers/pyodbc.py",
         "django_db2_for_i/schema.py",
@@ -196,7 +196,7 @@ def test_module_and_class_level_changes_select_the_module_or_class() -> None:
 )
 def test_shared_code_runs_the_full_own_tier(path) -> None:
     selection = verify.own_selection(
-        ["tests/pub400/test_x.py", path], lambda p: BEFORE, lambda p: BEFORE + "\n"
+        ["tests/ibmi/test_x.py", path], lambda p: BEFORE, lambda p: BEFORE + "\n"
     )
     assert selection.full and selection.full.startswith(path)
 
@@ -300,13 +300,13 @@ def runs(directory: Path) -> list[list[str]]:
 
 def test_select_writes_one_run_per_line(selecting, results_dir) -> None:
     selecting.goldens = ["ddl/create_author", "queries/new"]
-    selecting.paths = ["tests/pub400/test_x.py"]
+    selecting.paths = ["tests/ibmi/test_x.py"]
     selecting.corpus = ["a.tests.A.test_1", "b.tests.B.test_2"]
     selecting.unlisted = ["c.tests.C.test_3", "d.tests.D.test_4"]
     assert verify.select("6.1", "origin/main") == 0
     assert runs(results_dir) == [
         ["goldens", "verify/goldens.txt"],
-        ["own", "tests/pub400/test_x.py::test_a"],
+        ["own", "tests/ibmi/test_x.py::test_a"],
         ["django", "a.tests.A.test_1", "b.tests.B.test_2", "c.tests.C.test_3"],
         ["django", "d.tests.D.test_4"],
     ]
@@ -317,12 +317,10 @@ def test_select_writes_one_run_per_line(selecting, results_dir) -> None:
 
 
 def test_select_runs_the_full_own_tier_for_shared_code(selecting, results_dir, capsys) -> None:
-    selecting.paths = ["tests/pub400/test_x.py", "tests/pub400/conftest.py"]
+    selecting.paths = ["tests/ibmi/test_x.py", "tests/ibmi/conftest.py"]
     assert verify.select("6.1", "origin/main") == 0
     assert runs(results_dir) == [["own", "full"]]
-    assert (
-        "the full tier (tests/pub400/conftest.py: shared own-test code)" in capsys.readouterr().out
-    )
+    assert "the full tier (tests/ibmi/conftest.py: shared own-test code)" in capsys.readouterr().out
 
 
 def test_select_with_nothing_to_run(selecting, results_dir, capsys) -> None:

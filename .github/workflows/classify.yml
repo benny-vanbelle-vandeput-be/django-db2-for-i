@@ -1,6 +1,6 @@
 # Classifies every pull request from its changed files (scripts/classify_pr.py)
 # and keeps one comment on the PR up to date with the result. CLAUDE.md,
-# "Git workflow": the labels needs-full-tier and run-ibmi are only ever ADDED
+# "Git workflow": the labels needs-full-ibmi-run and run-ibmi are only ever ADDED
 # here; the main session removes them after the IBM i run and its result are
 # posted. Nothing reacts to the labels in CI, and this job is not a required
 # check, so a hiccup of the GitHub API never blocks a merge.

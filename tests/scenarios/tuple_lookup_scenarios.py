@@ -3,7 +3,7 @@ ForeignObject) in every context, with a NULL in one column.
 
 Shared by the offline reference test, which runs them on SQLite (a backend
 with supports_tuple_lookups and standard row-value semantics), and by the
-pub400 test, which runs them on IBM i. EXPECTED holds the reference rows;
+IBM i test, which runs them on IBM i. EXPECTED holds the reference rows;
 KNOWN_DIFFERENCES lists where the backend differs, with the reason.
 """
 

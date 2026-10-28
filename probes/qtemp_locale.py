@@ -2,7 +2,7 @@
 
 Changes only QTEMP (DECLARE GLOBAL TEMPORARY TABLE SESSION.x). One
 connection per run, opened by the backend itself (Django settings
-``tests.django_settings.settings_pub400``), so the driver defaults are the
+``tests.django_settings.settings_ibmi``), so the driver defaults are the
 real ones. ``--all`` runs each locale in its own process, one after the
 other. Not part of probes/run.py.
 
@@ -80,7 +80,7 @@ def run_locale(name: str) -> int:
     import django
     import pyodbc
 
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.django_settings.settings_pub400")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.django_settings.settings_ibmi")
     django.setup()
     from django.db import connection
 

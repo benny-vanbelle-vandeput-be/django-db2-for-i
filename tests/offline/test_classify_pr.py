@@ -94,16 +94,16 @@ def test_unknown_paths_fail_closed(path) -> None:
 @pytest.mark.parametrize(
     ("path", "cls", "labels"),
     [
-        ("docker/Dockerfile", cp.FULL, ["needs-full-tier"]),
-        ("docker/odbcinst.ini", cp.FULL, ["needs-full-tier"]),
-        ("compose.yaml", cp.FULL, ["needs-full-tier"]),
-        (".dockerignore", cp.FULL, ["needs-full-tier"]),
+        ("docker/Dockerfile", cp.FULL, ["needs-full-ibmi-run"]),
+        ("docker/odbcinst.ini", cp.FULL, ["needs-full-ibmi-run"]),
+        ("compose.yaml", cp.FULL, ["needs-full-ibmi-run"]),
+        (".dockerignore", cp.FULL, ["needs-full-ibmi-run"]),
         ("scripts/pub400.sh", cp.DOCS, ["run-ibmi"]),
-        ("scripts/runtests.sh", cp.DOCS, ["run-ibmi"]),
+        ("scripts/django_suite.sh", cp.DOCS, ["run-ibmi"]),
         ("scripts/run_django_tests.py", cp.DOCS, ["run-ibmi"]),
-        ("scripts/release_run.py", cp.DOCS, ["run-ibmi"]),
-        ("tests/django_settings/settings_pub400.py", cp.DOCS, ["run-ibmi"]),
-        ("tests/django_settings/settings_runtests_pub400.py", cp.DOCS, ["run-ibmi"]),
+        ("scripts/status_run.py", cp.DOCS, ["run-ibmi"]),
+        ("tests/django_settings/settings_ibmi.py", cp.DOCS, ["run-ibmi"]),
+        ("tests/django_settings/settings_django_suite.py", cp.DOCS, ["run-ibmi"]),
         ("tests/django_settings/settings_offline.py", cp.DOCS, []),
         ("tests/django_settings/settings_corpus.py", cp.DOCS, []),
         ("tests/corpus/capture.py", cp.DOCS, ["run-ibmi"]),
@@ -162,15 +162,17 @@ def test_the_most_demanding_class_wins_and_labels_combine() -> None:
         }
     )
     assert result.cls == cp.FULL
-    assert result.labels == ["needs-full-tier", "run-ibmi"]
+    assert result.labels == ["needs-full-ibmi-run", "run-ibmi"]
 
 
 def test_the_core_backend_needs_the_full_tier_and_says_why() -> None:
     """#176 broke an own IBM i test its targeted run did not pick (#179)."""
     result = run({"django_db2_for_i/schema.py": (b"a", b"b"), "docs/x.md": (b"a", b"b")})
-    assert (result.cls, result.labels) == (cp.FULL, ["needs-full-tier"])
+    assert (result.cls, result.labels) == (cp.FULL, ["needs-full-ibmi-run"])
     text = cp.as_markdown(result, None)
-    assert "| `django_db2_for_i/schema.py` | needs full tier | core backend (schema.py)" in text
+    assert (
+        "| `django_db2_for_i/schema.py` | needs full IBM i run | core backend (schema.py)" in text
+    )
     assert set(cp.CORE_PATHS) == {
         f"django_db2_for_i/{name}.py"
         for name in (
@@ -188,9 +190,9 @@ def test_docs_only_has_no_labels() -> None:
 @pytest.mark.parametrize(
     "path",
     [
-        "tests/pub400/test_schema.py",
+        "tests/ibmi/test_schema.py",
         "tests/testapp/models.py",
-        "tests/django_settings/settings_pub400.py",
+        "tests/django_settings/settings_ibmi.py",
     ],
 )
 def test_new_or_changed_ibmi_tests_need_a_targeted_run(path) -> None:
@@ -200,7 +202,7 @@ def test_new_or_changed_ibmi_tests_need_a_targeted_run(path) -> None:
 
 
 def test_removed_ibmi_tests_need_no_run() -> None:
-    assert run({"tests/pub400/test_old.py": (b"a", None)}).labels == []
+    assert run({"tests/ibmi/test_old.py": (b"a", None)}).labels == []
 
 
 def test_a_version_bump_alone_is_not_backend_code() -> None:
@@ -219,7 +221,7 @@ def test_goldens_by_stamp() -> None:
 
 
 def test_corpus_entries_by_stamp() -> None:
-    path = "tests/offline/corpus/6.1/7.5/queries/basic.jsonl.gz"
+    path = "tests/offline/replay/6.1/7.5/queries/basic.jsonl.gz"
     assert run({path: (None, corpus(STAMP, STAMP))}).cls == cp.DOCS
     result = run({path: (corpus(STAMP), corpus(STAMP, UNVERIFIED))})
     assert result.cls == cp.SQL
@@ -227,7 +229,7 @@ def test_corpus_entries_by_stamp() -> None:
 
 
 def test_a_new_pinned_django_commit_needs_the_full_tier() -> None:
-    path = "tests/offline/corpus/6.1/7.5/manifest.toml"
+    path = "tests/offline/replay/6.1/7.5/manifest.toml"
     old = b'django = "6.1"\ndjango_commit = "1e01021"\n'
     assert run({path: (old, old.replace(b"1e01021", b"abcdef0"))}).cls == cp.FULL
     assert run({path: (old, old + b"\n[modules.basic]\nunique = 1\n")}).cls == cp.DOCS
@@ -283,7 +285,7 @@ def test_supported_django_test_modules_need_a_targeted_run() -> None:
         ({"tests/offline/golden/6.1/7.5/q/x.sql": (None, golden(STAMP))}, False),
         (
             {
-                "tests/offline/corpus/6.1/7.5/queries/b.jsonl.gz": (
+                "tests/offline/replay/6.1/7.5/queries/b.jsonl.gz": (
                     corpus(UNVERIFIED),
                     corpus(STAMP),
                 )
@@ -292,7 +294,7 @@ def test_supported_django_test_modules_need_a_targeted_run() -> None:
         ),
         (
             {
-                "tests/offline/corpus/6.1/7.5/queries/b.jsonl.gz": (
+                "tests/offline/replay/6.1/7.5/queries/b.jsonl.gz": (
                     corpus(UNVERIFIED),
                     corpus(STAMP, sql="X"),
                 )
@@ -301,7 +303,7 @@ def test_supported_django_test_modules_need_a_targeted_run() -> None:
         ),
         (
             {
-                "tests/offline/corpus/6.1/7.5/manifest.toml": (
+                "tests/offline/replay/6.1/7.5/manifest.toml": (
                     b'[modules.b]\nlevel = "a"\nunique = 1\n',
                     b'[modules.b]\nlevel = "b"\nunique = 1\n',
                 )
@@ -310,7 +312,7 @@ def test_supported_django_test_modules_need_a_targeted_run() -> None:
         ),
         (
             {
-                "tests/offline/corpus/6.1/7.5/manifest.toml": (
+                "tests/offline/replay/6.1/7.5/manifest.toml": (
                     b'[modules.b]\nlevel = "a"\nunique = 1\n',
                     b'[modules.b]\nlevel = "a"\nunique = 2\n',
                 )
@@ -412,7 +414,7 @@ def test_push_of_docs_only_needs_no_new_run(repo) -> None:
     assert cp.check_push(before, head, "main") == cp.PushCheck(
         False, "the push changes only docs/tests that do not run on IBM i"
     )
-    test = _commit(repo, {"tests/pub400/test_x.py": b"def test(): pass\n"}, "test")
+    test = _commit(repo, {"tests/ibmi/test_x.py": b"def test(): pass\n"}, "test")
     assert cp.check_push(head, test, "main").new_run_needed
     fixed = _commit(repo, {"django_db2_for_i/client.py": b"x = 3\n"}, "fix")
     assert cp.check_push(test, fixed, "main").new_run_needed
@@ -557,7 +559,7 @@ def test_an_unknown_previous_head_needs_a_new_run(repo) -> None:
 
 def test_command_line_on_a_branch(repo, capsys) -> None:
     _git(repo, "switch", "-q", "-c", "pr")
-    _commit(repo, {"tests/pub400/test_x.py": b"def test(): pass\n"}, "test: x")
+    _commit(repo, {"tests/ibmi/test_x.py": b"def test(): pass\n"}, "test: x")
     assert cp.main(["--base", "main", "--format", "json"]) == 0
     data = json.loads(capsys.readouterr().out)
     assert (data["class"], data["labels"], data["push"]) == (cp.DOCS, ["run-ibmi"], None)

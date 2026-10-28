@@ -157,7 +157,7 @@ jobs:
       # job (docs/proposals/offline-query-corpus.md, decision 5), so the required
       # `offline` check covers it. It installs Django from the corpus's commit;
       # without a corpus for the version it does nothing.
-      - name: nox -s corpus (same Python and Django)
+      - name: nox -s replay (same Python and Django)
         env:
           SESSION: ${{ matrix.session }}
         run: |
@@ -169,7 +169,7 @@ jobs:
             -v "$PWD:/workspace" \
             -w /workspace \
             "$IMAGE" \
-            nox -s "corpus${SESSION#offline}"
+            nox -s "replay${SESSION#offline}"
 
   # The required status check: green only when the session list, lint and
   # every matrix job succeeded (a skipped or cancelled job counts as failed).

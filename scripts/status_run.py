@@ -1,15 +1,15 @@
-"""The release run for one Django version (CLAUDE.md section 6; DECISIONS 2026-10-19).
+"""The status run for one Django version (CLAUDE.md section 6; DECISIONS 2026-10-19).
 
-    nox -s release_run -- <django-version> [--restart] [--limit N]
+    nox -s status_run -- <django-version> [--restart] [--limit N]
 
 Before every release, for each supported Django version (newest Python):
-every supported Django test module, then the pub400 tier. The modules and
+every supported Django test module, then the IBM i tests. The modules and
 their labels are the ``[[modules]]`` of docs/status.toml, the same list the
 README's module table is generated from, so there is one list.
 
-Every label runs with ``--capture``, so each release run also refreshes the
-offline query corpus (docs/OFFLINE_CORPUS.md; DECISIONS 2026-10-19, "Refresh:
-... release runs ... refresh it"): the raw captures land in
+Every label runs with ``--capture``, so each status run also refreshes the
+offline query corpus (docs/REPLAY_TESTS.md; DECISIONS 2026-10-19, "Refresh:
+... status runs ... refresh it"): the raw captures land in
 test-results/<version>/corpus/, and scripts/build_corpus.py turns them into
 the corpus afterwards.
 
@@ -21,8 +21,8 @@ that fails does not stop the run, the summary lists it and the exit code is
 non-zero. Logs: test-results/<version>/ (runtests.py, by
 scripts/run_django_tests.py) and test-results/<version>/tiers/pub400.log (the tier).
 
-Resumable (bin/release-run): the result of every label and of the tier is
-written to test-results/<version>/release-run/state.json as soon as it is
+Resumable (bin/status-run): the result of every label and of the tier is
+written to test-results/<version>/status-run/state.json as soon as it is
 known, with the backend commit and the Django commit. A later run on the same
 two commits skips what passed and runs what failed or is missing, so the run
 can be spread over several nights; another commit, or ``--restart``, starts
@@ -53,7 +53,7 @@ from _common import DATABASE_PORT, ProbeError, Settings, tcp_check  # noqa: E402
 
 
 def labels(status: Path = STATUS_DATA) -> list[str]:
-    """The release run's Django test labels, in docs/status.toml order."""
+    """The status run's Django test labels, in docs/status.toml order."""
     modules = tomllib.loads(status.read_text(encoding="utf-8"))["modules"]
     return [label for module in modules for label in module.get("labels", [module["module"]])]
 
@@ -70,7 +70,7 @@ def reachable() -> str | None:
 
 
 def run_tier(version: str) -> int:
-    """The pub400 tier, fully clean, its output also in test-results/<version>/tiers/.
+    """The IBM i tests, fully clean, its output also in test-results/<version>/tiers/.
 
     Not next to the module logs: scripts/update_test_status.py reads every
     test-results/<version>/*.log as a Django test module's log.
@@ -83,8 +83,8 @@ def run_tier(version: str) -> int:
         "-m",
         "pytest",
         "-m",
-        "pub400",
-        "--ds=tests.django_settings.settings_pub400",
+        "ibmi",
+        "--ds=tests.django_settings.settings_ibmi",
         "--tb=short",
         "--create-db",
         "-p",
@@ -102,11 +102,11 @@ def run_tier(version: str) -> int:
         return process.wait()
 
 
-TIER = "pub400 tier"
+TIER = "IBM i tests"
 
 
 def state_path(version: str) -> Path:
-    return ROOT / "test-results" / version / "release-run" / "state.json"
+    return ROOT / "test-results" / version / "status-run" / "state.json"
 
 
 def read_state(version: str) -> dict:
@@ -142,7 +142,7 @@ def complete(state: dict, run: Sequence[str]) -> bool:
 
 
 def main(argv: Sequence[str]) -> int:
-    parser = argparse.ArgumentParser(prog="nox -s release_run --", add_help=False)
+    parser = argparse.ArgumentParser(prog="nox -s status_run --", add_help=False)
     parser.add_argument("version")
     parser.add_argument("--restart", action="store_true")
     parser.add_argument("--limit", type=int)
@@ -150,7 +150,7 @@ def main(argv: Sequence[str]) -> int:
         args = parser.parse_args(argv)
     except SystemExit:
         print(
-            "usage: nox -s release_run -- <django-version> [--restart] [--limit N]",
+            "usage: nox -s status_run -- <django-version> [--restart] [--limit N]",
             file=sys.stderr,
         )
         return 2
@@ -163,7 +163,7 @@ def main(argv: Sequence[str]) -> int:
         return 2
     django_dir = ROOT / "vendor" / f"django-{version}"
     if not (django_dir / "tests" / "runtests.py").exists():
-        missing = f"vendor/django-{version} is missing (see scripts/runtests.sh)"
+        missing = f"vendor/django-{version} is missing (see scripts/django_suite.sh)"
         print(f"refused: {missing}", file=sys.stderr)
         return 2
     problem = reachable()
@@ -176,7 +176,7 @@ def main(argv: Sequence[str]) -> int:
     )
     results = state["results"]
     passed = [name for name in [*run, TIER] if results.get(name) == "passed"]
-    print(f"release run, Django {version}, backend {backend}: {how}")
+    print(f"status run, Django {version}, backend {backend}: {how}")
     if passed:
         print(f"skipped, passed before on the same commits: {', '.join(passed)}")
     budget = args.limit
@@ -196,7 +196,7 @@ def main(argv: Sequence[str]) -> int:
             budget -= 1
     failed = [name for name in [*run, TIER] if results.get(name) == "failed"]
     missing = [name for name in [*run, TIER] if name not in results]
-    print(f"\nrelease run, Django {version}: {len(run) + 1} runs, ", end="")
+    print(f"\nstatus run, Django {version}: {len(run) + 1} runs, ", end="")
     if complete(state, run):
         print("all passed")
         return 0

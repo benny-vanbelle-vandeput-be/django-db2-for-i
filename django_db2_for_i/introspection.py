@@ -126,7 +126,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         "VARCHAR": "CharField",
         "VARG": "CharField",  # NVARCHAR
         # Types the backend does not write, common in existing IBM i tables
-        # (inspectdb, tests/pub400/test_inspectdb.py).
+        # (inspectdb, tests/ibmi/test_inspectdb.py).
         "CLOB": "TextField",
         "NUMERIC": "DecimalField",
     }

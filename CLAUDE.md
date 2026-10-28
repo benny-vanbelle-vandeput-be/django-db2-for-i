@@ -49,7 +49,7 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
   - a **targeted run** (the affected own IBM i tests and Django test modules or ids)
     for new or changed tests that run on IBM i, for changed SQL (a golden or corpus
     entry without a verification stamp) and on request;
-  - the **full** pub400 tier (`nox -s pub400`), not a subset, when the driver layer,
+  - the **full** IBM i tests (`nox -s ibmi`), not a subset, when the driver layer,
     `base.py`, `creation.py`, the capabilities, the core backend modules
     (`schema.py`, `introspection.py`, `compiler.py`, `operations.py`, `features.py`,
     `expressions.py`, `compat.py`: a change there can break a test far from it, #179),
@@ -57,7 +57,7 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
     change, or a file the classification does not list (it fails closed); changed SQL
     still gets its targeted run (`bin/verify`) for the stamps;
   - nothing for docs/tests-only changes that do not run on IBM i.
-- When a feature flag is enabled, add an own pub400 test for the common real-world usage
+- When a feature flag is enabled, add an own IBM i test for the common real-world usage
   pattern of that feature (e.g. full querysets with model instances, not only `values()`);
   Django's own tests do not cover every pattern.
 - At the end of each phase: update `docs/TEST_STATUS.md`, add changelog fragments, commit,
@@ -155,7 +155,7 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
   It covers one machine only: two machines behind the same IP are not covered.
 - No uptime guarantee: test runs must fail fast and clearly when the system is unreachable.
 - Allowed on PUB400: single, small Django test modules (e.g. `basic`, `transactions`) and the
-  curated `pub400` tier. **Never** the full Django suite or the full matrix.
+  curated IBM i tests. **Never** the full Django suite or the full matrix.
 - Connect with pyodbc + IBM i Access ODBC Driver (database host server port 8471, 9471 for TLS).
 
 ## 4. Architecture: three independent axes
@@ -219,19 +219,21 @@ Standard Django backend layout: `base.py`, `features.py`, `operations.py`, `sche
 
 Three tiers, selectable via pytest markers / nox sessions.
 
-**Test set names.** README, TEST_STATUS, CONTRIBUTING and this file use four
-user-facing names. Code (nox sessions, `tests/pub400/`, markers, the
-`needs-full-tier` label) keeps the old names until one mechanical rename PR,
-made when no other PRs are open.
+**Test set names.** One name per test set, the same in the docs and the code
+(#191, topic 2). History (CHANGELOG, DECISIONS, IBMI_NOTES, the phase records)
+keeps the names of its time; PUB400 is the name of the system, never of a test set.
 
-| Test set | Old name |
-|---|---|
-| Offline · own tests | offline tier (`nox -s offline`) |
-| IBM i · own tests | pub400 tier (`nox -s pub400`) |
-| IBM i · Django test suite | Django modules on PUB400 (`scripts/runtests.sh`, `release_run`) |
-| Offline · Django test suite (replay) | offline query corpus (`nox -s corpus`) |
+| Name | One line | In the code | Was |
+|---|---|---|---|
+| Offline tests | our own pytest tests; no IBM i, CI on every push | `nox -s offline`, `tests/offline/`, marker `offline` | offline tier |
+| Golden files | the exact SQL expected for a query or schema change, checked offline, executed once on IBM i | `tests/offline/golden/` | goldens |
+| Replay tests | the SQL of Django's own tests, captured once on IBM i (the corpus), compiled again offline | `nox -s replay`, `tests/offline/replay/`, marker `replay` | offline query corpus, corpus replay |
+| IBM i tests | our own pytest tests against a real IBM i (now PUB400) | `nox -s ibmi`, `tests/ibmi/`, marker `ibmi` | pub400 tier, own IBM i tests |
+| Django suite on IBM i | modules of Django's own test suite against a real IBM i | `scripts/django_suite.sh`, `nox -s django_suite` | Django modules on PUB400 |
+| Targeted / full IBM i run | the two sizes of IBM i run a PR gets: the affected tests, or all IBM i tests | `bin/ibmi-test --affected` / `--full-tier`, label `needs-full-ibmi-run` | targeted run, full tier |
+| Status run | the supported Django modules plus the IBM i tests, every Django version; refreshes TEST_STATUS and the replay tests; before every release | `bin/status-run`, `nox -s status_run` | release run |
 
-### Tier 1 — `offline` = "Offline · own tests" (no IBM i needed; every commit, in CI)
+### Tier 1 — `offline` = "Offline tests" (no IBM i needed; every commit, in CI)
 - Compile querysets with `query.get_compiler(using).as_sql()` and compare SQL + params
   to golden files in `tests/offline/golden/`.
 - Collect DDL with `connection.schema_editor(collect_sql=True)` for model and migration operations.
@@ -247,37 +249,37 @@ made when no other PRs are open.
   parallel jobs (one per Python × Django combination). The aggregating `offline` job stays
   a required check on `main`.
 
-### Tier 2 — `pub400` = "IBM i · own tests" (small curated smoke set for a shared, restricted system)
+### Tier 2 — `ibmi` = "IBM i tests" (small curated smoke set for a shared, restricted system)
 - Works in **pre-existing libraries**: `creation.py` supports a "use existing schema,
   never CREATE/DROP SCHEMA" mode and cleans up its own tables.
 - Multi-database tests are skipped if no second library is configured.
 - Includes a job that executes all golden-file SQL to verify it.
 - Keep the load light. Check PUB400's terms of use and ODBC availability.
 
-### Tier 3 — `full` = "IBM i · Django test suite" (Django's `runtests.py` against a dedicated IBM i)
+### Tier 3 — `full` = "Django suite on IBM i" (Django's `runtests.py` against a dedicated IBM i)
 - Source of truth for feature flags and `docs/TEST_STATUS.md`.
 - Django checkouts in `vendor/django-<version>` (gitignored), on the `stable/<version>.x` branch.
-- Settings today: `tests/django_settings/settings_runtests_pub400.py`, with the two
+- Settings today: `tests/django_settings/settings_django_suite.py`, with the two
   `.env` libraries as `default` and `other` (PUB400). On a dedicated IBM i (not
   available yet): two schemas with names of at most 10 characters (e.g. `DJTEST` and
   `DJTESTOTH`), configured via `.env`; those settings are written when the system exists.
-- `scripts/runtests.sh <django-version> <module...>` runs `runtests.py` with `--settings`,
+- `scripts/django_suite.sh <django-version> <module...>` runs `runtests.py` with `--settings`,
   `--parallel=1`, saving output to `test-results/<django-version>/<module>.log`.
 - `scripts/update_test_status.py` parses the logs and updates `docs/TEST_STATUS.md`:
   per test module the pass/fail/skip/xfail counts per Django version, date of the last run,
   and the enabled feature flags.
 - Day-to-day: single modules against the primary version (6.1).
 - Before every release: one run of all Django test modules we support (the modules in
-  `docs/TEST_STATUS.md`) plus our own pub400 tier, for every supported Django version,
+  `docs/TEST_STATUS.md`) plus our own IBM i tests, for every supported Django version,
   newest Python. Sequential, one connection at a time, preferably off-peak. Never the full
-  Django suite. The release run stays complete, but may be spread over several nights:
+  Django suite. The status run stays complete, but may be spread over several nights:
   it is resumable per Django version. During development: single modules/labels, and
   IBM i runs as the PR's classification requires (section 2).
 
 ### Version matrix
 - offline: every Python × every Django version.
-- pub400: one combination (newest Python, newest Django) during development; every
-  supported Django version (newest Python) in the release run.
+- IBM i tests: one combination (newest Python, newest Django) during development; every
+  supported Django version (newest Python) in the status run.
 - full: newest Python × every Django version, plus oldest Python × newest Django.
 
 ## 7. Containerized environment
@@ -339,13 +341,13 @@ made when no other PRs are open.
 - Before every push: `nox -s lint offline` passes locally (`bin/check` runs it, with the
   corpus replay, the verification gate and the classification).
 - **Every PR is classified** from its changed files by `scripts/classify_pr.py`:
-  **needs full tier** (the driver layer, `base.py`, `creation.py`, the capabilities, the
+  **needs full IBM i run** (the driver layer, `base.py`, `creation.py`, the capabilities, the
   core backend modules, the container image, the pinned Django commit, the supported Django versions, and every
   path it does not list: it fails closed), **SQL-affecting** (other backend code, goldens
   or corpus entries without a verification stamp) or **docs/tests only** (the paths it
   lists as such; a new file or directory is added to its lists in the same PR).
   The CI job `classify` runs it on every push and keeps one comment on the PR up to date.
-- **Labels:** `needs-full-tier` for "needs full tier"; `run-ibmi` for SQL-affecting PRs
+- **Labels:** `needs-full-ibmi-run` for "needs full IBM i run"; `run-ibmi` for SQL-affecting PRs
   and for changes that run on IBM i (new or changed own IBM i tests, the test models, the
   IBM i settings, the IBM i run tooling, the nox sessions, the supported Django test
   modules). CI only **adds** them; anyone may
@@ -363,7 +365,7 @@ made when no other PRs are open.
   maintainer count, and the maintainer may waive a commit with
   `<!-- ibmi-run sha=<full sha> waived -->`. Changes to the gate's files
   (`ibmi-gate.yml`, `scripts/ibmi_gate.py`, and `scripts/classify_pr.py`, which decides
-  the verdict) are "needs full tier", and the PR comment names them for the
+  the verdict) are "needs full IBM i run", and the PR comment names them for the
   maintainer's review.
   `ibmi-gate` is a required check on `main`. The maintainer (only) can re-evaluate one
   PR with the workflow's `workflow_dispatch` (input: the PR number; it runs only from
@@ -413,7 +415,7 @@ django-db2-for-i/
 │   ├── TEST_STATUS.md           # generated (nox -s test_status)
 │   ├── FEATURES.md              # generated (nox -s features) from features.toml
 │   ├── status.toml              # phases, modules, open tracks
-│   ├── DJANGO_VERSIONS.md, IBMI_NOTES.md, DECISIONS.md, WORKFLOW.md, OFFLINE_CORPUS.md
+│   ├── DJANGO_VERSIONS.md, IBMI_NOTES.md, DECISIONS.md, WORKFLOW.md, REPLAY_TESTS.md
 ├── django_db2_for_i/            # ENGINE = "django_db2_for_i"
 │   ├── base.py, features.py, operations.py, schema.py, introspection.py,
 │   │   creation.py, client.py, compiler.py, expressions.py, validation.py, inquiry.py
@@ -421,15 +423,15 @@ django-db2-for-i/
 │   ├── capabilities.py          # IBM i server axis
 │   └── drivers/                 # driver axis: base.py, pyodbc.py
 ├── tests/
-│   ├── testapp/                 # models used by offline and pub400 tests
+│   ├── testapp/                 # models used by offline and IBM i tests
 │   ├── offline/                 # offline tier; golden/ (goldens), corpus/ (query corpus)
-│   ├── pub400/                  # own IBM i tests
+│   ├── ibmi/                    # own IBM i tests
 │   ├── corpus/                  # corpus capture and offline replay
 │   ├── golden_cases/            # the queries and schema changes of the goldens
-│   └── django_settings/         # settings_offline, settings_corpus, settings_pub400,
-│                                # settings_runtests_pub400
+│   └── django_settings/         # settings_offline, settings_corpus, settings_ibmi,
+│                                # settings_django_suite
 ├── probes/                      # qtemp_* and lib_* probes; results/ (published)
-├── scripts/                     # classify_pr.py, ibmi_gate.py, pub400.sh, runtests.sh, ...
+├── scripts/                     # classify_pr.py, ibmi_gate.py, pub400.sh, django_suite.sh, ...
 ├── vendor/                      # Django checkouts (gitignored)
 └── test-results/                # logs (gitignored)
 ```

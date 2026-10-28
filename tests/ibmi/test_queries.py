@@ -477,7 +477,7 @@ def test_null_column_compared_with_a_negated_value(live, empty) -> None:
     # filter(~F("flag")): only the FALSE row, not the NULL row.
     assert names(authors.filter(~F("book__available"))) == ["b: false"]
     # exclude(flag=True) on this annotation: NOT (flag = TRUE), UNKNOWN for the NULL
-    # row, so only the FALSE row (as on PostgreSQL; tests/boolean_condition_scenarios.py).
+    # row, so only the FALSE row (as on PostgreSQL; tests/scenarios/boolean_condition_scenarios.py).
     assert names(authors.exclude(available=True)) == ["b: false"]
     # A selected ~F("flag"): NULL stays NULL.
     negated = authors.annotate(negated=~F("book__available"))
@@ -565,8 +565,8 @@ def test_boolean_conditions_match_the_reference(live, empty) -> None:
     """A nullable BooleanField used as a condition by every path Django has
     (filter / exclude with True and False, ~Q, ~F, a When condition, a boolean
     annotation in filter / exclude), on TRUE, FALSE and NULL rows, gives the rows
-    of the reference (tests/boolean_condition_scenarios.py)."""
-    from tests import boolean_condition_scenarios as scenarios
+    of the reference (tests/scenarios/boolean_condition_scenarios.py)."""
+    from tests.scenarios import boolean_condition_scenarios as scenarios
 
     scenarios.create("default")
     actual = {name: scenarios.rows(qs) for name, qs in scenarios.querysets("default").items()}

@@ -12,7 +12,7 @@ from django.apps import apps
 from django.db import connection
 
 from django_db2_for_i.creation import MARKER_TABLE, TestDatabaseRefused
-from tests.pub400.marked_library import unmarked_creates_allowed
+from tests.ibmi.marked_library import unmarked_creates_allowed
 from tests.testapp.models import Author
 
 

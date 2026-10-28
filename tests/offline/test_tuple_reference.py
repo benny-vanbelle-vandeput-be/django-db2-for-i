@@ -1,12 +1,12 @@
-"""The reference for tests/tuple_lookup_scenarios.py: Django on SQLite, a
+"""The reference for tests/scenarios/tuple_lookup_scenarios.py: Django on SQLite, a
 backend with supports_tuple_lookups and standard row-value semantics (an
 in-memory database, no IBM i)."""
 
 import pytest
 from django.db import connections
 
-from tests import tuple_lookup_scenarios as scenarios
 from tests.offline.reference_db import sqlite_reference
+from tests.scenarios import tuple_lookup_scenarios as scenarios
 from tests.testapp.models import Account, Contact
 
 

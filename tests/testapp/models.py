@@ -1,4 +1,4 @@
-"""Models used by the offline and pub400 tiers."""
+"""Models used by the offline and IBM i tests."""
 
 import datetime
 import uuid

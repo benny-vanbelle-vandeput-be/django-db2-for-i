@@ -38,7 +38,7 @@ from tests.golden import (
     verification_level,
 )
 from tests.golden_cases import FLUSH_METADATA, TESTAPP_TABLES, ordered_cases
-from tests.pub400.marked_library import marked_library
+from tests.ibmi.marked_library import marked_library
 from tests.verification_gate import reasons as unverifiable_reasons
 
 RESULTS: dict[str, str] = {}  # golden name -> "passed" | "failed" | "skipped"

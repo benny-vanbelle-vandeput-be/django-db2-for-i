@@ -83,7 +83,7 @@ pushed to a public registry (IBM's license).
 2. Read the classification at the end of `bin/check`:
    - **docs/tests only**, no label: no IBM i run;
    - **run-ibmi**: changed SQL or tests that run on IBM i: a targeted run;
-   - **needs-full-tier**: the driver layer, `base.py`, `creation.py`, the
+   - **needs-full-ibmi-run**: the driver layer, `base.py`, `creation.py`, the
      capabilities, the core backend (`schema.py`, `introspection.py`,
      `compiler.py`, `operations.py`, `features.py`, `expressions.py`,
      `compat.py`), the container image, the pinned Django commit or the
@@ -120,7 +120,7 @@ pushed to a public registry (IBM's license).
 2. `git push -u origin <branch>`, then `gh pr create`. The description says
    what changed, how it was checked, and which IBM i runs follow.
 3. CI (`classify`) comments the classification and adds `run-ibmi` or
-   `needs-full-tier`. Run what it asks for (topic `change`) on the pull
+   `needs-full-ibmi-run`. Run what it asks for (topic `change`) on the pull
    request's **latest** commit, post the result (the SHA, the counts), then
    remove the label (REST:
    `gh api -X DELETE "repos/{owner}/{repo}/issues/<PR>/labels/run-ibmi"`).
@@ -140,7 +140,7 @@ pushed to a public registry (IBM's license).
 ## review: what the maintainer checks before merging
 
 1. CI is green on the latest commit (`offline` is required on `main`).
-2. No `run-ibmi` or `needs-full-tier` label is left, and the pull request
+2. No `run-ibmi` or `needs-full-ibmi-run` label is left, and the pull request
    shows the IBM i run on its latest commit (SHA and counts).
 3. Goldens and corpus entries carry stamps (the gate); stamp-only commits
    match the run they come from.
@@ -182,18 +182,18 @@ pushed to a public registry (IBM's license).
 3. **`bin/status`** regenerates TEST_STATUS, the badges, README's generated
    sections and FEATURES.md from `test-results/` (in the container, never
    connecting to an IBM i), then shows who holds the PUB400 lock and the open
-   pull requests that still carry `run-ibmi` or `needs-full-tier`.
+   pull requests that still carry `run-ibmi` or `needs-full-ibmi-run`.
    `bin/status --no-write` only shows the lock and those pull requests.
 4. Only the labelled pull requests, without regenerating:
    ```sh
    gh api "repos/{owner}/{repo}/pulls?state=open&per_page=100" \
-     --jq '.[] | select(any(.labels[]; .name == "run-ibmi" or .name == "needs-full-tier")) | "#\(.number) \(.title)"'
+     --jq '.[] | select(any(.labels[]; .name == "run-ibmi" or .name == "needs-full-ibmi-run")) | "#\(.number) \(.title)"'
    ```
 
 ## release: preparing a release
 
-1. **Release run**, every supported Django version: `bin/release-run` (all
-   versions, one after another) or `bin/release-run --django <version>`.
+1. **Status run**, every supported Django version: `bin/status-run` (all
+   versions, one after another) or `bin/status-run --django <version>`.
    It is resumable: a later start on the same commits skips what passed, so
    it may be spread over several nights (`--restart` starts over,
    `--limit N` stops after N runs). When a version passed completely, its
@@ -201,7 +201,7 @@ pushed to a public registry (IBM's license).
 2. **Release pull request**: `bin/release-prepare <version>` in the main
    checkout on an up-to-date `main` (never in a subagent worktree; no `.env`
    needed). It checks every precondition first (CI on `main`, the gate,
-   complete and passed release runs with the backend unchanged since, a
+   complete and passed status runs with the backend unchanged since, a
    newer version, changelog fragments), then opens the pull request.
 3. **The maintainer merges it**, then signs and pushes the tag on the merge
    commit from their own release clone:
@@ -224,7 +224,7 @@ releases; `bin/release-prepare` only prints steps 3 and 4.
   comes first). Check with `bin/doctor`; try again later, never in a loop.
 - **The Mac slept during a run** (`08S01` "Communication link failure",
   CWBCO1034): `scripts/pub400.sh` wraps runs in `caffeinate`; keep the lid
-  open, or start again (`bin/release-run` resumes).
+  open, or start again (`bin/status-run` resumes).
 - **CPA32B2 / HY008** (an `ALTER TABLE` that drops data is cancelled):
   migrations suppress it for their own job; outside a field change (RunSQL,
   a raw cursor) it still cancels, see [Troubleshooting](user/Troubleshooting.md).

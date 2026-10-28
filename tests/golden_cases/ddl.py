@@ -170,7 +170,7 @@ def _drop_and_add_foreign_keys(model):
     """DROP CONSTRAINT of each of ``model``'s foreign keys (create_model() added
     them), then ADD CONSTRAINT ... FOREIGN KEY again by the same name. (Dropping
     one in RemoveField / AlterField finds the name by introspection, which needs
-    a connection; the pub400 tests cover that part.)"""
+    a connection; the IBM i tests cover that part.)"""
 
     def build(connection):
         suffix = "_fk_%(to_table)s_%(to_column)s"
@@ -402,7 +402,7 @@ CASES: tuple[Case, ...] = (
         (MEASURE,),
     ),
     # The way back: narrowing and NOT NULL, which send CPA32B2 (suppressed, as in
-    # migrations: tests/pub400/test_goldens.py).
+    # migrations: tests/ibmi/test_goldens.py).
     Case(
         "ddl/alter_field_narrow",
         "alter",
@@ -423,7 +423,7 @@ CASES: tuple[Case, ...] = (
     ),
     # AddConstraint / RemoveConstraint of a CheckConstraint. Changing a column
     # check (#151) needs the name Db2 for i gave it, which holds the library
-    # name: tests/offline/test_schema.py and the pub400 tests cover it.
+    # name: tests/offline/test_schema.py and the IBM i tests cover it.
     Case(
         "ddl/add_check_constraint",
         "alter",

@@ -1,10 +1,10 @@
 #!/bin/sh
 # Run modules of Django's own test suite against IBM i, in the tests container.
 #
-#   scripts/runtests.sh <django-version> [--clean] [--debug-sql] [--capture] <label> [<label> ...]
-#   scripts/runtests.sh 6.1 basic transactions
-#   scripts/runtests.sh 6.1 basic.tests.ModelTest.test_x
-#   scripts/runtests.sh 6.1 --clean --debug-sql basic.tests.ModelTest.test_x
+#   scripts/django_suite.sh <django-version> [--clean] [--debug-sql] [--capture] <label> [<label> ...]
+#   scripts/django_suite.sh 6.1 basic transactions
+#   scripts/django_suite.sh 6.1 basic.tests.ModelTest.test_x
+#   scripts/django_suite.sh 6.1 --clean --debug-sql basic.tests.ModelTest.test_x
 #
 # A label is a test module or a dotted label inside one. One runtests.py call
 # per label (--parallel=1 --noinput, --keepdb unless --clean), logs in
@@ -44,4 +44,4 @@ if [ "$labels" -gt 3 ]; then
 fi
 
 # Through scripts/pub400.sh: on macOS, the Mac does not sleep during the run.
-exec "$(dirname "$0")/pub400.sh" django_tests "$version" "$@"
+exec "$(dirname "$0")/pub400.sh" django_suite "$version" "$@"

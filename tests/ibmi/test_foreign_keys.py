@@ -114,7 +114,7 @@ def fk_models(live, monkeypatch):
     from django.apps import apps
     from django.db import models
 
-    from tests.pub400.connection_guard import replace_if_unusable
+    from tests.ibmi.connection_guard import replace_if_unusable
 
     monkeypatch.setattr(live.features, "supports_foreign_keys", True)
 
@@ -159,7 +159,7 @@ def _rebuilt(model, name, cls, **changes):
 @pytest.fixture
 def fk_cleanup(live, monkeypatch):
     """Foreign keys enabled; the fk tables dropped after the test."""
-    from tests.pub400.connection_guard import replace_if_unusable
+    from tests.ibmi.connection_guard import replace_if_unusable
 
     monkeypatch.setattr(live.features, "supports_foreign_keys", True)
     yield
@@ -331,7 +331,7 @@ PATH_TABLES = ("TESTAPP_FKGRAND", "TESTAPP_FKCHILD", "TESTAPP_FKOTHER", "TESTAPP
 
 @pytest.fixture
 def path_cleanup(live):
-    from tests.pub400.connection_guard import replace_if_unusable
+    from tests.ibmi.connection_guard import replace_if_unusable
 
     yield MigrationRunner(live)
     replace_if_unusable(live)

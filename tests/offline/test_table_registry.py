@@ -115,7 +115,7 @@ def test_the_wrapper_is_added_once_per_connection_of_this_backend() -> None:
 
 def test_both_ibmi_settings_install_the_registry() -> None:
     root = Path(__file__).resolve().parents[2] / "tests" / "django_settings"
-    for name in ("settings_pub400.py", "settings_runtests_pub400.py"):
+    for name in ("settings_ibmi.py", "settings_django_suite.py"):
         assert "table_registry.install()" in (root / name).read_text()
 
 

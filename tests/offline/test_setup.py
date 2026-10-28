@@ -42,7 +42,7 @@ def repo(tmp_path):
     (root / "bin" / "doctor").write_text('#!/bin/sh\necho "doctor $*" >> "$CALLS"\n')
     (root / "bin" / "doctor").chmod(0o755)
     shutil.copy(ROOT / ".env.example", root / ".env.example")
-    manifest = root / "tests" / "offline" / "corpus" / "6.1" / "7.5" / "manifest.toml"
+    manifest = root / "tests" / "offline" / "replay" / "6.1" / "7.5" / "manifest.toml"
     manifest.parent.mkdir(parents=True)
     manifest.write_text(f'django = "6.1"\ndjango_commit = "{PINNED}"\n')
     fake = tmp_path / "fakebin"

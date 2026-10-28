@@ -1,7 +1,7 @@
 """Shared pytest configuration.
 
 Tests are marked with their tier based on their directory (tests/offline/ ->
-``offline``, tests/pub400/ -> ``pub400``).
+``offline``, tests/ibmi/ -> ``ibmi``).
 
 Offline tests must never open a database connection: for them,
 ``pyodbc.connect`` is replaced with a function that fails loudly.
@@ -18,9 +18,9 @@ pytest_plugins = ["tests.redaction", "pytester"]
 TESTS_DIR = Path(__file__).parent
 TIER_DIRS = {
     "offline": TESTS_DIR / "offline",
-    "pub400": TESTS_DIR / "pub400",
+    "ibmi": TESTS_DIR / "ibmi",
     # Only the replay; tests/corpus/store.py and capture.py are tested offline.
-    "corpus": TESTS_DIR / "corpus",
+    "replay": TESTS_DIR / "corpus",
 }
 
 
@@ -88,7 +88,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     group.addoption(
         "--record-verification",
         action="store_true",
-        help="mark goldens accepted by IBM i as verified (pub400 tier)",
+        help="mark goldens accepted by IBM i as verified (IBM i tests)",
     )
     group.addoption(
         "--goldens-from",

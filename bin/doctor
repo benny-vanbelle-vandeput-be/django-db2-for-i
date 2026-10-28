@@ -48,7 +48,7 @@ else
     result FAIL ".env is missing: copy .env.example to .env and fill it in"
 fi
 
-for manifest in "$ROOT"/tests/offline/corpus/*/*/manifest.toml; do
+for manifest in "$ROOT"/tests/offline/replay/*/*/manifest.toml; do
     [ -f "$manifest" ] || continue
     version=$(basename "$(dirname "$(dirname "$manifest")")")
     pinned=$(sed -n 's/^django_commit = "\(.*\)"$/\1/p' "$manifest")

@@ -3,7 +3,7 @@
     python scripts/build_corpus.py <django-version> [<raw capture> ...] [--profile 7.5]
 
 Without capture files, all of test-results/<version>/corpus/*.jsonl are used
-(written by ``scripts/runtests.sh <version> --capture <label>``). The records
+(written by ``scripts/django_suite.sh <version> --capture <label>``). The records
 are grouped by Django test module (the first part of the test id), so the
 labels of one module (``queries.tests``, ``queries.test_q``, ...) are combined:
 build a module only from captures that cover all of its labels, because the
