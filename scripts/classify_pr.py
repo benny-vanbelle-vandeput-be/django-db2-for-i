@@ -8,7 +8,9 @@ The changed files are those of ``git diff <merge-base of base and head> <head>``
 Every file gets one of three classes; the pull request gets the most demanding:
 
 - **needs full tier**: the driver layer (``django_db2_for_i/drivers/``),
-  ``base.py``, ``creation.py``, the capabilities, the pinned Django commit
+  ``base.py``, ``creation.py``, the capabilities, the core backend modules
+  (``CORE_PATHS``: a change there can break tests far from the change, #176
+  and #179), the pinned Django commit
   (``django_commit`` of a corpus manifest; ``vendor/`` itself is not in git) or
   the supported Django versions (``DJANGO_PYTHONS`` in noxfile.py, the
   dependencies in pyproject.toml), and the IBM i gate itself
@@ -77,6 +79,22 @@ FULL_TIER_PATHS = {
     "django_db2_for_i/base.py": "the connection (base.py)",
     "django_db2_for_i/creation.py": "the test database setup (creation.py)",
     "django_db2_for_i/capabilities.py": "the server capabilities",
+}
+# The core backend: used by nearly every query or schema change, so a change
+# can break an own IBM i test that no targeted selection picks (#176 broke
+# one that only #178's run found, #179). The full own IBM i tier on the
+# newest Django, besides the targeted run of changed SQL (#190, topic 5).
+CORE_PATHS = {
+    f"django_db2_for_i/{name}.py": f"core backend ({name}.py): the full own IBM i tier"
+    for name in (
+        "schema",
+        "introspection",
+        "compiler",
+        "operations",
+        "features",
+        "expressions",
+        "compat",
+    )
 }
 # The IBM i gate (ibmi-gate.yml runs main's copy, never the pull request's):
 # the strictest class, and the comment names them, so the maintainer reviews
@@ -314,6 +332,8 @@ def judge(change: Change, old: Reader, new: Reader) -> Finding:
         return Finding(path, FULL, GATE_PATHS[path])
     if prefix := _under(path, FULL_TIER_PATHS):
         return Finding(path, FULL, FULL_TIER_PATHS[prefix])
+    if path in CORE_PATHS:
+        return Finding(path, FULL, CORE_PATHS[path])
     if path == f"{BACKEND}__init__.py" and only_version_changed(before, after):
         return Finding(path, DOCS, "only `__version__`")
     if path.startswith(BACKEND):

@@ -84,8 +84,11 @@ pushed to a public registry (IBM's license).
    - **docs/tests only**, no label: no IBM i run;
    - **run-ibmi**: changed SQL or tests that run on IBM i: a targeted run;
    - **needs-full-tier**: the driver layer, `base.py`, `creation.py`, the
-     capabilities, the container image, the pinned Django commit or the
-     supported Django versions: the full own IBM i tier.
+     capabilities, the core backend (`schema.py`, `introspection.py`,
+     `compiler.py`, `operations.py`, `features.py`, `expressions.py`,
+     `compat.py`), the container image, the pinned Django commit or the
+     supported Django versions: the full own IBM i tier (`bin/ibmi-test
+     --full-tier`), and `bin/verify` as well for changed SQL.
 3. `bin/verify` does the targeted run: it writes changed SQL to the goldens
    and the corpus, runs exactly what needs IBM i (unverified goldens, new or
    changed own IBM i tests, one Django test per unverified corpus entry, tests

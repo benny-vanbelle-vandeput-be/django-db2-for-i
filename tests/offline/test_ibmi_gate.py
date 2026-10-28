@@ -13,7 +13,7 @@ import classify_pr as cp  # noqa: E402
 import ibmi_gate as gate  # noqa: E402
 
 A, B, C = ("a" * 40, "b" * 40, "c" * 40)
-SQL_CHANGE = {"django_db2_for_i/schema.py": (b"a", b"b")}
+SQL_CHANGE = {"django_db2_for_i/client.py": (b"a", b"b")}
 FULL_CHANGE = {"django_db2_for_i/base.py": (b"a", b"b")}
 DOCS_CHANGE = {"docs/x.md": (b"a", b"b")}
 
@@ -177,7 +177,7 @@ def repo(tmp_path, monkeypatch) -> Path:
     _git(tmp_path, "init", "-q", "-b", "main")
     _git(tmp_path, "config", "user.email", "test@example.invalid")
     _git(tmp_path, "config", "user.name", "Test")
-    _commit(tmp_path, {"docs/a.md": b"a\n", "django_db2_for_i/schema.py": b"x = 1\n"}, "init")
+    _commit(tmp_path, {"docs/a.md": b"a\n", "django_db2_for_i/client.py": b"x = 1\n"}, "init")
     _git(tmp_path, "switch", "-q", "-c", "pr")
     monkeypatch.chdir(tmp_path)
     return tmp_path
@@ -191,7 +191,7 @@ def _verdict(capsys, tmp_path, head: str, comments: list[dict]) -> dict:
 
 
 def test_the_gate_follows_the_pull_request(repo, tmp_path, capsys) -> None:
-    feat = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    feat = _commit(repo, {"django_db2_for_i/client.py": b"x = 2\n"}, "feat")
     assert _verdict(capsys, tmp_path, feat, [])["state"] == "failure"
     posted = [result_comment(feat)]
     assert _verdict(capsys, tmp_path, feat, posted)["state"] == "success"
@@ -201,18 +201,18 @@ def test_the_gate_follows_the_pull_request(repo, tmp_path, capsys) -> None:
     assert verdict["state"] == "success"
     assert verdict["description"].startswith(f"targeted run on {feat[:7]}: ")
     # More backend code: red again until a new result is posted.
-    more = _commit(repo, {"django_db2_for_i/schema.py": b"x = 3\n"}, "feat: more")
+    more = _commit(repo, {"django_db2_for_i/client.py": b"x = 3\n"}, "feat: more")
     assert _verdict(capsys, tmp_path, more, posted)["state"] == "failure"
 
 
 def test_an_unknown_result_commit_does_not_cover(repo, tmp_path, capsys) -> None:
-    feat = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    feat = _commit(repo, {"django_db2_for_i/client.py": b"x = 2\n"}, "feat")
     verdict = _verdict(capsys, tmp_path, feat, [result_comment("0" * 40)])
     assert verdict["state"] == "failure"
 
 
 def test_the_description_fits_a_status(repo, tmp_path, capsys) -> None:
-    feat = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    feat = _commit(repo, {"django_db2_for_i/client.py": b"x = 2\n"}, "feat")
     assert len(_verdict(capsys, tmp_path, feat, [])["description"]) <= 140
 
 

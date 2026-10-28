@@ -249,7 +249,13 @@ def needs_full_own_tier(path: str) -> str | None:
     for shared in SHARED_OWN_TEST_PATHS:
         if path == shared or (shared.endswith("/") and path.startswith(shared)):
             return "shared own-test code"
-    for prefix, why in {**classify_pr.FULL_TIER_PATHS, **classify_pr.ENVIRONMENT_PATHS}.items():
+    paths = {
+        **classify_pr.FULL_TIER_PATHS,
+        # The core backend: the full own tier too (#176, #179; #190, topic 5).
+        **classify_pr.CORE_PATHS,
+        **classify_pr.ENVIRONMENT_PATHS,
+    }
+    for prefix, why in paths.items():
         if path == prefix or (prefix.endswith("/") and path.startswith(prefix)):
             return why
     return None
