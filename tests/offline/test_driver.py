@@ -156,8 +156,8 @@ CHECK_VIOLATED = (
     "INSERT, UPDATE, or MERGE not allowed by CHECK constraint. (-545) (SQLExecDirectW)"
 )
 # The message texts of SQL0544 and SQL0530-SQL0532 follow IBM's message file; IBM i
-# reported them with SQLSTATE HY000 (docs/IBMI_NOTES.md: probe w13 and the
-# check_journal notes). Only the SQLCODE decides the class.
+# reported them with SQLSTATE HY000 (docs/IBMI_NOTES.md: probe lib_constraints and
+# the check_journal notes). Only the SQLCODE decides the class.
 CHECK_NOT_ADDED = (
     "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0544 - "
     "CHECK constraint TESTAPP_BOOK_PAGES cannot be added. (-544) (SQLExecDirectW)"
