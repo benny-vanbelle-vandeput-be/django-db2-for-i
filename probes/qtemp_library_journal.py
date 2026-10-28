@@ -5,7 +5,7 @@ Only reads catalog services; creates and changes nothing, also not in QTEMP.
 A table created in a library is journaled when the library has a QSQJRN
 journal, or when the library itself is journaled (STRJRNLIB) and its inherit
 rules include new files, to the library's journal, whatever its name. Without
-either, constraints (SQL7008, probe check_journal) and transactions fail. The
+either, constraints (SQL7008, probe check_constraint_unjournaled) and transactions fail. The
 system check in validation.py and bin/doctor reads that state; this probe
 verifies the sources on the configured libraries, a library that does not
 exist and QTEMP:

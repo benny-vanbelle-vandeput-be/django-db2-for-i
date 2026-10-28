@@ -69,6 +69,16 @@ def test_lib_probes_connect_only_through_the_gate() -> None:
         assert re.search(r"\bconnect\(", text), path.name
 
 
+def test_qtemp_probes_with_an_entry_point_run_through_one_session() -> None:
+    """No nox session per probe (#191, item 10): probe_qtemp runs any of them,
+    and only qtemp_ probes."""
+    text = (ROOT / "noxfile.py").read_text()
+    sessions = re.findall(r"^def (probe\w*)\(", text, re.MULTILINE)
+    assert sessions == ["probe_lib", "probe", "probe_qtemp"]
+    session = text[text.index("def probe_qtemp(") :]
+    assert 'r"qtemp_[a-z0-9_]+"' in session
+
+
 def test_a_lib_probe_gets_no_connection_without_approval(common, monkeypatch) -> None:
     monkeypatch.setattr(sys, "argv", ["probes/lib_drop.py"])
     monkeypatch.setitem(sys.modules, "pyodbc", None)  # never reached

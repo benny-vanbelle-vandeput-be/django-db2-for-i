@@ -3,6 +3,9 @@
 #
 #   bin/probe --list             the probes of probes/run.py and the lib_ probes (no connection)
 #   bin/probe <name> [<name>]    e.g. bin/probe reachability, bin/probe sysinfo libraries
+#   bin/probe qtemp_<topic> [-- <probe options>]
+#                                a qtemp_ probe with its own entry point (one connection
+#                                per variant, e.g. qtemp_encoding), alone
 #   bin/probe --approved <link> lib_<topic> [--execute] [-- <probe options>]
 #                                a probe that changes the IBM i outside QTEMP: only with
 #                                the maintainer's approval comment for that probe, checked
@@ -37,6 +40,11 @@ for node in ast.parse(open(sys.argv[1]).read()).body:
 PY
     echo all
     local file
+    # The qtemp_ probes with an entry point of their own (nox -s probe_qtemp).
+    for file in $(grep -l '__name__ == "__main__"' "$ROOT"/probes/qtemp_*.py); do
+        file=${file##*/}
+        echo "${file%.py}"
+    done
     for file in "$ROOT"/probes/lib_*.py; do
         file=${file##*/}
         echo "${file%.py}"
@@ -54,6 +62,8 @@ if [ "${ARGS[0]:-}" = --publish ]; then
 fi
 approved=""
 lib=""
+script=""
+execute=""
 extra=()
 i=0
 while [ "$i" -lt "${#ARGS[@]}" ]; do
@@ -68,7 +78,10 @@ while [ "$i" -lt "${#ARGS[@]}" ]; do
             approved=${ARGS[$i]:-}
             [ -n "$approved" ] || die "--approved needs the link to the approval comment"
             ;;
-        --execute) extra+=("$arg") ;;
+        --execute)
+            execute=1
+            extra+=("$arg")
+            ;;
         --)
             # The rest goes to the lib_ probe itself (e.g. -- --library other).
             extra+=("${ARGS[@]:$((i + 1))}")
@@ -78,6 +91,10 @@ while [ "$i" -lt "${#ARGS[@]}" ]; do
         lib_*)
             [ -z "$lib" ] || die "one lib_ probe per run"
             lib=$arg
+            ;;
+        qtemp_*)
+            [ -z "$script" ] || die "one qtemp_ probe per run"
+            script=$arg
             ;;
         *) names+=("$arg") ;;
     esac
@@ -95,6 +112,17 @@ if [ -n "$lib" ]; then
             || die "the approval could not be confirmed; nothing was run"
     fi
     pub400 probe_lib "$lib" --approved "$approved" --approved-by "$approver" ${extra[@]+"${extra[@]}"}
+    exit
+fi
+if [ -n "$script" ]; then
+    [ "${#names[@]}" = 0 ] || die "a qtemp_ probe by file name runs alone"
+    [ -z "$approved" ] && [ -z "$execute" ] || die "--approved and --execute are for lib_ probes only"
+    known=$(probes)
+    if ! printf '%s\n' "$known" | grep -qx "$script"; then
+        [ -f "$ROOT/probes/$script.py" ] && die "$script runs by its short name (bin/probe --list)"
+        die "unknown probe: $script (bin/probe --list)"
+    fi
+    pub400 probe_qtemp "$script" ${extra[@]+"${extra[@]}"}
     exit
 fi
 [ -z "$approved" ] && [ "${#extra[@]}" = 0 ] || die "--approved and --execute are for lib_ probes only"

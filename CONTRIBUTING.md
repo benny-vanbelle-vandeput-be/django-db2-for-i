@@ -43,7 +43,7 @@ The workflow, step by step, is in [docs/WORKFLOW.md](docs/WORKFLOW.md)
 | `bin/check` | what CI does, locally: lint, offline tests, corpus replay, gate, classification |
 | `bin/verify` | verifies changed SQL and new tests on IBM i and writes the stamps |
 | `bin/ibmi-test` | chosen own IBM i tests, Django test labels, `--affected` or `--full-tier` on IBM i |
-| `bin/probe` | IBM i probes by name: `qtemp_` probes (read-only or QTEMP); `lib_` probes only with `--approved <link>` to the maintainer's approval; `--publish` puts a result into the repository |
+| `bin/probe` | IBM i probes by name: `qtemp_` probes (read-only or QTEMP; the ones with their own entry point by file name, e.g. `bin/probe qtemp_encoding`); `lib_` probes only with `--approved <link>` to the maintainer's approval; `--publish` puts a result into the repository |
 | `bin/status` | regenerates the status pages; shows the PUB400 lock and labelled pull requests |
 | `bin/ibmi-cleanup` | lists (`--yes`: drops) the leftover test tables of a crashed run |
 | `bin/release-run` | the release run on IBM i, per Django version, resumable |
