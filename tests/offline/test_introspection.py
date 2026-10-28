@@ -3,6 +3,7 @@
 import django
 import pytest
 from django.db import DatabaseError, connections, models
+from django.db.backends.base.introspection import BaseDatabaseIntrospection
 
 from django_db2_for_i import compat, introspection
 
@@ -205,28 +206,36 @@ def test_relations() -> None:
     relations = connections["default"].introspection.get_relations(cursor, "testapp_book")
     assert cursor.executed == [(introspection.RELATIONS_SQL, ["TESTAPP_BOOK"])]
     assert relations == {
-        "author_id": compat.relation("id", "testapp_author", "DO_NOTHING"),
-        "editor_id": compat.relation("id", "testapp_author", "DB_SET_NULL"),
-        "shelf_id": compat.relation("id", "testapp_shelf", None),
+        "author_id": compat.relation("id", "testapp_author", "NO ACTION"),
+        "editor_id": compat.relation("id", "testapp_author", "SET NULL"),
+        "shelf_id": compat.relation("id", "testapp_shelf", "RESTRICT"),
     }
 
 
 def test_relation_shape_per_django_version(monkeypatch) -> None:
+    """Before 6.1 the tuple has no delete rule, and Django has no on_delete_types
+    to map it with: 5.2 and 6.0 never look it up."""
     monkeypatch.setattr(django, "VERSION", (6, 0, 0, "final", 0))
-    assert compat.relation("id", "t", "DB_CASCADE") == ("id", "t")
+    for rule in ("NO ACTION", "CASCADE", "SET NULL", "SET DEFAULT", "RESTRICT", "OTHER"):
+        assert compat.relation("id", "t", rule) == ("id", "t")
     monkeypatch.setattr(django, "VERSION", (6, 1, 0, "final", 0))
-    if not hasattr(models, "DB_CASCADE"):
-        pytest.skip("the db_on_delete constants exist from Django 6.1 on")
-    assert compat.relation("id", "t", "DB_CASCADE") == ("id", "t", models.DB_CASCADE)
-    assert compat.relation("id", "t", None) == ("id", "t", None)
+    if not hasattr(BaseDatabaseIntrospection, "on_delete_types"):
+        pytest.skip("on_delete_types and the db_on_delete constants exist from Django 6.1 on")
+    assert compat.relation("id", "t", "CASCADE") == ("id", "t", models.DB_CASCADE)
+    assert compat.relation("id", "t", "RESTRICT") == ("id", "t", None)
 
 
-def test_delete_rules_name_django_constants() -> None:
-    assert set(introspection.DELETE_RULES.values()) == {
-        "DO_NOTHING",
-        "DB_CASCADE",
-        "DB_SET_NULL",
-        "DB_SET_DEFAULT",
+def test_django_maps_every_delete_rule_of_db2() -> None:
+    """SYSREFCST.DELETE_RULE values (IBM's documentation) against Django 6.1's
+    on_delete_types, which replaced the backend's own DELETE_RULES table."""
+    if not hasattr(BaseDatabaseIntrospection, "on_delete_types"):
+        assert compat.relation("id", "t", "CASCADE") == ("id", "t")  # 5.2, 6.0
+        return
+    assert BaseDatabaseIntrospection.on_delete_types == {
+        "NO ACTION": models.DO_NOTHING,
+        "CASCADE": models.DB_CASCADE,
+        "SET NULL": models.DB_SET_NULL,
+        "SET DEFAULT": models.DB_SET_DEFAULT,
     }
 
 

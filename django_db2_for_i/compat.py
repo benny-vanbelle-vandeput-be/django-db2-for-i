@@ -59,16 +59,17 @@ DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON = django.VERSION >= (6, 0)
 DJANGO_CALLS_ADAPT_DURATIONFIELD_VALUE = django.VERSION >= (6, 1)
 
 
-def relation(column: str, table: str, on_delete: str | None) -> tuple:
+def relation(column: str, table: str, rule: str) -> tuple:
     """A value of introspection.get_relations(): ``(column, table, db_on_delete)``
-    on 6.1, ``(column, table)`` before. ``on_delete`` names the constant in
-    django.db.models (``"DB_CASCADE"``, ...), which exist only from 6.1 on;
-    ``None`` for a rule Django has no constant for."""
+    on 6.1, ``(column, table)`` before. ``rule`` is the catalog's delete rule
+    (``QSYS2.SYSREFCST.DELETE_RULE``: ``"NO ACTION"``, ``"CASCADE"``, ...).
+    Django 6.1's ``on_delete_types`` maps exactly these values (``None`` for
+    ``RESTRICT``, which has no Django constant); it does not exist before 6.1."""
     if django.VERSION < (6, 1):
         return (column, table)
-    from django.db import models
+    from django.db.backends.base.introspection import BaseDatabaseIntrospection
 
-    return (column, table, getattr(models, on_delete) if on_delete else None)
+    return (column, table, BaseDatabaseIntrospection.on_delete_types.get(rule))
 
 
 def install_duration_adapter() -> None:
