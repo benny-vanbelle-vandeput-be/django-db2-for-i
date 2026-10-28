@@ -51,7 +51,9 @@ pushed to a public registry (IBM's license).
 2. For parallel work, use a worktree next to the checkout:
    `git worktree add ../django-db2-for-i-<topic> -b fix/<topic> origin/main`.
    The `bin/` scripts work there too (the container gets the shared git
-   directory).
+   directory). Each worktree has its own nox virtualenvs (a Docker volume,
+   `scripts/nox_volume.sh`), so `bin/check` can run in two worktrees at
+   once; the first run in a new worktree creates them (a few minutes).
 3. `.env` is gitignored, so a new worktree has none, and IBM i runs there
    stop with "no .env in this checkout". Link it **only into worktrees the
    main session uses for IBM i runs**:

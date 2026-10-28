@@ -112,6 +112,7 @@ IBMI_RUN_PATHS = {
     "tests/django_settings/settings_runtests_pub400.py": "the IBM i Django test settings",
     "scripts/pub400.sh": "the IBM i run wrapper",
     "scripts/pub400_lock.py": "the PUB400 lock",
+    "scripts/nox_volume.sh": "the nox-envs volume of every container run",
     "scripts/probe_approval.py": "the approval check of lib_ probes (bin/probe)",
     "bin/_common.sh": "the shared part of the bin/ scripts (PUB400 runs)",
     "bin/doctor": "the environment check (one PUB400 connection)",

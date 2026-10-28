@@ -53,6 +53,9 @@ mkdir -p "$state"
 # A named container: the lock stops it before it is released (a stopped run
 # would otherwise leave the container and its PUB400 connection behind).
 container="db2i-pub400-$$"
+# This checkout's own nox virtualenvs (scripts/nox_volume.sh).
+DB2I_NOX_ENVS=$(scripts/nox_volume.sh .)
+export DB2I_NOX_ENVS
 set -- docker compose run --rm --name "$container" -e DB2I_BACKEND_COMMIT="$commit" \
     -v "$state:/db2i-state" -e DB2I_TABLE_LIST=/db2i-state/created-objects.txt \
     tests nox -s "$session" -- "$@"

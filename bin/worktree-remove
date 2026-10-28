@@ -10,8 +10,9 @@
 # copies its test-results/ (gitignored: probe results, logs, bin/verify
 # reports) to the main checkout's test-results/archive/<worktree>/, removes
 # its .env if that is a link (it refuses a real .env file, which git would
-# delete with the worktree), and runs git worktree remove. Probe results a decision rests on also go into the
-# repository (bin/probe --publish).
+# delete with the worktree), runs git worktree remove and removes the
+# worktree's own nox-envs volume (scripts/nox_volume.sh). Probe results a
+# decision rests on also go into the repository (bin/probe --publish).
 
 source "$(dirname "$0")/_common.sh"
 common_args "$@"
@@ -34,6 +35,8 @@ if [ -e "$path/.env" ] && [ ! -L "$path/.env" ]; then
 fi
 
 name=$(basename "$path")
+# Its own nox-envs volume (scripts/nox_volume.sh), named while it is still a worktree.
+volume=$("$ROOT/scripts/nox_volume.sh" "$path")
 if [ -d "$path/test-results" ]; then
     run mkdir -p "$main/test-results/archive/$name"
     run cp -R "$path/test-results/." "$main/test-results/archive/$name/"
@@ -42,3 +45,6 @@ if [ -L "$path/.env" ]; then # a link only; never a real file
     run unlink "$path/.env"
 fi
 run git -C "$main" worktree remove "$path"
+if [ "$volume" != django-db2-for-i_nox-envs ]; then
+    run docker volume rm --force "$volume" || echo "$(basename "$0"): volume $volume not removed (in use?)" >&2
+fi

@@ -651,3 +651,53 @@ def test_probe_publish_runs_the_cleaner_in_the_container(tmp_path) -> None:
     )
     refused = run_bin(str(BIN / "probe"), "--publish", tmp_path=tmp_path)
     assert refused.returncode == 2 and "--publish needs one result file" in refused.stderr
+
+
+# --- One nox-envs volume per checkout (#190, topic 4) ------------------------------------
+
+NOX_VOLUME = ROOT / "scripts" / "nox_volume.sh"
+
+
+def nox_volume(checkout: Path) -> str:
+    result = subprocess.run(
+        ["sh", str(NOX_VOLUME), str(checkout)], capture_output=True, text=True, check=True
+    )
+    return result.stdout.strip()
+
+
+def test_the_main_checkout_keeps_its_volume_and_a_worktree_gets_its_own(tmp_path) -> None:
+    git = [
+        "git", "-c", "user.name=t", "-c", "user.email=t@example.com",
+        "-c", "commit.gpgsign=false",
+    ]  # fmt: skip
+    main = tmp_path / "django-db2-for-i"
+    main.mkdir()
+    subprocess.run([*git, "-C", str(main), "init", "-q"], check=True)
+    subprocess.run([*git, "-C", str(main), "commit", "-q", "--allow-empty", "-m", "x"], check=True)
+    worktree = tmp_path / "django-db2-for-i-My Topic"
+    subprocess.run(
+        [*git, "-C", str(main), "worktree", "add", "-q", "-b", "t", str(worktree)], check=True
+    )
+    assert nox_volume(main) == "django-db2-for-i_nox-envs"
+    assert nox_volume(worktree) == "django-db2-for-i_nox-envs-django-db2-for-i-My-Topic"
+    # Not a git checkout at all (a copy): the main checkout's volume.
+    assert nox_volume(tmp_path) == "django-db2-for-i_nox-envs"
+
+
+def test_compose_takes_the_volume_name_from_the_environment() -> None:
+    text = (ROOT / "compose.yaml").read_text()
+    assert "name: ${DB2I_NOX_ENVS:-django-db2-for-i_nox-envs}" in text
+
+
+@needs_bin
+def test_every_container_gets_the_checkouts_own_volume(tmp_path) -> None:
+    lines = run_bin(str(BIN / "check"), "--dry-run", tmp_path=tmp_path).stdout.splitlines()
+    containers = [line for line in lines if "docker compose" in line]
+    assert containers
+    expected = f"+ env DB2I_NOX_ENVS={nox_volume(ROOT)} docker compose "
+    assert all(line.startswith(expected) for line in containers)
+    text = (ROOT / "scripts" / "pub400.sh").read_text()
+    assert "DB2I_NOX_ENVS=$(scripts/nox_volume.sh .)\nexport DB2I_NOX_ENVS\n" in text
+    remove = (BIN / "worktree-remove").read_text()
+    assert 'volume=$("$ROOT/scripts/nox_volume.sh" "$path")' in remove
+    assert 'run docker volume rm --force "$volume"' in remove
