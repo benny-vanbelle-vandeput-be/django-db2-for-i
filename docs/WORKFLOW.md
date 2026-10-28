@@ -208,8 +208,9 @@ pushed to a public registry (IBM's license).
    git tag -v v<version>
    git push origin v<version>
    ```
-4. **The maintainer creates the GitHub release** by hand (the release
-   workflow is parked, see #94).
+4. **The maintainer creates the GitHub release** by hand, from the tag
+   (there is no release workflow; the notes:
+   `python scripts/changelog_section.py <version>`).
 
 Claude never creates, pushes or deletes tags, and never creates or edits
 releases; `bin/release-prepare` only prints steps 3 and 4.
