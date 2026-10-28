@@ -199,7 +199,7 @@ nothing has been changed when it is raised.
 | Message starts with | Cause and fix |
 |---|---|
 | "Test library ... does not exist" | Create the library; the backend never creates schemas. |
-| "... has no QSQJRN journal" / "... is not active" | Create or start the journal, see [IBM i requirements](IBM-i-Requirements.md#journaling-required). |
+| "... has no QSQJRN journal" / "... do not inherit journaling" / "... is not active" | Create or start the journal, or journal the library with `STRJRNLIB` so that new objects inherit journaling to an active journal, see [IBM i requirements](IBM-i-Requirements.md#journaling-required). |
 | "... contains objects that do not belong to the Django models under test" | The library holds other tables or views. Use a library for tests only. |
 | "... contains tables of the Django models under test ... but no DJDB2I_TEST_MARKER table" | The library looks like an application library. Use an empty library; drop the tables yourself only if you are sure they hold no data you need. |
 | "Could not drop ... object(s)" | Cleanup failed; the marker is kept so the next run (with `--noinput`) can finish the cleanup. |

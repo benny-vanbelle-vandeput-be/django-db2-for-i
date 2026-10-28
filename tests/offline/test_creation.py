@@ -1,6 +1,7 @@
 """Test database creation in an existing library (no server needed)."""
 
 import datetime as dt
+import re
 
 import django.db
 import pytest
@@ -243,17 +244,33 @@ def test_nodb_cursor_is_never_opened() -> None:
 # --- Setup and teardown flows with a fake catalog ----------------------------------------
 
 
+# QSYS2.LIBRARY_INFO: JOURNALED, INHERIT_JOURNALING, JOURNAL_LIBRARY, JOURNAL_NAME, QSQJRN count
+NOT_JOURNALED = ("NO", "NO", None, None, 0)
+STRJRNLIB = ("YES", "YES", "JRNLIB", "APPJRN", 0)
+
+
 class FakeCatalog:
     """Answers the creation's catalog queries and records every statement."""
 
     def __init__(
-        self, inventory, marker_rows=(), *, library=True, journal="*ACTIVE", fail=(), legacy=False
+        self,
+        inventory,
+        marker_rows=(),
+        *,
+        library=True,
+        journal="*ACTIVE",
+        journaling=NOT_JOURNALED,
+        journals=(),
+        fail=(),
+        legacy=False,
     ):
         self.legacy = legacy  # marker table without the MODULE_SET column
         self.inventory = dict(inventory)
         self.marker_rows = list(marker_rows)
         self.library = library
-        self.journal = journal
+        self.journal = journal  # state of the library's QSQJRN, None: no QSQJRN
+        self.journaling = journaling  # its QSYS2.LIBRARY_INFO row (STRJRNLIB)
+        self.journals = dict(journals)  # (library, journal) -> state, other journals
         self.fail = dict(fail)  # object name -> sqlcode raised by its DROP
         self.executed: list[tuple[str, list]] = []
         self._rows: list[tuple] = []
@@ -282,7 +299,13 @@ class FakeCatalog:
         if "QSYS2.SYSSCHEMAS" in sql:
             return [(1,)] if self.library else []
         if "QSYS2.JOURNAL_INFO" in sql:
-            return [(self.journal,)] if self.journal else []
+            if "JOURNAL_NAME = 'QSQJRN'" in sql:
+                return [(self.journal,)] if self.journal else []
+            library, name = re.findall(r"JOURNAL_(?:LIBRARY|NAME) = '(\w+)'", sql)
+            state = self.journals.get((library, name))
+            return [(state,)] if state else []
+        if "QSYS2.LIBRARY_INFO" in sql:
+            return [self.journaling]
         if "QSYS2.SYSTABLES" in sql:
             return [(name, kind) for name, kind in self.inventory.items()]
         if "QSYS2.SYSREFCST" in sql:
@@ -354,6 +377,45 @@ def test_setup_refuses_production_like_library_and_changes_nothing(setup_with) -
     ],
 )
 def test_setup_checks_library_and_journal(setup_with, catalog, message: str) -> None:
+    with pytest.raises(TestDatabaseRefused, match=message):
+        setup_with(catalog)._create_test_db(0, autoclobber=True)
+    assert catalog.statements == []
+
+
+def test_setup_accepts_a_library_journaled_with_strjrnlib(setup_with) -> None:
+    catalog = FakeCatalog(
+        {}, journal=None, journaling=STRJRNLIB, journals={("JRNLIB", "APPJRN"): "*ACTIVE"}
+    )
+    assert setup_with(catalog)._create_test_db(0, autoclobber=False) == LIB
+    assert any(
+        "JOURNAL_LIBRARY = 'JRNLIB' AND JOURNAL_NAME = 'APPJRN'" in sql
+        for sql, _ in catalog.executed
+    )
+
+
+@pytest.mark.parametrize(
+    ("catalog", "message"),
+    [
+        (
+            FakeCatalog(
+                {}, journal=None, journaling=STRJRNLIB, journals={("JRNLIB", "APPJRN"): "*STANDBY"}
+            ),
+            "journaled to JRNLIB/APPJRN, but that journal is not active \\(state \\*STANDBY\\)",
+        ),
+        (
+            FakeCatalog({}, journal=None, journaling=STRJRNLIB),
+            "not active \\(state not found\\)",
+        ),
+        (
+            FakeCatalog({}, journal=None, journaling=("YES", "NO", "JRNLIB", "APPJRN", 0)),
+            "(?s)do not inherit journaling.*CRTJRN JRN\\(DJTEST/QSQJRN\\)",
+        ),
+    ],
+    ids=["journal-not-active", "journal-not-found", "no-inherit"],
+)
+def test_setup_refuses_strjrnlib_without_an_active_inherited_journal(
+    setup_with, catalog, message: str
+) -> None:
     with pytest.raises(TestDatabaseRefused, match=message):
         setup_with(catalog)._create_test_db(0, autoclobber=True)
     assert catalog.statements == []

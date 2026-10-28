@@ -10,7 +10,9 @@ the extra ``_nodb_cursor()`` connection Django uses for CREATE/DROP
 DATABASE; everything runs on the alias's own connection. Safety rules
 (docs/DECISIONS.md):
 
-- The library must exist and have an active QSQJRN journal.
+- The library must exist and be journaled: an active QSQJRN journal in it,
+  or STRJRNLIB with new objects inheriting journaling, to an active journal
+  (the rule of check W001, #156).
 - A library without the marker table ``DJDB2I_TEST_MARKER`` must not contain
   any table or view: otherwise setup refuses, also with ``--noinput``,
   because it may be a production library.
@@ -275,14 +277,43 @@ class DatabaseCreation(BaseDatabaseCreation):
         )
         row = cursor.fetchone()
         if row is None:
-            raise TestDatabaseRefused(
-                f"Test library {library} has no QSQJRN journal; tables in it would not be "
-                f"journaled, so data changes fail with SQL7008. {JOURNAL_HELP.format(lib=library)}"
-            )
+            self._check_library_journaling(cursor, library)
+            return
         if str(row[0]).strip() != "*ACTIVE":
             raise TestDatabaseRefused(
                 f"The QSQJRN journal in test library {library} is not active "
                 f"(state {str(row[0]).strip()})."
+            )
+
+    def _check_library_journaling(self, cursor, library: str) -> None:
+        """No QSQJRN: the library must be journaled with STRJRNLIB, new objects
+        inheriting it, to an active journal (the rule of check W001, #156)."""
+        # Imported here: validation imports this module.
+        from .validation import journaling_problem, library_journaling
+
+        info = library_journaling(cursor, library)
+        problem = journaling_problem(info, library) if info else f"library {library} not found"
+        if problem:
+            raise TestDatabaseRefused(
+                f"Test {problem}; tables in it would not be journaled, so data changes "
+                f"fail with SQL7008. {JOURNAL_HELP.format(lib=library)}"
+            )
+        journal_library, journal_name = info[2] or "", info[3] or ""
+        if not (_SYSTEM_NAME.match(journal_library) and _SYSTEM_NAME.match(journal_name)):
+            raise TestDatabaseRefused(
+                f"Test library {library} is journaled to {journal_library}/{journal_name}, "
+                "which is not a valid journal name."
+            )
+        cursor.execute(
+            "SELECT JOURNAL_STATE FROM QSYS2.JOURNAL_INFO "
+            f"WHERE JOURNAL_LIBRARY = '{journal_library}' AND JOURNAL_NAME = '{journal_name}'"
+        )
+        row = cursor.fetchone()
+        state = str(row[0]).strip() if row else "not found"
+        if state != "*ACTIVE":
+            raise TestDatabaseRefused(
+                f"Test library {library} is journaled to {journal_library}/{journal_name}, "
+                f"but that journal is not active (state {state})."
             )
 
     def _inventory(self, cursor, library: str) -> dict[str, str]:

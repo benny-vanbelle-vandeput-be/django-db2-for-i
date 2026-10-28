@@ -59,12 +59,11 @@ def _journaling_sql(library: str) -> str:
     )
 
 
-def journal_problem(cursor, library: str) -> str | None:
-    """Why new tables in ``library`` would not be journaled, or None.
+def library_journaling(cursor, library: str) -> tuple | None:
+    """``(JOURNALED, INHERIT_JOURNALING, JOURNAL_LIBRARY, JOURNAL_NAME, QSQJRN count)``.
 
-    None also for a library that does not exist. ``cursor`` is any DB-API
-    cursor (bin/doctor runs this through probe journal_check); database
-    errors propagate.
+    None for a library that does not exist. ``cursor`` is any DB-API cursor;
+    database errors propagate.
     """
     if not _SYSTEM_NAME.match(library):
         raise ValueError(f"{library!r} is not the system name of a library")
@@ -72,9 +71,23 @@ def journal_problem(cursor, library: str) -> str | None:
     row = cursor.fetchone()
     if row is None:
         return None
-    journaled, inherit, journal_library, journal_name, qsqjrn = (
-        value.strip() if isinstance(value, str) else value for value in row
-    )
+    return tuple(value.strip() if isinstance(value, str) else value for value in row)
+
+
+def journal_problem(cursor, library: str) -> str | None:
+    """Why new tables in ``library`` would not be journaled, or None.
+
+    None also for a library that does not exist. ``cursor`` is any DB-API
+    cursor (bin/doctor runs this through probe journal_check); database
+    errors propagate.
+    """
+    row = library_journaling(cursor, library)
+    return None if row is None else journaling_problem(row, library)
+
+
+def journaling_problem(row: tuple, library: str) -> str | None:
+    """Why new tables would not be journaled, from a ``library_journaling`` row."""
+    journaled, inherit, journal_library, journal_name, qsqjrn = row
     if qsqjrn or (journaled == "YES" and inherit == "YES"):
         return None
     if journaled == "YES":
