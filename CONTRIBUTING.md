@@ -65,9 +65,14 @@ table; it lists only, unless `--yes`.
 
 The IBM i scripts take `--wait` to queue behind a running PUB400 job.
 
-Every run against PUB400 goes through `scripts/pub400.sh`, which holds the
-PUB400 lock: one PUB400 job at a time on the machine. A second job stops with
-"PUB400 busy: <holder>", or waits with `scripts/pub400.sh --wait ...`.
+**One PUB400 job at a time on this machine**, whatever the worktree: no probe,
+IBM i test run or Django run starts while another one runs; it queues instead.
+Every PUB400 run goes through `scripts/pub400.sh`, which enforces this with a
+per-user lock outside every checkout (`scripts/pub400_lock.py`:
+`~/.local/state/django-db2-for-i/pub400.lock`, an OS file lock released when
+the process dies). A second job stops with "PUB400 busy: <holder>", or waits
+with `scripts/pub400.sh --wait ...`; `bin/status` shows the holder. It covers
+one machine only: two machines behind the same IP are not covered.
 
 ### Pinned tooling
 
@@ -87,19 +92,39 @@ supported version and the newest pyodbc, the versions users get.
 
 ## Test sets
 
-Four test sets, named the same everywhere, code included (README,
-TEST_STATUS, this file, CLAUDE.md):
+Four test sets, and the names around them, named the same everywhere, code
+included (README, TEST_STATUS, this file, CLAUDE.md; #191, topic 2). History
+(CHANGELOG, DECISIONS, IBMI_NOTES, the phase records) keeps the names of its
+time; PUB400 is the name of the system, never of a test set.
 
-| Test set | What and where | Was |
-|---|---|---|
-| Offline tests | this project's unit tests and golden SQL checks, `tests/offline/`, `nox -s offline`; CI on every commit | offline tier |
-| IBM i tests | this project's tests against a real Db2 for i, `tests/ibmi/`, `nox -s ibmi`; when the pull request's classification asks for it | pub400 tier |
-| Django suite on IBM i | Django's own test modules against Db2 for i, `scripts/django_suite.sh`; before every release (the status run) | Django modules on PUB400 |
-| Replay tests | the recorded SQL of passing Django tests (the corpus), compiled again offline, `nox -s replay`; CI on every commit | offline query corpus |
+| Name | What it is | In the code | Was |
+|---|---|---|---|
+| Offline tests | this project's unit tests and golden SQL checks; no IBM i, CI on every commit | `nox -s offline`, `tests/offline/`, marker `offline` | offline tier |
+| Golden files | the exact SQL expected for a query or schema change, checked offline, executed once on IBM i | `tests/offline/golden/` | goldens |
+| Replay tests | the recorded SQL of passing Django tests (the corpus), compiled again offline; CI on every commit | `nox -s replay`, `tests/offline/replay/`, marker `replay` | offline query corpus, corpus replay |
+| IBM i tests | this project's tests against a real Db2 for i (now PUB400); when the pull request's classification asks for it | `nox -s ibmi`, `tests/ibmi/`, marker `ibmi` | pub400 tier, own IBM i tests |
+| Django suite on IBM i | Django's own test modules against Db2 for i; before every release (the status run) | `scripts/django_suite.sh`, `nox -s django_suite` | Django modules on PUB400 |
+| Targeted / full IBM i run | the two sizes of IBM i run a pull request gets: the affected tests, or all IBM i tests | `bin/ibmi-test --affected` / `--full-tier`, label `needs-full-ibmi-run` | targeted run, full tier |
+| Status run | the supported Django modules plus the IBM i tests, every Django version; refreshes TEST_STATUS and the replay tests; before every release | `bin/status-run`, `nox -s status_run` | release run |
 
 Each run of the nox sessions writes its counts to
 `test-results/<django>/sets/` (`--results-summary`); `nox -s test_status`
 turns them, with the Django test logs, into README's "Test status".
+
+## Branches, commits and `main`
+
+- `main` is protected by a ruleset: changes only through pull requests with one
+  approval by the maintainer, the `offline` check passing on an up-to-date
+  branch, merge commits only (no rebase or squash merging), signed commits
+  required. Never push to `main` directly and never force-push it.
+- Every commit on `main` must be signed: the PR commits by their author's
+  signing key, the merge commit by GitHub. Rebase merging is not used because
+  it recreates the commits without signatures.
+- One branch per logical change, named `<type>/<topic>` (`feat/`, `fix/`,
+  `docs/`, `test/`, `ci/`, `chore/`, `build/`), created from the current
+  `origin/main`.
+- Before every push: `nox -s lint offline` passes locally (`bin/check` runs it,
+  with the replay tests, the verification gate and the classification).
 
 ## Pull requests and IBM i runs
 
@@ -119,25 +144,51 @@ summary.
 - The script fails closed: a new file or directory is "needs full IBM i run" until
   it is added to the script's lists, in the same pull request (an offline test
   checks that every tracked file is listed).
-- Anyone may add `run-ibmi` by hand to request a run.
-- The labels are removed only after the run on the pull request's latest
+- The core backend modules need the full run because a change there can break
+  a test far from it (#179); changed SQL still gets its targeted run
+  (`bin/verify`) for the stamps.
+- CI only **adds** the labels; anyone may add `run-ibmi` by hand to request a
+  run. Nothing in CI reacts to the labels.
+- The labels are removed only after the run on the pull request's **latest**
   commit has passed and its result (the commit, the counts) is posted on the
   pull request. A pull request with either label is not merged.
-- The status `ibmi-gate` checks the same independently of the labels: it is
-  red while an IBM i run is needed and no posted result covers the pull
-  request's current content. A result comment starts with
-  `<!-- ibmi-run sha=<full sha> tier=targeted|full -->` and counts only from
-  the machine account or the maintainer (`scripts/ibmi_gate.py`).
-- A later push brings the labels back, except a push that only adds the
-  verification stamps written by the run (and files generated from them), a
-  push whose own files are docs/tests that do not run on IBM i (such as a
-  renamed changelog fragment), and a conflict-free rebase whose own changes are identical (`git range-diff`)
-  onto docs/tests-only commits of `main` (or commits that change only the IBM
-  i gate: `.github/workflows/ibmi-gate.yml`, `scripts/ibmi_gate.py` and
-  `scripts/classify_pr.py`), also when it carries the run's verification
-  stamps commit along.
+- **The IBM i gate (`ibmi-gate`)** checks the same independently of the
+  labels: a commit status on the pull request's head, set by
+  `.github/workflows/ibmi-gate.yml` (`scripts/ibmi_gate.py`, always main's copy:
+  `pull_request_target` and `issue_comment`; the PR is only data, its code never runs).
+  Red while the classification needs an IBM i run and no posted result covers the
+  current content, by the same exceptions as below. Every run result comment
+  starts with the marker `<!-- ibmi-run sha=<full sha> tier=targeted|full -->`
+  (`full` for the full run); only markers by the machine account or the
+  maintainer count, and the maintainer may waive a commit with
+  `<!-- ibmi-run sha=<full sha> waived -->`. Changes to the gate's files
+  (`ibmi-gate.yml`, `scripts/ibmi_gate.py`, and `scripts/classify_pr.py`, which decides
+  the verdict) are "needs full IBM i run", and the PR comment names them for the
+  maintainer's review.
+  `ibmi-gate` is a required check on `main`. The maintainer (only) can re-evaluate one
+  PR with the workflow's `workflow_dispatch` (input: the PR number; it runs only from
+  `main`).
+- **A later push puts the labels back** (CI adds them again), with three exceptions that
+  need no new run:
+  - a push that only contains the verification stamps written by the run
+    (`--record-verification`) on the previous commit, and files generated solely from
+    them (e.g. the golden count in `docs/TEST_STATUS.md` via `nox -s test_status`). The
+    PR comment then states the SHA the run was on and that the latest commit only adds
+    those stamps and generated files;
+  - a push (no rewrite) whose own files the classification marks as docs/tests only
+    without an IBM i run, goldens and corpus entries excluded (e.g. renaming the
+    changelog fragment to the PR number);
+  - a conflict-free rebase whose own changes are identical (`git range-diff`) onto new
+    `main` commits that the classification marks as docs/tests only, or that change
+    only the IBM i gate's files (strictest class in their own PR, for the maintainer's
+    review; they run nowhere on IBM i). The rebase may also carry the run's
+    verification stamps commit (the first exception) along.
 - Pull requests are rebased onto `main` whenever they are behind it (the
-  `main` ruleset requires the `offline` check on an up-to-date branch).
+  `main` ruleset requires the `offline` check on an up-to-date branch), and
+  pushed with `git push --force-with-lease` (pull request branches only). The
+  maintainer never uses GitHub's "Update branch" button: with "approval of the
+  most recent push" that would make the maintainer the last pusher, so nobody
+  could approve the pull request anymore.
 
 ## Changelog
 

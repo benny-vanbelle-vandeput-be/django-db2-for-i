@@ -22,6 +22,16 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
 
 ## 2. Working rules (read first)
 
+The rules for every contributor (branches, commits, pull requests, the
+classification, the labels, the IBM i gate, the PUB400 lock, the test set
+names) are in CONTRIBUTING.md; the day-to-day commands in docs/WORKFLOW.md.
+Both apply to Claude in full and are loaded with this file (Claude Code imports):
+
+- @CONTRIBUTING.md
+- @docs/WORKFLOW.md
+
+This file holds the project's design and what is specific to Claude.
+
 - **Plan before code.** For every phase: propose a plan, wait for approval, then implement.
 - **Small, reviewable commits.** One logical change per commit; conventional commit messages.
 - **Never guess IBM i behaviour.** When uncertain, write a tiny probe script in `probes/`,
@@ -44,19 +54,9 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
 - **Respect shared systems.** Never run the full Django suite against PUB400 or any shared system
   (see "Initial test system: PUB400" for what is allowed).
 - Record non-obvious design decisions in `docs/DECISIONS.md` (date, decision, why, alternatives).
-- **IBM i runs follow the PR's classification** (`scripts/classify_pr.py`, see "Git
-  workflow"), and the result is reported in the PR:
-  - a **targeted run** (the affected own IBM i tests and Django test modules or ids)
-    for new or changed tests that run on IBM i, for changed SQL (a golden or corpus
-    entry without a verification stamp) and on request;
-  - the **full** IBM i tests (`nox -s ibmi`), not a subset, when the driver layer,
-    `base.py`, `creation.py`, the capabilities, the core backend modules
-    (`schema.py`, `introspection.py`, `compiler.py`, `operations.py`, `features.py`,
-    `expressions.py`, `compat.py`: a change there can break a test far from it, #179),
-    the container image, the pinned Django commit or the supported Django versions
-    change, or a file the classification does not list (it fails closed); changed SQL
-    still gets its targeted run (`bin/verify`) for the stamps;
-  - nothing for docs/tests-only changes that do not run on IBM i.
+- **IBM i runs follow the PR's classification** (`scripts/classify_pr.py`), and the
+  result is reported in the PR: a targeted run, the full IBM i tests, or nothing
+  (CONTRIBUTING.md, "Pull requests and IBM i runs").
 - When a feature flag is enabled, add an own IBM i test for the common real-world usage
   pattern of that feature (e.g. full querysets with model instances, not only `values()`);
   Django's own tests do not cover every pattern.
@@ -146,13 +146,8 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
     not on the list is never added by a rename. The marker rule above is
     unchanged.
 - PUB400 limits connections per IP: one connection per run, `--parallel=1`, no retry storms.
-- **One PUB400 job at a time on this machine**, whatever the worktree: no probe, tier
-  or Django run starts while another one runs; it queues instead. `scripts/pub400.sh`
-  enforces this with a per-user lock outside every checkout
-  (`scripts/pub400_lock.py`: `~/.local/state/django-db2-for-i/pub400.lock`, an OS file
-  lock released when the process dies; "PUB400 busy: <holder>", or `--wait`;
-  `bin/status` shows the holder). Every PUB400 run goes through `scripts/pub400.sh`.
-  It covers one machine only: two machines behind the same IP are not covered.
+- **One PUB400 job at a time on this machine**, through `scripts/pub400.sh` and its
+  lock (CONTRIBUTING.md, "Development environment").
 - No uptime guarantee: test runs must fail fast and clearly when the system is unreachable.
 - Allowed on PUB400: single, small Django test modules (e.g. `basic`, `transactions`) and the
   curated IBM i tests. **Never** the full Django suite or the full matrix.
@@ -220,18 +215,8 @@ Standard Django backend layout: `base.py`, `features.py`, `operations.py`, `sche
 Three tiers, selectable via pytest markers / nox sessions.
 
 **Test set names.** One name per test set, the same in the docs and the code
-(#191, topic 2). History (CHANGELOG, DECISIONS, IBMI_NOTES, the phase records)
-keeps the names of its time; PUB400 is the name of the system, never of a test set.
-
-| Name | One line | In the code | Was |
-|---|---|---|---|
-| Offline tests | our own pytest tests; no IBM i, CI on every push | `nox -s offline`, `tests/offline/`, marker `offline` | offline tier |
-| Golden files | the exact SQL expected for a query or schema change, checked offline, executed once on IBM i | `tests/offline/golden/` | goldens |
-| Replay tests | the SQL of Django's own tests, captured once on IBM i (the corpus), compiled again offline | `nox -s replay`, `tests/offline/replay/`, marker `replay` | offline query corpus, corpus replay |
-| IBM i tests | our own pytest tests against a real IBM i (now PUB400) | `nox -s ibmi`, `tests/ibmi/`, marker `ibmi` | pub400 tier, own IBM i tests |
-| Django suite on IBM i | modules of Django's own test suite against a real IBM i | `scripts/django_suite.sh`, `nox -s django_suite` | Django modules on PUB400 |
-| Targeted / full IBM i run | the two sizes of IBM i run a PR gets: the affected tests, or all IBM i tests | `bin/ibmi-test --affected` / `--full-tier`, label `needs-full-ibmi-run` | targeted run, full tier |
-| Status run | the supported Django modules plus the IBM i tests, every Django version; refreshes TEST_STATUS and the replay tests; before every release | `bin/status-run`, `nox -s status_run` | release run |
+(#191, topic 2); the table (what each is, where in the code, what it was) is in
+CONTRIBUTING.md, "Test sets".
 
 ### Tier 1 — `offline` = "Offline tests" (no IBM i needed; every commit, in CI)
 - Compile querysets with `query.get_compiler(using).as_sql()` and compare SQL + params
@@ -311,87 +296,35 @@ keeps the names of its time; PUB400 is the name of the system, never of a test s
   Action on pushes to main. Never edit the wiki directly.
 
 ## Git workflow
+The rules for everyone are in CONTRIBUTING.md: "Branches, commits and `main`"
+(the ruleset, signed commits, branch names, `bin/check` before every push) and
+"Pull requests and IBM i runs" (the classification, the labels, the IBM i gate,
+which pushes put the labels back, rebasing). The commands are in
+docs/WORKFLOW.md (`branch`, `commit`, `pr`). Specific to Claude:
+
 - Claude works on GitHub only as the machine account `claude-v-belle-net`
   (`GH_TOKEN`), never with the maintainer's account. This repository's local git
   config uses `gh auth git-credential` for pushes, so the keychain is not used.
-- `main` is protected by a ruleset: changes only through pull requests with one
-  approval by the maintainer, the `offline` check passing on an up-to-date
-  branch, merge commits only (no rebase or squash merging), signed commits
-  required. Never push to `main` directly and never force-push it.
-- Every commit on `main` must be signed: the PR commits by the machine
-  account's signing key, the merge commit by GitHub. Rebase merging is not
-  used because it recreates the commits without signatures.
-- One branch per logical change, named `<type>/<topic>` (`feat/`, `fix/`,
-  `docs/`, `test/`, `ci/`, `chore/`), created from the current `origin/main`.
 - **`.env` in worktrees:** a new worktree has no `.env` (gitignored). Link it
   (`ln -s ../django-db2-for-i/.env .env`, never reading it) only into worktrees the
   main session uses for IBM i runs. **Never** link or copy it into a subagent's
   worktree (`.claude/worktrees/`): subagents are offline only, and a missing `.env`
   is an extra safeguard there. Once linked, the link is never moved, replaced or
   removed by hand (only `bin/worktree-remove` removes it).
-- **Results never vanish with a worktree.** Remove a merged worktree with
-  `bin/worktree-remove <path>`: it copies its `test-results/` to the main checkout's
-  `test-results/archive/<worktree>/` first. Raw probe output that a decision rests on
-  goes into the repository with `bin/probe --publish <result>` (`probes/results/<probe>.json`,
-  host, user and library names replaced, no credentials).
 - Commits: conventional messages; author is the maintainer (noreply address),
   committer is the machine account (noreply address), every commit and tag is
   signed with the machine account's SSH signing key (all set in the
   repository's local git config). Never commit with a personal email address.
-- Before every push: `nox -s lint offline` passes locally (`bin/check` runs it, with the
-  corpus replay, the verification gate and the classification).
-- **Every PR is classified** from its changed files by `scripts/classify_pr.py`:
-  **needs full IBM i run** (the driver layer, `base.py`, `creation.py`, the capabilities, the
-  core backend modules, the container image, the pinned Django commit, the supported Django versions, and every
-  path it does not list: it fails closed), **SQL-affecting** (other backend code, goldens
-  or corpus entries without a verification stamp) or **docs/tests only** (the paths it
-  lists as such; a new file or directory is added to its lists in the same PR).
-  The CI job `classify` runs it on every push and keeps one comment on the PR up to date.
-- **Labels:** `needs-full-ibmi-run` for "needs full IBM i run"; `run-ibmi` for SQL-affecting PRs
-  and for changes that run on IBM i (new or changed own IBM i tests, the test models, the
-  IBM i settings, the IBM i run tooling, the nox sessions, the supported Django test
-  modules). CI only **adds** them; anyone may
-  add `run-ibmi` by hand to request a run. The main session queues the run behind any
-  other PUB400 job, posts the result on the PR (the SHA it ran on, the counts) and only
-  then removes the label; the run must be on the PR's **latest** commit. The maintainer
-  does not merge a PR that carries either label. Nothing in CI reacts to the labels.
-- **The IBM i gate (`ibmi-gate`)**: a commit status on the PR's head, set by
-  `.github/workflows/ibmi-gate.yml` (`scripts/ibmi_gate.py`, always main's copy:
-  `pull_request_target` and `issue_comment`; the PR is only data, its code never runs).
-  Red while the classification needs an IBM i run and no posted result covers the
-  current content, by the same exceptions as below. Every run result comment
-  starts with the marker `<!-- ibmi-run sha=<full sha> tier=targeted|full -->`
-  (`full` for the full tier); only markers by the machine account or the
-  maintainer count, and the maintainer may waive a commit with
-  `<!-- ibmi-run sha=<full sha> waived -->`. Changes to the gate's files
-  (`ibmi-gate.yml`, `scripts/ibmi_gate.py`, and `scripts/classify_pr.py`, which decides
-  the verdict) are "needs full IBM i run", and the PR comment names them for the
-  maintainer's review.
-  `ibmi-gate` is a required check on `main`. The maintainer (only) can re-evaluate one
-  PR with the workflow's `workflow_dispatch` (input: the PR number; it runs only from
-  `main`); Claude never triggers it (`.claude/settings.json` denies it).
-- **A later push puts the labels back** (CI adds them again), with three exceptions that
-  need no new run:
-  - a push that only contains the verification stamps written by the run
-    (`--record-verification`) on the previous commit, and files generated solely from
-    them (e.g. the golden count in `docs/TEST_STATUS.md` via `nox -s test_status`). The
-    PR comment then states the SHA the run was on and that the latest commit only adds
-    those stamps and generated files;
-  - a push (no rewrite) whose own files the classification marks as docs/tests only
-    without an IBM i run, goldens and corpus entries excluded (e.g. renaming the
-    changelog fragment to the PR number);
-  - a conflict-free rebase whose own changes are identical (`git range-diff`) onto new
-    `main` commits that the classification marks as docs/tests only, or that change
-    only the IBM i gate's files (strictest class in their own PR, for the maintainer's
-    review; they run nowhere on IBM i). The rebase may also carry the run's
-    verification stamps commit (the first exception) along.
+- **IBM i runs for a PR:** the main session queues the run behind any other
+  PUB400 job, posts the result on the PR (the marker, the SHA it ran on, the
+  counts) and only then removes the label; the run must be on the PR's
+  **latest** commit.
+- Claude never triggers the IBM i gate's `workflow_dispatch` (`.claude/settings.json`
+  denies it); only the maintainer re-evaluates a PR with it.
 - Before review, and whenever a PR branch is behind `main`, Claude rebases it
   onto `main` and pushes it itself (`git push --force-with-lease`, PR branches
   only), so every PR is up to date and its commits stay signed (whether the
-  rebase needs a new IBM i run: see the labels above). The maintainer
-  never uses GitHub's "Update branch" button: with "approval of the most recent
-  push" that would make the maintainer the last pusher, so nobody could approve
-  the PR anymore.
+  rebase needs a new IBM i run: CONTRIBUTING.md, the three exceptions).
 - Claude opens pull requests and answers review comments, but never merges; the
   maintainer reviews and merges.
 
