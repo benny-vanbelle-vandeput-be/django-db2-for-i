@@ -1,0 +1,1 @@
+Contributor rule: `.env` and its link in a worktree are never moved, renamed, copied, deleted or re-linked; a throwaway worktree without `.env` rules it out as a cause. `.claude/settings.json` denies those commands.
