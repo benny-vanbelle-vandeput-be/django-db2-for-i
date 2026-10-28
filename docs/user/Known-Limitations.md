@@ -527,6 +527,25 @@ out rows whose result would pass year 9999, or check the duration first).
 `TimeField + DurationField` wraps at 24 hours, as on PostgreSQL, and has no
 fractional seconds (see "TimeField has no fractional seconds").
 
+## Not available on Db2 for i
+
+Db2 for i has no equivalent for these Django features, so they stay off
+(verified on IBM i 7.5; [feature flags](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/FEATURES.md)):
+
+- **`GeneratedField`.** A generated column on Db2 for i can only hold a special
+  register (such as `USER`), the data change operation, a row change
+  timestamp or an identity, never an expression over other columns. Use a
+  normal field that the application fills in, or compute it in a query
+  (`annotate()`).
+- **`db_collation` on `CharField` and `TextField`.** Db2 for i has no `COLLATE`
+  clause for a column; sorting and comparison follow the job's sort sequence.
+- **`CharField` without `max_length`.** Character columns need a length; use
+  `TextField` for text without a limit.
+- **Materialized views in `inspectdb`.** `inspectdb --include-views` lists
+  views, but not materialized query tables.
+
+Django's system checks report the first three when a model uses them.
+
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and

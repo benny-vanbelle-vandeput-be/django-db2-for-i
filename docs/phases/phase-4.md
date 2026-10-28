@@ -196,6 +196,8 @@ and test set, from one status run on `main` after this phase, is in
   `supports_no_precision_decimalfield`, `supports_sequence_reset`,
   `supports_comments_inline`, `can_introspect_materialized_views`,
   `has_real_datatype`, `related_fields_match_type`, `truncates_names`.
+  Decided after the phase with probe `qtemp_later_flags` (#191, topic 3):
+  each now names phase 5, phase 6, "needs probe" or why it stays off.
 - **Phase 5**: unique constraint variants, partial / expression / covering
   indexes, `allows_multiple_constraints_on_same_fields`, the `constraints`,
   `indexes` and `model_indexes` modules.

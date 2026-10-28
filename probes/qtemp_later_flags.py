@@ -1,7 +1,8 @@
 """What Db2 for i supports for the feature flags once marked "later" (#191, topic 3).
 
 Writes only to QTEMP (tables that disappear with the job); reads nothing
-outside it. Each statement's outcome is recorded with its SQLSTATE and
+outside it but SYSIBM.SYSDUMMY1. Without commitment control (CMT=0): QTEMP
+tables have no journal. Each statement's outcome is recorded with its SQLSTATE and
 SQLCODE. Db2 for i syntax, not PostgreSQL's (the maintainer's decision on
 #191): a materialized view is a materialized query table, and generated
 columns are tried in several forms.
@@ -44,10 +45,12 @@ PREFIX = "QTEMP.PLF"
 
 
 def connection_attributes(settings: Settings) -> dict[str, str]:
+    """The backend's attributes without commitment control: QTEMP tables have
+    no journal, so a row in one is refused under it (SQL7008)."""
     import pyodbc
 
     pyodbc.pooling = False
-    return BACKEND
+    return {**BACKEND, "CMT": "0"}
 
 
 def _query(conn, sql: str, params=()) -> dict[str, Any]:
@@ -243,6 +246,32 @@ def _materialized(conn, results) -> None:
         _step(results, "base table: driver catalog (SQLTables)", _tables(conn, "PLFBASE"))
         _execute(conn, f"DROP TABLE {PREFIX}MQT")
     _execute(conn, f"DROP TABLE {PREFIX}BASE")
+    # Whether the QTEMP base table is what the first MQT's SQ20058 is about.
+    _execute(conn, f"DROP TABLE {PREFIX}MQ2")
+    created = _step(
+        results,
+        "mqt over SYSIBM.SYSDUMMY1: create",
+        _execute(
+            conn,
+            f"CREATE TABLE {PREFIX}MQ2 AS (SELECT IBMREQD FROM SYSIBM.SYSDUMMY1) "
+            "DATA INITIALLY DEFERRED REFRESH DEFERRED MAINTAINED BY USER",
+        ),
+    )
+    if created["result"] == "ok":
+        _step(
+            results,
+            "mqt over SYSIBM.SYSDUMMY1: refresh",
+            _execute(conn, f"REFRESH TABLE {PREFIX}MQ2"),
+        )
+        _step(
+            results, "mqt over SYSIBM.SYSDUMMY1: read", _query(conn, f"SELECT * FROM {PREFIX}MQ2")
+        )
+        _step(
+            results,
+            "mqt over SYSIBM.SYSDUMMY1: driver catalog (SQLTables)",
+            _tables(conn, "PLFMQ2"),
+        )
+        _execute(conn, f"DROP TABLE {PREFIX}MQ2")
 
 
 def _tables(conn, table: str) -> dict[str, Any]:

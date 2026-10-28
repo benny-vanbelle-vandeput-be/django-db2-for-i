@@ -39,6 +39,23 @@ def test_every_flag_that_is_off_is_off_planned_or_not_applicable() -> None:
     )
 
 
+def test_every_planned_flag_names_a_phase_or_its_open_question() -> None:
+    """No "later" (#191, topic 3): a planned flag names its phase, or says which
+    probe it needs."""
+    planned = {
+        name: info["planned"]
+        for name, info in features.load_descriptions()["flags"].items()
+        if "planned" in info
+    }
+    assert planned
+    wrong = {
+        name: value
+        for name, value in planned.items()
+        if not (value.startswith("phase ") or value.startswith("needs probe ("))
+    }
+    assert wrong == {}
+
+
 def test_the_page_is_up_to_date() -> None:
     expected = features.render(features.load_values(), features.load_descriptions())
     assert features.OUTPUT.read_text() == expected, "run: nox -s features"
