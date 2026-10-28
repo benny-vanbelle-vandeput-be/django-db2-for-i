@@ -115,13 +115,16 @@ Open tracks:
 
 > [!WARNING]
 > **Alpha.** Connections, transactions and savepoints, the basic field types,
-> `CREATE` / `DROP TABLE`, test databases in an existing library, and the
-> queries covered by the Django test modules above (filters, lookups,
-> ordering, pagination, aggregation, expressions, compound queries) work on
-> Django 5.2, 6.0 and 6.1. Migrations that alter tables, many field types,
-> `bulk_create()` with returned keys, window functions and `JSONField` are not
-> done yet. Not for production use; APIs and settings may change between alpha
-> releases.
+> test databases in an existing library, the queries covered by the Django
+> test modules above (filters, lookups, ordering, pagination, aggregation,
+> expressions, compound queries) and the schema editor (migrations that
+> create and alter tables, foreign keys, check constraints, indexes,
+> introspection and `inspectdb`) work on Django 5.2, 6.0 and 6.1, within the
+> [known limitations](docs/user/Known-Limitations.md). `bulk_create()` with
+> returned keys, unique constraint variants, partial and expression indexes
+> (phase 5), window functions, `JSONField` and database functions (phase 6)
+> are not done yet. Not for production use; APIs and settings may change
+> between alpha releases.
 
 ## What it is
 

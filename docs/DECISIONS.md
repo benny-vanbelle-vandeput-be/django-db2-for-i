@@ -500,7 +500,7 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   (rejected by the project owner: connection level is simpler and the value is
   restored at close); a QAQQINI option (none exists); rebuilding tables for
   data-losing changes (large; phase 4 only if needed).
-- **Corrected 2026-10-25:** "none exists" was wrong. Probe w08 only listed
+- **Corrected 2026-10-25:** "none exists" was wrong. Probe `qtemp_inquiry` (w08) only listed
   the rows in the QTEMP copy. IBM documents `SUPPRESS_INQUIRY_MESSAGES`
   (`*YES`: no CPA32B2 when altering a table), and on PUB400 it works per job
   without special authorities (IBMI_NOTES, "CPA32B2 suppressed per job").
@@ -1296,7 +1296,7 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   Django's test runs (option 3, rejected: tests would not test the real path).
 
 ## 2026-10-21: Probe w13 in the journaled default library
-- **Decision (project owner):** write probe w13 (constraints) is approved in
+- **Decision (project owner):** probe `lib_constraints` (w13) is approved in
   the journaled `default` test library, under these conditions: its own
   prefixed tables only, always cleaned up (also on failure), nothing else read
   or changed, one connection, nothing else on PUB400 at the same time. It
@@ -1312,7 +1312,7 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Decision (project owner):** `can_create_inline_fk` stays off: foreign keys
   stay separate `ALTER TABLE ... ADD CONSTRAINT` statements, which work for
   tables that reference each other (verified). `indexes_foreign_keys` is set
-  to what probe w13 shows, but the DDL does not change: the backend keeps
+  to what probe `lib_constraints` (w13) shows, but the DDL does not change: the backend keeps
   creating Django's own index for foreign key columns.
 - **Why:** inline foreign keys fail for tables that reference each other
   (one does not exist yet); changing the index DDL would change new
@@ -1320,7 +1320,7 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Alternatives:** inline foreign keys in `CREATE TABLE`; dropping Django's
   index when Db2 for i creates or shares one.
 - **Amended 2026-10-25 (project owner):** `indexes_foreign_keys = True`.
-  Probe w13 shows that Db2 for i creates no index for a foreign key, but
+  Probe `lib_constraints` (w13) shows that Db2 for i creates no index for a foreign key, but
   Django reads the flag only in its tests (5.2, 6.0 and 6.1: no other use in
   `django/`), as "a foreign key column ends up with an index", whoever made
   it. No Django backend sets it to False, PostgreSQL included, which also

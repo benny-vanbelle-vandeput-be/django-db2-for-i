@@ -201,11 +201,11 @@ Run 2026-10-16 23:56 UTC (read-only). Connection attributes: `NAM=0`,
   So `NVARCHAR(n)` counts UTF-16 code units: it matches Django's `max_length`
   for every BMP character, while a non-BMP character (emoji) uses 2 of the
   `n` units. `VARCHAR(n) CCSID 1208` counts bytes. The `INSERT` behaviour
-  into real columns is covered by write probe `w01_commitment.py`.
+  into real columns is covered by probe `lib_commitment.py`.
 
 ### Commitment control on an unjournaled table, Unicode columns (`probe_write`)
 Approved by the project owner and run 2026-10-17 00:01 UTC with
-`w01_commitment.py` against `<USER>B` (no `QSQJRN`). Connection `NAM=0`,
+`lib_commitment.py` against `<USER>B` (no `QSQJRN`). Connection `NAM=0`,
 `CMT=1` (*CS). Table `DJPROBE (ID INTEGER NOT NULL, NV NVARCHAR(10),
 V8 VARCHAR(10) CCSID 1208)`, created (not journaled, `JOURNALED` = `NO`) and
 dropped again.
@@ -242,7 +242,7 @@ counts characters (code points).
 
 ### Statement atomicity in autocommit mode (`probe_autocommit`)
 Requested by the project owner; run 2026-10-17 00:07 UTC with
-`w02_autocommit.py` on a journaled table in `<USER>2` (`DJAUTOC (ID INTEGER NOT
+`lib_autocommit.py` on a journaled table in `<USER>2` (`DJAUTOC (ID INTEGER NOT
 NULL PRIMARY KEY)`, created and dropped). Connection `NAM=0`, `CMT=1`,
 autocommit on, one connection per run. After seeding `ID=1`, the statement
 `INSERT ... VALUES (2), (3), (1)` fails with `SQL0803` (duplicate key,
@@ -333,15 +333,16 @@ SQLGetInfo limits as reported by the driver: `SQL_MAX_SCHEMA_NAME_LEN` 130,
 - `SQL_MAX_IDENTIFIER_LEN` 18 contradicts the 128-character table/column
   limits reported alongside it; it is not used.
 - `SQL_MAX_ROW_SIZE` 32740 differs from the 32,766-byte row length used in
-  DECISIONS.md (NVARCHAR decision). The real limit is to be verified with a
-  DDL probe (phase 4) before anything depends on the exact value.
+  DECISIONS.md (NVARCHAR decision). Verified in phase 4: the limit is 32,766
+  bytes ("ALTER TABLE, renames, indexes and row length" below); the driver's
+  value is not used.
 - Repeated 2026-10-17 08:16 UTC after the first Django run (`nox -s pub400`,
   Django `connection.cursor()` with new statement texts and parameter
   markers, `XDYNAMIC=0`): **no `*SQLPKG` objects** owned by the user or in
   the test libraries. This is the confirmation promised above.
 
 ### Operations behaviour (`probe_operations`)
-Run 2026-10-17 08:31 UTC with `w03_operations.py` on two temporary tables in
+Run 2026-10-17 08:31 UTC with `lib_operations.py` on two temporary tables in
 `<USER>2` (journaled), dropped afterwards. Connection as the backend's:
 `NAM=0`, `CMT=1`, `TRUEAUTOCOMMIT=1`, `XDYNAMIC=0`, autocommit on. (The JSON
 result file was not written because of a serialization bug in the probe,
@@ -396,7 +397,7 @@ Confirmed by `probe_sequence` (baseline step).
 
 ### SEQUENCE objects as key generator (`probe_sequence`)
 Requested by the project owner; run 2026-10-17 09:00 UTC with
-`w04_sequence.py` on a sequence and two tables in `<USER>2` (journaled), all
+`lib_sequence.py` on a sequence and two tables in `<USER>2` (journaled), all
 dropped afterwards. One connection, backend settings, autocommit off for the
 transaction steps.
 
@@ -419,7 +420,7 @@ transaction steps.
   1, `CACHE` 20, `CYCLE` NO, `ORDER` NO). Sequences are `*DTAARA` objects.
 
 ### DROP TABLE with foreign keys and views (`probe_drop`)
-Requested by the project owner; run 2026-10-17 12:11 UTC with `w05_drop.py`
+Requested by the project owner; run 2026-10-17 12:11 UTC with `lib_drop.py`
 on temporary objects in `<USER>2` (journaled), dropped afterwards.
 
 | Statement | Result |
@@ -919,7 +920,7 @@ attributes; a QTEMP table with `NAME NVARCHAR(10)`, `SMALL SMALLINT`,
   SQLSTATE class mapping (`23` -> IntegrityError) misses it; the driver layer
   maps SQLCODE -545 to IntegrityError (#96).
 - Foreign key violations (SQL0530 / SQL0531 / SQL0532) cannot be probed in
-  QTEMP; probe w13 did it in the journaled library: they arrive with `HY000`
+  QTEMP; probe `lib_constraints` (w13) did it in the journaled library: they arrive with `HY000`
   too (see "Foreign keys, unique and check constraints").
 
 ### Foreign keys, unique and check constraints (`nox -s probe_constraints -- --execute`)
@@ -1244,7 +1245,7 @@ schema editor writes, in autocommit mode and in a transaction (rolled back):
   library's `QSQJRN`, or outside SQL) fails there.
 - A table in a user library without a journal was not probed with constraints
   (that needs approval); it gave the same SQL7008 for a transaction in
-  probe `w01_commitment` ("Commitment control on an unjournaled table").
+  probe `lib_commitment` ("Commitment control on an unjournaled table").
 - Adding a CHECK that a row already violates fails with `SQL0544 - CHECK
   constraint ... cannot be added` (SQLSTATE `HY000`; the driver layer maps
   SQLCODE -544 to IntegrityError, as PostgreSQL reports such a check), and the
@@ -1375,14 +1376,14 @@ probe 25. The views' columns, from their own `QSYS2.SYSCOLUMNS` rows:
   Introspection tests therefore need tables in a real library.
 - The two test libraries held no constraints or indexes when the probe ran,
   so the coded values (`CONSTRAINT_TYPE`, the rules, `IS_UNIQUE`, `ORDERING`)
-  come from probe w13's own tables instead (see "Foreign keys, unique and
+  come from the own tables of probe `lib_constraints` (w13) instead (see "Foreign keys, unique and
   check constraints"). The libraries' `SYSCOLUMNS` rows (126 columns) show
   `HAS_DEFAULT` `N`, `IS_IDENTITY` `NO`, `IS_NULLABLE` `Y` / `N`, and
   `DATA_TYPE` values `CHAR`, `INTEGER`, `SMALLINT`, `VARCHAR` and `VARG`
   (graphic varying, i.e. NVARCHAR).
 
 ### Column types in the catalog (`nox -s probe_column_types -- --execute`)
-2026-10-23, PUB400 (IBM i 7.5), write probe w14 (approved 2026-10-23, step B
+2026-10-23, PUB400 (IBM i 7.5), probe `lib_column_types` (w14) (approved 2026-10-23, step B
 item 6): four own `DJW14` tables in the journaled `default` library, each on
 the table list before its `CREATE TABLE`, all dropped at the end (none left).
 `QSYS2.SYSCOLUMNS` for every type of `DatabaseWrapper.data_types`:

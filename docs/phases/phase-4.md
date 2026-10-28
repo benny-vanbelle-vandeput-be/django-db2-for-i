@@ -65,7 +65,7 @@ with its progress updates, until #187 replaced it with this record).
 **Step A: facts first**
 - Probe 24 (`alter_table`), probe 25 (`catalog`) and the baseline runs of
   `introspection` and `schema`. [#134](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/134)
-- Write probe w13 (constraints) in the journaled `default` library.
+- Probe `lib_constraints` (w13) in the journaled `default` library.
   [#135](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/135)
 - The column order of created tables is the model's field order (#23).
   [#136](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/136)
@@ -73,7 +73,7 @@ with its progress updates, until #187 replaced it with this record).
 **Step B: introspection**
 - `get_constraints()` from the QSYS2 catalog; `get_relations()` with
   `can_introspect_foreign_keys`; field types, lengths and defaults from the
-  catalog (write probe w14). [#138](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/138), [#140](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/140), [#141](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/141), [#144](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/144)
+  catalog (probe `lib_column_types` (w14)). [#138](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/138), [#140](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/140), [#141](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/141), [#144](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/144)
 - One trailing semicolon is removed from every statement; Django's own
   `DEFAULT_AUTO_FIELD` per version in the IBM i test settings.
   [#142](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/142), [#145](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/145)
@@ -127,7 +127,7 @@ with its progress updates, until #187 replaced it with this record).
 - `supports_comments` stays off: [DECISIONS](../DECISIONS.md#2026-10-21-supports_comments-only-if-unicode-text-works), [DECISIONS](../DECISIONS.md#2026-10-26-supports_comments-stays-off)
 - `db_index` on a `TextField` or `BinaryField` is skipped: [DECISIONS](../DECISIONS.md#2026-10-26-db_index-on-a-textfield-or-binaryfield-is-skipped)
 - The first per-version expected-failure list: [DECISIONS](../DECISIONS.md#2026-10-24-the-first-per-version-expected-failure-list)
-- Probe w13 in the journaled `default` library: [DECISIONS](../DECISIONS.md#2026-10-21-probe-w13-in-the-journaled-default-library)
+- Probe `lib_constraints` (w13) in the journaled `default` library: [DECISIONS](../DECISIONS.md#2026-10-21-probe-w13-in-the-journaled-default-library)
 - Tooling: [the PR classification](../DECISIONS.md#2026-10-21-ibm-i-runs-follow-an-automatic-pull-request-classification),
   [the verification gate](../DECISIONS.md#2026-10-21-the-verification-gate-is-its-own-nox-session-with-a-shared-allow-list),
   [bin/ scripts and the PUB400 lock](../DECISIONS.md#2026-10-21-bin-scripts-in-bash-32-the-pub400-lock-in-the-hosts-python),
