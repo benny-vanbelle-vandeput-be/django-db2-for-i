@@ -1687,3 +1687,25 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Alternatives:** on with a documented CCSID limitation (a migration
   fails for some text); on, writing only the text that fits the job CCSID
   and dropping the rest (silent data loss); off (chosen).
+
+## 2026-10-28: Phase 5 plan: conflicts last with an exit, names first
+- **Decision (project owner):** the phase 5 plan (`docs/phases/phase-5.md`)
+  is approved with these answers. `ignore_conflicts` / `update_conflicts`
+  come through `MERGE`, as the last step (the `MERGE` probe first, then
+  `ignore_conflicts`, then `update_conflicts`), with an explicit exit: if
+  `MERGE` proves unreliable, the conflict flags move to a later phase with
+  the probe result as the reason. `bulk_create`, `constraints`, `indexes`
+  and `model_indexes` become supported modules. `truncates_names` and
+  `supports_sequence_reset` come right after the baseline.
+  `can_use_chunked_reads` is on only if the cursor probe shows it works
+  without workarounds, otherwise phase 6. A `lib_` probe for unique
+  constraints is acceptable in principle if QTEMP refuses them, but is
+  still requested and approved on its own. Implementation starts after the
+  `v0.1.0b1` tag.
+- **Why:** `MERGE` is not race-free (a concurrent insert of the same key
+  can still raise a duplicate-key error), so it is the riskiest part and
+  should not block the rest; `truncates_names` affects many tests, so
+  turning it on first makes the later measurements cleaner; the beta should
+  ship the cleaned-up code, not half of phase 5.
+- **Alternatives:** conflicts in a later phase from the start; the step
+  order A, B, C, D, E of the proposal; starting phase 5 before the beta.

@@ -45,4 +45,4 @@ done. Every file follows the template below.
 | 2 | Queries & pagination | [phase-2.md](phase-2.md) |
 | 3 | Django 6.0 and 5.2 support | [phase-3.md](phase-3.md) |
 | 4 | Schema editor completeness | [phase-4.md](phase-4.md) |
-| 5 | Returning & bulk | [phase-5.md](phase-5.md) (proposal) |
+| 5 | Returning & bulk | [phase-5.md](phase-5.md) (approved plan) |

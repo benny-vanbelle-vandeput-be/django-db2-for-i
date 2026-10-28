@@ -1,6 +1,7 @@
 # Phase 5: Returning & bulk
 
-> Status: Proposed, not yet approved
+> Status: Approved, 2026-10-28. Implementation starts after the beta tag
+> (`v0.1.0b1`); see "Before the beta".
 
 ## Goal
 From CLAUDE.md section 9: **returning & bulk**: `FINAL TABLE` returning
@@ -8,7 +9,7 @@ columns, `bulk_create`, unique constraint variants, partial / expression /
 covering indexes; the `constraints`, `indexes` and `model_indexes` modules
 (the phase 4/5 boundary: [DECISIONS](../DECISIONS.md#2026-10-21-phase-4-and-phase-5-schema-needs-first-constraint-and-index-variants-later)).
 
-Proposed "done when":
+"Done when" (approved, answer b):
 - **The Django modules `bulk_create`, `constraints`, `indexes` and
   `model_indexes` run on 6.1, 6.0 and 5.2 against PUB400 without failures
   or errors**: every remaining failure is a skip or expected failure with one
@@ -75,7 +76,7 @@ rests on Db2 for i documentation only.
 | Bulk | `has_bulk_insert` | on: multi-row `VALUES (...), (...)`, with a batch size from the statement and parameter limits |
 | | `supports_default_keyword_in_insert`, `supports_default_keyword_in_bulk_insert` | on if `DEFAULT` is accepted in `VALUES` (not verified on IBM i) |
 | | `allows_auto_pk_0` | depends on whether an identity column takes an explicit 0 |
-| | `supports_ignore_conflicts`, `supports_update_conflicts`, `supports_update_conflicts_with_target` | Db2 for i has no `ON CONFLICT`; `MERGE` could emulate them (open question 1) |
+| | `supports_ignore_conflicts`, `supports_update_conflicts`, `supports_update_conflicts_with_target` | Db2 for i has no `ON CONFLICT`; emulated with `MERGE` in step B, the last step (answer a), or moved to later with the probe result as reason |
 | Indexes | `supports_partial_indexes`, `supports_functions_in_partial_indexes` | on if `CREATE INDEX ... WHERE` works (not verified on IBM i) |
 | | `supports_expression_indexes` | on if indexes on expressions work (not verified on IBM i) |
 | | `supports_covering_indexes` | expected off: no `INCLUDE` known on Db2 for i (probe confirms) |
@@ -85,7 +86,7 @@ rests on Db2 for i documentation only.
 | | `allows_multiple_constraints_on_same_fields` | expected off (SQL0541, already probed); stays off with that reason |
 | Names, misc | `truncates_names` | on: `quote_name()` already truncates (#198) |
 | | `supports_sequence_reset` | on: `RESTART WITH` is verified; `sqlsequencereset` needs `MAX()` first |
-| | `can_use_chunked_reads` | depends on whether pyodbc keeps an open cursor usable while other statements run on the same connection (probe) |
+| | `can_use_chunked_reads` | the cursor probe decides (answer d): on in step E if it works without workarounds, otherwise moved to phase 6 |
 | | `delete_can_self_reference_subquery`, `update_can_self_select` | on if Db2 for i accepts a subquery on the target table (probe) |
 
 ## 4. IBM i questions and probes
@@ -96,7 +97,8 @@ approval. One probe per topic, each published with `bin/probe --publish`:
 | Probe | Questions |
 |---|---|
 | `qtemp_returning` | `FINAL TABLE (INSERT ...)` single and multi-row; `ORDER BY INPUT SEQUENCE`; returned identity and `db_default` values; `FINAL TABLE (UPDATE ...)`; `DEFAULT` in `VALUES`; an explicit 0 in an identity column |
-| `qtemp_bulk` | the largest multi-row insert: rows, parameter markers and statement length before an error, and the SQLCODE (for `bulk_batch_size()`); `MERGE` for ignore / update conflicts |
+| `qtemp_bulk` | the largest multi-row insert: rows, parameter markers and statement length before an error, and the SQLCODE (for `bulk_batch_size()`) |
+| `qtemp_merge` | step B, first: `MERGE` for ignore / update conflicts, its row counts, and what a concurrent insert of the same key does (answer a) |
 | `qtemp_indexes` | `CREATE INDEX ... WHERE` (with functions), indexes on expressions, `INCLUDE`, unique indexes with a condition; how `QSYS2.SYSINDEXES` / `SYSKEYS` show each (for introspection) |
 | `qtemp_unique_nulls` | a unique constraint and a unique index on nullable columns: one or several NULLs, `NULLS DISTINCT` / `NOT DISTINCT`, partially NULL multi-column keys |
 | `qtemp_cursors` | two open cursors on one connection, one fetching while the other writes (chunked reads); a `DELETE` / `UPDATE` with a subquery on the same table |
@@ -104,8 +106,18 @@ approval. One probe per topic, each published with `bin/probe --publish`:
 **One risk:** QTEMP refused constraints in probe 22 (SQL7008). If
 `qtemp_unique_nulls` cannot create a unique *constraint* in QTEMP even with
 commitment control off, that question needs a `lib_` probe in the journaled
-test library, which needs your approval as a GitHub comment. I would open
-that request then, with exactly what it creates and how it cleans up.
+test library. Agreed in principle (answer c), but the normal rule applies:
+each `lib_` probe is requested separately, saying what it creates and how it
+cleans up, and runs only after the maintainer's approval comment on GitHub
+(`bin/probe --approved <link>`).
+
+**Concurrency of `MERGE`** (answer a): `MERGE` is not race-free. Two jobs
+that insert the same new key at the same time can both find no match, and
+one of them still gets a duplicate-key error (SQL0803). Step B investigates
+and documents what Db2 for i does there (one connection on PUB400 cannot
+run two jobs at once, so the probe covers what a single job can show, and
+the rest is documented as a limitation), and maps the error to
+`IntegrityError` as for a plain insert.
 
 ## 5. Design
 - **Returning:** `return_insert_columns()` and the insert compiler write
@@ -116,9 +128,12 @@ that request then, with exactly what it creates and how it cleans up.
 - **Bulk insert:** multi-row `VALUES` with `bulk_batch_size()` from the
   probe's limits; with returning, `ORDER BY INPUT SEQUENCE` if the probe
   confirms it, otherwise `can_return_rows_from_bulk_insert` stays off.
-- **Conflicts:** only if open question 1 says so: `MERGE INTO <table> USING
+- **Conflicts (step B, the last step):** `MERGE INTO <table> USING
   (VALUES ...) ON <unique columns> WHEN NOT MATCHED THEN INSERT [WHEN MATCHED
-  THEN UPDATE]`.
+  THEN UPDATE]`. **Exit:** if the `qtemp_merge` probe shows `MERGE` is not
+  reliable for this (wrong row counts, refused shapes, or behaviour Django's
+  tests cannot accept), the three conflict flags move to a later phase with
+  the probe result as the reason, and phase 5 is done without them.
 - **Indexes and unique variants:** in `schema.py` through Django's existing
   hooks (`_create_index_sql`, `_create_unique_sql`, the `condition`,
   `expressions` and `include` arguments); introspection reports what the
@@ -139,24 +154,62 @@ that request then, with exactly what it creates and how it cleans up.
   reason per entry.
 - **IBM i runs:** most PRs touch `operations.py`, `schema.py`,
   `introspection.py`, `compiler.py` or `features.py` (core backend), so each
-  gets the full IBM i tests on 6.1 (#199).
+  gets the full IBM i tests on 6.1 (#199). Step A changes the compiler, so
+  each of its PRs gets the full run: about 15 to 20 minutes on PUB400 per
+  PR, plus a new one after every rebase over a run-requiring commit.
 
 ## 7. Plan with PR boundaries
+In this order (answers e and f):
+
 | Step | PRs | Content |
 |---|---|---|
-| 0 | 1 | the five QTEMP probes, IBMI_NOTES, a baseline run of the four modules on 6.1; `features.toml` updated from the results |
-| A | 2–3 | returning: `can_return_columns_from_insert` (+ `DEFAULT`, `allows_auto_pk_0` if the probe allows); then `has_bulk_insert` + `can_return_rows_from_bulk_insert`; the `bulk_create` module |
-| B | 0–2 | conflicts through `MERGE`, if open question 1 says so |
+| 0 | 1 | the QTEMP probes of section 4 (except `qtemp_merge`), IBMI_NOTES, `features.toml` updated from the results; a baseline run of the four modules on 6.1 after the beta tag |
+| Names | 1 | `truncates_names` and `supports_sequence_reset`, right after the baseline: `truncates_names` affects many tests, so later measurements are cleaner |
+| A | 2–3 | returning: `can_return_columns_from_insert` (+ `DEFAULT`, `allows_auto_pk_0` if the probe allows); then `has_bulk_insert` + `can_return_rows_from_bulk_insert`; the `bulk_create` module. Full IBM i run per PR (compiler) |
 | C | 2 | indexes: partial (+ functions) and expression indexes, `include` if supported; the `indexes` and `model_indexes` modules |
 | D | 1–2 | unique variants: nullable, partially nullable, `nulls_distinct`; the `constraints` module |
-| E | 1–2 | `truncates_names`, `supports_sequence_reset`, `can_use_chunked_reads`, the self-referencing `UPDATE` / `DELETE`, `can_return_rows_from_update` |
+| E | 1–2 | `can_use_chunked_reads` (if the probe allows), the self-referencing `UPDATE` / `DELETE`, `can_return_rows_from_update` |
+| B | 2–3 | conflicts, last: the `qtemp_merge` probe, then `ignore_conflicts`, then `update_conflicts`; or the exit in section 5 |
 | Close-out | 2 | the four modules into `docs/status.toml`, a status run on 5.2 / 6.0 / 6.1, TEST_STATUS, this file rewritten as the record |
 
-About 10 to 14 PRs. Steps A, C and D are independent after step 0 and can
-run in parallel worktrees; IBM i runs stay one at a time.
+About 12 to 16 PRs. IBM i runs stay one at a time.
+
+## Before the beta
+Until the tag `v0.1.0b1` exists (checked read-only with
+`git ls-remote --tags origin`; the maintainer sets it):
+- **No implementation** commits on branches meant for `main`, and no
+  implementation PRs.
+- **Allowed as preparation**, in a local worktree that is not pushed: the
+  probe scripts, offline tests, draft goldens (marked unverified), notes for
+  IBMI_NOTES, the expected-failure analysis. After the tag: rebase on
+  `main`, then open the PRs in the order above.
+- **PUB400:** the IBM i runs of the pre-beta pause PRs come first, then the
+  status run for the beta, then phase 5. The QTEMP probes may run before the
+  beta, but only when PUB400 is free (never during a status run or another
+  PR's IBM i run), with one connection and the lock, and no retries when
+  PUB400 is unreachable: try again later. The baseline run of the four
+  modules waits until after the tag, so it measures the code phase 5 builds
+  on.
 
 ## Key decisions
-None yet; the answers to the open questions go here and into DECISIONS.
+The answers of the plan's approval (2026-10-28), also in
+[DECISIONS](../DECISIONS.md#2026-10-28-phase-5-plan-conflicts-last-with-an-exit-names-first):
+- **a. Conflicts through `MERGE`:** in phase 5, as the last step: the
+  `MERGE` probe, then `ignore_conflicts`, then `update_conflicts`.
+  Concurrent inserts are investigated and documented (`MERGE` is not
+  race-free). Exit: if `MERGE` is unreliable, the conflict flags move to
+  later with the probe result as the reason.
+- **b. Supported modules:** `bulk_create`, `constraints`, `indexes` and
+  `model_indexes` become supported modules; that is the "done when".
+- **c. `lib_` probe for unique constraints:** yes in principle, if QTEMP
+  refuses them; each `lib_` probe is still requested separately and waits
+  for the maintainer's approval on GitHub.
+- **d. `can_use_chunked_reads`:** not a priority. The cursor probe decides:
+  on in step E if it works without workarounds, otherwise phase 6.
+- **e. Order:** step 0, then `truncates_names` and
+  `supports_sequence_reset`, then A, C, D, E, B, close-out.
+- **f. Names first:** `truncates_names` and `supports_sequence_reset` right
+  after the baseline, because `truncates_names` affects many tests.
 
 ## IBM i findings
 None yet; the probe results of step 0 go here.
@@ -174,18 +227,4 @@ DB-level `on_delete` and the flags #198 assigned to phase 6.
 - [phase-4.md](phase-4.md): "Carried forward"
 
 ## Open questions
-1. **Conflicts (`ignore_conflicts`, `update_conflicts`) through `MERGE`:** in
-   phase 5 (step B), or later? `MERGE` is a different statement than Django
-   expects for an insert, and its result does not map one-to-one to
-   "returned rows"; skipping it keeps three flags off with a reason.
-2. **The four modules as supported modules:** about 220 more tests per Django
-   version in every status run (now about 2 hours per version). Agreed?
-3. **A `lib_` probe for unique constraints** if QTEMP refuses them (section
-   4): I'd open the approval request then. Agreed in principle?
-4. **`can_use_chunked_reads`:** worth it on a shared system with one
-   connection? If the probe shows any risk to the connection, I propose to
-   keep it off with that reason.
-5. **The order of steps A, C and D**, or one of them first: is there a
-   feature you need sooner?
-6. **`truncates_names` and `supports_sequence_reset`** are small and already
-   verified: first, in step 0's PR, or in step E as planned?
+All answered at approval (see "Key decisions").
