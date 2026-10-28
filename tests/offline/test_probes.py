@@ -16,9 +16,14 @@ NOT_PROBES = {"_common.py", "run.py"}
 URL = "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/143#issuecomment-42"
 
 
-def load(path: Path, name: str):
+def load(path: Path, name: str, monkeypatch: pytest.MonkeyPatch | None = None):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
+    if monkeypatch is not None:
+        # In sys.modules before it runs, as importlib's recipe does: dataclasses
+        # look the module up there while building a class. Without it this file
+        # failed when it ran on its own (#154).
+        monkeypatch.setitem(sys.modules, name, module)
     spec.loader.exec_module(module)
     return module
 
@@ -28,7 +33,7 @@ def common(monkeypatch):
     monkeypatch.syspath_prepend(str(PROBES))
     monkeypatch.delenv("DB2I_PROBE_APPROVED", raising=False)
     monkeypatch.delenv("DB2I_PROBE_APPROVED_BY", raising=False)
-    return load(PROBES / "_common.py", "_common")
+    return load(PROBES / "_common.py", "_common", monkeypatch)
 
 
 def probe_files() -> list[Path]:
