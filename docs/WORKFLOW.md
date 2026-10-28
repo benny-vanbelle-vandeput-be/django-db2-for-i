@@ -58,6 +58,11 @@ pushed to a public registry (IBM's license).
    `ln -s ../django-db2-for-i/.env .env`. **Never** link (or copy) it into a
    subagent's worktree (`.claude/worktrees/`): subagents work offline only,
    and a missing `.env` is an extra safeguard there.
+   **Never move, rename, copy, delete or re-link `.env` or its link**, not
+   even to test something; only `bin/worktree-remove` removes the link. To
+   rule out `.env` as the cause of a problem, use a throwaway worktree
+   without it (`git worktree add ../django-db2-for-i-noenv origin/main`)
+   and remove it afterwards with `bin/worktree-remove`.
 4. Remove a worktree when its branch is merged:
    `bin/worktree-remove ../django-db2-for-i-<topic>`. It copies the
    worktree's `test-results/` (probe results, logs, reports) to the main

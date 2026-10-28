@@ -29,6 +29,13 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
 - **Never mark a test as skipped / expected failure without a reason** (one line, in the list itself).
 - **No credentials in the repo or the image.** Use environment variables / `.env` (gitignored).
   Never read, print, log or echo `.env` or its values; scripts load it themselves.
+  Never move, rename, copy, delete or re-link `.env` or its symlink in a worktree,
+  not even to test something. To rule out `.env` as the cause of a problem, use a
+  throwaway worktree without it (`git worktree add ../django-db2-for-i-noenv
+  origin/main`), removed afterwards with `bin/worktree-remove`. The only
+  exceptions: the documented link into a main-session worktree (see "Git
+  workflow") and `bin/worktree-remove`, which removes that link.
+  `.claude/settings.json` denies the commands for it.
   Error messages and logs must never contain the password or full connection string.
 - **`bin/setup` is for humans in their own terminal.** It asks for the `.env` values;
   Claude never runs it interactively and never enters values. Claude runs it only
@@ -314,7 +321,8 @@ made when no other PRs are open.
   (`ln -s ../django-db2-for-i/.env .env`, never reading it) only into worktrees the
   main session uses for IBM i runs. **Never** link or copy it into a subagent's
   worktree (`.claude/worktrees/`): subagents are offline only, and a missing `.env`
-  is an extra safeguard there.
+  is an extra safeguard there. Once linked, the link is never moved, replaced or
+  removed by hand (only `bin/worktree-remove` removes it).
 - **Results never vanish with a worktree.** Remove a merged worktree with
   `bin/worktree-remove <path>`: it copies its `test-results/` to the main checkout's
   `test-results/archive/<worktree>/` first. Raw probe output that a decision rests on
