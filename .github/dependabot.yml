@@ -1,0 +1,45 @@
+# Updates of the pinned dev and test tooling arrive as pull requests the
+# maintainer merges deliberately (#190, topic 6), never overnight on main.
+#
+# - uv: the tooling in uv.lock (pytest, pytest-django, ruff and what they
+#   need), weekly, in one grouped pull request. Only the lock changes
+#   (lockfile-only), so pyproject.toml keeps its ranges. Django and pyodbc are
+#   ignored: they are the library's runtime dependencies, and the nox sessions
+#   install their newest release, the one users get.
+# - github-actions: the actions of the workflows, monthly, grouped.
+# - cooldown: a release is offered only once it is 7 days old.
+#
+# Not here: the container image (base image, uv image, NOX_VERSION and
+# UV_VERSION in docker/Dockerfile). Those stay manual, and a Dockerfile change
+# needs the full IBM i tier (scripts/classify_pr.py).
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    versioning-strategy: lockfile-only
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: django
+      - dependency-name: pyodbc
+    groups:
+      tooling:
+        patterns: ["*"]
+    commit-message:
+      prefix: build
+    labels: []
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+    labels: []

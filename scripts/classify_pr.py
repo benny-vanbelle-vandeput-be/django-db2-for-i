@@ -163,6 +163,7 @@ DOCS_PATHS = {
     "CONTRIBUTING.md": "docs",
     "CLAUDE.md": "docs",
     "LICENSE": "docs",
+    "uv.lock": "the pinned dev and test tooling (offline CI checks it; no IBM i run, #190)",
     ".gitignore": "repository settings",
     ".gitleaks.toml": "repository settings",
     ".env.example": "settings template",
@@ -283,11 +284,13 @@ def dependencies(pyproject: str | None) -> tuple | None:
 
 
 def without_tool_settings(pyproject: str | None) -> dict | None:
-    """pyproject.toml without its ``[tool.*]`` tables (linters, pytest, ...)."""
+    """pyproject.toml without its ``[tool.*]`` tables (linters, pytest, ...) and
+    its ``[dependency-groups]`` (the dev and test tooling, pinned in uv.lock)."""
     if pyproject is None:
         return None
     data = tomllib.loads(pyproject)
     data.pop("tool", None)
+    data.pop("dependency-groups", None)
     return data
 
 
@@ -321,7 +324,7 @@ def judge(change: Change, old: Reader, new: Reader) -> Finding:
             return Finding(path, FULL, "the dependencies (supported Django versions)")
         if without_tool_settings(before) != without_tool_settings(after):
             return Finding(path, FULL, "the project metadata or build settings")
-        return Finding(path, DOCS, "tool settings only")
+        return Finding(path, DOCS, "tool settings or dependency groups only")
     if path == "noxfile.py":
         if django_versions(before) != django_versions(after):
             return Finding(path, FULL, "the Django versions of the matrix")

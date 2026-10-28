@@ -128,6 +128,9 @@ pushed to a public registry (IBM's license).
    `git push --force-with-lease` (pull request branches only; never `main`).
    Never use GitHub's "Update branch" button.
 6. Never merge your own pull request; the maintainer reviews and merges.
+7. Dependabot's pull requests (the pinned tooling in `uv.lock`, GitHub
+   Actions) are rebased by Dependabot itself; the maintainer merges them.
+   A lock update needs no IBM i run.
 
 ## review: what the maintainer checks before merging
 

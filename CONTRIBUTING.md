@@ -69,6 +69,22 @@ Every run against PUB400 goes through `scripts/pub400.sh`, which holds the
 PUB400 lock: one PUB400 job at a time on the machine. A second job stops with
 "PUB400 busy: <holder>", or waits with `scripts/pub400.sh --wait ...`.
 
+### Pinned tooling
+
+The dev and test tooling (pytest, pytest-django, ruff and what they need) is
+pinned in `uv.lock`; the nox sessions install exactly those versions, so a new
+release never changes `bin/check` or CI by itself. `pyproject.toml` keeps
+open ranges in `[dependency-groups]`. The library's runtime dependencies are
+not pinned: the sessions install the newest Django patch release of each
+supported version and the newest pyodbc, the versions users get.
+
+- Dependabot (`.github/dependabot.yml`) proposes updates as one weekly pull
+  request, for releases at least 7 days old; the maintainer merges it like any
+  other. A lock update is "docs/tests only": offline CI checks it, no IBM i run.
+- By hand: `docker compose run --rm tests uv lock --upgrade-package <name>`;
+  after changing `[dependency-groups]`, `uv lock` (the sessions refuse a lock
+  that does not match `pyproject.toml`).
+
 ## Test sets
 
 Four test sets, named the same everywhere (README, TEST_STATUS, this file):
