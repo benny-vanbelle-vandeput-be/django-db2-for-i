@@ -11,7 +11,7 @@ from decimal import Decimal
 import django.db
 import pytest
 from django.apps import apps
-from django.db import NotSupportedError, connection, models
+from django.db import NotSupportedError, connection, connections, models
 from django.db.models.functions import Now
 from django.test.utils import isolate_apps
 
@@ -589,13 +589,23 @@ class RowsCursor:
         return (1,) if self.has_rows else None
 
 
+def _wrapper():
+    """The default DatabaseWrapper itself, for monkeypatch: not the
+    ``connection`` proxy, whose attributes live on the wrapper. pytest 9.2
+    undoes a patch of an attribute the target does not hold itself with
+    ``delattr``, which the proxy passes on: the wrapper then lost
+    ``in_atomic_block`` or ``cursor`` for every later test."""
+    return connections["default"]
+
+
 def _executing_editor(monkeypatch, *, has_rows, in_atomic_block=True):
     """A schema editor that executes (no collect_sql) against a fake cursor."""
     executed: list[str] = []
     editor = connection.schema_editor(atomic=False)
     editor.deferred_sql = []  # what __enter__ sets up, without a connection
-    monkeypatch.setattr(connection, "in_atomic_block", in_atomic_block)
-    monkeypatch.setattr(connection, "cursor", lambda: RowsCursor(executed, has_rows))
+    wrapper = _wrapper()
+    monkeypatch.setattr(wrapper, "in_atomic_block", in_atomic_block)
+    monkeypatch.setattr(wrapper, "cursor", lambda: RowsCursor(executed, has_rows))
     monkeypatch.setattr(editor, "execute", lambda sql, params=(): executed.append(str(sql)))
     return editor, executed
 
@@ -657,8 +667,9 @@ def _recording_editor(monkeypatch):
     executed: list[tuple[str, object]] = []
     editor = connection.schema_editor(atomic=False)
     editor.deferred_sql = []  # what __enter__ sets up, without a connection
-    monkeypatch.setattr(connection, "cursor", lambda: RecordingCursor(executed))
-    monkeypatch.setattr(connection, "suppress_cpa32b2", lambda: "suppressed")
+    wrapper = _wrapper()
+    monkeypatch.setattr(wrapper, "cursor", lambda: RecordingCursor(executed))
+    monkeypatch.setattr(wrapper, "suppress_cpa32b2", lambda: "suppressed")
     return editor, executed
 
 
