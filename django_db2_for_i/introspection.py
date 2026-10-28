@@ -20,7 +20,7 @@ from django_db2_for_i import compat
 # QSYS2.SYSKEYS.ORDERING (column text: "A-Ascending, D-Descending", probe 25).
 ORDERS = {"A": "ASC", "D": "DESC"}
 # QSYS2.SYSINDEXES.IS_UNIQUE: "D" is an index that allows duplicate keys
-# (probe w13); every other value is a unique kind.
+# (probe lib_constraints); every other value is a unique kind.
 DUPLICATES_ALLOWED = "D"
 
 # The constraints of a table with their columns in key order: the key
@@ -65,17 +65,6 @@ FOREIGN_KEYS_SQL = (
     f"AND C.CONSTRAINT_TYPE = 'FOREIGN KEY' AND {ENFORCED_FK} "
     "ORDER BY C.CONSTRAINT_NAME, PK.ORDINAL_POSITION"
 )
-# QSYS2.SYSREFCST.DELETE_RULE -> the name of Django's db_on_delete constant,
-# the way Django's own backends map theirs. Only NO ACTION occurs on PUB400
-# (probe w13; the backend writes no ON DELETE); the other rules are IBM's
-# documented values, checked when phase 6 switches on supports_on_delete_db_*.
-# RESTRICT has no Django constant (None, as on PostgreSQL).
-DELETE_RULES = {
-    "NO ACTION": "DO_NOTHING",
-    "CASCADE": "DB_CASCADE",
-    "SET NULL": "DB_SET_NULL",
-    "SET DEFAULT": "DB_SET_DEFAULT",
-}
 # Each foreign key column of a table with the referenced table, the referenced
 # column at the same key position, and the delete rule.
 RELATIONS_SQL = (
@@ -96,7 +85,7 @@ RELATIONS_SQL = (
     "ORDER BY C.CONSTRAINT_NAME, K.ORDINAL_POSITION"
 )
 # The SQL indexes of a table with their key columns in order. The access
-# paths that constraints use are not listed in SYSINDEXES (probe w13), so a
+# paths that constraints use are not listed in SYSINDEXES (probe lib_constraints), so a
 # constraint does not show up twice.
 INDEXES_SQL = (
     "SELECT I.INDEX_NAME, I.IS_UNIQUE, K.COLUMN_NAME, K.ORDERING "
@@ -235,13 +224,18 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
 
     def get_relations(self, cursor, table_name: str) -> dict[str, tuple]:
         """{column: (referenced column, referenced table[, db_on_delete])}; the
-        tuple's shape follows the Django version (compat.relation)."""
+        tuple's shape follows the Django version (compat.relation). The delete
+        rule (SYSREFCST.DELETE_RULE) maps with Django 6.1's on_delete_types,
+        whose keys are Db2's values. Only NO ACTION occurs on PUB400 (probe
+        lib_constraints; the backend writes no ON DELETE); the other rules are
+        IBM's documented values, checked when phase 6 switches on
+        supports_on_delete_db_*."""
         cursor.execute(RELATIONS_SQL, [table_name.upper()])
         return {
             self.identifier_converter(column.rstrip()): compat.relation(
                 self.identifier_converter(target_column.rstrip()),
                 self.identifier_converter(target_table.rstrip()),
-                DELETE_RULES.get(rule.rstrip()),
+                rule.rstrip(),
             )
             for column, target_table, target_column, rule in cursor.fetchall()
         }

@@ -1,7 +1,7 @@
 """DatabaseOperations: SQL generation helpers (quoting, casts, dates, pagination).
 
 Implemented in phase 1; extended in later phases. Behaviour notes are backed
-by probes (docs/IBMI_NOTES.md, ``w03_operations``).
+by probes (docs/IBMI_NOTES.md, ``lib_operations``).
 
 Identifiers: Db2 for i folds unquoted names to uppercase. ``quote_name()``
 uppercases and quotes every name, so ``"basic_article"`` becomes

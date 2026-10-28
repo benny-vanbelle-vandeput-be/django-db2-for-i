@@ -120,8 +120,8 @@ def test_relations(live) -> None:
         book = live.introspection.get_relations(cursor, "testapp_book")
         node = live.introspection.get_relations(cursor, "testapp_node")
         tag = live.introspection.get_relations(cursor, "testapp_tag")
-    assert book == {"author_id": compat.relation("id", "testapp_author", "DO_NOTHING")}
-    assert node == {"parent_id": compat.relation("id", "testapp_node", "DO_NOTHING")}
+    assert book == {"author_id": compat.relation("id", "testapp_author", "NO ACTION")}
+    assert node == {"parent_id": compat.relation("id", "testapp_node", "NO ACTION")}
     assert tag == {}
 
 
