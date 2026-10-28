@@ -83,12 +83,9 @@ pushed to a public registry (IBM's license).
 2. Read the classification at the end of `bin/check`:
    - **docs/tests only**, no label: no IBM i run;
    - **run-ibmi**: changed SQL or tests that run on IBM i: a targeted run;
-   - **needs-full-ibmi-run**: the driver layer, `base.py`, `creation.py`, the
-     capabilities, the core backend (`schema.py`, `introspection.py`,
-     `compiler.py`, `operations.py`, `features.py`, `expressions.py`,
-     `compat.py`), the container image, the pinned Django commit or the
-     supported Django versions: the full own IBM i tier (`bin/ibmi-test
-     --full-tier`), and `bin/verify` as well for changed SQL.
+   - **needs-full-ibmi-run**: the full IBM i tests (`bin/ibmi-test
+     --full-tier`), and `bin/verify` as well for changed SQL. Which paths
+     need it: [CONTRIBUTING.md](../CONTRIBUTING.md#pull-requests-and-ibm-i-runs).
 3. `bin/verify` does the targeted run: it writes changed SQL to the goldens
    and the corpus, runs exactly what needs IBM i (unverified goldens, new or
    changed own IBM i tests, one Django test per unverified corpus entry, tests
@@ -124,11 +121,10 @@ pushed to a public registry (IBM's license).
    request's **latest** commit, post the result (the SHA, the counts), then
    remove the label (REST:
    `gh api -X DELETE "repos/{owner}/{repo}/issues/<PR>/labels/run-ibmi"`).
-4. A later push puts the labels back, except a push that only adds the
-   stamps of that run (and files generated from them), a push whose own files
-   are docs/tests that do not run on IBM i (a renamed changelog fragment), or a
-   conflict-free
-   rebase onto docs/tests-only `main` commits with identical changes.
+4. A later push puts the labels back, except the three cases in
+   [CONTRIBUTING.md](../CONTRIBUTING.md#pull-requests-and-ibm-i-runs) (the
+   run's stamps only, a docs/tests-only push such as a renamed changelog
+   fragment, an identical rebase onto docs/tests-only `main` commits).
 5. When the branch is behind `main`, rebase and
    `git push --force-with-lease` (pull request branches only; never `main`).
    Never use GitHub's "Update branch" button.
