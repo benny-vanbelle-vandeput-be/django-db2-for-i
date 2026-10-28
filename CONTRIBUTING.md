@@ -113,7 +113,7 @@ summary.
 
 | Class | What changed | IBM i run | Label |
 |---|---|---|---|
-| needs full tier | `django_db2_for_i/drivers/`, `base.py`, `creation.py`, `capabilities.py`, the container image (`docker/`, `compose.yaml`), the pinned Django commit, the supported Django versions, and any path the script does not list | the full own IBM i tests | `needs-full-tier` |
+| needs full tier | `django_db2_for_i/drivers/`, `base.py`, `creation.py`, `capabilities.py`, the core backend (`schema.py`, `introspection.py`, `compiler.py`, `operations.py`, `features.py`, `expressions.py`, `compat.py`), the container image (`docker/`, `compose.yaml`), the pinned Django commit, the supported Django versions, and any path the script does not list | the full own IBM i tests | `needs-full-tier` |
 | SQL-affecting | other backend code; goldens or corpus entries without a verification stamp | the affected tests | `run-ibmi` |
 | docs/tests only | the paths the script lists as such | only for changes that run on IBM i (own IBM i tests, test models, IBM i settings, the IBM i run tooling such as `scripts/pub400.sh`, the nox sessions, the supported Django test modules) | `run-ibmi` for those |
 

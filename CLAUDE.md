@@ -50,9 +50,12 @@ Build, from scratch, a Django database backend for **Db2 for IBM i** (AS/400, iS
     for new or changed tests that run on IBM i, for changed SQL (a golden or corpus
     entry without a verification stamp) and on request;
   - the **full** pub400 tier (`nox -s pub400`), not a subset, when the driver layer,
-    `base.py`, `creation.py`, the capabilities, the container image, the pinned Django
-    commit or the supported Django versions change, or a file the classification does
-    not list (it fails closed);
+    `base.py`, `creation.py`, the capabilities, the core backend modules
+    (`schema.py`, `introspection.py`, `compiler.py`, `operations.py`, `features.py`,
+    `expressions.py`, `compat.py`: a change there can break a test far from it, #179),
+    the container image, the pinned Django commit or the supported Django versions
+    change, or a file the classification does not list (it fails closed); changed SQL
+    still gets its targeted run (`bin/verify`) for the stamps;
   - nothing for docs/tests-only changes that do not run on IBM i.
 - When a feature flag is enabled, add an own pub400 test for the common real-world usage
   pattern of that feature (e.g. full querysets with model instances, not only `values()`);
@@ -337,7 +340,7 @@ made when no other PRs are open.
   corpus replay, the verification gate and the classification).
 - **Every PR is classified** from its changed files by `scripts/classify_pr.py`:
   **needs full tier** (the driver layer, `base.py`, `creation.py`, the capabilities, the
-  container image, the pinned Django commit, the supported Django versions, and every
+  core backend modules, the container image, the pinned Django commit, the supported Django versions, and every
   path it does not list: it fails closed), **SQL-affecting** (other backend code, goldens
   or corpus entries without a verification stamp) or **docs/tests only** (the paths it
   lists as such; a new file or directory is added to its lists in the same PR).

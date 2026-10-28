@@ -52,9 +52,16 @@ def test_the_unverified_marker_matches_the_goldens() -> None:
         ("django_db2_for_i/base.py", cp.FULL),
         ("django_db2_for_i/creation.py", cp.FULL),
         ("django_db2_for_i/capabilities.py", cp.FULL),
-        ("django_db2_for_i/compiler.py", cp.SQL),
-        ("django_db2_for_i/schema.py", cp.SQL),
-        ("django_db2_for_i/compat.py", cp.SQL),
+        ("django_db2_for_i/compiler.py", cp.FULL),
+        ("django_db2_for_i/schema.py", cp.FULL),
+        ("django_db2_for_i/compat.py", cp.FULL),
+        ("django_db2_for_i/introspection.py", cp.FULL),
+        ("django_db2_for_i/operations.py", cp.FULL),
+        ("django_db2_for_i/features.py", cp.FULL),
+        ("django_db2_for_i/expressions.py", cp.FULL),
+        ("django_db2_for_i/client.py", cp.SQL),
+        ("django_db2_for_i/validation.py", cp.SQL),
+        ("django_db2_for_i/inquiry.py", cp.SQL),
         ("docs/IBMI_NOTES.md", cp.DOCS),
         ("tests/offline/test_schema.py", cp.DOCS),
         ("scripts/update_test_status.py", cp.DOCS),
@@ -150,12 +157,27 @@ def test_the_most_demanding_class_wins_and_labels_combine() -> None:
     result = run(
         {
             "docs/x.md": (b"a", b"b"),
-            "django_db2_for_i/compiler.py": (b"a", b"b"),
+            "django_db2_for_i/client.py": (b"a", b"b"),
             "django_db2_for_i/drivers/base.py": (b"a", b"b"),
         }
     )
     assert result.cls == cp.FULL
     assert result.labels == ["needs-full-tier", "run-ibmi"]
+
+
+def test_the_core_backend_needs_the_full_tier_and_says_why() -> None:
+    """#176 broke an own IBM i test its targeted run did not pick (#179)."""
+    result = run({"django_db2_for_i/schema.py": (b"a", b"b"), "docs/x.md": (b"a", b"b")})
+    assert (result.cls, result.labels) == (cp.FULL, ["needs-full-tier"])
+    text = cp.as_markdown(result, None)
+    assert "| `django_db2_for_i/schema.py` | needs full tier | core backend (schema.py)" in text
+    assert set(cp.CORE_PATHS) == {
+        f"django_db2_for_i/{name}.py"
+        for name in (
+            "schema", "introspection", "compiler", "operations", "features", "expressions",
+            "compat",
+        )
+    }  # fmt: skip
 
 
 def test_docs_only_has_no_labels() -> None:
@@ -325,11 +347,11 @@ def test_range_diff_identical() -> None:
 
 
 def test_markdown_lists_only_files_that_need_a_run() -> None:
-    result = run({"docs/x.md": (b"a", b"b"), "django_db2_for_i/schema.py": (b"a", b"b")})
+    result = run({"docs/x.md": (b"a", b"b"), "django_db2_for_i/client.py": (b"a", b"b")})
     text = cp.as_markdown(result, cp.PushCheck(True, "the push changes the pull request"))
     assert text.startswith(cp.COMMENT_MARKER)
     assert "**SQL-affecting**" in text and "`run-ibmi`" in text
-    assert "`django_db2_for_i/schema.py`" in text and "`docs/x.md`" not in text
+    assert "`django_db2_for_i/client.py`" in text and "`docs/x.md`" not in text
     assert "| 1 more |" in text
     assert "IBM i run needed: **yes, run-ibmi (the push changes the pull request)**." in text
     assert json.loads(cp.as_json(result, None))["labels"] == ["run-ibmi"]
@@ -361,7 +383,7 @@ def repo(tmp_path, monkeypatch) -> Path:
     _git(tmp_path, "init", "-q", "-b", "main")
     _git(tmp_path, "config", "user.email", "test@example.invalid")
     _git(tmp_path, "config", "user.name", "Test")
-    _commit(tmp_path, {"docs/a.md": b"a\n", "django_db2_for_i/schema.py": b"x = 1\n"}, "init")
+    _commit(tmp_path, {"docs/a.md": b"a\n", "django_db2_for_i/client.py": b"x = 1\n"}, "init")
     monkeypatch.chdir(tmp_path)
     return tmp_path
 
@@ -382,7 +404,7 @@ def test_push_of_stamps_only_needs_no_new_run(repo) -> None:
 
 def test_push_of_docs_only_needs_no_new_run(repo) -> None:
     _git(repo, "switch", "-q", "-c", "pr")
-    before = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    before = _commit(repo, {"django_db2_for_i/client.py": b"x = 2\n"}, "feat")
     (repo / "changelog.d").mkdir()
     _git(repo, "mv", "docs/a.md", "changelog.d/1.added.md")
     _git(repo, "commit", "-q", "-m", "docs: changelog fragment")
@@ -392,7 +414,7 @@ def test_push_of_docs_only_needs_no_new_run(repo) -> None:
     )
     test = _commit(repo, {"tests/pub400/test_x.py": b"def test(): pass\n"}, "test")
     assert cp.check_push(head, test, "main").new_run_needed
-    fixed = _commit(repo, {"django_db2_for_i/schema.py": b"x = 3\n"}, "fix")
+    fixed = _commit(repo, {"django_db2_for_i/client.py": b"x = 3\n"}, "fix")
     assert cp.check_push(test, fixed, "main").new_run_needed
     stamped = _commit(repo, {GOLDEN: golden(STAMP)}, "test: a golden with a stamp")
     assert cp.check_push(fixed, stamped, "main").new_run_needed
@@ -400,7 +422,7 @@ def test_push_of_docs_only_needs_no_new_run(repo) -> None:
 
 def test_rebase_onto_docs_commits_needs_no_new_run(repo) -> None:
     _git(repo, "switch", "-q", "-c", "pr")
-    before = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat: x")
+    before = _commit(repo, {"django_db2_for_i/client.py": b"x = 2\n"}, "feat: x")
     _git(repo, "switch", "-q", "main")
     _commit(repo, {"docs/a.md": b"b\n"}, "docs: a")
     _git(repo, "switch", "-q", "pr")
@@ -416,7 +438,7 @@ def test_rebase_onto_gate_commits_needs_no_new_run(repo) -> None:
     """The gate's files are the strictest class in their own pull request
     (#163 needed a full run again after #161), not for a rebase over them."""
     _git(repo, "switch", "-q", "-c", "pr")
-    before = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat: x")
+    before = _commit(repo, {"django_db2_for_i/client.py": b"x = 2\n"}, "feat: x")
     _git(repo, "switch", "-q", "main")
     _commit(repo, {"scripts/ibmi_gate.py": b"g = 1\n", "docs/a.md": b"b\n"}, "ci: gate")
     _git(repo, "switch", "-q", "pr")
@@ -435,7 +457,7 @@ def _stamped_rebase(repo, extra: dict[str, bytes]) -> tuple[str, str]:
     _git(repo, "switch", "-q", "-c", "pr")
     before = _commit(
         repo,
-        {"django_db2_for_i/schema.py": b"x = 2\n", GOLDEN: golden(UNVERIFIED)},
+        {"django_db2_for_i/client.py": b"x = 2\n", GOLDEN: golden(UNVERIFIED)},
         "feat: x",
     )
     _git(repo, "switch", "-q", "main")
@@ -458,7 +480,7 @@ def test_a_rebase_may_carry_the_runs_stamps(repo) -> None:
 
 
 def test_a_rebase_with_another_extra_commit_needs_a_new_run(repo) -> None:
-    before, head = _stamped_rebase(repo, {"django_db2_for_i/schema.py": b"x = 3\n"})
+    before, head = _stamped_rebase(repo, {"django_db2_for_i/client.py": b"x = 3\n"})
     check = cp.check_push(before, head, "main")
     assert check == cp.PushCheck(True, "a rewrite whose own changes differ (git range-diff)")
 
@@ -492,7 +514,7 @@ def test_rebase_onto_gate_and_backend_commits_needs_a_new_run(repo) -> None:
     _git(repo, "switch", "-q", "main")
     _commit(
         repo,
-        {".github/workflows/ibmi-gate.yml": b"on: {}\n", "django_db2_for_i/operations.py": b"y\n"},
+        {".github/workflows/ibmi-gate.yml": b"on: {}\n", "django_db2_for_i/client.py": b"y\n"},
         "mixed",
     )
     _git(repo, "switch", "-q", "pr")
@@ -521,8 +543,8 @@ def test_rebase_onto_backend_commits_needs_a_new_run(repo) -> None:
 
 def test_rewrite_with_other_changes_needs_a_new_run(repo) -> None:
     _git(repo, "switch", "-q", "-c", "pr")
-    before = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat: x")
-    (repo / "django_db2_for_i/schema.py").write_bytes(b"x = 3\n")
+    before = _commit(repo, {"django_db2_for_i/client.py": b"x = 2\n"}, "feat: x")
+    (repo / "django_db2_for_i/client.py").write_bytes(b"x = 3\n")
     _git(repo, "commit", "-q", "-a", "--amend", "-m", "feat: x")
     check = cp.check_push(before, _git(repo, "rev-parse", "HEAD"), "main")
     assert check == cp.PushCheck(True, "a rewrite whose own changes differ (git range-diff)")
@@ -543,7 +565,7 @@ def test_command_line_on_a_branch(repo, capsys) -> None:
 
 def test_run_verdict() -> None:
     docs = run({"docs/x.md": (b"a", b"b")})
-    sql = run({"django_db2_for_i/schema.py": (b"a", b"b")})
+    sql = run({"django_db2_for_i/client.py": (b"a", b"b")})
     changed, stamps = cp.PushCheck(True, "changed"), cp.PushCheck(False, "stamps only")
     assert cp.run_verdict(docs, changed).startswith("no (docs/tests only")
     assert cp.run_verdict(sql, None) == "yes, run-ibmi"
@@ -572,7 +594,7 @@ def test_previous_head(comment, expected) -> None:
 
 
 def test_the_comment_names_the_head_it_classified() -> None:
-    result = run({"django_db2_for_i/schema.py": (b"a", b"b")})
+    result = run({"django_db2_for_i/client.py": (b"a", b"b")})
     comment = cp.as_markdown(result, None, SHA)
     assert comment.splitlines()[0] == f"<!-- classify-pr head={SHA} -->"
     assert comment.startswith(cp.COMMENT_PREFIX)
@@ -588,7 +610,7 @@ def test_no_comment_yet_classifies_the_whole_pull_request(repo, tmp_path, capsys
     """The first run, or the first run after a cancelled one: no previous
     head, so the labels of the whole pull request are added."""
     _git(repo, "switch", "-q", "-c", "pr")
-    _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    _commit(repo, {"django_db2_for_i/client.py": b"x = 2\n"}, "feat")
     _commit(repo, {"changelog.d/1.added.md": b"x\n"}, "docs: fragment")
     empty = tmp_path / "previous.md"
     empty.write_text("")
@@ -605,7 +627,7 @@ def test_a_cancelled_run_does_not_count_as_classified(repo, tmp_path, capsys) ->
     is checked from there and the labels are added."""
     _git(repo, "switch", "-q", "-c", "pr")
     classified = _commit(repo, {"docs/b.md": b"b\n"}, "docs: b")
-    cancelled = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    cancelled = _commit(repo, {"django_db2_for_i/client.py": b"x = 2\n"}, "feat")
     _commit(repo, {"changelog.d/1.added.md": b"x\n"}, "docs: fragment")
 
     from_push = _json(capsys, "--before", cancelled)
@@ -622,7 +644,7 @@ def test_a_cancelled_run_does_not_count_as_classified(repo, tmp_path, capsys) ->
 
 def test_a_completed_run_on_the_same_head_keeps_the_labels(repo, tmp_path, capsys) -> None:
     _git(repo, "switch", "-q", "-c", "pr")
-    head = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    head = _commit(repo, {"django_db2_for_i/client.py": b"x = 2\n"}, "feat")
     comment = tmp_path / "previous.md"
     comment.write_text(f"<!-- classify-pr head={head} -->\n")
     data = _json(capsys, "--previous-comment", str(comment))
@@ -631,7 +653,7 @@ def test_a_completed_run_on_the_same_head_keeps_the_labels(repo, tmp_path, capsy
 
 def test_the_markdown_comment_names_the_head(repo, capsys) -> None:
     _git(repo, "switch", "-q", "-c", "pr")
-    head = _commit(repo, {"django_db2_for_i/schema.py": b"x = 2\n"}, "feat")
+    head = _commit(repo, {"django_db2_for_i/client.py": b"x = 2\n"}, "feat")
     assert cp.main(["--base", "main", "--format", "markdown"]) == 0
     assert capsys.readouterr().out.splitlines()[0] == f"<!-- classify-pr head={head} -->"
 

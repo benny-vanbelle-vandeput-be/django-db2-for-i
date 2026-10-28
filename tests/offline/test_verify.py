@@ -189,6 +189,8 @@ def test_module_and_class_level_changes_select_the_module_or_class() -> None:
         "tests/django_settings/settings_pub400.py",
         "django_db2_for_i/base.py",
         "django_db2_for_i/drivers/pyodbc.py",
+        "django_db2_for_i/schema.py",
+        "django_db2_for_i/compat.py",
         "docker/Dockerfile",
     ],
 )
@@ -201,7 +203,7 @@ def test_shared_code_runs_the_full_own_tier(path) -> None:
 
 def test_backend_and_docs_changes_select_no_own_tests() -> None:
     selection = verify.own_selection(
-        ["django_db2_for_i/operations.py", "docs/DECISIONS.md", "tests/offline/test_x.py"],
+        ["django_db2_for_i/client.py", "docs/DECISIONS.md", "tests/offline/test_x.py"],
         lambda p: "",
         lambda p: "x = 1\n",
     )

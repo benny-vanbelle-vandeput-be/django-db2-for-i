@@ -1,0 +1,1 @@
+Pull requests that change the core backend (`schema.py`, `introspection.py`, `compiler.py`, `operations.py`, `features.py`, `expressions.py`, `compat.py`) now need the full own IBM i tier, not only a targeted run.
