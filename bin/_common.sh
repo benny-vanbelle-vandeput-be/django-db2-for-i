@@ -2,7 +2,8 @@
 #
 # - --help / -h prints the script's header comment; --dry-run prints every
 #   command instead of running it (run).
-# - container runs a command in the tests container (docker compose). In a
+# - container runs a command in the tests container (docker compose), with
+#   the checkout's own nox-envs volume (scripts/nox_volume.sh). In a
 #   git worktree it also mounts the repository's shared git directory at its
 #   host path, so git works inside the container. The checkout's mount
 #   (/workspace) is git's safe.directory for that one run (passed as
@@ -69,7 +70,9 @@ container() {
     if [ -n "$common" ] && [ "$common" != "$ROOT/.git" ]; then
         mounts=(-v "$common:$common")
     fi
-    run docker compose --project-directory "$ROOT" run --rm ${mounts[@]+"${mounts[@]}"} \
+    # This checkout's own nox virtualenvs (scripts/nox_volume.sh).
+    run env DB2I_NOX_ENVS="$("$ROOT/scripts/nox_volume.sh" "$ROOT")" \
+        docker compose --project-directory "$ROOT" run --rm ${mounts[@]+"${mounts[@]}"} \
         -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0="$WORKSPACE" \
         tests "$@"
 }

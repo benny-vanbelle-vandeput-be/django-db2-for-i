@@ -89,6 +89,16 @@ def worktree(tmp_path):
     (main / "bin").mkdir(parents=True)
     for name in ("_common.sh", "worktree-remove"):
         (main / "bin" / name).write_text((BIN / name).read_text())
+    (main / "scripts").mkdir()
+    volume = main / "scripts" / "nox_volume.sh"
+    volume.write_text((BIN.parent / "scripts" / "nox_volume.sh").read_text())
+    volume.chmod(0o755)
+    # A docker that only records its calls (the worktree's nox-envs volume).
+    (tmp_path / "fakebin").mkdir()
+    (tmp_path / "fakebin" / "docker").write_text(
+        f'#!/bin/sh\necho "$*" >> "{tmp_path}/docker-calls"\n'
+    )
+    (tmp_path / "fakebin" / "docker").chmod(0o755)
     (main / ".gitignore").write_text("test-results/\n.env\n")
     (main / ".env").write_text("not read\n")
     git("init", "-q", "-b", "main", cwd=main)
@@ -104,8 +114,12 @@ def worktree(tmp_path):
 
 
 def remove(main: Path, *args: str) -> subprocess.CompletedProcess:
+    env = {**os.environ, "PATH": f"{main.parent / 'fakebin'}:{os.environ['PATH']}"}
     return subprocess.run(
-        ["bash", str(main / "bin" / "worktree-remove"), *args], capture_output=True, text=True
+        ["bash", str(main / "bin" / "worktree-remove"), *args],
+        capture_output=True,
+        text=True,
+        env=env,
     )
 
 
@@ -121,6 +135,8 @@ def test_a_merged_worktree_is_archived_unlinked_and_removed(worktree) -> None:
     archived = main / "test-results" / "archive" / "main-topic" / "probes"
     assert (archived / "catalog-20261022T203029Z.json").read_text() == "{}\n"
     assert (main / ".env").read_text() == "not read\n"  # only the link went
+    calls = (main.parent / "docker-calls").read_text()
+    assert calls == "volume rm --force django-db2-for-i_nox-envs-main-topic\n"
 
 
 @needs_bin

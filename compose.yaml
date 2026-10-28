@@ -39,5 +39,10 @@ services:
       target: offline
 
 volumes:
+  # One per checkout, so worktrees never rebuild each other's virtualenvs:
+  # bin/ and scripts/pub400.sh set DB2I_NOX_ENVS (scripts/nox_volume.sh); the
+  # default is the main checkout's volume.
   nox-envs:
+    name: ${DB2I_NOX_ENVS:-django-db2-for-i_nox-envs}
+  # Shared by every checkout (uv locks its cache itself).
   uv-cache:
