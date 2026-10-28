@@ -26,10 +26,28 @@ OFFLINE_MATRIX = [
 ]
 
 
+def install_groups(session: nox.Session, *groups: str) -> None:
+    """Dependency groups (the dev and test tooling) at the versions pinned in
+    uv.lock, never the newest release: an update arrives as a pull request
+    (Dependabot, .github/dependabot.yml). --locked fails when pyproject.toml
+    changed without `uv lock`. Django and pyodbc are not taken from the lock:
+    the sessions install the newest release users get."""
+    # In the virtualenv, not session.create_tmp(): that would set TMPDIR inside
+    # the checkout, where pytester's runs find the project's pyproject.toml.
+    requirements = f"{session.virtualenv.location}/requirements-{'-'.join(groups)}.txt"
+    only = [option for group in groups for option in ("--only-group", group)]
+    session.run(
+        "uv", "export", "--locked", "--no-emit-project", "--no-hashes", "--quiet",
+        *only, "--output-file", requirements,
+        external=True,
+    )  # fmt: skip
+    session.install("-r", requirements)
+
+
 def install(session: nox.Session, django: str, *groups: str) -> None:
     """Install the backend, a specific Django version and dependency groups."""
     if groups:
-        session.install(*nox.project.dependency_groups(PYPROJECT, *groups))
+        install_groups(session, *groups)
     session.install("-e", ".", f"Django~={django}.0")
 
 
@@ -51,7 +69,7 @@ def django_argument(session: nox.Session) -> tuple[str, list[str]]:
 @nox.session(python=NEWEST_PYTHON)
 def lint(session: nox.Session) -> None:
     """Static checks: ruff lint and format check."""
-    session.install(*nox.project.dependency_groups(PYPROJECT, "lint"))
+    install_groups(session, "lint")
     session.run("ruff", "check", ".")
     session.run("ruff", "format", "--check", ".")
 
@@ -137,7 +155,7 @@ def corpus(session: nox.Session, django: str) -> None:
         return
     manifest = tomllib.loads(manifests[0].read_text())
     checkout = django_checkout(session, django, manifest["django_commit"])
-    session.install(*nox.project.dependency_groups(PYPROJECT, "test"))
+    install_groups(session, "test")
     session.install("--no-deps", "-e", ".")
     others = [
         dependency
@@ -179,7 +197,7 @@ def wheel(session: nox.Session) -> None:
     shutil.rmtree("dist", ignore_errors=True)
     session.run("uv", "build", "--out-dir", "dist", external=True)
     (built,) = glob.glob("dist/*.whl")
-    session.install(*nox.project.dependency_groups(PYPROJECT, "test"))
+    install_groups(session, "test")
     session.install(built, f"Django~={NEWEST_DJANGO}.0")
     with tempfile.TemporaryDirectory(prefix="wheel-test-") as tmp:
         # probes/: scripts/release_run.py reuses its reachability check.
@@ -258,7 +276,7 @@ def release_run(session: nox.Session) -> None:
     if not session.posargs or session.posargs[0].startswith("-"):
         session.error("usage: nox -s release_run -- <django-version> [--restart] [--limit N]")
     # Django from the vendor checkout, as in django_tests, for the modules and the tier.
-    session.install(*nox.project.dependency_groups(PYPROJECT, "test"))
+    install_groups(session, "test")
     session.install("-e", f"vendor/django-{session.posargs[0]}")
     session.install("--no-deps", "-e", ".")
     session.install(
@@ -274,7 +292,7 @@ def release_run(session: nox.Session) -> None:
 @nox.session(python=NEWEST_PYTHON)
 def features(session: nox.Session) -> None:
     """docs/FEATURES.md: dump the feature flags on every supported Django (offline), then render."""
-    session.install(*nox.project.dependency_groups(PYPROJECT, "test"))
+    install_groups(session, "test")
     for django in DJANGO_PYTHONS:
         session.install("-e", ".", f"Django~={django}.0")
         session.run("python", "scripts/features.py", "dump")

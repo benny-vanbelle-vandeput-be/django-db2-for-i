@@ -121,6 +121,17 @@ def test_pyproject_beyond_tool_settings_fails_closed() -> None:
     assert run({"pyproject.toml": (project.encode(), build.encode())}).cls == cp.FULL
 
 
+def test_the_tooling_needs_no_ibmi_run() -> None:
+    """The dev and test tooling: the lock and pyproject's dependency groups (#190)."""
+    lock = run({"uv.lock": (b"a", b"b")})
+    assert (lock.cls, lock.labels) == (cp.DOCS, [])
+    project = '[project]\nname = "a"\ndependencies = []\n'
+    groups = project + '[dependency-groups]\ntest = ["pytest>=9"]\n'
+    newer = groups.replace("pytest>=9", "pytest>=9.2")
+    result = run({"pyproject.toml": (groups.encode(), newer.encode())})
+    assert (result.cls, result.labels) == (cp.DOCS, [])
+
+
 def test_every_tracked_file_is_listed() -> None:
     """New files are classified on purpose, not by the fail-closed default."""
     root = SCRIPT.parents[1]
