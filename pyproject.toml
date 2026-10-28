@@ -67,7 +67,6 @@ markers = [
     "offline: no IBM i needed; never opens a database connection",
     "pub400: curated smoke set for a shared, restricted IBM i (PUB400)",
     "corpus: replay of the offline query corpus (nox -s corpus); never opens a connection",
-    "full: requires a dedicated IBM i",
 ]
 
 [tool.ruff]

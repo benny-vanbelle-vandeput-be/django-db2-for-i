@@ -349,35 +349,19 @@ def probe(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
-def probe_defaults(session: nox.Session) -> None:
-    """Write probe 06 (QTEMP only, nothing persists): accepted column DEFAULT forms."""
-    session.install("-e", ".")
-    session.run("python", "probes/qtemp_defaults.py", *session.posargs)
+def probe_qtemp(session: nox.Session) -> None:
+    """One qtemp_ probe with its own entry point (read-only or QTEMP, often one
+    connection per variant): bin/probe qtemp_<topic> [-- <options>]. The probes
+    of probes/run.py run through the probe session instead."""
+    import pathlib
+    import re
 
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_inquiry(session: nox.Session) -> None:
-    """Write probe 08 (QTEMP and own job only): DROP COLUMN inquiry message."""
-    session.install("-e", ".")
-    session.run("python", "probes/qtemp_inquiry.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_encoding(session: nox.Session) -> None:
-    """Write probe 10 (QTEMP only, one connection per variant): string encoding."""
-    session.install("-e", ".")
-    session.run("python", "probes/qtemp_encoding.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_job_ccsid(session: nox.Session) -> None:
-    """Write probe 11 (QTEMP and own job, restored): job CCSID 37 and finding B."""
-    session.install("-e", ".")
-    session.run("python", "probes/qtemp_job_ccsid.py", *session.posargs)
-
-
-@nox.session(python=NEWEST_PYTHON)
-def probe_locale(session: nox.Session) -> None:
-    """Write probe 12 (QTEMP only, one connection per locale): non-UTF-8 locale."""
+    args = list(session.posargs)
+    name = args.pop(0) if args else ""
+    path = pathlib.Path(f"probes/{name}.py")
+    if not re.fullmatch(r"qtemp_[a-z0-9_]+", name) or not path.is_file():
+        session.error(f"not a qtemp_ probe: {name!r} (bin/probe --list)")
+    if '__name__ == "__main__"' not in path.read_text():
+        session.error(f"{name} has no entry point of its own: bin/probe <name> (probes/run.py)")
     install(session, NEWEST_DJANGO)
-    session.run("python", "probes/qtemp_locale.py", *session.posargs, env={"PYTHONPATH": "."})
+    session.run("python", str(path), *args, env={"PYTHONPATH": "."})

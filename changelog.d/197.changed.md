@@ -1,0 +1,1 @@
+`bin/probe qtemp_<topic>` runs the QTEMP probes that have their own entry point (`qtemp_encoding`, `qtemp_locale`, ...) through one nox session, `probe_qtemp`, instead of one session per probe; the unused pytest marker `full` is gone, and `qtemp_check_journal` is now `qtemp_check_constraint_unjournaled`.

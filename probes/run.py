@@ -7,7 +7,7 @@ Usage (inside the "tests" container):
                      library_journal|journal_check|all] ...
     nox -s probe -- fetch_errors | mapping_errors | long_string_params |
                     numeric_params | constraint_errors | drop_column | alter_table |
-                    alter_column | renames | type_changes | check_journal |
+                    alter_column | renames | type_changes | check_constraint_unjournaled |
                     transaction_start | add_column_default | qaqqini_inquiry |
                     qaqqini_lifecycle | lob_index | later_flags
                                        (own connection attributes, run alone)
@@ -28,7 +28,7 @@ import qtemp_add_column_default
 import qtemp_alter_column
 import qtemp_alter_table
 import qtemp_catalog
-import qtemp_check_journal
+import qtemp_check_constraint_unjournaled
 import qtemp_compound_parts
 import qtemp_connect
 import qtemp_constraint_errors
@@ -94,7 +94,7 @@ PROBES = {
     "alter_column": qtemp_alter_column,
     "renames": qtemp_renames,
     "type_changes": qtemp_type_changes,
-    "check_journal": qtemp_check_journal,
+    "check_constraint_unjournaled": qtemp_check_constraint_unjournaled,
     "catalog": qtemp_catalog,
     "library_journal": qtemp_library_journal,
     "journal_check": qtemp_journal_check,

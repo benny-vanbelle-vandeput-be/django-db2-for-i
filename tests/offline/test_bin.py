@@ -414,6 +414,10 @@ def test_the_ibmi_scripts_go_through_pub400_sh(tmp_path) -> None:
     (line,) = dry(str(BIN / "probe"), "--dry-run", "--approved", approval, "lib_drop", "--execute")
     assert line.startswith(f"+ {pub400} probe_lib lib_drop --approved {approval} --approved-by ")
     assert line.endswith(" --execute")
+    # A qtemp_ probe with its own entry point: one generic session (#191, item 10).
+    assert dry(str(BIN / "probe"), "--dry-run", "qtemp_encoding", "--", "--variant", "x") == [
+        f"+ {pub400} probe_qtemp qtemp_encoding --variant x"
+    ]
     assert dry(str(BIN / "ibmi-test"), "--dry-run", "own", "-k", "goldens") == [
         f"+ {pub400} pub400 6.1 --create-db -k goldens"
     ]
@@ -444,6 +448,10 @@ def test_the_ibmi_scripts_refuse_what_is_not_allowed(tmp_path) -> None:
             (str(BIN / "probe"), "--approved", "x", "lib_drop", "lib_sequence"),
             "one lib_ probe per run",
         ),
+        ((str(BIN / "probe"), "qtemp_catalog"), "qtemp_catalog runs by its short name"),
+        ((str(BIN / "probe"), "qtemp_nope"), "unknown probe: qtemp_nope"),
+        ((str(BIN / "probe"), "qtemp_locale", "connect"), "runs alone"),
+        ((str(BIN / "probe"), "qtemp_locale", "--execute"), "for lib_ probes only"),
         ((str(BIN / "ibmi-test"), "django"), "never the full suite"),
         ((str(BIN / "ibmi-test"), "--django", "9.9", "own", "x"), "Django 9.9 is not supported"),
         ((str(BIN / "ibmi-test"), "--full-tier", "own", "x"), "no own/django selection"),

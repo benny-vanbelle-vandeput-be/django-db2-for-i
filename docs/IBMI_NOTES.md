@@ -1223,7 +1223,7 @@ unique constraints and indexes before the type change, and without
 ### CHECK constraints on a table that is not journaled (`probe -- check_journal`)
 2026-10-24, PUB400 (IBM i 7.5), the backend's connection attributes (`CMT=1`,
 `TRUEAUTOCOMMIT=1`), QTEMP only. Phase 4 step C item 11,
-`probes/qtemp_check_journal.py`. QTEMP tables cannot be journaled, so they
+`probes/qtemp_check_constraint_unjournaled.py` (named `qtemp_check_journal.py` until 2026-10-28; its published result keeps the old name, `probes/results/check_journal.json`). QTEMP tables cannot be journaled, so they
 stand in for a table in a library without a journal. Each CHECK form the
 schema editor writes, in autocommit mode and in a transaction (rolled back):
 
