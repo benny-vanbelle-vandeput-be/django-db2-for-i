@@ -164,7 +164,6 @@ DOCS_PATHS = {
     "scripts/changelog_section.py": "offline tooling",
     "scripts/features.py": "offline tooling",
     "scripts/update_test_status.py": "offline tooling",
-    "scripts/verify_release_tag.py": "offline tooling",
     "bin/check": "offline tooling (what CI does)",
     "bin/status": "offline tooling (status pages)",
     "bin/setup": "first-time setup (images, .env template, vendor/ checkouts)",

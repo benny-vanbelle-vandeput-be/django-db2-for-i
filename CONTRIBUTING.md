@@ -372,11 +372,12 @@ Claude never create release tags; the maintainer creates and signs them.**
    ```
 
    The tag must be annotated (`-s` makes a signed, annotated tag), signed
-   with the key whose public part is stored ASCII-armored in the admin-only
-   Actions variable `RELEASE_SIGNING_KEY`, point to a commit on `main`, and
-   equal `v` + `__version__`.
-3. **Create the GitHub release yourself** (the release workflow is parked,
-   see #94).
+   with the maintainer's key, point to a commit on `main`, and equal `v` +
+   `__version__`.
+3. **The maintainer creates the GitHub release** from the tag, by hand.
+   There is no release workflow (removed in #94): nothing runs on a tag push.
+   The release notes are the version's CHANGELOG section:
+   `python scripts/changelog_section.py <version>`.
 
 Published tags are never moved or recreated. `v0.1.0a1` predates this
-workflow and its code reports version `0.0.1.dev0` (see `CHANGELOG.md`).
+procedure and its code reports version `0.0.1.dev0` (see `CHANGELOG.md`).

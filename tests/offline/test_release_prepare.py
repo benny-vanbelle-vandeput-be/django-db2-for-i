@@ -57,7 +57,8 @@ def test_it_never_tags_or_releases_and_prints_the_manual_steps(tmp_path) -> None
     assert 'git tag -s v0.1.0a5 -m "v0.1.0a5"' in steps
     assert "git push origin v0.1.0a5" in steps
     assert (
-        "3. Create the GitHub release yourself (the release workflow is parked, see #94)." in steps
+        "3. Create the GitHub release yourself, from the tag "
+        "(notes: python scripts/changelog_section.py 0.1.0a5)." in steps
     )
     called = (tmp_path / "called").read_text() if (tmp_path / "called").exists() else ""
     # A dry run only reads (container() asks git for the shared git directory).

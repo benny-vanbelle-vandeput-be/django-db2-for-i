@@ -21,7 +21,7 @@
 # request. Needs no .env and never connects to an IBM i.
 #
 # It never creates, pushes or deletes tags, never creates or edits GitHub
-# releases and never touches the release workflow. At the end it prints what
+# releases. At the end it prints what
 # the maintainer does by hand: merge, sign and push the tag, then create the
 # GitHub release.
 
@@ -99,5 +99,5 @@ What the maintainer does by hand (bin/release-prepare never tags and never creat
      git tag -s v$version -m "v$version"
      git tag -v v$version
      git push origin v$version
-3. Create the GitHub release yourself (the release workflow is parked, see #94).
+3. Create the GitHub release yourself, from the tag (notes: python scripts/changelog_section.py $version).
 EOF

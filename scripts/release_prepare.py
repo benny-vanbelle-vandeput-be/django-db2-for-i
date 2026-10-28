@@ -17,8 +17,8 @@
 ``body`` prints the release pull request's description: the status runs and
 the corpus counts per Django version.
 
-Never connects to an IBM i; never tags, never touches GitHub releases or the
-release workflow (CONTRIBUTING.md, "Releases").
+Never connects to an IBM i; never tags, never touches GitHub releases
+(CONTRIBUTING.md, "Releases").
 """
 
 from __future__ import annotations
