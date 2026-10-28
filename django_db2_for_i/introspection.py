@@ -20,7 +20,7 @@ from django_db2_for_i import compat
 # QSYS2.SYSKEYS.ORDERING (column text: "A-Ascending, D-Descending", probe 25).
 ORDERS = {"A": "ASC", "D": "DESC"}
 # QSYS2.SYSINDEXES.IS_UNIQUE: "D" is an index that allows duplicate keys
-# (probe w13); every other value is a unique kind.
+# (probe lib_constraints); every other value is a unique kind.
 DUPLICATES_ALLOWED = "D"
 
 # The constraints of a table with their columns in key order: the key
@@ -85,7 +85,7 @@ RELATIONS_SQL = (
     "ORDER BY C.CONSTRAINT_NAME, K.ORDINAL_POSITION"
 )
 # The SQL indexes of a table with their key columns in order. The access
-# paths that constraints use are not listed in SYSINDEXES (probe w13), so a
+# paths that constraints use are not listed in SYSINDEXES (probe lib_constraints), so a
 # constraint does not show up twice.
 INDEXES_SQL = (
     "SELECT I.INDEX_NAME, I.IS_UNIQUE, K.COLUMN_NAME, K.ORDERING "
