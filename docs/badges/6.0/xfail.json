@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "Django 6.0",
-  "message": "10 expected failures",
+  "message": "55 expected failures",
   "color": "blue"
 }
