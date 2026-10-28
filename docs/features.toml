@@ -129,41 +129,36 @@ supports_expression_defaults.off = "A column `DEFAULT` on Db2 for i takes only a
 supports_index_on_text_field.description = "Indexes on `TextField` columns."
 supports_index_on_text_field.off = "Db2 for i cannot index an `NCLOB` or `BLOB` column; `db_index` on a `TextField` or `BinaryField` creates no index (decision 2026-10-26)."
 
-# --- Planned ----------------------------------------------------------------
-
-# Not evaluated in phase 4; carried forward (docs/phases/phase-4.md, "Carried forward").
-# Not verified on IBM i yet: each needs a probe or Django's tests before it is on.
+# Once "later"; decided with probe `qtemp_later_flags`, IBMI_NOTES, 2026-10-28 (#191, topic 3).
 can_introspect_materialized_views.description = "`inspectdb --include-views` also finds materialized views."
-can_introspect_materialized_views.planned = "later"
-has_real_datatype.description = "The database has a single-precision `REAL` type besides `DOUBLE`."
-has_real_datatype.planned = "later"
+can_introspect_materialized_views.off = "The flag only enables Django's test, which writes `CREATE MATERIALIZED VIEW`: Db2 for i rejects it (SQL0104; its materialized query tables are `CREATE TABLE ... AS (...) MAINTAINED BY USER`, probe `qtemp_later_flags`, IBMI_NOTES)."
 related_fields_match_type.description = "A foreign key column must have exactly the type of the column it references."
-related_fields_match_type.planned = "later"
+related_fields_match_type.not_applicable = "MySQL (unsigned integer types). Here a positive integer field is the plain integer type plus a CHECK, so a foreign key already gets the referenced column's type."
 supports_alter_generated_column_data_type.description = "The type of a `GeneratedField` column can be changed in place (Django 6.1+)."
-supports_alter_generated_column_data_type.planned = "later"
+supports_alter_generated_column_data_type.off = "Db2 for i has no generated columns over other columns (`supports_stored_generated_columns`)."
 supports_collation_on_charfield.description = "`CharField(db_collation=...)`."
-supports_collation_on_charfield.planned = "later"
+supports_collation_on_charfield.off = "Db2 for i takes no `COLLATE` clause on a column (SQL0104; with `CCSID 1200` SQL0683, probe `qtemp_later_flags`, IBMI_NOTES); sorting follows the job's sort sequence."
 supports_collation_on_textfield.description = "`TextField(db_collation=...)`."
-supports_collation_on_textfield.planned = "later"
+supports_collation_on_textfield.off = "Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES)."
 supports_comments_inline.description = "Column comments are written in the `ADD COLUMN` statement itself."
-supports_comments_inline.planned = "later"
-supports_no_precision_decimalfield.description = "`DecimalField` without `max_digits` and `decimal_places` (Django 6.1+)."
-supports_no_precision_decimalfield.planned = "later"
+supports_comments_inline.off = "Column comments are off (`supports_comments`, decision 2026-10-26), so inline comments are too."
 supports_non_deterministic_collations.description = "Non-deterministic (for example case-insensitive) collations in `db_collation`."
-supports_non_deterministic_collations.planned = "later"
-supports_sequence_reset.description = "`sqlsequencereset` resets identity values."
-supports_sequence_reset.planned = "later"
+supports_non_deterministic_collations.off = "Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES)."
 supports_stored_generated_columns.description = "`GeneratedField(db_persist=True)`, stored generated columns."
-supports_stored_generated_columns.planned = "later"
+supports_stored_generated_columns.off = "`GENERATED ALWAYS AS` takes only special registers (`USER`, ...), `DATA CHANGE OPERATION`, row change timestamps and identities, no expression over other columns (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES)."
 supports_unlimited_charfield.description = "`CharField` without `max_length`."
-supports_unlimited_charfield.planned = "later"
+supports_unlimited_charfield.off = "`NVARCHAR` and `VARCHAR` need a length (SQL0104, SQL0604, probe `qtemp_later_flags`, IBMI_NOTES); the unbounded type, `NCLOB`, is `TextField`."
 supports_virtual_generated_columns.description = "`GeneratedField(db_persist=False)`, virtual generated columns."
-supports_virtual_generated_columns.planned = "later"
-truncates_names.description = "Names longer than the database allows are shortened with a hash, the same way everywhere."
-truncates_names.planned = "later"
+supports_virtual_generated_columns.off = "Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES)."
+
+# --- Planned ----------------------------------------------------------------
 
 # Phase 5: returning columns, bulk operations, constraints, indexes.
 # Not verified on IBM i yet: each needs a probe or Django's tests before it is on.
+supports_sequence_reset.description = "`sqlsequencereset` resets identity values."
+supports_sequence_reset.planned = "phase 5"
+truncates_names.description = "Names longer than the database allows are shortened with a hash, the same way everywhere."
+truncates_names.planned = "phase 5"
 allows_multiple_constraints_on_same_fields.description = "Several constraints on the same columns."
 allows_multiple_constraints_on_same_fields.planned = "phase 5"
 allows_auto_pk_0.description = "An `AutoField` primary key may be 0."
@@ -214,6 +209,15 @@ update_can_self_select.planned = "phase 5"
 # Not verified on IBM i yet, except: LOB columns in GROUP BY (probe queries) and
 # LISTAGG(DISTINCT ...) with a separator (probe listagg) work; Django's tests
 # decide. Some may stay off (NOWAIT, EXCLUDE in window frames).
+has_real_datatype.description = "The database has a single-precision `REAL` type besides `DOUBLE`."
+has_real_datatype.planned = "phase 6"
+# Needs a probe: DECIMAL without a precision is DECIMAL(5, 0), so the type would
+# be DECFLOAT(34). It round-trips 34-digit values, but 1E+300 is refused at bind
+# (01004) and values come back as str (probe qtemp_later_flags, IBMI_NOTES).
+# Open: how the driver binds such values, and whether 34 digits fit Django's
+# meaning of an unconstrained DecimalField.
+supports_no_precision_decimalfield.description = "`DecimalField` without `max_digits` and `decimal_places` (Django 6.1+)."
+supports_no_precision_decimalfield.planned = "needs probe (`DECFLOAT(34)` binding)"
 allows_group_by_lob.description = "`TextField` and `BinaryField` columns can be grouped by."
 allows_group_by_lob.planned = "phase 6"
 can_introspect_json_field.description = "Introspection recognizes a `JSONField` column."

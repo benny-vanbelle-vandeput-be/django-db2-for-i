@@ -1,0 +1,563 @@
+{
+  "probe": "later_flags",
+  "utc": "20261028T070152Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "real: create": {
+    "result": "ok"
+  },
+  "real: insert 1.5": {
+    "result": "ok"
+  },
+  "real: read": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "R",
+        "type": "float",
+        "size": 7,
+        "precision": 7,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1.5"
+      ]
+    ]
+  },
+  "decimal without precision: create": {
+    "result": "ok"
+  },
+  "decimal without precision: describe": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "decimal without precision: insert 12345": {
+    "result": "ok"
+  },
+  "decimal without precision: insert 123456": {
+    "result": "error",
+    "sqlstate": "22003",
+    "sqlcode": 30160,
+    "message": "Column 1: Numeric value out of range. (30160) (SQLExecDirectW)"
+  },
+  "decimal without precision: insert 1.5": {
+    "result": "error",
+    "sqlstate": "22001",
+    "sqlcode": 30126,
+    "message": "Column 1: Character data right truncation. (30126) (SQLExecDirectW)"
+  },
+  "decimal without precision: read": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('12345')"
+      ]
+    ]
+  },
+  "decfloat(34): create": {
+    "result": "ok"
+  },
+  "decfloat(34): insert 12345678901234567890.123456789": {
+    "result": "ok"
+  },
+  "decfloat(34): read 12345678901234567890.123456789": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "F",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'12345678901234567890.123456789'"
+      ]
+    ],
+    "sent": "Decimal('12345678901234567890.123456789')"
+  },
+  "decfloat(34): insert 0.1": {
+    "result": "ok"
+  },
+  "decfloat(34): read 0.1": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "F",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'0.1'"
+      ]
+    ],
+    "sent": "Decimal('0.1')"
+  },
+  "decfloat(34): insert -1E-30": {
+    "result": "ok"
+  },
+  "decfloat(34): read -1E-30": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "F",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'-1E-30'"
+      ]
+    ],
+    "sent": "Decimal('-1E-30')"
+  },
+  "decfloat(34): insert 123456789012345678901234567890.1234": {
+    "result": "ok"
+  },
+  "decfloat(34): read 123456789012345678901234567890.1234": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "F",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'123456789012345678901234567890.1234'"
+      ]
+    ],
+    "sent": "Decimal('123456789012345678901234567890.1234')"
+  },
+  "decfloat(34): insert 1E+300": {
+    "result": "error",
+    "sqlstate": "01004",
+    "sqlcode": 30002,
+    "message": "Data truncated. (30002) (SQLExecDirectW)"
+  },
+  "decfloat(34): read 1E+300": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "F",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [],
+    "sent": "Decimal('1E+300')"
+  },
+  "decfloat(16): create": {
+    "result": "ok"
+  },
+  "decfloat(16): insert 12345678901234567890.123456789": {
+    "result": "ok"
+  },
+  "decfloat(16): read 12345678901234567890.123456789": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "F",
+        "type": "str",
+        "size": 16,
+        "precision": 16,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1.234567890123457E+19'"
+      ]
+    ],
+    "sent": "Decimal('12345678901234567890.123456789')"
+  },
+  "decfloat(16): insert 0.1": {
+    "result": "ok"
+  },
+  "decfloat(16): read 0.1": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "F",
+        "type": "str",
+        "size": 16,
+        "precision": 16,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'0.1'"
+      ]
+    ],
+    "sent": "Decimal('0.1')"
+  },
+  "decfloat(16): insert -1E-30": {
+    "result": "ok"
+  },
+  "decfloat(16): read -1E-30": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "F",
+        "type": "str",
+        "size": 16,
+        "precision": 16,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'-1E-30'"
+      ]
+    ],
+    "sent": "Decimal('-1E-30')"
+  },
+  "decfloat(16): insert 123456789012345678901234567890.1234": {
+    "result": "ok"
+  },
+  "decfloat(16): read 123456789012345678901234567890.1234": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "F",
+        "type": "str",
+        "size": 16,
+        "precision": 16,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1.234567890123457E+29'"
+      ]
+    ],
+    "sent": "Decimal('123456789012345678901234567890.1234')"
+  },
+  "decfloat(16): insert 1E+300": {
+    "result": "error",
+    "sqlstate": "01004",
+    "sqlcode": 30002,
+    "message": "Data truncated. (30002) (SQLExecDirectW)"
+  },
+  "decfloat(16): read 1E+300": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "F",
+        "type": "str",
+        "size": 16,
+        "precision": 16,
+        "scale": 0
+      }
+    ],
+    "rows": [],
+    "sent": "Decimal('1E+300')"
+  },
+  "NVARCHAR without a length: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ) was not valid. Valid tokens: (. (-104) (SQLExecDirectW)"
+  },
+  "VARCHAR without a length: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -604,
+    "message": "SQL0604 - Attributes not valid. (-604) (SQLExecDirectW)"
+  },
+  "VARGRAPHIC without a length: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -604,
+    "message": "SQL0604 - Attributes not valid. (-604) (SQLExecDirectW)"
+  },
+  "column with COLLATE UNICODE: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token COLLATE was not valid. Valid tokens: ) ,. (-104) (SQLExecDirectW)"
+  },
+  "column with COLLATE \"UCA500R1_LEN_S1\": create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token COLLATE was not valid. Valid tokens: ) ,. (-104) (SQLExecDirectW)"
+  },
+  "column with COLLATE UCA500R1_LEN_S1: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token COLLATE was not valid. Valid tokens: ) ,. (-104) (SQLExecDirectW)"
+  },
+  "column with COLLATE SYSTEM: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token COLLATE was not valid. Valid tokens: ) ,. (-104) (SQLExecDirectW)"
+  },
+  "column with CCSID 1200 COLLATE UNICODE: create": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -683,
+    "message": "SQL0683 - Clause not valid for specified type. (-683) (SQLExecDirectW)"
+  },
+  "generated column, expression: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token * was not valid. Valid tokens: . ACCTNG USERID APPLNAME PROGRAMID WRKSTNNAME. (-104) (SQLExecDirectW)"
+  },
+  "generated column, expression, STORED: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token * was not valid. Valid tokens: . ACCTNG USERID APPLNAME PROGRAMID WRKSTNNAME. (-104) (SQLExecDirectW)"
+  },
+  "generated column, expression, VIRTUAL: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token * was not valid. Valid tokens: . ACCTNG USERID APPLNAME PROGRAMID WRKSTNNAME. (-104) (SQLExecDirectW)"
+  },
+  "generated column, AS (expression), no GENERATED: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token * was not valid. Valid tokens: . ACCTNG USERID APPLNAME PROGRAMID WRKSTNNAME. (-104) (SQLExecDirectW)"
+  },
+  "generated column, expression, cast: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ( was not valid. Valid tokens: . ACCTNG USERID APPLNAME PROGRAMID WRKSTNNAME. (-104) (SQLExecDirectW)"
+  },
+  "generated column, special register (USER): create": {
+    "result": "ok"
+  },
+  "generated column, special register (USER): insert A=3": {
+    "result": "ok"
+  },
+  "generated column, special register (USER): update A=4": {
+    "result": "ok"
+  },
+  "generated column, special register (USER): read": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "A",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "B",
+        "type": "str",
+        "size": 18,
+        "precision": 18,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "4",
+        "'<USER>'"
+      ]
+    ]
+  },
+  "generated column, special register (CURRENT TIMESTAMP): create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token TIMESTAMP was not valid. Valid tokens: SERVER CLIENT_ACCTNG CLIENT_APPLNAME CLIENT_PROGRAMID CLIENT_USER"
+  },
+  "generated column, data change operation: create": {
+    "result": "ok"
+  },
+  "generated column, data change operation: insert A=3": {
+    "result": "ok"
+  },
+  "generated column, data change operation: update A=4": {
+    "result": "ok"
+  },
+  "generated column, data change operation: read": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "A",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "B",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "4",
+        "'U'"
+      ]
+    ]
+  },
+  "generated column, row change timestamp: create": {
+    "result": "ok"
+  },
+  "generated column, row change timestamp: insert A=3": {
+    "result": "ok"
+  },
+  "generated column, row change timestamp: update A=4": {
+    "result": "ok"
+  },
+  "generated column, row change timestamp: read": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "A",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "B",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "4",
+        "datetime.datetime(2026, 10, 28, 7, 1, 50, 314273)"
+      ]
+    ]
+  },
+  "generated column, identity (control): create": {
+    "result": "ok"
+  },
+  "generated column, identity (control): insert A=3": {
+    "result": "ok"
+  },
+  "generated column, identity (control): update A=4": {
+    "result": "ok"
+  },
+  "generated column, identity (control): read": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "A",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "B",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "4",
+        "1"
+      ]
+    ]
+  },
+  "mqt: base table": {
+    "result": "ok"
+  },
+  "CREATE MATERIALIZED VIEW (Django's test)": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token MATERIALIZED was not valid. Valid tokens: RECURSIVE. (-104) (SQLExecDirectW)"
+  },
+  "mqt: create (DATA INITIALLY DEFERRED REFRESH DEFERRED MAINTAINED BY USER)": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -20058,
+    "message": "SQ20058 - Subselect for materialized query table PLFMQT not valid for reason code 2. (-20058) (SQLExecDirectW)"
+  },
+  "mqt over SYSIBM.SYSDUMMY1: create": {
+    "result": "ok"
+  },
+  "mqt over SYSIBM.SYSDUMMY1: refresh": {
+    "result": "ok"
+  },
+  "mqt over SYSIBM.SYSDUMMY1: read": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "IBMREQD",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'Y'"
+      ]
+    ]
+  },
+  "mqt over SYSIBM.SYSDUMMY1: driver catalog (SQLTables)": {
+    "result": "ok",
+    "rows": []
+  },
+  "table name of 129 characters": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -107,
+    "message": "SQL0107 - TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+  },
+  "table name of 128 characters": {
+    "result": "ok"
+  }
+}

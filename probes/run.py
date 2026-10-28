@@ -9,7 +9,7 @@ Usage (inside the "tests" container):
                     numeric_params | constraint_errors | drop_column | alter_table |
                     alter_column | renames | type_changes | check_journal |
                     transaction_start | add_column_default | qaqqini_inquiry |
-                    qaqqini_lifecycle | lob_index
+                    qaqqini_lifecycle | lob_index | later_flags
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -39,6 +39,7 @@ import qtemp_features
 import qtemp_fetch_errors
 import qtemp_in_subquery
 import qtemp_journal_check
+import qtemp_later_flags
 import qtemp_leftovers
 import qtemp_libraries
 import qtemp_library_journal
@@ -103,6 +104,7 @@ PROBES = {
     "leftovers": qtemp_leftovers,
     "qaqqini_lifecycle": qtemp_qaqqini_lifecycle,
     "lob_index": qtemp_lob_index,
+    "later_flags": qtemp_later_flags,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 

@@ -1851,6 +1851,41 @@ library that does not exist (`DJDB2INONE`) and `QTEMP`. Raw result:
   library's journal by its inherit rules is from IBM's STRJRNLIB documentation
   (default `INHRULES`: all object types, all operations, `*INCLUDE`).
 
+### The flags once marked "later" (`probe -- later_flags`)
+2026-10-28, PUB400 (IBM i 7.5), `probes/qtemp_later_flags.py` (#191, topic 3):
+QTEMP only, one connection with the backend's attributes but without
+commitment control (`CMT=0`; the first run with `CMT=1` got SQL7008 on every
+row, QTEMP tables have no journal). Result: `probes/results/later_flags.json`.
+
+| What | Statement | Outcome |
+|---|---|---|
+| `REAL` | `R REAL`, insert 1.5 | ok; described as float, precision 7; reads back `1.5` |
+| `DECIMAL` without precision | `D DECIMAL` | `DECIMAL(5, 0)`: 12345 ok; 123456 `22003` (30160, out of range); 1.5 `22001` (30126, truncation) |
+| `DECFLOAT(34)` | `Decimal` parameters | 34 significant digits round-trip exactly (`12345678901234567890.123456789`, `0.1`, `-1E-30`, `123456789012345678901234567890.1234`); `1E+300` refused at bind, `01004` (30002, "Data truncated"); values come back as `str` |
+| `DECFLOAT(16)` | the same | rounded to 16 digits (`1.234567890123457E+19`), `1E+300` refused the same way |
+| No length | `NVARCHAR`, `VARCHAR`, `VARGRAPHIC` | SQL0104 (`NVARCHAR`: "Token ) was not valid"), SQL0604 ("Attributes not valid") |
+| `COLLATE` on a column | `UNICODE`, `"UCA500R1_LEN_S1"`, `UCA500R1_LEN_S1`, `SYSTEM` | SQL0104 "Token COLLATE was not valid"; after `CCSID 1200`: SQL0683 "Clause not valid for specified type" |
+| Generated column over other columns | `GENERATED ALWAYS AS (A * 2)`, also `STORED`, `VIRTUAL`, `AS (A * 2)`, `AS (CAST(A AS BIGINT) + 1)` | SQL0104; the valid tokens are special registers (`USER`, `ACCTNG`, `APPLNAME`, `PROGRAMID`, `WRKSTNNAME`, ...) |
+| Generated column, other forms | `AS (USER)`, `AS (DATA CHANGE OPERATION)`, row change timestamp, identity | ok, values `'<user>'`, `'U'` after an update, the timestamp, 1; `AS (CURRENT TIMESTAMP)`: SQL0104 |
+| Materialized view | `CREATE MATERIALIZED VIEW` (Django's test) | SQL0104 "Token MATERIALIZED was not valid" |
+| MQT over a QTEMP table | `CREATE TABLE ... AS (SELECT ... FROM QTEMP.x) DATA INITIALLY DEFERRED REFRESH DEFERRED MAINTAINED BY USER` | SQ20058 reason code 2 |
+| MQT over `SYSIBM.SYSDUMMY1` | the same clauses | ok; `REFRESH TABLE` ok, one row; `SQLTables` lists no QTEMP object |
+| Long names | table name of 129 / 128 characters | SQL0107 / ok |
+
+**Consequences** (`docs/features.toml`):
+- off: `supports_unlimited_charfield`, the three collation flags,
+  `supports_stored_generated_columns`, `supports_virtual_generated_columns`,
+  `supports_alter_generated_column_data_type`, and
+  `can_introspect_materialized_views`, whose only effect is Django's
+  `CREATE MATERIALIZED VIEW` test.
+- `has_real_datatype`: phase 6 (introspection maps `REAL`).
+- `truncates_names` (phase 5): the limit is 128, and `quote_name()` already
+  shortens longer names.
+- `supports_no_precision_decimalfield`: **needs a probe**: how the driver
+  binds a `Decimal` with a large exponent (the `01004`), and whether
+  `DECFLOAT(34)`'s 34 digits fit Django's unconstrained `DecimalField`.
+  `DECFLOAT` values also arrive as `str`, so the backend would need a converter.
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one
