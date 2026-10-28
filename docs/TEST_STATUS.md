@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2628 | 2 | 0 | 0 | 2026-10-24 12:15:08 UTC |
-| IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 03:02:59 UTC |
-| IBM i · Django test suite | 1189 | 53 | 7 | 0 | 2026-10-22 21:00:55 UTC |
-| Offline · Django test suite (replay) | 2533 | 0 | 0 | 0 | 2026-10-24 12:15:49 UTC |
+| Offline · own tests | 2941 | 2 | 0 | 0 | 2026-10-28 04:05:29 UTC |
+| IBM i · own tests | 328 | 0 | 1 | 0 | 2026-10-28 03:00:24 UTC |
+| IBM i · Django test suite | 2117 | 189 | 53 | 0 | 2026-10-28 02:13:55 UTC |
+| Offline · Django test suite (replay) | 2544 | 0 | 0 | 0 | 2026-10-28 04:07:04 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2629 | 1 | 0 | 0 | 2026-10-24 12:11:47 UTC |
-| IBM i · own tests | 245 | 0 | 2 | 0 | 2026-10-21 01:55:40 UTC |
-| IBM i · Django test suite | 1110 | 41 | 8 | 0 | 2026-10-21 01:03:38 UTC |
-| Offline · Django test suite (replay) | 2473 | 0 | 0 | 0 | 2026-10-24 12:12:28 UTC |
+| Offline · own tests | 2942 | 1 | 0 | 0 | 2026-10-28 03:58:03 UTC |
+| IBM i · own tests | 328 | 0 | 1 | 0 | 2026-10-28 00:53:07 UTC |
+| IBM i · Django test suite | 2021 | 169 | 54 | 0 | 2026-10-28 00:08:11 UTC |
+| Offline · Django test suite (replay) | 2484 | 0 | 0 | 0 | 2026-10-28 03:59:37 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2627 | 1 | 0 | 0 | 2026-10-24 12:08:23 UTC |
-| IBM i · own tests | 240 | 3 | 2 | 0 | 2026-10-21 00:42:24 UTC |
-| IBM i · Django test suite | 1098 | 38 | 8 | 0 | 2026-10-20 23:51:07 UTC |
-| Offline · Django test suite (replay) | 2429 | 0 | 0 | 0 | 2026-10-24 12:09:01 UTC |
+| Offline · own tests | 2940 | 1 | 0 | 0 | 2026-10-28 03:53:17 UTC |
+| IBM i · own tests | 323 | 3 | 1 | 0 | 2026-10-27 22:48:00 UTC |
+| IBM i · Django test suite | 1982 | 163 | 55 | 0 | 2026-10-27 22:01:12 UTC |
+| Offline · Django test suite (replay) | 2440 | 0 | 0 | 0 | 2026-10-28 03:53:59 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,10 +73,10 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-10-20 23:30:50 UTC to 2026-10-22 21:00:55 UTC
+- **Runs:** 2026-10-27 20:35:42 UTC to 2026-10-28 02:13:55 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
 - **Python:** 3.14.8
-- **Backend commits:** 4cf4e0e 2026-10-21, e664be7 2026-10-22 (per module in the table)
+- **Backend commits:** 32dc152 2026-10-27 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
@@ -85,27 +85,42 @@ The IBM i · Django test suite per module and Django version.
 
 | Module | Django | Tests | Passed | Failures | Errors | Skipped | Expected failures | Unexpected successes | Result | Run | Backend commit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| aggregation | 5.2 | 140 | 139 | 0 | 0 | 1 | 0 | 0 | OK | 2026-10-20 23:45:50 UTC | 4cf4e0e 2026-10-21 |
-| aggregation | 6.0 | 156 | 151 | 0 | 0 | 5 | 0 | 0 | OK | 2026-10-21 00:58:00 UTC | 4cf4e0e 2026-10-21 |
-| aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-10-21 02:11:00 UTC | 4cf4e0e 2026-10-21 |
-| basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-20 23:30:50 UTC | 4cf4e0e 2026-10-21 |
-| basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-21 00:43:23 UTC | 4cf4e0e 2026-10-21 |
-| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-22 21:00:55 UTC | e664be7 2026-10-22 |
-| expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-20 23:48:00 UTC | 4cf4e0e 2026-10-21 |
-| expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-21 01:00:22 UTC | 4cf4e0e 2026-10-21 |
-| expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-21 02:13:24 UTC | 4cf4e0e 2026-10-21 |
-| lookup | 5.2 | 100 | 91 | 0 | 0 | 7 | 2 | 0 | OK | 2026-10-20 23:39:06 UTC | 4cf4e0e 2026-10-21 |
-| lookup | 6.0 | 100 | 93 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-21 00:51:38 UTC | 4cf4e0e 2026-10-21 |
-| lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-21 02:04:49 UTC | 4cf4e0e 2026-10-21 |
-| ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-20 23:37:53 UTC | 4cf4e0e 2026-10-21 |
-| ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-21 00:50:20 UTC | 4cf4e0e 2026-10-21 |
-| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-21 02:03:38 UTC | 4cf4e0e 2026-10-21 |
-| queries | 5.2 | 493 | 469 | 0 | 0 | 20 | 4 | 0 | OK | 2026-10-20 23:51:07 UTC | 4cf4e0e 2026-10-21 |
-| queries | 6.0 | 495 | 470 | 0 | 0 | 21 | 4 | 0 | OK | 2026-10-21 01:03:38 UTC | 4cf4e0e 2026-10-21 |
-| queries | 6.1 | 506 | 482 | 0 | 0 | 21 | 3 | 0 | OK | 2026-10-21 02:16:34 UTC | 4cf4e0e 2026-10-21 |
-| transactions | 5.2 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-20 23:32:45 UTC | 4cf4e0e 2026-10-21 |
-| transactions | 6.0 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-21 00:45:07 UTC | 4cf4e0e 2026-10-21 |
-| transactions | 6.1 | 88 | 85 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-21 01:58:35 UTC | 4cf4e0e 2026-10-21 |
+| aggregation | 5.2 | 140 | 139 | 0 | 0 | 1 | 0 | 0 | OK | 2026-10-27 20:48:50 UTC | 32dc152 2026-10-27 |
+| aggregation | 6.0 | 156 | 151 | 0 | 0 | 5 | 0 | 0 | OK | 2026-10-27 23:00:20 UTC | 32dc152 2026-10-27 |
+| aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-10-28 01:05:30 UTC | 32dc152 2026-10-27 |
+| basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-27 20:35:42 UTC | 32dc152 2026-10-27 |
+| basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-27 22:48:41 UTC | 32dc152 2026-10-27 |
+| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-28 00:54:02 UTC | 32dc152 2026-10-27 |
+| expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-27 20:50:42 UTC | 32dc152 2026-10-27 |
+| expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-27 23:02:11 UTC | 32dc152 2026-10-27 |
+| expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-28 01:07:19 UTC | 32dc152 2026-10-27 |
+| inspectdb | 5.2 | 28 | 17 | 0 | 0 | 11 | 0 | 0 | OK | 2026-10-27 21:58:45 UTC | 32dc152 2026-10-27 |
+| inspectdb | 6.0 | 28 | 17 | 0 | 0 | 11 | 0 | 0 | OK | 2026-10-28 00:05:56 UTC | 32dc152 2026-10-27 |
+| inspectdb | 6.1 | 31 | 17 | 0 | 0 | 14 | 0 | 0 | OK | 2026-10-28 02:11:42 UTC | 32dc152 2026-10-27 |
+| introspection | 5.2 | 21 | 18 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-27 21:56:37 UTC | 32dc152 2026-10-27 |
+| introspection | 6.0 | 21 | 18 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-28 00:03:48 UTC | 32dc152 2026-10-27 |
+| introspection | 6.1 | 24 | 18 | 0 | 0 | 6 | 0 | 0 | OK | 2026-10-28 02:09:26 UTC | 32dc152 2026-10-27 |
+| lookup | 5.2 | 100 | 91 | 0 | 0 | 7 | 2 | 0 | OK | 2026-10-27 20:43:36 UTC | 32dc152 2026-10-27 |
+| lookup | 6.0 | 100 | 93 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-27 22:55:39 UTC | 32dc152 2026-10-27 |
+| lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-28 01:00:43 UTC | 32dc152 2026-10-27 |
+| migrate_signals | 5.2 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-27 22:00:38 UTC | 32dc152 2026-10-27 |
+| migrate_signals | 6.0 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-28 00:07:41 UTC | 32dc152 2026-10-27 |
+| migrate_signals | 6.1 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-28 02:13:26 UTC | 32dc152 2026-10-27 |
+| migrations | 5.2 | 784 | 736 | 0 | 0 | 24 | 24 | 0 | OK | 2026-10-27 20:53:19 UTC | 32dc152 2026-10-27 |
+| migrations | 6.0 | 811 | 762 | 0 | 0 | 25 | 24 | 0 | OK | 2026-10-27 23:04:44 UTC | 32dc152 2026-10-27 |
+| migrations | 6.1 | 825 | 776 | 0 | 0 | 25 | 24 | 0 | OK | 2026-10-28 01:09:50 UTC | 32dc152 2026-10-27 |
+| ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-27 20:42:35 UTC | 32dc152 2026-10-27 |
+| ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-27 22:54:42 UTC | 32dc152 2026-10-27 |
+| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-28 00:59:46 UTC | 32dc152 2026-10-27 |
+| queries | 5.2 | 493 | 469 | 0 | 0 | 20 | 4 | 0 | OK | 2026-10-27 22:01:12 UTC | 32dc152 2026-10-27 |
+| queries | 6.0 | 495 | 470 | 0 | 0 | 21 | 4 | 0 | OK | 2026-10-28 00:08:11 UTC | 32dc152 2026-10-27 |
+| queries | 6.1 | 506 | 482 | 0 | 0 | 21 | 3 | 0 | OK | 2026-10-28 02:13:55 UTC | 32dc152 2026-10-27 |
+| schema | 5.2 | 220 | 110 | 0 | 0 | 87 | 23 | 0 | OK | 2026-10-27 21:46:16 UTC | 32dc152 2026-10-27 |
+| schema | 6.0 | 222 | 111 | 0 | 0 | 89 | 22 | 0 | OK | 2026-10-27 23:53:59 UTC | 32dc152 2026-10-27 |
+| schema | 6.1 | 227 | 113 | 0 | 0 | 92 | 22 | 0 | OK | 2026-10-28 01:59:38 UTC | 32dc152 2026-10-27 |
+| transactions | 5.2 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-27 20:37:21 UTC | 32dc152 2026-10-27 |
+| transactions | 6.0 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-27 22:50:08 UTC | 32dc152 2026-10-27 |
+| transactions | 6.1 | 88 | 86 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-28 00:55:32 UTC | 32dc152 2026-10-27 |
 
 ## Feature flags set to True by the backend
 
@@ -115,7 +130,10 @@ The IBM i · Django test suite per module and Django version.
 - `can_introspect_foreign_keys`
 - `can_release_savepoints`
 - `can_rename_index`
+- `can_rollback_ddl`
+- `ignores_table_name_case`
 - `implied_column_null`
+- `indexes_foreign_keys`
 - `nulls_order_largest`
 - `pattern_lookup_needs_param_pattern`
 - `requires_compound_order_by_subquery`
@@ -123,6 +141,10 @@ The IBM i · Django test suite per module and Django version.
 - `supports_aggregate_order_by_clause`
 - `supports_any_value`
 - `supports_boolean_expr_in_select_clause`
+- `supports_column_check_constraints`
+- `supports_foreign_keys`
+- `supports_index_column_ordering`
+- `supports_inspectdb`
 - `supports_parentheses_in_compound`
 - `supports_regex_backreferencing`
 - `supports_select_difference`
@@ -130,6 +152,7 @@ The IBM i · Django test suite per module and Django version.
 - `supports_select_union`
 - `supports_slicing_ordering_in_compound`
 - `supports_subqueries_in_group_by`
+- `supports_table_check_constraints`
 - `supports_temporal_subtraction`
 - `supports_transactions`
 - `supports_tuple_lookups`
@@ -141,15 +164,16 @@ The IBM i · Django test suite per module and Django version.
 | Reason | Expected failures | Skips |
 |---|---|---|
 | Db2 for i TIME has no fractional seconds | 1 | 0 |
-| Db2 for i asks CPA32B2 before a change that may lose data (DROP COLUMN, narrowing, SET NOT NULL), and the test system's reply list has no entry for it; the test passes on a system with the CPA32B2 reply list entry and OPTIONS['inquiry_message_reply'] = '*SYSRPYL' | 15 | 0 |
-| Db2 for i cannot change this column type in place (SQL0190) | 5 | 0 |
-| Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6) | 10 | 0 |
+| Db2 for i cannot change this column type in place (SQL0190) | 10 | 0 |
+| Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6) | 27 | 3 |
+| Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546) | 2 | 0 |
 | Db2 for i rejects an untyped NULL as an expression (SQL0206) | 1 | 0 |
+| JSONField is not supported yet (phase 6) | 0 | 0 |
 | a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 3 | 0 |
 | identity restart deferred in TestCase (SQL0910) | 0 | 0 |
+| null=True to null=False with a default sets the NULLs (UPDATE) and then runs SET NOT NULL in the same transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910) | 7 | 0 |
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
-| supports_foreign_keys is off: Django's test tables have no foreign key constraints to introspect (phase 4, item 10) | 1 | 0 |
 
 ## Golden files
 
-490 goldens, 9 unverified; unverifiable on PUB400: 9 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
+520 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
