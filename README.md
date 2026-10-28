@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2941 | 2 | 0 | 0 | 2026-10-28 04:05:29 UTC |
-| IBM i · own tests | 328 | 0 | 1 | 0 | 2026-10-28 03:00:24 UTC |
-| IBM i · Django test suite | 2117 | 189 | 53 | 0 | 2026-10-28 02:13:55 UTC |
-| Offline · Django test suite (replay) | 2544 | 0 | 0 | 0 | 2026-10-28 04:07:04 UTC |
+| Offline tests | 2941 | 2 | 0 | 0 | 2026-10-28 05:16:07 UTC |
+| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-28 03:00:24 UTC |
+| Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-28 02:13:55 UTC |
+| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-28 05:16:49 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2942 | 1 | 0 | 0 | 2026-10-28 03:58:03 UTC |
-| IBM i · own tests | 328 | 0 | 1 | 0 | 2026-10-28 00:53:07 UTC |
-| IBM i · Django test suite | 2021 | 169 | 54 | 0 | 2026-10-28 00:08:11 UTC |
-| Offline · Django test suite (replay) | 2484 | 0 | 0 | 0 | 2026-10-28 03:59:37 UTC |
+| Offline tests | 2942 | 1 | 0 | 0 | 2026-10-28 05:12:26 UTC |
+| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-28 00:53:07 UTC |
+| Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-28 00:08:11 UTC |
+| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-28 05:13:10 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,27 +61,27 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2940 | 1 | 0 | 0 | 2026-10-28 03:53:17 UTC |
-| IBM i · own tests | 323 | 3 | 1 | 0 | 2026-10-27 22:48:00 UTC |
-| IBM i · Django test suite | 1982 | 163 | 55 | 0 | 2026-10-27 22:01:12 UTC |
-| Offline · Django test suite (replay) | 2440 | 0 | 0 | 0 | 2026-10-28 03:53:59 UTC |
+| Offline tests | 2940 | 1 | 0 | 0 | 2026-10-28 05:08:41 UTC |
+| IBM i tests | 323 | 3 | 1 | 0 | 2026-10-27 22:48:00 UTC |
+| Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-27 22:01:12 UTC |
+| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-28 05:09:25 UTC |
 
 ### About the tests
 
-- **Offline · own tests:** unit tests and SQL checks written for this project (golden
+- **Offline tests:** unit tests and SQL checks written for this project (golden
   files of the generated SQL and DDL, operations, the driver layer). They run in
   GitHub CI on every commit, for every Python × Django combination, without an IBM i.
-- **IBM i · own tests:** tests written for this project, run against a real Db2 for i
+- **IBM i tests:** tests written for this project, run against a real Db2 for i
   (PUB400, IBM i 7.5): queries with model instances, schema changes, transactions,
   and every golden file executed on the server. They run for every backend change.
-- **IBM i · Django test suite:** Django's official test suite, limited to the modules that use
+- **Django suite on IBM i:** Django's official test suite, limited to the modules that use
   the database and that this backend supports so far: `aggregation`, `basic`, `expressions`, `inspectdb`, `introspection`, `lookup`, `migrate_signals`, `migrations`, `ordering`, `queries`, `schema`, `transactions`. They run on
-  PUB400 before every release (the release run) and for the modules a change
+  PUB400 before every release (the status run) and for the modules a change
   touches.
-- **Offline · Django test suite (replay):** the SQL of every passing test of that Django test suite is
+- **Replay tests:** the SQL of every passing test of that Django test suite is
   recorded on IBM i; GitHub CI generates it again on every commit, without an IBM i,
   and compares (counted per recorded statement). See
-  [docs/OFFLINE_CORPUS.md](docs/OFFLINE_CORPUS.md).
+  [docs/REPLAY_TESTS.md](docs/REPLAY_TESTS.md).
 
 **failed** = failures + errors + unexpected successes; it should be 0 on `main`.
 **Skipped** tests need a feature that is off (see the feature flags) or another
@@ -105,7 +105,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (34 enabled on Django 6.1) �
 | 6 | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
 | 7 | PUB400 tier & release prep | planned |
 
-Latest release: **`v0.1.0a4`** (2026-10-21): Phase 3: Django 6.0 and 5.2 support (release runs on 5.2, 6.0 and 6.1, 17 runs each, 0 failed; offline query corpora for all three). ([CHANGELOG](CHANGELOG.md))
+Latest release: **`v0.1.0a4`** (2026-10-21): Phase 3: Django 6.0 and 5.2 support (status runs on 5.2, 6.0 and 6.1, 17 runs each, 0 failed; offline query corpora for all three). ([CHANGELOG](CHANGELOG.md))
 
 Open tracks:
 
@@ -202,7 +202,7 @@ Django 6.0 or later. The full list, with workarounds:
   [`docs/phases/`](docs/phases/README.md); [CHANGELOG](CHANGELOG.md).
 - Developer notes: [decisions](docs/DECISIONS.md), [IBM i findings](docs/IBMI_NOTES.md),
   [Django versions](docs/DJANGO_VERSIONS.md), [test status](docs/TEST_STATUS.md),
-  [feature flags](docs/FEATURES.md), [offline query corpus](docs/OFFLINE_CORPUS.md).
+  [feature flags](docs/FEATURES.md), [offline query corpus](docs/REPLAY_TESTS.md).
 
 ## Development
 
@@ -226,16 +226,16 @@ The scripts in `bin/` run on the host; each has `--help` and `--dry-run`:
 | `bin/probe` | IBM i probes by name: `qtemp_` probes (read-only or QTEMP); `lib_` probes only with `--approved <link>` to the maintainer's approval; `--publish` puts a result into the repository |
 | `bin/status` | regenerates the status pages; shows the PUB400 lock and labelled pull requests |
 | `bin/ibmi-cleanup` | lists (`--yes`: drops) the leftover test tables of a crashed run |
-| `bin/release-run` | the release run on IBM i, per Django version, resumable |
+| `bin/status-run` | the status run on IBM i, per Django version, resumable |
 | `bin/release-prepare` | checks the release preconditions and opens the release pull request |
 | `bin/worktree-remove` | removes a merged worktree, keeping its test results in the main checkout |
 
 | Test set | How it runs | Needs |
 |---|---|---|
-| Offline · own tests | `docker compose run --rm offline nox -s lint offline` | nothing |
-| IBM i · own tests | `scripts/pub400.sh pub400 [<django>]` | an IBM i (`.env`) |
-| IBM i · Django test suite | `scripts/runtests.sh <django> --clean <module>`; before a release `scripts/pub400.sh release_run <django>` | an IBM i, `vendor/django-<version>` |
-| Offline · Django test suite (replay) | `docker compose run --rm offline nox -s "corpus(3.14-django6.1)"` | nothing |
+| Offline tests | `docker compose run --rm offline nox -s lint offline` | nothing |
+| IBM i tests | `scripts/pub400.sh ibmi [<django>]` | an IBM i (`.env`) |
+| Django suite on IBM i | `scripts/django_suite.sh <django> --clean <module>`; before a release `scripts/pub400.sh status_run <django>` | an IBM i, `vendor/django-<version>` |
+| Replay tests | `docker compose run --rm offline nox -s "replay(3.14-django6.1)"` | nothing |
 
 `nox -s test_status` regenerates this README's generated sections and
 [docs/TEST_STATUS.md](docs/TEST_STATUS.md); `nox -s features` regenerates

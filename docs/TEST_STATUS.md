@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2941 | 2 | 0 | 0 | 2026-10-28 04:05:29 UTC |
-| IBM i · own tests | 328 | 0 | 1 | 0 | 2026-10-28 03:00:24 UTC |
-| IBM i · Django test suite | 2117 | 189 | 53 | 0 | 2026-10-28 02:13:55 UTC |
-| Offline · Django test suite (replay) | 2544 | 0 | 0 | 0 | 2026-10-28 04:07:04 UTC |
+| Offline tests | 2941 | 2 | 0 | 0 | 2026-10-28 05:16:07 UTC |
+| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-28 03:00:24 UTC |
+| Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-28 02:13:55 UTC |
+| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-28 05:16:49 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2942 | 1 | 0 | 0 | 2026-10-28 03:58:03 UTC |
-| IBM i · own tests | 328 | 0 | 1 | 0 | 2026-10-28 00:53:07 UTC |
-| IBM i · Django test suite | 2021 | 169 | 54 | 0 | 2026-10-28 00:08:11 UTC |
-| Offline · Django test suite (replay) | 2484 | 0 | 0 | 0 | 2026-10-28 03:59:37 UTC |
+| Offline tests | 2942 | 1 | 0 | 0 | 2026-10-28 05:12:26 UTC |
+| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-28 00:53:07 UTC |
+| Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-28 00:08:11 UTC |
+| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-28 05:13:10 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,20 +40,20 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline · own tests | 2940 | 1 | 0 | 0 | 2026-10-28 03:53:17 UTC |
-| IBM i · own tests | 323 | 3 | 1 | 0 | 2026-10-27 22:48:00 UTC |
-| IBM i · Django test suite | 1982 | 163 | 55 | 0 | 2026-10-27 22:01:12 UTC |
-| Offline · Django test suite (replay) | 2440 | 0 | 0 | 0 | 2026-10-28 03:53:59 UTC |
+| Offline tests | 2940 | 1 | 0 | 0 | 2026-10-28 05:08:41 UTC |
+| IBM i tests | 323 | 3 | 1 | 0 | 2026-10-27 22:48:00 UTC |
+| Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-27 22:01:12 UTC |
+| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-28 05:09:25 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
 
   | Test set | Called before |
   |---|---|
-  | Offline · own tests | offline tier (`nox -s offline`, `tests/offline/`) |
-  | IBM i · own tests | pub400 tier (`nox -s pub400`, `tests/pub400/`) |
-  | IBM i · Django test suite | Django modules on PUB400 (`scripts/runtests.sh`, the release run) |
-  | Offline · Django test suite (replay) | offline query corpus (`nox -s corpus`, `tests/corpus/`) |
+  | Offline tests | offline tier (`nox -s offline`, `tests/offline/`) |
+  | IBM i tests | IBM i tests (`nox -s ibmi`, `tests/ibmi/`) |
+  | Django suite on IBM i | Django's own test modules on IBM i (`scripts/django_suite.sh`, the status run) |
+  | Replay tests | offline query corpus (`nox -s replay`, `tests/corpus/`) |
 
 - **The badges** of a Django version are the sums of its table. The counts come
   from the last recorded run of each set (the logs and summaries in
@@ -81,7 +81,7 @@ summaries in `test-results/`. Do not edit by hand.
 
 ## Django test modules
 
-The IBM i · Django test suite per module and Django version.
+The Django suite on IBM i per module and Django version.
 
 | Module | Django | Tests | Passed | Failures | Errors | Skipped | Expected failures | Unexpected successes | Result | Run | Backend commit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
