@@ -1,0 +1,1 @@
+`scripts/django_suite.sh` checks its arguments with the rules of `scripts/run_django_tests.py` (`--check-only`, on the host, before the PUB400 lock), so they live in one place: a label must be a test module label, and options may come between the labels.

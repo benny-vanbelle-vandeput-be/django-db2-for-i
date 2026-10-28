@@ -227,12 +227,20 @@ def main(argv: Sequence[str]) -> int:
         "--capture", action="store_true", help="record statements for the offline query corpus"
     )
     parser.add_argument("-v", "--verbosity", type=int, default=2)
-    args = parser.parse_args(argv)
+    parser.add_argument(
+        "--check-only",
+        action="store_true",
+        help="only check the arguments (scripts/django_suite.sh, on the host); run nothing",
+    )
+    # Intermixed: options between the labels, also on the host's older Python.
+    args = parser.parse_intermixed_args(argv)
     try:
         validate(args.version, args.labels)
     except RunRefused as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return 2
+    if args.check_only:
+        return 0
     django_dir = ROOT / "vendor" / f"django-{args.version}"
     if not (django_dir / "tests" / "runtests.py").exists():
         print(

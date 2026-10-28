@@ -15,33 +15,13 @@
 # the statements of passing tests for the offline query corpus
 # (test-results/<version>/corpus/<label>.jsonl; scripts/build_corpus.py). Refuses to run without labels (the full suite) or
 # with more than three labels: the system is shared (CLAUDE.md, PUB400 rules).
-# The checks are repeated inside the container (scripts/run_django_tests.py).
+#
+# The rules live in one place, scripts/run_django_tests.py (#204): it checks
+# the arguments here, with the host's python3 (standard library only), before
+# the PUB400 lock is taken, and again inside the container.
 set -eu
 
-usage() {
-    echo "usage: $0 <django-version> [--clean] [--debug-sql] [--capture] <label> [<label> ...]" >&2
-    exit 2
-}
-
-[ $# -ge 1 ] || usage
-version=$1
-shift
-labels=0
-for arg in "$@"; do
-    case $arg in
-        --clean|--debug-sql|--capture) ;;
-        -*) echo "refused: unknown option $arg" >&2; exit 2 ;;
-        *) labels=$((labels + 1)) ;;
-    esac
-done
-if [ "$labels" -eq 0 ]; then
-    echo "refused: name the test modules; the full Django test suite never runs on a shared system" >&2
-    exit 2
-fi
-if [ "$labels" -gt 3 ]; then
-    echo "refused: at most 3 labels per run on a shared system" >&2
-    exit 2
-fi
+python3 "$(dirname "$0")/run_django_tests.py" --check-only "$@"
 
 # Through scripts/pub400.sh: on macOS, the Mac does not sleep during the run.
-exec "$(dirname "$0")/pub400.sh" django_suite "$version" "$@"
+exec "$(dirname "$0")/pub400.sh" django_suite "$@"

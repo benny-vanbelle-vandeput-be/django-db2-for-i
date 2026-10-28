@@ -1834,6 +1834,12 @@ library that does not exist (`DJDB2INONE`) and `QTEMP`. Raw result:
   new journal-eligible objects inherit journaling from the library, by its
   inherit rules). `DETAILED_INFO => 'NO'` skips the library size. It needs
   `*READ` authority to the library.
+- **Not verified on PUB400: a library journaled with `STRJRNLIB`** (both test
+  libraries use `QSQJRN`). The check W001 and, since #156, the test runner
+  (`creation.py`) accept such a library when new objects inherit journaling
+  and its journal is `*ACTIVE` in `QSYS2.JOURNAL_INFO`; that rests on IBM's
+  documentation. Verifying it needs a `lib_` probe with the maintainer's
+  approval.
 - **A library that does not exist** gives no row and no error, both with and
   without `IGNORE_ERRORS => 'YES'`; `OBJECT_STATISTICS` on it gives no row either.
   Parameter markers worked in every query here; the check still uses the
