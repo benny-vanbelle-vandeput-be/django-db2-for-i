@@ -1,6 +1,6 @@
-"""Settings for replaying the offline query corpus (nox -s corpus; no IBM i).
+"""Settings for replaying the offline query corpus (nox -s replay; no IBM i).
 
-The same settings as Django's test runs on PUB400 (settings_runtests_pub400.py:
+The same settings as Django's test runs on PUB400 (settings_django_suite.py:
 USE_TZ = False, Django's default TIME_ZONE, AutoField) with the offline
 capability profile and no connection. Django's test suite at the corpus's
 commit is put on sys.path (DB2I_DJANGO_TESTS) and the corpus modules' apps are

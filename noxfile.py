@@ -140,7 +140,7 @@ def django_checkout(session: nox.Session, django: str, commit: str) -> str:
     OFFLINE_MATRIX,
     ids=[f"{python}-django{django}" for python, django in OFFLINE_MATRIX],
 )
-def corpus(session: nox.Session, django: str) -> None:
+def replay(session: nox.Session, django: str) -> None:
     """Replay the offline query corpus of this Django version (no IBM i).
 
     Django, library and test suite, comes from exactly the commit the corpus was
@@ -149,7 +149,7 @@ def corpus(session: nox.Session, django: str) -> None:
     import pathlib
     import tomllib
 
-    manifests = sorted(pathlib.Path("tests/offline/corpus", django).glob("*/manifest.toml"))
+    manifests = sorted(pathlib.Path("tests/offline/replay", django).glob("*/manifest.toml"))
     if not manifests:
         session.log(f"no offline query corpus for Django {django}: nothing to replay")
         return
@@ -162,7 +162,7 @@ def corpus(session: nox.Session, django: str) -> None:
         for dependency in PYPROJECT["project"]["dependencies"]
         if not dependency.lower().startswith("django")
     ]
-    # Editable, as the django_tests session installs it for the capture, so the
+    # Editable, as the django_suite session installs it for the capture, so the
     # version string (with the git date) matches the pickles' exactly.
     session.install(*others)
     session.install("-e", checkout)
@@ -170,7 +170,7 @@ def corpus(session: nox.Session, django: str) -> None:
         "pytest",
         "tests/corpus",
         "-m",
-        "corpus",
+        "replay",
         "--ds=tests.django_settings.settings_corpus",
         f"--results-summary={results_summary(django, 'corpus')}",
         *session.posargs,
@@ -200,7 +200,7 @@ def wheel(session: nox.Session) -> None:
     install_groups(session, "test")
     session.install(built, f"Django~={NEWEST_DJANGO}.0")
     with tempfile.TemporaryDirectory(prefix="wheel-test-") as tmp:
-        # probes/: scripts/release_run.py reuses its reachability check.
+        # probes/: scripts/status_run.py reuses its reachability check.
         for name in ("tests", "scripts", "probes", "changelog.d"):
             shutil.copytree(name, f"{tmp}/{name}", ignore=shutil.ignore_patterns("__pycache__"))
         for name in ("pyproject.toml", "CHANGELOG.md"):
@@ -216,13 +216,13 @@ def wheel(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
-def pub400(session: nox.Session) -> None:
+def ibmi(session: nox.Session) -> None:
     """Tier 2: curated smoke set against PUB400 (newest Python, newest Django).
 
-    Another supported Django version as the first argument: nox -s pub400 -- 6.0
+    Another supported Django version as the first argument: nox -s ibmi -- 6.0
     Reuses the test library by default (pytest-django --reuse-db, Django's
     keepdb: safe with the test marker table, and saves DDL on PUB400).
-    Fully clean run: nox -s pub400 -- --create-db
+    Fully clean run: nox -s ibmi -- --create-db
     """
     django, args = django_argument(session)
     install(session, django, "test")
@@ -230,8 +230,8 @@ def pub400(session: nox.Session) -> None:
     session.run(
         "pytest",
         "-m",
-        "pub400",
-        "--ds=tests.django_settings.settings_pub400",
+        "ibmi",
+        "--ds=tests.django_settings.settings_ibmi",
         # Short tracebacks: no function arguments (defense in depth, together
         # with the report redaction in tests/redaction.py).
         "--tb=short",
@@ -242,14 +242,14 @@ def pub400(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
-def django_tests(session: nox.Session) -> None:
-    """Tier 3 on a shared system: Django's runtests.py for named modules (scripts/runtests.sh).
+def django_suite(session: nox.Session) -> None:
+    """Tier 3 on a shared system: Django's runtests.py for named modules (scripts/django_suite.sh).
 
-    nox -s django_tests -- <django-version> [--clean] [--debug-sql] <module> [<module> ...]
+    nox -s django_suite -- <django-version> [--clean] [--debug-sql] <module> [<module> ...]
     """
     if not session.posargs:
         session.error(
-            "usage: nox -s django_tests -- <django-version> [--clean] [--debug-sql] <module> ..."
+            "usage: nox -s django_suite -- <django-version> [--clean] [--debug-sql] <module> ..."
         )
     version = session.posargs[0]
     checkout = f"vendor/django-{version}"
@@ -267,15 +267,15 @@ def django_tests(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
-def release_run(session: nox.Session) -> None:
+def status_run(session: nox.Session) -> None:
     """Before a release, per Django version: all supported Django modules, then the
-    pub400 tier (scripts/release_run.py; sequential, one connection at a time).
+    IBM i tests (scripts/status_run.py; sequential, one connection at a time).
 
-    nox -s release_run -- <django-version> [--restart] [--limit N]
+    nox -s status_run -- <django-version> [--restart] [--limit N]
     """
     if not session.posargs or session.posargs[0].startswith("-"):
-        session.error("usage: nox -s release_run -- <django-version> [--restart] [--limit N]")
-    # Django from the vendor checkout, as in django_tests, for the modules and the tier.
+        session.error("usage: nox -s status_run -- <django-version> [--restart] [--limit N]")
+    # Django from the vendor checkout, as in django_suite, for the modules and the tier.
     install_groups(session, "test")
     session.install("-e", f"vendor/django-{session.posargs[0]}")
     session.install("--no-deps", "-e", ".")
@@ -286,7 +286,7 @@ def release_run(session: nox.Session) -> None:
             if not dependency.lower().startswith("django")
         ]
     )
-    session.run("python", "scripts/release_run.py", *session.posargs)
+    session.run("python", "scripts/status_run.py", *session.posargs)
 
 
 @nox.session(python=NEWEST_PYTHON)

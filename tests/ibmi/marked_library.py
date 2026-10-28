@@ -1,4 +1,4 @@
-"""The test library's marker for one pub400 test module at a time.
+"""The test library's marker for one IBM i test module at a time.
 
 ``marked_library()`` runs the creation safety gate (journal check, no foreign
 objects, leftovers of a crashed marked run dropped, DJDB2I_TEST_MARKER
@@ -26,7 +26,7 @@ from django.db import connection
 
 from django_db2_for_i.creation import MARKER_TABLE
 from tests import table_registry
-from tests.pub400.connection_guard import replace_if_unusable
+from tests.ibmi.connection_guard import replace_if_unusable
 
 _owner: str | None = None
 # unmarked_creates_allowed() blocks that are active.
@@ -95,7 +95,7 @@ def guard(execute, sql, params, many, context):
             pytest.fail(
                 f"{entry.kind} {entry.library}.{entry.name} created outside a marked "
                 "library: create tables only inside marked_library() (a module fixture, "
-                "see tests/pub400/marked_library.py) or in QTEMP"
+                "see tests/ibmi/marked_library.py) or in QTEMP"
             )
     return execute(sql, params, many, context)
 

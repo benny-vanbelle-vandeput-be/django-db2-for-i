@@ -8,13 +8,13 @@
 - ``<version>`` is a release or pre-release version (``0.1.0a5``, ``0.1.0``)
   newer than ``__version__``;
 - ``changelog.d/`` has fragments and they pass ``assemble_changelog.py check``;
-- every supported Django version (noxfile.py) has a release run
-  (test-results/<version>/release-run/state.json) in which every label and the
+- every supported Django version (noxfile.py) has a status run
+  (test-results/<version>/status-run/state.json) in which every label and the
   own IBM i tier passed;
 - the backend is unchanged since each run: the classification of the run's
   commit to HEAD is "docs/tests only" without labels (no IBM i run needed).
 
-``body`` prints the release pull request's description: the release runs and
+``body`` prints the release pull request's description: the status runs and
 the corpus counts per Django version.
 
 Never connects to an IBM i; never tags, never touches GitHub releases or the
@@ -39,7 +39,7 @@ _VERSION = re.compile(r'^__version__ = "([^"]+)"$', re.MULTILINE)
 # Release and pre-release versions only: 1.2.3, 1.2.3a4, 1.2.3b1, 1.2.3rc2.
 _RELEASE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:(a|b|rc)(\d+))?$")
 _PRE_RANK = {"a": 0, "b": 1, "rc": 2, None: 3}
-TIER = "pub400 tier"
+TIER = "IBM i tests"
 
 
 def _script(name: str):
@@ -81,7 +81,7 @@ def release_labels() -> list[str]:
 
 
 def run_state(django: str) -> dict:
-    path = ROOT / "test-results" / django / "release-run" / "state.json"
+    path = ROOT / "test-results" / django / "status-run" / "state.json"
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
 
@@ -121,21 +121,21 @@ def check(version: str) -> list[str]:
     for django in supported_django():
         state = run_state(django)
         if not state:
-            problems.append(f"Django {django}: no release run (bin/release-run --django {django})")
+            problems.append(f"Django {django}: no status run (bin/status-run --django {django})")
             continue
         results = state.get("results", {})
         missing = [name for name in labels if name not in results]
         failed = [name for name in labels if results.get(name) == "failed"]
         if failed or missing:
             problems.append(
-                f"Django {django}: the release run is not complete and passed "
+                f"Django {django}: the status run is not complete and passed "
                 f"(failed: {', '.join(failed) or 'none'}; not run: {len(missing)})"
             )
             continue
         run_commit = state.get("backend", "").split()[0] if state.get("backend") else ""
         changes = backend_changes(run_commit) if run_commit else ["no backend commit recorded"]
         problems += [
-            f"Django {django}: changed since its release run ({run_commit}): {change}"
+            f"Django {django}: changed since its status run ({run_commit}): {change}"
             for change in changes
         ]
     return problems
@@ -145,7 +145,7 @@ def body(version: str) -> str:
     lines = [
         f"Release {version}, prepared by `bin/release-prepare`.",
         "",
-        "## Release runs (IBM i, PUB400)",
+        "## Status runs (IBM i, PUB400)",
         "",
         "| Django | Backend commit | Runs | Result |",
         "|---|---|---|---|",
@@ -160,7 +160,7 @@ def body(version: str) -> str:
         )
     lines += ["", "## Offline query corpus", "", "| Django | Module | Unique entries | Level |"]
     lines.append("|---|---|---|---|")
-    for manifest in sorted((ROOT / "tests" / "offline" / "corpus").glob("*/*/manifest.toml")):
+    for manifest in sorted((ROOT / "tests" / "offline" / "replay").glob("*/*/manifest.toml")):
         data = tomllib.loads(manifest.read_text(encoding="utf-8"))
         for module, counts in sorted(data.get("modules", {}).items()):
             lines.append(

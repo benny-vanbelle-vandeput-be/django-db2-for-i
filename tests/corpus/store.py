@@ -2,7 +2,7 @@
 
 One corpus per Django version and capability profile::
 
-    tests/offline/corpus/<django>/<profile>/
+    tests/offline/replay/<django>/<profile>/
         manifest.toml             # Django commit, capture level and date, counts per module
         queries/<module>.jsonl.gz # one JSON object per unique statement (gzip)
         queries/<module>.sql      # the unique SQL, one statement per line, for review
@@ -43,7 +43,7 @@ from typing import Any
 
 from tests.golden import UNVERIFIED, encode_param, new_stamp
 
-CORPUS_ROOT = Path(__file__).resolve().parents[1] / "offline" / "corpus"
+CORPUS_ROOT = Path(__file__).resolve().parents[1] / "offline" / "replay"
 PICKLE_PROTOCOL = 5
 # 1: plain pickle; 2: model classes as persistent ids (see the module docstring).
 PICKLE_FORMAT = 2

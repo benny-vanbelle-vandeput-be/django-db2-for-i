@@ -8,12 +8,12 @@
 # Preconditions, all checked before anything is written:
 # - not a subagent worktree (.claude/worktrees/): only the main session prepares releases;
 # - HEAD is origin/main after a fetch; the only local changes are the corpus
-#   files the release runs wrote (bin/release-run);
+#   files the status runs wrote (bin/status-run);
 # - CI passed on main's head (GitHub check runs);
 # - the verification gate passes (no golden or corpus entry without a stamp);
 # - scripts/release_prepare.py check: the version is newer than __version__,
 #   there are changelog fragments, every supported Django version has a
-#   complete release run that passed, and the backend is unchanged since.
+#   complete status run that passed, and the backend is unchanged since.
 # Then, on a new branch chore/release-<version>: commits the corpus, sets
 # __version__, assembles the CHANGELOG (scripts/assemble_changelog.py),
 # regenerates the status pages and FEATURES.md (nox -s test_status features),
@@ -37,7 +37,7 @@ case $ROOT in
     */.claude/worktrees/*) die "refused in a subagent worktree ($ROOT): only the main session prepares releases" ;;
 esac
 branch=chore/release-$version
-corpus=tests/offline/corpus
+corpus=tests/offline/replay
 
 # --- preconditions -----------------------------------------------------------------------
 run git -C "$ROOT" fetch --quiet origin
@@ -45,7 +45,7 @@ if [ "$DRY_RUN" = 0 ]; then
     [ "$(git -C "$ROOT" rev-parse HEAD)" = "$(git -C "$ROOT" rev-parse origin/main)" ] \
         || die "HEAD is not origin/main (git switch main && git pull --ff-only)"
     changed=$(git -C "$ROOT" status --porcelain | grep -v "^.. $corpus/" || true)
-    [ -z "$changed" ] || die "local changes other than the release runs' corpus:
+    [ -z "$changed" ] || die "local changes other than the status runs' corpus:
 $changed"
     ! git -C "$ROOT" rev-parse --verify --quiet "refs/heads/$branch" >/dev/null \
         || die "the branch $branch exists already"
@@ -66,7 +66,7 @@ container uv run --no-project python scripts/release_prepare.py check "$version"
 run git -C "$ROOT" switch --quiet -c "$branch"
 if [ "$DRY_RUN" = 1 ] || [ -n "$(git -C "$ROOT" status --porcelain -- "$corpus")" ]; then
     run git -C "$ROOT" add -- "$corpus"
-    run git -C "$ROOT" commit --quiet -m "test(corpus): the offline query corpus of the release runs"
+    run git -C "$ROOT" commit --quiet -m "test(corpus): the offline query corpus of the status runs"
 fi
 run sed -i.bak "s/^__version__ = \".*\"$/__version__ = \"$version\"/" "$ROOT/django_db2_for_i/__init__.py"
 run rm -f "$ROOT/django_db2_for_i/__init__.py.bak"

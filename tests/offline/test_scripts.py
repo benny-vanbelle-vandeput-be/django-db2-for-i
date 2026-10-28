@@ -77,7 +77,7 @@ def test_runtests_command_is_serial_and_noninteractive() -> None:
     command = runner.runtests_command("basic", keepdb=True, verbosity=2)
     assert command[1:] == [
         "runtests.py",
-        "--settings=tests.django_settings.settings_runtests_pub400",
+        "--settings=tests.django_settings.settings_django_suite",
         "--parallel=1",
         "--noinput",
         "--verbosity=2",
@@ -128,7 +128,7 @@ def test_debug_sql_output_is_scrubbed_and_recorded(monkeypatch, tmp_path, capsys
 def test_debug_sql_option_is_accepted() -> None:
     import subprocess as sp
 
-    script = Path(__file__).resolve().parents[2] / "scripts" / "runtests.sh"
+    script = Path(__file__).resolve().parents[2] / "scripts" / "django_suite.sh"
     text = script.read_text()
     assert "--clean|--debug-sql|--capture) ;;" in text
     result = sp.run(["sh", str(script), "6.1", "--debug-sql"], capture_output=True, text=True)
@@ -148,10 +148,10 @@ def test_pub400_script_accepts_only_pub400_sessions_and_keeps_the_mac_awake() ->
     assert result.returncode == 2
     assert "usage:" in result.stderr
     text = script.read_text()
-    assert "pub400|django_tests|release_run|probe|probe_*|ibmi_cleanup) ;;" in text
+    assert "ibmi|django_suite|status_run|probe|probe_*|ibmi_cleanup) ;;" in text
     assert "caffeinate -i -s" in text
-    runtests = (script.parent / "runtests.sh").read_text()
-    assert 'exec "$(dirname "$0")/pub400.sh" django_tests "$version" "$@"' in runtests
+    runtests = (script.parent / "django_suite.sh").read_text()
+    assert 'exec "$(dirname "$0")/pub400.sh" django_suite "$version" "$@"' in runtests
 
 
 def test_the_backend_commit_comes_from_the_host_when_given(monkeypatch) -> None:
@@ -366,9 +366,9 @@ def write_summary(root: Path, version: str, name: str, **counts) -> None:
 
 
 TIER_LOG = (
-    "tests/pub400/test_schema.py ....\n"
+    "tests/ibmi/test_schema.py ....\n"
     "=========================== short test summary info ============================\n"
-    "XFAIL tests/pub400/test_inquiry.py::test_drop - no entry\n"
+    "XFAIL tests/ibmi/test_inquiry.py::test_drop - no entry\n"
     "==== 240 passed, 3 skipped, 2240 deselected, 2 xfailed in 746.19s (0:12:26) ====\n"
 )
 
@@ -416,11 +416,11 @@ def test_test_set_table_totals_and_badges(tmp_path) -> None:
         "| Test set | Passed | Skipped | Expected failures | Failed | Last run |",
         "|---|---|---|---|---|---|",
     ]
-    assert "| Offline · own tests | 100 | 2 | 0 | 1 | 2026-10-21 08:00:00 UTC |" in table
-    assert "| IBM i · Django test suite | 122 | 8 | 4 | 6 | 2026-10-17 18:00:00 UTC |" in table
+    assert "| Offline tests | 100 | 2 | 0 | 1 | 2026-10-21 08:00:00 UTC |" in table
+    assert "| Django suite on IBM i | 122 | 8 | 4 | 6 | 2026-10-17 18:00:00 UTC |" in table
     empty = status.set_table(status.set_results([], "5.2", results_dir), "5.2")
     none = " | ".join([status.NONE] * 4)
-    assert f"| IBM i · own tests | {none} | not run yet |" in empty
+    assert f"| IBM i tests | {none} | not run yet |" in empty
     written = status.write_badges(
         STATUS, results_ok_and_failed(), tmp_path / "b", results_dir, TODAY
     )
@@ -466,11 +466,11 @@ def test_the_tier_log_counts_when_there_is_no_summary(tmp_path) -> None:
     log.parent.mkdir(parents=True)
     log.write_text(TIER_LOG)
     sets = status.set_results([], "5.2", tmp_path / "results")
-    assert sets[status.SET_PUB400].totals == status.Totals(
+    assert sets[status.SET_IBMI].totals == status.Totals(
         passed=240, failed=0, skipped=3, expected_failures=2
     )
     write_summary(tmp_path / "results", "5.2", "pub400", passed=7)
-    assert status.set_results([], "5.2", tmp_path / "results")[status.SET_PUB400].totals.passed == 7
+    assert status.set_results([], "5.2", tmp_path / "results")[status.SET_IBMI].totals.passed == 7
 
 
 def test_readme_sections_between_markers(monkeypatch, tmp_path) -> None:
@@ -494,7 +494,7 @@ def test_readme_sections_between_markers(monkeypatch, tmp_path) -> None:
     assert "main/docs/badges/6.0/xfail.json)](docs/TEST_STATUS.md)" in text
     assert "### About the tests" in text
     assert "limited to the modules that use" in text and "`basic`, `transactions`" in text
-    assert "[docs/OFFLINE_CORPUS.md](docs/OFFLINE_CORPUS.md)" in text
+    assert "[docs/REPLAY_TESTS.md](docs/REPLAY_TESTS.md)" in text
     assert "[docs/FEATURES.md](docs/FEATURES.md) (1 enabled on Django 6.1)" in text
     assert "**Phase 3: Django 6.0 and 5.2 support** (in progress)" in text
     assert "| A: 6.1 → 6.0 | done | [#107](https://github.com/" in text
@@ -540,13 +540,13 @@ def test_main_writes_everything(monkeypatch, tmp_path) -> None:
     assert status.main() == 0
     passed = json.loads((tmp_path / "badges" / "6.1" / "passed.json").read_text())
     assert passed["message"] == "122 passed"
-    assert "| IBM i · Django test suite | 122 |" in readme.read_text()
+    assert "| Django suite on IBM i | 122 |" in readme.read_text()
     page = (tmp_path / "TEST_STATUS.md").read_text()
     assert "- **IBM i:** 7.5 on PUB400" in page
     assert (
         "## Django 6.1 ✅" in page and "docs/badges/6.1/passed.json)](#django-test-modules)" in page
     )
-    assert "| Offline · own tests | offline tier (`nox -s offline`, `tests/offline/`) |" in page
+    assert "| Offline tests | offline tier (`nox -s offline`, `tests/offline/`) |" in page
 
 
 def test_committed_status_data_parses() -> None:
@@ -682,11 +682,11 @@ def test_label_logs_of_one_module_must_agree_on_python(tmp_path) -> None:
     assert total.python == ""
 
 
-# --- release run -------------------------------------------------------------------------
+# --- status run -------------------------------------------------------------------------
 
-release = load("release_run")
+release = load("status_run")
 
-# The wheel session tests a copy without docs/ (the release run reads docs/status.toml).
+# The wheel session tests a copy without docs/ (the status run reads docs/status.toml).
 needs_status_data = pytest.mark.skipif(
     not (SCRIPTS.parent / "docs" / "status.toml").exists(),
     reason="docs/status.toml is not part of this copy of the tests",
@@ -694,7 +694,7 @@ needs_status_data = pytest.mark.skipif(
 
 
 @needs_status_data
-def test_release_run_labels_come_from_status_toml() -> None:
+def test_status_run_labels_come_from_status_toml() -> None:
     import tomllib
 
     run = release.labels()
@@ -708,7 +708,7 @@ def test_release_run_labels_come_from_status_toml() -> None:
 
 
 @needs_status_data
-def test_release_run_refuses_before_connecting(monkeypatch, tmp_path, capsys) -> None:
+def test_status_run_refuses_before_connecting(monkeypatch, tmp_path, capsys) -> None:
     calls = []
     monkeypatch.setattr(release.run_django_tests, "main", lambda argv: calls.append(argv) or 0)
     monkeypatch.setattr(release, "run_tier", lambda version: calls.append(version) or 0)
@@ -727,7 +727,7 @@ def test_release_run_refuses_before_connecting(monkeypatch, tmp_path, capsys) ->
 
 
 @needs_status_data
-def test_release_run_runs_every_label_then_the_tier_and_reports_failures(
+def test_status_run_runs_every_label_then_the_tier_and_reports_failures(
     monkeypatch, tmp_path, capsys
 ) -> None:
     calls = []
@@ -743,12 +743,12 @@ def test_release_run_runs_every_label_then_the_tier_and_reports_failures(
     monkeypatch.setattr(release, "run_tier", lambda version: calls.append(["tier", version]) or 0)
     assert release.main(["6.1"]) == 1
     run = release.labels()
-    # Every label captures: the release run refreshes the offline query corpus.
+    # Every label captures: the status run refreshes the offline query corpus.
     assert calls == [["6.1", "--clean", "--capture", label] for label in run] + [["tier", "6.1"]]
     assert f"{len(run) + 1} runs, failed: lookup" in capsys.readouterr().out
 
 
-def test_release_run_reachability_needs_no_credentials(monkeypatch) -> None:
+def test_status_run_reachability_needs_no_credentials(monkeypatch) -> None:
     for name in ("DB2I_HOST", "DB2I_USER", "DB2I_PASSWORD", "DB2I_SSL"):
         monkeypatch.delenv(name, raising=False)
     assert "DB2I_HOST" in release.reachable()
@@ -761,7 +761,7 @@ def test_release_run_reachability_needs_no_credentials(monkeypatch) -> None:
     assert release.reachable() == "port 9471 not reachable: timeout"
 
 
-def test_release_run_tier_log_is_not_read_as_a_module_log(monkeypatch, tmp_path, capsys) -> None:
+def test_status_run_tier_log_is_not_read_as_a_module_log(monkeypatch, tmp_path, capsys) -> None:
     """scripts/update_test_status.py reads test-results/<version>/*.log as module
     logs; the tier's log goes to tiers/, with the password scrubbed."""
     import io
@@ -783,12 +783,12 @@ def test_release_run_tier_log_is_not_read_as_a_module_log(monkeypatch, tmp_path,
     assert "S3cret!pw" not in capsys.readouterr().out
 
 
-# --- release run: resuming (bin/release-run) ---------------------------------------------
+# --- status run: resuming (bin/status-run) ---------------------------------------------
 
 
 @pytest.fixture
 def resumable(monkeypatch, tmp_path):
-    """release_run.main() with fake runs: labels a, b, c; results in tmp_path."""
+    """status_run.main() with fake runs: labels a, b, c; results in tmp_path."""
     (tmp_path / "vendor" / "django-6.1" / "tests").mkdir(parents=True)
     (tmp_path / "vendor" / "django-6.1" / "tests" / "runtests.py").touch()
     monkeypatch.setattr(release, "ROOT", tmp_path)
@@ -856,7 +856,7 @@ def test_new_commits_or_restart_start_over_and_clear_old_captures(resumable, cap
     assert json.loads(release.state_path("6.1").read_text())["results"] == {}
 
 
-def test_release_run_usage(resumable, capsys) -> None:
+def test_status_run_usage(resumable, capsys) -> None:
     assert release.main(["6.1", "--limit"]) == 2
     assert release.main(["6.1", "--bogus"]) == 2
-    assert "usage: nox -s release_run" in capsys.readouterr().err
+    assert "usage: nox -s status_run" in capsys.readouterr().err

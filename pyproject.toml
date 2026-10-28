@@ -59,14 +59,14 @@ packages = ["django_db2_for_i"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-# Offline settings by default; the pub400 nox session passes --ds.
+# Offline settings by default; the ibmi nox session passes --ds.
 DJANGO_SETTINGS_MODULE = "tests.django_settings.settings_offline"
 django_find_project = false
 addopts = ["--strict-markers", "--strict-config", "-ra"]
 markers = [
     "offline: no IBM i needed; never opens a database connection",
-    "pub400: curated smoke set for a shared, restricted IBM i (PUB400)",
-    "corpus: replay of the offline query corpus (nox -s corpus); never opens a connection",
+    "ibmi: our own tests against a real IBM i (now PUB400)",
+    "replay: replay tests, the offline query corpus (nox -s replay); never opens a connection",
 ]
 
 [tool.ruff]

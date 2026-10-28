@@ -3,7 +3,7 @@
 Each case builds a list of ``(sql, params)`` statements from a connection
 whose capabilities follow the profile being generated. The same cases are
 compared offline (tests/offline/test_goldens.py) and executed against
-IBM i (tests/pub400/test_goldens.py).
+IBM i (tests/ibmi/test_goldens.py).
 
 The selection is deliberately narrow: pagination, quoting, booleans,
 date/time parameters, LIKE escaping, identity handling, flush and DDL types.

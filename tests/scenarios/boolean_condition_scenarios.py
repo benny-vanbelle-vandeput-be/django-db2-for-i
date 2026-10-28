@@ -2,7 +2,7 @@
 TRUE, FALSE and NULL rows.
 
 Shared by the offline reference test, which runs them on SQLite (Django on a
-backend with standard three-valued logic), and by the pub400 test, which runs
+backend with standard three-valued logic), and by the IBM i test, which runs
 them on IBM i. Django renders ``filter(flag=True/False)`` through Exact's
 boolean shortcut (``flag`` / ``NOT flag``) and ``~F("flag")`` as a
 NegatedExpression; Db2 for i's NOT of a BOOLEAN value treats NULL as false.

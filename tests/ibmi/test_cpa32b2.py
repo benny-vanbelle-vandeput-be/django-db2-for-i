@@ -19,8 +19,8 @@ import pytest
 from django.db import DataError, IntegrityError, OperationalError, models
 
 from django_db2_for_i.base import DatabaseWrapper
-from tests.pub400.connection_guard import replace_if_unusable
-from tests.pub400.marked_library import marked_library
+from tests.ibmi.connection_guard import replace_if_unusable
+from tests.ibmi.marked_library import marked_library
 
 TABLE = "TESTAPP_NARROWING"
 QAQQINI_COPY = "SELECT COUNT(*) FROM TABLE(QSYS2.OBJECT_STATISTICS('QTEMP', '*FILE', 'QAQQINI')) X"

@@ -10,7 +10,7 @@
 # (nox -s test_status, from test-results/) and docs/FEATURES.md (nox -s
 # features), in the container; never connects to an IBM i. Then shows who
 # holds the PUB400 lock (scripts/pub400_lock.py --status) and the open pull
-# requests that carry needs-full-tier or run-ibmi (gh, read-only; skipped
+# requests that carry needs-full-ibmi-run or run-ibmi (gh, read-only; skipped
 # when gh is not installed).
 
 source "$(dirname "$0")/_common.sh"
@@ -31,8 +31,8 @@ run python3 "$ROOT/scripts/pub400_lock.py" --status
 if command -v gh >/dev/null 2>&1; then
     # REST, not gh pr list (GraphQL needs scopes the machine account lacks).
     run gh api "repos/{owner}/{repo}/pulls?state=open&per_page=100" \
-        --jq '.[] | select(any(.labels[]; .name == "needs-full-tier" or .name == "run-ibmi"))
-              | "PR #\(.number) [\([.labels[].name | select(. == "needs-full-tier" or . == "run-ibmi")] | join(", "))] \(.title)"' ||
+        --jq '.[] | select(any(.labels[]; .name == "needs-full-ibmi-run" or .name == "run-ibmi"))
+              | "PR #\(.number) [\([.labels[].name | select(. == "needs-full-ibmi-run" or . == "run-ibmi")] | join(", "))] \(.title)"' ||
         echo "could not list the pull requests (gh)"
 else
     echo "gh not installed: labelled pull requests not shown"

@@ -1,4 +1,4 @@
-"""The tests.testapp models whose tables the pub400 test modules create
+"""The tests.testapp models whose tables the IBM i test modules create
 (``testapp_tables`` in conftest.py)."""
 
 from tests.testapp.models import (

@@ -17,7 +17,7 @@ x-common: &common
     - uv-cache:/home/dev/.cache/uv
 
 services:
-  # Full environment with the IBM i Access ODBC Driver (offline, probe, pub400, full tiers).
+  # Full environment with the IBM i Access ODBC Driver (offline tests, probes, IBM i runs).
   tests:
     <<: *common
     platform: linux/amd64

@@ -5,13 +5,13 @@
 Inputs:
 
 - test-results/<django-version>/<module>.log (and labels/<label>.log), written
-  by scripts/run_django_tests.py: the "IBM i · Django test suite" runs, per
+  by scripts/run_django_tests.py: the "Django suite on IBM i" runs, per
   module and Django version, from Django's test runner summary;
 - test-results/<django-version>/sets/*.json, written by pytest
   ``--results-summary`` (tests/results_summary.py; the nox sessions pass it):
-  ``offline-py<python>.json`` ("Offline · own tests", the newest Python's file
-  counts), ``pub400.json`` ("IBM i · own tests") and ``corpus.json``
-  ("Offline · Django test suite (replay)", counted per corpus entry);
+  ``offline-py<python>.json`` ("Offline tests", the newest Python's file
+  counts), ``pub400.json`` ("IBM i tests") and ``corpus.json``
+  ("Replay tests", counted per corpus entry);
 - docs/status.toml: the IBM i, Python and Django versions with their state,
   the phases with their steps, releases and open tracks;
 - docs/features/<django-version>.json (scripts/features.py): the number of
@@ -402,17 +402,17 @@ def general_badge_lines(status: dict, root: str = "", today: dt.date | None = No
 
 # --- The four test sets per Django version ------------------------------------------
 
-SET_OFFLINE = "Offline · own tests"
-SET_PUB400 = "IBM i · own tests"
-SET_DJANGO = "IBM i · Django test suite"
-SET_REPLAY = "Offline · Django test suite (replay)"
-TEST_SETS = [SET_OFFLINE, SET_PUB400, SET_DJANGO, SET_REPLAY]
+SET_OFFLINE = "Offline tests"
+SET_IBMI = "IBM i tests"
+SET_DJANGO = "Django suite on IBM i"
+SET_REPLAY = "Replay tests"
+TEST_SETS = [SET_OFFLINE, SET_IBMI, SET_DJANGO, SET_REPLAY]
 # The names used before (code, sessions and directories keep them for now).
 OLD_NAMES = {
     SET_OFFLINE: "offline tier (`nox -s offline`, `tests/offline/`)",
-    SET_PUB400: "pub400 tier (`nox -s pub400`, `tests/pub400/`)",
-    SET_DJANGO: "Django modules on PUB400 (`scripts/runtests.sh`, the release run)",
-    SET_REPLAY: "offline query corpus (`nox -s corpus`, `tests/corpus/`)",
+    SET_IBMI: "IBM i tests (`nox -s ibmi`, `tests/ibmi/`)",
+    SET_DJANGO: "Django's own test modules on IBM i (`scripts/django_suite.sh`, the status run)",
+    SET_REPLAY: "offline query corpus (`nox -s replay`, `tests/corpus/`)",
 }
 
 
@@ -443,7 +443,7 @@ _PYTEST_COUNT = re.compile(r"(\d+) (passed|failed|skipped|xfailed|xpassed|errors
 
 
 def _read_tier_log(path: Path) -> SetResult | None:
-    """The pytest summary line of a release run's tier log (tiers/pub400.log),
+    """The pytest summary line of a status run's tier log (tiers/pub400.log),
     for runs from before ``--results-summary``; the file's time as the run."""
     try:
         text = path.read_text(errors="replace")
@@ -484,7 +484,7 @@ def set_results(
     )
     return {
         SET_OFFLINE: _read_summary(offline[-1]) if offline else None,
-        SET_PUB400: tier,
+        SET_IBMI: tier,
         SET_DJANGO: django,
         SET_REPLAY: _read_summary(sets / "corpus.json"),
     }
@@ -547,7 +547,7 @@ def write_badges(
     return written
 
 
-CORPUS_ROOT = ROOT / "tests" / "offline" / "corpus"
+CORPUS_ROOT = ROOT / "tests" / "offline" / "replay"
 NONE = "\u2013"  # an en dash: no recorded run
 
 
@@ -619,17 +619,17 @@ def about_lines(results: list[ModuleResult], system: str, ibmi: str) -> list[str
         f"- **{SET_OFFLINE}:** unit tests and SQL checks written for this project (golden",
         "  files of the generated SQL and DDL, operations, the driver layer). They run in",
         "  GitHub CI on every commit, for every Python × Django combination, without an IBM i.",
-        f"- **{SET_PUB400}:** tests written for this project, run against a real Db2 for i",
+        f"- **{SET_IBMI}:** tests written for this project, run against a real Db2 for i",
         f"  ({system}, IBM i {ibmi}): queries with model instances, schema changes, transactions,",
         "  and every golden file executed on the server. They run for every backend change.",
         f"- **{SET_DJANGO}:** Django's official test suite, limited to the modules that use",
         f"  the database and that this backend supports so far: {module_text}. They run on",
-        f"  {system} before every release (the release run) and for the modules a change",
+        f"  {system} before every release (the status run) and for the modules a change",
         "  touches.",
         f"- **{SET_REPLAY}:** the SQL of every passing test of that Django test suite is",
         "  recorded on IBM i; GitHub CI generates it again on every commit, without an IBM i,",
         "  and compares (counted per recorded statement). See",
-        "  [docs/OFFLINE_CORPUS.md](docs/OFFLINE_CORPUS.md).",
+        "  [docs/REPLAY_TESTS.md](docs/REPLAY_TESTS.md).",
         "",
         "**failed** = failures + errors + unexpected successes; it should be 0 on `main`.",
         "**Skipped** tests need a feature that is off (see the feature flags) or another",

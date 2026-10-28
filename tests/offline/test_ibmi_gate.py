@@ -124,7 +124,7 @@ def test_the_newest_covering_result_wins() -> None:
 def test_a_targeted_result_does_not_cover_the_full_tier() -> None:
     verdict = decide(FULL_CHANGE, A, gate.results([result_comment(A)]))
     assert verdict.state == "failure"
-    assert verdict.description.startswith("needs a full IBM i run (needs-full-tier)")
+    assert verdict.description.startswith("needs a full IBM i run (needs-full-ibmi-run)")
     assert decide(FULL_CHANGE, A, gate.results([result_comment(A, "full")])).state == "success"
 
 

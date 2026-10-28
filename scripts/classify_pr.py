@@ -7,7 +7,7 @@
 The changed files are those of ``git diff <merge-base of base and head> <head>``.
 Every file gets one of three classes; the pull request gets the most demanding:
 
-- **needs full tier**: the driver layer (``django_db2_for_i/drivers/``),
+- **needs full IBM i run**: the driver layer (``django_db2_for_i/drivers/``),
   ``base.py``, ``creation.py``, the capabilities, the core backend modules
   (``CORE_PATHS``: a change there can break tests far from the change, #176
   and #179), the pinned Django commit
@@ -16,7 +16,7 @@ Every file gets one of three classes; the pull request gets the most demanding:
   dependencies in pyproject.toml), and the IBM i gate itself
   (``.github/workflows/ibmi-gate.yml``, ``scripts/ibmi_gate.py`` and this
   script, which decides the gate's verdict; the comment names them for the
-  maintainer's review). Label ``needs-full-tier``.
+  maintainer's review). Label ``needs-full-ibmi-run``.
 - **SQL-affecting**: any other backend code, a golden without a verification
   stamp, or corpus entries without one (new or changed SQL). Label ``run-ibmi``.
 - **docs/tests only**: the paths listed in ``DOCS_PATHS`` and
@@ -26,7 +26,7 @@ Every file gets one of three classes; the pull request gets the most demanding:
   run: label ``run-ibmi``.
 
 It **fails closed**: a path matched by no rule (a new file or directory) is
-"needs full tier", like the container image (``docker/``, ``compose.yaml``).
+"needs full IBM i run", like the container image (``docker/``, ``compose.yaml``).
 
 With ``--before`` (the previous head of the pull request) the push from
 ``before`` to ``head`` is checked as well (CLAUDE.md, "Git workflow"). It needs
@@ -65,9 +65,9 @@ import sys
 import tomllib
 from collections.abc import Callable, Iterable
 
-DOCS, SQL, FULL = "docs/tests only", "SQL-affecting", "needs full tier"
+DOCS, SQL, FULL = "docs/tests only", "SQL-affecting", "needs full IBM i run"
 RANK = {DOCS: 0, SQL: 1, FULL: 2}
-FULL_TIER_LABEL, RUN_IBMI_LABEL = "needs-full-tier", "run-ibmi"
+FULL_TIER_LABEL, RUN_IBMI_LABEL = "needs-full-ibmi-run", "run-ibmi"
 # The comment's first line; it names the head the classification handled.
 COMMENT_MARKER = "<!-- classify-pr -->"
 COMMENT_PREFIX = "<!-- classify-pr"
@@ -113,7 +113,7 @@ ENVIRONMENT_PATHS = {
 }
 # docs/tests only, but they run on IBM i (or drive the IBM i runs): a targeted run.
 IBMI_RUN_PATHS = {
-    "tests/pub400/": "own IBM i tests",
+    "tests/ibmi/": "own IBM i tests",
     "tests/testapp/": "the test models",
     "tests/conftest.py": "the shared test fixtures",
     "tests/golden.py": "the golden format (executed on IBM i)",
@@ -122,12 +122,11 @@ IBMI_RUN_PATHS = {
     "tests/verification_gate.py": "the unverifiable list (read by the IBM i golden check)",
     "tests/results_summary.py": "the results summary plugin",
     "tests/redaction.py": "the log redaction",
-    "tests/boolean_condition_scenarios.py": "scenarios of the IBM i tests",
-    "tests/tuple_lookup_scenarios.py": "scenarios of the IBM i tests",
+    "tests/scenarios/": "scenarios of the IBM i tests",
     "tests/corpus/capture.py": "the corpus capture (runs on IBM i)",
     "tests/corpus/store.py": "the corpus format (used by the capture)",
-    "tests/django_settings/settings_pub400.py": "the IBM i test settings",
-    "tests/django_settings/settings_runtests_pub400.py": "the IBM i Django test settings",
+    "tests/django_settings/settings_ibmi.py": "the IBM i test settings",
+    "tests/django_settings/settings_django_suite.py": "the IBM i Django test settings",
     "scripts/pub400.sh": "the IBM i run wrapper",
     "scripts/pub400_lock.py": "the PUB400 lock",
     "scripts/nox_volume.sh": "the nox-envs volume of every container run",
@@ -141,13 +140,13 @@ IBMI_RUN_PATHS = {
     "bin/ibmi-cleanup": "the cleanup of leftover test objects",
     "scripts/ibmi_cleanup.py": "the cleanup of leftover test objects",
     "tests/table_registry.py": "the list of objects test runs create",
-    "scripts/runtests.sh": "the Django test runner on IBM i",
+    "scripts/django_suite.sh": "the Django test runner on IBM i",
     "scripts/run_django_tests.py": "the Django test runner on IBM i",
-    "scripts/release_run.py": "the release run",
-    "bin/release-run": "the release run",
+    "scripts/status_run.py": "the status run",
+    "bin/status-run": "the status run",
 }
 # docs/tests only: nothing here runs on IBM i. Everything matched by no rule in
-# judge() is "needs full tier" (fails closed): a new file or directory is never
+# judge() is "needs full IBM i run" (fails closed): a new file or directory is never
 # waved through, it is listed here (or above) when it is added.
 DOCS_PATHS = {
     "docs/": "docs",
@@ -189,7 +188,7 @@ DOCS_PATHS = {
     "django-db2-for-i.code-workspace": "editor setup",
 }
 GOLDEN_DIR = "tests/offline/golden/"
-CORPUS_DIR = "tests/offline/corpus/"
+CORPUS_DIR = "tests/offline/replay/"
 # tests/golden.py: UNVERIFIED (an offline test keeps the two equal).
 UNVERIFIED = "unverified"
 VERIFIED_LINE = re.compile(r"^-- verified: (?P<stamp>.*)$", re.MULTILINE)

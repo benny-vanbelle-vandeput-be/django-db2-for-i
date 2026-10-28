@@ -2,7 +2,7 @@
 
 Enabled only by the environment variable DB2I_CORPUS_CAPTURE (a file path),
 which ``scripts/run_django_tests.py --capture`` sets; the runner settings then
-use ``CaptureRunner`` (tests/django_settings/settings_runtests_pub400.py).
+use ``CaptureRunner`` (tests/django_settings/settings_django_suite.py).
 Never part of the backend package.
 
 Before Django executes a statement (``SQLCompiler.execute_sql`` and

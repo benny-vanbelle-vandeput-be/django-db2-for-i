@@ -209,9 +209,9 @@ def test_tuple_in_subquery_in_a_case_context_uses_the_rewrite(live, empty) -> No
 
 def test_tuple_lookups_match_the_reference(live, empty) -> None:
     """Every lookup on a multi-column relation, in every context, gives the rows of
-    the reference (SQLite with supports_tuple_lookups, tests/tuple_lookup_scenarios.py),
+    the reference (SQLite with supports_tuple_lookups, tests/scenarios/tuple_lookup_scenarios.py),
     except the listed known differences."""
-    from tests import tuple_lookup_scenarios as scenarios
+    from tests.scenarios import tuple_lookup_scenarios as scenarios
 
     scenarios.create("default")
     actual = {name: scenarios.rows(qs) for name, qs in scenarios.querysets("default").items()}

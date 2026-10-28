@@ -1,4 +1,4 @@
-"""pub400 tier: one connection per run, closed at the end of the session.
+"""IBM i tests: one connection per run, closed at the end of the session.
 
 ``testapp_tables`` creates the tests.testapp tables in the default library
 (journaled) for one test module and drops them again; a module uses it with
@@ -16,9 +16,9 @@ import pytest
 from django.core.management.color import no_style
 from django.db import connection, connections
 
-from tests.pub400.connection_guard import replace_if_unusable
-from tests.pub400.marked_library import install_guard, marked_library
-from tests.pub400.testapp_tables import MODELS, TABLES
+from tests.ibmi.connection_guard import replace_if_unusable
+from tests.ibmi.marked_library import install_guard, marked_library
+from tests.ibmi.testapp_tables import MODELS, TABLES
 
 
 @pytest.fixture(scope="session", autouse=True)

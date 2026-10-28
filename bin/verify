@@ -5,7 +5,7 @@
 #   bin/verify --django 6.0         another supported Django version
 #   bin/verify --base <ref>         compare against another branch (default origin/main)
 #   bin/verify --max-labels 60      refuse more Django test labels than this (default 60)
-#   bin/verify --max-runs 20        refuse more scripts/runtests.sh runs than this (default 20)
+#   bin/verify --max-runs 20        refuse more scripts/django_suite.sh runs than this (default 20)
 #   bin/verify --wait               queue behind a running PUB400 job
 #   bin/verify --dry-run            print the commands, run nothing
 #   bin/verify --help
@@ -58,7 +58,7 @@ verify() {
 run mkdir -p "$ROOT/$dir"
 run rm -f "$ROOT/$dir/offline.xml" "$ROOT/$dir/corpus.xml" "$ROOT/$dir/results.txt"
 container nox -s "offline($python-django$django)" -- "--junitxml=$dir/offline.xml" || true
-container nox -s "corpus($python-django$django)" -- "--junitxml=$dir/corpus.xml" || true
+container nox -s "replay($python-django$django)" -- "--junitxml=$dir/corpus.xml" || true
 status=0
 verify triage "$django" || status=$?
 updated=()
@@ -67,7 +67,7 @@ case $status in
     4)
         container nox -s "offline($python-django$django)" -- --update-goldens \
             || die "writing the new goldens failed (see above)"
-        container nox -s "corpus($python-django$django)" -- --update-corpus \
+        container nox -s "replay($python-django$django)" -- --update-corpus \
             || die "writing the new corpus SQL failed (see above)"
         updated=(--updated)
         ;;

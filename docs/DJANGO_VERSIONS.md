@@ -7,7 +7,7 @@ changes on this backend. The plan and the reasoning are in
 
 Status of 2026-10-21 (phase 3 done): the backend supports Django 5.2, 6.0 and
 6.1, each with the four test sets on every Python, the goldens verified on
-PUB400 and a release run (see [phase-3.md](phases/phase-3.md)). Nothing in
+PUB400 and a status run (see [phase-3.md](phases/phase-3.md)). Nothing in
 this file marked "planned" is implemented yet.
 
 ## Supported versions and the drop rule
@@ -98,7 +98,7 @@ All of these also apply to 5.2.
 
 | Difference | Impact on the backend | Status |
 |---|---|---|
-| `adapt_durationfield_value()` is never called; `DurationField` converts itself | Values still arrive as microseconds, but the range check is skipped, so the driver would raise an unclear error. Kept through `compat.py` ([DECISIONS](DECISIONS.md#2026-10-19-the-duration-range-check-on-every-supported-django-version)), with a pub400 test per version. `compat.install_duration_adapter()` routes the values through it ([DECISIONS](DECISIONS.md#2026-10-20-the-duration-range-check-before-django-61)). | done (step A PR 3) |
+| `adapt_durationfield_value()` is never called; `DurationField` converts itself | Values still arrive as microseconds, but the range check is skipped, so the driver would raise an unclear error. Kept through `compat.py` ([DECISIONS](DECISIONS.md#2026-10-19-the-duration-range-check-on-every-supported-django-version)), with a IBM i test per version. `compat.install_duration_adapter()` routes the values through it ([DECISIONS](DECISIONS.md#2026-10-20-the-duration-range-check-before-django-61)). | done (step A PR 3) |
 | Aliases are not quoted (`quote_name_unless_alias()`) | Different SQL text, so 6.0 needs its own goldens. Unquoted aliases fold to uppercase like our quoted ones; the 154 6.0 goldens differ from 6.1's only in that quoting, and all 154 were accepted on PUB400 ([#110](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/110)). | done |
 | Combined querysets ignore the default model ordering | Different SQL and results: goldens per series. The compound-query goldens of 6.0 and 5.2 equal 6.1's (apart from alias quoting), and the `queries` labels pass on all three versions. | checked |
 | `mark_expected_failures_and_skips` has no `ImportError` fallback | A skip or expected-failure name that 6.0's suite lacks breaks every run, so the lists must be per Django version. All names in today's lists exist in the 6.0 and 5.2 suites. Two `schema` expected failures pass on 5.2 and are left out there (`compat.PASSING_ON_THIS_VERSION`, 2026-10-24). | checked |
@@ -116,7 +116,7 @@ These come on top of the 6.0 table.
 | `sql_delete_column` ends in `CASCADE` | How Db2 for i handles `DROP COLUMN ... CASCADE` **can only be verified on IBM i**. A QTEMP probe comes first; then the same SQL is pinned for all versions ([DECISIONS](DECISIONS.md#2026-10-19-drop-column-sql-pinned-for-every-version-after-a-qtemp-probe)). Probe 23: all forms are valid and cancelled by CPA32B2 before any dependency handling; the default is not determinable on PUB400 (IBMI_NOTES). `schema.py` pins 6.0+'s text without a keyword; golden `ddl/remove_field`. | done (step B PR 8) |
 | `return_insert_columns()` / `fetch_returned_insert_rows()` / `fetch_returned_insert_columns()` instead of `returning_columns()` / `fetch_returned_rows()` | No RETURNING support yet; compat provides both names when it comes | later (phase 5) |
 | A collapsed `Case` does not cast its `Value` default | Our `Case` hook also casts 5.2's plain `NULL`; the 5.2 goldens equal 6.0's ([#117](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/117)) | checked |
-| `IExact` / `PatternLookup.process_rhs` assign to `params[0]` (lists) | No backend hook passes tuple params into those paths: `lookup` passes on 5.2 (100 tests, the release run), the pattern and `iexact` goldens equal 6.0's | checked |
+| `IExact` / `PatternLookup.process_rhs` assign to `params[0]` (lists) | No backend hook passes tuple params into those paths: `lookup` passes on 5.2 (100 tests, the status run), the pattern and `iexact` goldens equal 6.0's | checked |
 | No `AnyValue`, `Aggregate(order_by=...)`, `can_return_rows_from_update` | Our flags (`supports_any_value`, `supports_aggregate_order_by_clause`) are ignored on 5.2 | n/a |
 
 ## compat.py
@@ -141,11 +141,11 @@ this file.
 
 ## Testing per version
 The four test sets are described in [CONTRIBUTING.md](../CONTRIBUTING.md#test-sets).
-- **Offline · own tests:** every Python × every supported Django version, in CI.
-- **IBM i · own tests:** for every backend change, on each Django version the change touches.
-- **IBM i · Django test suite:** before every release, the release run per Django version
-  (`scripts/pub400.sh release_run <django>`, [DECISIONS](DECISIONS.md#2026-10-19-the-release-run-as-one-nox-session));
+- **Offline tests:** every Python × every supported Django version, in CI.
+- **IBM i tests:** for every backend change, on each Django version the change touches.
+- **Django suite on IBM i:** before every release, the status run per Django version
+  (`scripts/pub400.sh status_run <django>`, [DECISIONS](DECISIONS.md#2026-10-19-the-status-run-as-one-nox-session));
   it also captures the offline query corpus.
-- **Offline · Django test suite (replay):** the corpus of every supported version, in CI.
+- **Replay tests:** the corpus of every supported version, in CI.
 - **Goldens:** all goldens of every series are verified on PUB400 (the `DROP COLUMN`
   golden stays unverified there: CPA32B2).

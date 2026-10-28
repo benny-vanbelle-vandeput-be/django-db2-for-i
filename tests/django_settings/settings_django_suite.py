@@ -1,6 +1,6 @@
 """Settings for Django's own test suite (runtests.py) against PUB400.
 
-Used by scripts/runtests.sh. Django's test settings must define two databases,
+Used by scripts/django_suite.sh. Django's test settings must define two databases,
 ``default`` and ``other`` (docs/internals/contributing/writing-code/
 unit-tests.txt); a test class that uses an undefined alias fails with
 ImproperlyConfigured instead of being skipped. Both are existing, journaled

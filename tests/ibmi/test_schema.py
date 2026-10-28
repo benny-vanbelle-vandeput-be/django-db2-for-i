@@ -15,8 +15,8 @@ from django.db import models
 from django_db2_for_i import compat
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
 from tests import table_registry
-from tests.pub400.connection_guard import replace_if_unusable
-from tests.pub400.testapp_tables import MODELS, TABLES
+from tests.ibmi.connection_guard import replace_if_unusable
+from tests.ibmi.testapp_tables import MODELS, TABLES
 from tests.testapp.models import Article, Author, Book, Defaults, Document, Node, Rating, Tag
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")

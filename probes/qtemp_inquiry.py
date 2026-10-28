@@ -8,7 +8,7 @@ probes/run.py.
 Usage (inside the "tests" container):
     nox -s probe_inquiry
 
-Question: in the pub400 tier, ALTER TABLE ... DROP COLUMN on a table with
+Question: in the IBM i tests, ALTER TABLE ... DROP COLUMN on a table with
 rows was cancelled (HY008). Which message is sent, and can the backend
 answer it for its own ALTER TABLE statements only?
 

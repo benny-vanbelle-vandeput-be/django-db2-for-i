@@ -1,4 +1,4 @@
-"""Replay the offline query corpus (nox -s corpus; docs/proposals/offline-query-corpus.md).
+"""Replay the offline query corpus (nox -s replay; docs/proposals/offline-query-corpus.md).
 
 Each entry is a statement a passing Django test sent to Db2 for i (captured on
 PUB400). Its pickled query is loaded, compiled again with the backend under the
