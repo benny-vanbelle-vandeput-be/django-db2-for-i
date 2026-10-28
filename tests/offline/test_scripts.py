@@ -125,15 +125,32 @@ def test_debug_sql_output_is_scrubbed_and_recorded(monkeypatch, tmp_path, capsys
     assert secret not in capsys.readouterr().out
 
 
-def test_debug_sql_option_is_accepted() -> None:
+@pytest.mark.parametrize(
+    ("args", "message"),
+    [
+        (["6.1", "--debug-sql"], "refused: no test modules given"),
+        (["6.1", "a", "b", "c", "d"], "refused: at most 3 labels"),
+        (["6.1", "--bogus", "basic"], "unrecognized arguments: --bogus"),
+        (["6.1", "../basic"], "refused: not a test module label"),
+        ([], "the following arguments are required: version"),
+    ],
+    ids=["no-labels", "four-labels", "unknown-option", "bad-label", "nothing"],
+)
+def test_django_suite_refuses_on_the_host_by_the_runner_rules(args, message: str) -> None:
+    """scripts/django_suite.sh checks with run_django_tests.py --check-only (#204),
+    before scripts/pub400.sh: a refused run never reaches the lock or Docker."""
     import subprocess as sp
 
     script = Path(__file__).resolve().parents[2] / "scripts" / "django_suite.sh"
-    text = script.read_text()
-    assert "--clean|--debug-sql|--capture) ;;" in text
-    result = sp.run(["sh", str(script), "6.1", "--debug-sql"], capture_output=True, text=True)
+    result = sp.run(["sh", str(script), *args], capture_output=True, text=True)
     assert result.returncode == 2
-    assert "name the test modules" in result.stderr
+    assert message in result.stderr
+
+
+def test_check_only_runs_nothing(monkeypatch) -> None:
+    monkeypatch.setattr(runner, "run_label", lambda *args: pytest.fail("ran a label"))
+    assert runner.main(["--check-only", "6.1", "--clean", "--debug-sql", "basic"]) == 0
+    assert runner.main(["--check-only", "6.1"]) == 2
 
 
 def test_pub400_script_accepts_only_pub400_sessions_and_keeps_the_mac_awake() -> None:
@@ -151,7 +168,8 @@ def test_pub400_script_accepts_only_pub400_sessions_and_keeps_the_mac_awake() ->
     assert "ibmi|django_suite|status_run|probe|probe_*|ibmi_cleanup) ;;" in text
     assert "caffeinate -i -s" in text
     runtests = (script.parent / "django_suite.sh").read_text()
-    assert 'exec "$(dirname "$0")/pub400.sh" django_suite "$version" "$@"' in runtests
+    assert 'python3 "$(dirname "$0")/run_django_tests.py" --check-only "$@"' in runtests
+    assert 'exec "$(dirname "$0")/pub400.sh" django_suite "$@"' in runtests
 
 
 def test_the_backend_commit_comes_from_the_host_when_given(monkeypatch) -> None:
