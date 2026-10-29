@@ -51,7 +51,7 @@ On in at least one supported Django version.
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (43)
+## Intentionally off (48)
 
 Off on purpose, with the reason.
 
@@ -59,11 +59,13 @@ Off on purpose, with the reason.
 |---|---|---|---|---|---|
 | `allows_group_by_select_index` | `GROUP BY 1`: grouping by the position of a selected column. | ❌ | ❌ | ❌ | Db2 for i rejects a position in `GROUP BY` (SQL0122, probe queries); Django groups by the expressions. |
 | `allows_group_by_selected_pks` | Grouping by a model's primary key alone also groups by its other selected columns. | ❌ | ❌ | ❌ | Db2 for i needs every selected column that is not aggregated in `GROUP BY` (not verified on IBM i). |
+| `allows_multiple_constraints_on_same_fields` | Several constraints on the same columns. | ❌ | ❌ | ❌ | A second unique constraint on the same columns is refused (SQL0541, probe `lib_constraints`, IBMI_NOTES). |
 | `atomic_transactions` | An error inside a transaction aborts the whole transaction. | ❌ | ❌ | ❌ | Db2 for i keeps the transaction usable after a failed statement (unlike PostgreSQL). |
 | `can_clone_databases` | The test database can be cloned for parallel test runs (`--parallel`). | ❌ | ❌ | ❌ | Tests run with `--parallel=1` in pre-existing libraries; a clone would need a library per process. |
 | `can_create_inline_fk` | Foreign keys are created inline in `CREATE TABLE`. | ❌ | ❌ | ❌ | Foreign keys are separate `ALTER TABLE ... ADD CONSTRAINT` statements, which also work for tables that reference each other. |
 | `can_defer_constraint_checks` | Constraint checks can be deferred to the end of the transaction. | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `can_introspect_materialized_views` | `inspectdb --include-views` also finds materialized views. | ❌ | ❌ | ❌ | The flag only enables Django's test, which writes `CREATE MATERIALIZED VIEW`: Db2 for i rejects it (SQL0104; its materialized query tables are `CREATE TABLE ... AS (...) MAINTAINED BY USER`, probe `qtemp_later_flags`, IBMI_NOTES). |
+| `can_return_rows_from_update` | Saving an existing object reads back database-computed fields from the same `UPDATE` (Django 6.0+). | – | ❌ | ❌ | `FINAL TABLE` takes only an `INSERT` (SQL0199 for `UPDATE`, probe `qtemp_returning`, IBMI_NOTES); fields are read back with a second query. |
 | `greatest_least_ignores_nulls` | `Greatest()` / `Least()` skip NULL arguments instead of returning NULL. | ❌ | ❌ | ❌ | On Db2 for i `GREATEST` / `LEAST` return NULL when an argument is NULL (not verified on IBM i). |
 | `has_case_insensitive_like` | `LIKE` matches regardless of case (`'a' LIKE 'A'`). | ❌ | ❌ | ❌ | Db2 for i compares `LIKE` patterns exactly (not verified on IBM i); `icontains` and friends use `UPPER()`. |
 | `has_native_duration_field` | `DurationField` is a native interval column. | ❌ | ❌ | ❌ | A `DurationField` is stored as a `BIGINT` of microseconds (probe durations). |
@@ -80,14 +82,17 @@ Off on purpose, with the reason.
 | `supports_comments` | `db_comment` and `db_table_comment` are stored as column and table comments. | ❌ | ❌ | ❌ | `COMMENT ON` takes no Unicode constant, so a comment would work or fail depending on its characters and the job CCSID (decision 2026-10-26). |
 | `supports_comments_inline` | Column comments are written in the `ADD COLUMN` statement itself. | ❌ | ❌ | ❌ | Column comments are off (`supports_comments`, decision 2026-10-26), so inline comments are too. |
 | `supports_comparing_boolean_expr` | Conditions can be compared or tested with `IS NULL` (`WHERE (price > 0) IS NOT NULL`). | ❌ | ❌ | ❌ | Db2 for i rejects a predicate as an operand (SQL0104, SQL0199, probe queries). |
+| `supports_covering_indexes` | Indexes and unique constraints with `include` (covering indexes). | ❌ | ❌ | ❌ | Db2 for i takes no `INCLUDE` in `CREATE INDEX` (SQL0104, probe `qtemp_indexes`, IBMI_NOTES). |
 | `supports_date_lookup_using_string` | Lookups such as `__startswith` with a string on a date or datetime column. | ❌ | ❌ | ❌ | Db2 for i rejects `LIKE` on a `TIMESTAMP` column (SQL0414, probe queries), as MySQL does. |
 | `supports_default_in_bit_aggregations` | Bit aggregates with a `default` (Django 6.1+). | – | – | ❌ | There are no bit aggregates (`supports_bit_aggregations`). |
+| `supports_deferrable_unique_constraints` | `UniqueConstraint(deferrable=...)`. | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `supports_explaining_query_execution` | `QuerySet.explain()`. | ❌ | ❌ | ❌ | Db2 for i has no `EXPLAIN` statement that returns a plan; plans come from Visual Explain and the database monitor (not verified on IBM i). |
 | `supports_expression_defaults` | `db_default` can be an expression, not only a constant. | ❌ | ❌ | ❌ | A column `DEFAULT` on Db2 for i takes only a constant or a special register. |
 | `supports_forward_references` | Rows may reference rows inserted later in the same transaction (deferred constraints). | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `supports_index_on_text_field` | Indexes on `TextField` columns. | ❌ | ❌ | ❌ | Db2 for i cannot index an `NCLOB` or `BLOB` column; `db_index` on a `TextField` or `BinaryField` creates no index (decision 2026-10-26). |
 | `supports_logical_xor` | `Q(...) ^ Q(...)` is written with a native `XOR` operator. | ❌ | ❌ | ❌ | Db2 for i has no logical `XOR` operator; Django's emulation is used (not verified on IBM i). |
 | `supports_non_deterministic_collations` | Non-deterministic (for example case-insensitive) collations in `db_collation`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
+| `supports_nulls_distinct_unique_constraints` | `UniqueConstraint(nulls_distinct=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `NULLS DISTINCT` / `NULLS NOT DISTINCT` on an index or a constraint (SQL0199, probe `qtemp_unique_nulls`, IBMI_NOTES). |
 | `supports_order_by_nulls_modifier` | `NULLS FIRST` / `NULLS LAST` in `ORDER BY` (`F('x').asc(nulls_first=True)`). | ❌ | ❌ | ❌ | Db2 for i rejects `NULLS FIRST` / `NULLS LAST` (SQL0199, probe queries); Django's `ORDER BY x IS NOT NULL, x` emulation is used. |
 | `supports_paramstyle_pyformat` | Raw SQL may use `%(name)s` parameters with a dict. | ❌ | ❌ | ❌ | The driver takes positional `?` markers only. |
 | `supports_stored_generated_columns` | `GeneratedField(db_persist=True)`, stored generated columns. | ❌ | ❌ | ❌ | `GENERATED ALWAYS AS` takes only special registers (`USER`, ...), `DATA CHANGE OPERATION`, row change timestamps and identities, no expression over other columns (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
@@ -101,7 +106,7 @@ Off on purpose, with the reason.
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (50)
+## Planned (45)
 
 Off for now; planned for the phase shown.
 
@@ -109,11 +114,9 @@ Off for now; planned for the phase shown.
 |---|---|---|---|---|---|
 | `allows_auto_pk_0` | An `AutoField` primary key may be 0. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `allows_group_by_lob` | `TextField` and `BinaryField` columns can be grouped by. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `allows_multiple_constraints_on_same_fields` | Several constraints on the same columns. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `can_introspect_json_field` | Introspection recognizes a `JSONField` column. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `can_return_columns_from_insert` | Inserted rows return their primary key and defaults in one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `can_return_rows_from_bulk_insert` | `bulk_create()` sets the primary keys of the created objects. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
-| `can_return_rows_from_update` | Saving an existing object reads back database-computed fields from the same `UPDATE` (Django 6.0+). | – | 🗓️ | 🗓️ | phase 5 |
 | `can_use_chunked_reads` | `QuerySet.iterator()` fetches rows in chunks from an open cursor while other queries run. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `delete_can_self_reference_subquery` | A delete whose filter has a subquery on the same table runs as one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `has_bulk_insert` | `bulk_create()` inserts many rows in one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
@@ -128,11 +131,9 @@ Off for now; planned for the phase shown.
 | `select_for_update_of_column` | `select_for_update(of=...)` is written with column names, not table names. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_aggregate_distinct_multiple_argument` | `StringAgg(..., distinct=True)` with a delimiter (`distinct` with several arguments). | – | 🗓️ | 🗓️ | phase 6 |
 | `supports_cast_with_precision` | `Cast()` to a type with a length or precision, e.g. `DecimalField(max_digits=...)`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_covering_indexes` | Indexes and unique constraints with `include` (covering indexes). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_default_in_lead_lag` | `Lead()` / `Lag()` with a `default`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_default_keyword_in_bulk_insert` | `bulk_create()` writes `DEFAULT` for fields with a `db_default`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_default_keyword_in_insert` | An insert writes `DEFAULT` for fields with a `db_default`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
-| `supports_deferrable_unique_constraints` | `UniqueConstraint(deferrable=...)`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_expression_indexes` | Indexes on expressions (`Index(Lower('name'))`). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_frame_exclusion` | Window frames with `exclusion` (`EXCLUDE ...`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_frame_range_fixed_distance` | Window `RANGE` frames with a fixed distance (`ValueRange(start=-5)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
@@ -143,7 +144,6 @@ Off for now; planned for the phase shown.
 | `supports_json_negative_indexing` | `JSONField` key transforms with a negative array index (Django 6.0+). | – | 🗓️ | 🗓️ | phase 6 |
 | `supports_no_precision_decimalfield` | `DecimalField` without `max_digits` and `decimal_places` (Django 6.1+). | – | – | 🗓️ | needs probe (`DECFLOAT(34)` binding) |
 | `supports_nullable_unique_constraints` | Unique constraints on nullable columns allow several NULLs. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
-| `supports_nulls_distinct_unique_constraints` | `UniqueConstraint(nulls_distinct=...)`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_on_delete_db_cascade` | `on_delete=DB_CASCADE`: the database deletes related rows (Django 6.1+). | – | – | 🗓️ | phase 6 |
 | `supports_on_delete_db_default` | `on_delete=DB_SET_DEFAULT` (Django 6.1+). | – | – | 🗓️ | phase 6 |
 | `supports_on_delete_db_null` | `on_delete=DB_SET_NULL` (Django 6.1+). | – | – | 🗓️ | phase 6 |

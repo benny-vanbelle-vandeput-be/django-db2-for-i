@@ -154,6 +154,38 @@ prs = [187]
 [[phases]]
 phase = "5"
 content = "Returning & bulk"
+status = "in progress"
+
+[[phases.steps]]
+step = "0: QTEMP probes and the baseline of the four modules"
+status = "in progress"
+
+[[phases.steps]]
+step = "Names: truncates_names, supports_sequence_reset"
+status = "planned"
+
+[[phases.steps]]
+step = "A: returning and bulk insert (bulk_create)"
+status = "planned"
+
+[[phases.steps]]
+step = "C: partial and expression indexes (indexes, model_indexes)"
+status = "planned"
+
+[[phases.steps]]
+step = "D: unique variants (constraints)"
+status = "planned"
+
+[[phases.steps]]
+step = "E: chunked reads, self-referencing UPDATE / DELETE"
+status = "planned"
+
+[[phases.steps]]
+step = "B: conflicts through MERGE, or the exit"
+status = "planned"
+
+[[phases.steps]]
+step = "Close-out: supported modules, status run, phase record"
 status = "planned"
 
 [[phases]]
