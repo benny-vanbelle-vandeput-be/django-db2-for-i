@@ -52,6 +52,16 @@ version = "6.2"
 state = "planned"
 
 [[releases]]
+tag = "v0.1.0b1"
+date = "2026-10-29"
+summary = "First beta: the pre-beta review (#190, #191) done; status runs on 5.2, 6.0 and 6.1, 22 runs each, 0 failed."
+
+[[releases]]
+tag = "v0.1.0a5"
+date = "2026-10-28"
+summary = "Phase 4: schema editor completeness (status runs on 5.2, 6.0 and 6.1, 22 runs each, 0 failed); released by hand, its changes are in the 0.1.0b1 section of the CHANGELOG."
+
+[[releases]]
 tag = "v0.1.0a4"
 date = "2026-10-21"
 summary = "Phase 3: Django 6.0 and 5.2 support (status runs on 5.2, 6.0 and 6.1, 17 runs each, 0 failed; offline query corpora for all three)."
