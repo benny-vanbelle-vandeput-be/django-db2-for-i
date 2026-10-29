@@ -53,6 +53,13 @@ def test_it_never_tags_or_releases_and_prints_the_manual_steps(tmp_path) -> None
     commands = [line for line in result.stdout.splitlines() if line.startswith("+ ")]
     assert commands and not [line for line in commands if FORBIDDEN.search(line)]
     assert commands[-1].startswith("+ gh pr create --base main --head chore/release-0.1.0a5")
+    # bin/check runs before the status pages are regenerated (fresh offline and
+    # replay results) and again on the release commit, before the push.
+    checks = [i for i, line in enumerate(commands) if line.endswith("/bin/check")]
+    status = next(i for i, line in enumerate(commands) if "nox -s test_status features" in line)
+    commit = next(i for i, line in enumerate(commands) if "commit --quiet -m chore" in line)
+    push = next(i for i, line in enumerate(commands) if " push " in line)
+    assert len(checks) == 2 and checks[0] < status < commit < checks[1] < push, commands
     steps = result.stdout.split("What the maintainer does by hand", 1)[1]
     assert 'git tag -s v0.1.0a5 -m "v0.1.0a5"' in steps
     assert "git push origin v0.1.0a5" in steps
@@ -227,3 +234,26 @@ def test_the_real_lists_are_read() -> None:
     assert "6.1" in prepare.supported_django()
     assert "basic" in prepare.release_labels()
     assert prepare.version_key(prepare.current_version()) is not None
+
+
+@needs_bin
+def test_only_unstaged_or_untracked_changes_are_unexpected() -> None:
+    """The staged release files are the release commit; the check must not
+    refuse them (it did, on its first real run)."""
+    script = (BIN / "release-prepare").read_text()
+    line = "unexpected=$(git -C \"$ROOT\" status --porcelain | grep -v '^[MADR] ' || true)"
+    assert line in script
+    porcelain = "M  CHANGELOG.md\nD  changelog.d/1.added.md\nMM README.md\n?? notes.txt\n"
+    result = subprocess.run(
+        ["sh", "-c", "grep -v '^[MADR] ' || true"], input=porcelain, capture_output=True, text=True
+    )
+    assert result.stdout == "MM README.md\n?? notes.txt\n"
+
+
+def test_the_replay_session_gets_the_per_entry_summary() -> None:
+    """tests/conftest.py counts the replay per corpus entry when the marker
+    expression is the replay session's (#202 renamed it; the count fell to 8)."""
+    noxfile = (ROOT / "noxfile.py").read_text()
+    assert '"-m",\n        "replay",' in noxfile
+    conftest = (ROOT / "tests" / "conftest.py").read_text()
+    assert 'if "replay" in (config.option.markexpr or ""):' in conftest

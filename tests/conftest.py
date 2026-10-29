@@ -115,7 +115,9 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config: pytest.Config)
     from tests.golden import UNVERIFIED, all_golden_paths, read
 
     summary = config.getoption("--results-summary")
-    if "corpus" in (config.option.markexpr or ""):
+    # The replay tests (nox -s replay, marker "replay") are counted per corpus
+    # entry, not per pytest test (#202 renamed the marker from "corpus").
+    if "replay" in (config.option.markexpr or ""):
         _corpus_summary(terminalreporter)
         if summary:
             _write_corpus_summary(Path(summary))

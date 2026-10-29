@@ -68,6 +68,10 @@ if [ "$DRY_RUN" = 1 ] || [ -n "$(git -C "$ROOT" status --porcelain -- "$corpus")
     run git -C "$ROOT" add -- "$corpus"
     run git -C "$ROOT" commit --quiet -m "test(corpus): the offline query corpus of the status runs"
 fi
+# bin/check first: it writes the offline and replay results that the status
+# pages below count (test-results/<django>/sets/); without it they would show
+# whatever run this checkout last had.
+run "$ROOT/bin/check" || die "bin/check failed on $branch before the release commit; nothing was pushed"
 run sed -i.bak "s/^__version__ = \".*\"$/__version__ = \"$version\"/" "$ROOT/django_db2_for_i/__init__.py"
 run rm -f "$ROOT/django_db2_for_i/__init__.py.bak"
 container uv run --no-project python scripts/assemble_changelog.py release "$version" \
@@ -75,7 +79,9 @@ container uv run --no-project python scripts/assemble_changelog.py release "$ver
 container nox -s test_status features || die "regenerating the status pages failed; branch $branch left"
 run git -C "$ROOT" add -- django_db2_for_i/__init__.py CHANGELOG.md changelog.d README.md docs
 if [ "$DRY_RUN" = 0 ]; then
-    unexpected=$(git -C "$ROOT" status --porcelain)
+    # Staged entries ("M  path": a space in column 2) are the release commit;
+    # anything with a change in the working tree, or untracked, is unexpected.
+    unexpected=$(git -C "$ROOT" status --porcelain | grep -v '^[MADR] ' || true)
     [ -z "$unexpected" ] || die "unexpected changes; branch $branch is left for inspection:
 $unexpected"
 fi
