@@ -1,0 +1,51 @@
+{
+  "probe": "bulk",
+  "utc": "20261029T205205Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "rows with parameter markers, 2 columns": {
+    "largest_ok": 16256,
+    "smallest_refused": 16384,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -901,
+      "message": "SQL0901 - SQL system error. (-901) (SQLPrepare)",
+      "statement_length": 131100
+    }
+  },
+  "rows with parameter markers, 10 columns": {
+    "largest_ok": 3264,
+    "smallest_refused": 3296,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -901,
+      "message": "SQL0901 - SQL system error. (-901) (SQLPrepare)",
+      "statement_length": 105500
+    }
+  },
+  "rows of a 1000-character literal": {
+    "largest_ok": 2080,
+    "smallest_refused": 2112,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY090",
+      "sqlcode": 30197,
+      "message": "Invalid statement length. (30197) (SQLExecDirectW)",
+      "statement_length": 2124700
+    }
+  },
+  "rows of the constant 1": {
+    "largest_ok": 32512,
+    "smallest_refused": 32768,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -101,
+      "message": "SQL0101 - SQL statement too long or complex. (-101) (SQLExecDirectW)",
+      "statement_length": 163868
+    }
+  }
+}

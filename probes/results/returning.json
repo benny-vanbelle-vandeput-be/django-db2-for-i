@@ -1,0 +1,307 @@
+{
+  "probe": "returning",
+  "utc": "20261029T204951Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "plain insert: rowcount": {
+    "result": "ok",
+    "rowcount": 1
+  },
+  "final table, one row: ID, D": {
+    "result": "ok",
+    "rowcount": -1,
+    "rows": [
+      [
+        "2",
+        "7"
+      ]
+    ]
+  },
+  "final table, one row, explicit key 100": {
+    "result": "ok",
+    "rowcount": -1,
+    "rows": [
+      [
+        "100"
+      ]
+    ]
+  },
+  "final table, one row: column names quoted": {
+    "result": "ok",
+    "rowcount": -1,
+    "rows": [
+      [
+        "3",
+        "7"
+      ]
+    ]
+  },
+  "IDENTITY_VAL_LOCAL() after final table insert": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 31,
+        "precision": 31,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('3')"
+      ]
+    ]
+  },
+  "multi: create": {
+    "result": "ok"
+  },
+  "final table, 5 rows, no ORDER BY": {
+    "result": "ok",
+    "rowcount": -1,
+    "rows": [
+      [
+        "1",
+        "'delta'"
+      ],
+      [
+        "2",
+        "'alpha'"
+      ],
+      [
+        "3",
+        "'charlie'"
+      ],
+      [
+        "4",
+        "'bravo'"
+      ],
+      [
+        "5",
+        "'echo'"
+      ]
+    ]
+  },
+  "final table, 5 rows, ORDER BY INPUT SEQUENCE": {
+    "result": "ok",
+    "rowcount": -1,
+    "rows": [
+      [
+        "6",
+        "'delta'"
+      ],
+      [
+        "7",
+        "'alpha'"
+      ],
+      [
+        "8",
+        "'charlie'"
+      ],
+      [
+        "9",
+        "'bravo'"
+      ],
+      [
+        "10",
+        "'echo'"
+      ]
+    ]
+  },
+  "final table, 3 rows with an explicit key 500 in the middle, ORDER BY INPUT SEQUENCE": {
+    "result": "ok",
+    "rowcount": -1,
+    "rows": [
+      [
+        "11",
+        "'first'"
+      ],
+      [
+        "500",
+        "'second'"
+      ],
+      [
+        "12",
+        "'third'"
+      ]
+    ]
+  },
+  "final table, 200 rows in reverse name order, ORDER BY INPUT SEQUENCE: names": {
+    "result": "ok",
+    "rowcount": -1,
+    "rows": 200,
+    "in_input_order": true
+  },
+  "multi-row plain insert: rowcount": {
+    "result": "ok",
+    "rowcount": 3
+  },
+  "default: create": {
+    "result": "ok"
+  },
+  "DEFAULT in VALUES, one row": {
+    "result": "ok",
+    "rowcount": 1
+  },
+  "DEFAULT in VALUES, several rows, mixed with values": {
+    "result": "ok",
+    "rowcount": 2
+  },
+  "DEFAULT in VALUES inside final table": {
+    "result": "ok",
+    "rowcount": -1,
+    "rows": [
+      [
+        "4",
+        "'d4'",
+        "7"
+      ],
+      [
+        "5",
+        "'d5'",
+        "11"
+      ]
+    ]
+  },
+  "every column DEFAULT (INSERT ... VALUES (DEFAULT, DEFAULT, DEFAULT))": {
+    "result": "ok",
+    "rowcount": 1
+  },
+  "INSERT ... DEFAULT VALUES": {
+    "result": "ok",
+    "rowcount": 1
+  },
+  "default: read": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NAME",
+        "type": "str",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      },
+      {
+        "name": "D",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'d1'",
+        "7"
+      ],
+      [
+        "2",
+        "'d2'",
+        "7"
+      ],
+      [
+        "3",
+        "'d3'",
+        "9"
+      ],
+      [
+        "4",
+        "'d4'",
+        "7"
+      ],
+      [
+        "5",
+        "'d5'",
+        "11"
+      ],
+      [
+        "6",
+        "None",
+        "7"
+      ],
+      [
+        "7",
+        "None",
+        "7"
+      ]
+    ]
+  },
+  "pk 0: create": {
+    "result": "ok"
+  },
+  "explicit 0 in the identity column": {
+    "result": "ok",
+    "rowcount": 1
+  },
+  "generated key after an explicit 0": {
+    "result": "ok",
+    "rowcount": -1,
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "pk 0: read": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NAME",
+        "type": "str",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0",
+        "'zero'"
+      ],
+      [
+        "1",
+        "'next'"
+      ]
+    ]
+  },
+  "update: create": {
+    "result": "ok"
+  },
+  "final table (UPDATE ...)": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword UPDATE not expected. Valid tokens: INSERT. (-199) (SQLPrepare)"
+  },
+  "old table (UPDATE ...)": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token QTEMP was not valid. Valid tokens: . /. (-104) (SQLExecDirectW)"
+  },
+  "old table (DELETE ...)": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword FROM not expected. Valid tokens: . /. (-199) (SQLExecDirectW)"
+  }
+}

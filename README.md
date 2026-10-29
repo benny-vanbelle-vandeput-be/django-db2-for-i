@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2958 | 2 | 0 | 0 | 2026-10-29 20:12:39 UTC |
+| Offline tests | 2958 | 2 | 0 | 0 | 2026-10-29 21:02:46 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 12:56:12 UTC |
 | Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-29 12:04:46 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 20:13:26 UTC |
+| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 21:02:56 UTC |
 
 ### Django 6.0 âœ…
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2959 | 1 | 0 | 0 | 2026-10-29 20:08:31 UTC |
+| Offline tests | 2959 | 1 | 0 | 0 | 2026-10-29 21:00:45 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 10:35:19 UTC |
 | Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-29 09:48:04 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 20:09:10 UTC |
+| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 21:00:58 UTC |
 
 ### Django 5.2 âœ…
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2957 | 1 | 0 | 0 | 2026-10-29 20:05:05 UTC |
+| Offline tests | 2957 | 1 | 0 | 0 | 2026-10-29 20:58:19 UTC |
 | IBM i tests | 323 | 3 | 1 | 0 | 2026-10-29 08:22:24 UTC |
 | Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-29 07:35:19 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 20:05:43 UTC |
+| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 20:58:33 UTC |
 
 ### About the tests
 
@@ -94,6 +94,19 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (34 enabled on Django 6.1) Â
 <!-- status:start -->
 ## Project status
 
+**Phase 5: Returning & bulk** (in progress)
+
+| Step | State | Pull requests |
+|---|---|---|
+| 0: QTEMP probes and the baseline of the four modules | in progress |  |
+| Names: truncates_names, supports_sequence_reset | planned |  |
+| A: returning and bulk insert (bulk_create) | planned |  |
+| C: partial and expression indexes (indexes, model_indexes) | planned |  |
+| D: unique variants (constraints) | planned |  |
+| E: chunked reads, self-referencing UPDATE / DELETE | planned |  |
+| B: conflicts through MERGE, or the exit | planned |  |
+| Close-out: supported modules, status run, phase record | planned |  |
+
 | Phase | Content | Status |
 |---|---|---|
 | [0](docs/phases/phase-0.md) | Skeleton & environment | done |
@@ -101,7 +114,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (34 enabled on Django 6.1) Â
 | [2](docs/phases/phase-2.md) | Queries & pagination (ordering, lookup, aggregation, expressions, queries) | done |
 | [3](docs/phases/phase-3.md) | Django 6.0 and 5.2 support | done |
 | [4](docs/phases/phase-4.md) | Schema editor completeness | done |
-| [5](docs/phases/phase-5.md) | Returning & bulk | planned |
+| [5](docs/phases/phase-5.md) | Returning & bulk | in progress |
 | 6 | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
 | 7 | PUB400 tier & release prep | planned |
 

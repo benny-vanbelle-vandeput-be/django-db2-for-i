@@ -49,12 +49,12 @@ covering indexes; the `constraints`, `indexes` and `model_indexes` modules
 ## 2. Django test modules
 Tests per module (`def test_` in `vendor/django-<version>/tests/<module>`):
 
-| Module | 5.2 | 6.0 | 6.1 | Status today |
+| Module | 5.2 | 6.0 | 6.1 | Baseline on 6.1 (step 0) |
 |---|---|---|---|---|
-| `bulk_create` | 52 | 59 | 60 | not run on IBM i |
-| `constraints` | 103 | 101 | 102 | not run on IBM i |
-| `indexes` | 31 | 31 | 31 | not run on IBM i |
-| `model_indexes` | 30 | 30 | 30 | not run on IBM i |
+| `bulk_create` | 52 | 59 | 60 | 16 passed, 43 skipped, 1 failed |
+| `constraints` | 103 | 101 | 102 | 83 passed, 19 skipped |
+| `indexes` | 31 | 31 | 31 | 6 passed, 24 skipped, 1 failed |
+| `model_indexes` | 30 | 30 | 30 | 28 passed, 2 skipped |
 
 Step 0 runs each module once on 6.1 (with `--clean`), so the plan starts
 from real numbers: how many pass with today's flags, and which fail for
@@ -212,7 +212,46 @@ The answers of the plan's approval (2026-10-28), also in
   after the baseline, because `truncates_names` affects many tests.
 
 ## IBM i findings
-None yet; the probe results of step 0 go here.
+**Baseline** (step 0, 2026-10-29): the four modules once on 6.1 with
+`--clean`, on `main` at the beta tag (`v0.1.0b1`, `dd7f255`); logs kept in
+`test-results/phase5-baseline/`. Numbers in section 2. Two failures:
+- `bulk_create.tests.BulkCreateTests.test_zero_as_autoval`: with
+  `allows_auto_pk_0` off Django expects a `ValueError` for a 0 key, which only
+  MySQL's backend raises. Db2 for i takes a 0 (probe below), so the flag goes
+  on in step A and the test is skipped by the flag.
+- `indexes.tests.PartialIndexConditionIgnoredTests.test_condition_ignored`:
+  with `supports_partial_indexes` off, the backend still writes the `WHERE`
+  of an `Index(condition=...)`: it inherits Django's `sql_create_index` with
+  `%(condition)s` (MySQL and Oracle have their own without it). Step C turns
+  the flag on, which settles it.
+
+**Probes** (step 0, 2026-10-29, QTEMP only; details and tables in
+[IBMI_NOTES](../IBMI_NOTES.md#returning-bulk-inserts-indexes-unique-nulls-cursors-phase-5-step-0)):
+- `qtemp_returning`: `FINAL TABLE (INSERT ...)` returns the identity and the
+  defaults, one row and many; `ORDER BY INPUT SEQUENCE` keeps the input order
+  (200 rows, explicit keys mixed in). `DEFAULT` in `VALUES` works, also
+  multi-row; an explicit 0 in an identity column works. `FINAL TABLE (UPDATE
+  ...)` is refused (SQL0199): `can_return_rows_from_update` is off.
+- `qtemp_bulk`: at most 32,767 parameter markers (32,640 worked, 32,768 got
+  SQL0901, a system error); statements up to about 2 MB; at most about
+  32,700 rows. `bulk_batch_size()` stays well below.
+- `qtemp_indexes`: partial indexes (with functions), expression indexes
+  and unique variants of both work; `INCLUDE` does not (SQL0104):
+  `supports_covering_indexes` is off.
+- `qtemp_unique_nulls`: a plain unique index treats NULLs as equal; `UNIQUE
+  WHERE NOT NULL` and a unique index `WHERE <column> IS NOT NULL` allow
+  several NULLs; no `NULLS [NOT] DISTINCT` (SQL0199):
+  `supports_nulls_distinct_unique_constraints` is off. Unique *constraints*
+  cannot be made in QTEMP (SQL7008): that question waits for a `lib_` probe.
+- `qtemp_cursors`: chunked fetches on one cursor while a second one reads
+  and writes; `DELETE` / `UPDATE` with a subquery on the same table: all
+  work (without commitment control; step E checks it with Django's tests).
+
+Off after step 0, with the reason in `features.toml`:
+`supports_covering_indexes`, `can_return_rows_from_update`,
+`supports_nulls_distinct_unique_constraints`,
+`supports_deferrable_unique_constraints`,
+`allows_multiple_constraints_on_same_fields`.
 
 ## Test status at the end of the phase
 Not started.
