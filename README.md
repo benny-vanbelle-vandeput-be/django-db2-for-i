@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2941 | 2 | 0 | 0 | 2026-10-28 05:16:07 UTC |
-| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-28 03:00:24 UTC |
-| Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-28 02:13:55 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-28 05:16:49 UTC |
+| Offline tests | 2958 | 2 | 0 | 0 | 2026-10-29 13:10:09 UTC |
+| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 12:56:12 UTC |
+| Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-29 12:04:46 UTC |
+| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 13:11:07 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2942 | 1 | 0 | 0 | 2026-10-28 05:12:26 UTC |
-| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-28 00:53:07 UTC |
-| Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-28 00:08:11 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-28 05:13:10 UTC |
+| Offline tests | 2959 | 1 | 0 | 0 | 2026-10-29 13:05:01 UTC |
+| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 10:35:19 UTC |
+| Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-29 09:48:04 UTC |
+| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 13:05:50 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2940 | 1 | 0 | 0 | 2026-10-28 05:08:41 UTC |
-| IBM i tests | 323 | 3 | 1 | 0 | 2026-10-27 22:48:00 UTC |
-| Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-27 22:01:12 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-28 05:09:25 UTC |
+| Offline tests | 2957 | 1 | 0 | 0 | 2026-10-29 13:00:24 UTC |
+| IBM i tests | 323 | 3 | 1 | 0 | 2026-10-29 08:22:24 UTC |
+| Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-29 07:35:19 UTC |
+| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 13:01:16 UTC |
 
 ### About the tests
 
