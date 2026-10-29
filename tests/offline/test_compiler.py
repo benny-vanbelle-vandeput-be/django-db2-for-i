@@ -1,4 +1,5 @@
-"""compiler.py: hidden columns for SELECT DISTINCT with emulated NULL ordering."""
+"""compiler.py: hidden columns for SELECT DISTINCT with emulated NULL ordering,
+and inserts that return columns through FINAL TABLE."""
 
 import re
 
@@ -278,3 +279,42 @@ def test_tuple_comparison_against_a_subquery_is_refused_on_every_version() -> No
         query.where.add(lookup(columns, subquery), "AND")
         with pytest.raises(NotSupportedError, match="through subqueries on this backend"):
             query.get_compiler(connection=connection).as_sql()
+
+
+# --- Returning columns (FINAL TABLE) ----------------------------------------------------
+
+
+def insert_sql(objs, returning=None):
+    from django.db.models.sql import InsertQuery
+
+    fields = [f for f in Author._meta.local_concrete_fields if not f.primary_key]
+    query = InsertQuery(Author)
+    query.insert_values(fields, objs)
+    sql_compiler = query.get_compiler(connection=connection)
+    sql_compiler.returning_fields = returning
+    return [(sql, tuple(params)) for sql, params in sql_compiler.as_sql()]
+
+
+def test_insert_with_returning_selects_from_final_table() -> None:
+    assert insert_sql([Author(name="a")], [Author._meta.pk]) == [
+        ('SELECT "ID" FROM FINAL TABLE (INSERT INTO "TESTAPP_AUTHOR" ("NAME") VALUES (%s))', ("a",))
+    ]
+
+
+def test_insert_without_returning_stays_plain() -> None:
+    assert insert_sql([Author(name="a")]) == [
+        ('INSERT INTO "TESTAPP_AUTHOR" ("NAME") VALUES (%s)', ("a",))
+    ]
+
+
+def test_insert_without_the_feature_stays_plain(monkeypatch) -> None:
+    monkeypatch.setattr(connection.features, "can_return_columns_from_insert", False)
+    assert insert_sql([Author(name="a")], [Author._meta.pk]) == [
+        ('INSERT INTO "TESTAPP_AUTHOR" ("NAME") VALUES (%s)', ("a",))
+    ]
+
+
+def test_returning_clause_is_empty() -> None:
+    # Django appends nothing; the compiler wraps the statement instead.
+    assert connection.ops.returning_columns([Author._meta.pk]) == ("", ())
+    assert connection.ops.return_insert_columns([Author._meta.pk]) == ("", ())

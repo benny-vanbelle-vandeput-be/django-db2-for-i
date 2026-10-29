@@ -44,6 +44,7 @@ from django.db.backends.utils import truncate_name
 from django.utils import timezone
 from django.utils.duration import duration_microseconds
 
+from .compat import Before60OperationsMixin
 from .expressions import DAY_MICROSECONDS, NVARCHAR_MAX
 from .schema import default_literal
 
@@ -100,7 +101,7 @@ def _logged_literal(value) -> str:
         return repr(value)
 
 
-class DatabaseOperations(BaseDatabaseOperations):
+class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
     compiler_module = "django_db2_for_i.compiler"
 
     # Cast types where data_types holds more than a type (the identity clause).
@@ -253,13 +254,20 @@ class DatabaseOperations(BaseDatabaseOperations):
 
         Only reliable directly after a single-row ``INSERT ... VALUES``:
         IDENTITY_VAL_LOCAL() returns the last row's value after a multi-row
-        insert and the explicit value when the key was given. Returning
-        columns (``FINAL TABLE``) replace this in phase 5.
+        insert and the explicit value when the key was given. With
+        ``can_return_columns_from_insert`` Django reads the key from the
+        insert itself (``FINAL TABLE``, compiler.py); this stays the fallback.
         """
         cursor.execute("SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1")
         value = cursor.fetchone()[0]
         # IDENTITY_VAL_LOCAL() is DECIMAL(31, 0).
         return None if value is None else int(value)
+
+    def returning_columns(self, fields):
+        """No ``RETURNING`` clause: the insert compiler wraps the statement in
+        ``SELECT ... FROM FINAL TABLE (...)`` instead. Django 5.2 calls it
+        ``return_insert_columns()`` (compat.Before60OperationsMixin)."""
+        return "", ()
 
     # --- Pagination -----------------------------------------------------------------
 

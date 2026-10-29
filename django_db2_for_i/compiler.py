@@ -407,7 +407,21 @@ class SQLCompiler(compiler.SQLCompiler):
 
 
 class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
-    pass
+    def as_sql(self):
+        """Db2 for i has no ``INSERT ... RETURNING``: the insert is wrapped in
+        ``SELECT <columns> FROM FINAL TABLE (INSERT ...)``, which returns the
+        inserted rows, generated identities and column defaults included
+        (probe ``qtemp_returning``). Several rows come back in input order
+        with ``ORDER BY INPUT SEQUENCE``. ``DatabaseOperations`` returns an
+        empty returning clause, so Django builds the plain ``INSERT`` here."""
+        statements = super().as_sql()
+        if not (self.returning_fields and self.connection.features.can_return_columns_from_insert):
+            return statements
+        ((sql, params),) = statements
+        qn = self.connection.ops.quote_name
+        columns = ", ".join(qn(field.column) for field in self.returning_fields)
+        order = " ORDER BY INPUT SEQUENCE" if len(self.query.objs) > 1 else ""
+        return [(f"SELECT {columns} FROM FINAL TABLE ({sql}){order}", params)]
 
 
 class SQLDeleteCompiler(compiler.SQLDeleteCompiler, SQLCompiler):
