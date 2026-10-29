@@ -9,7 +9,8 @@ Usage (inside the "tests" container):
                     numeric_params | constraint_errors | drop_column | alter_table |
                     alter_column | renames | type_changes | check_constraint_unjournaled |
                     transaction_start | add_column_default | qaqqini_inquiry |
-                    qaqqini_lifecycle | lob_index | later_flags
+                    qaqqini_lifecycle | lob_index | later_flags | returning |
+                    bulk | indexes | unique_nulls | cursors
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -27,17 +28,20 @@ import sys
 import qtemp_add_column_default
 import qtemp_alter_column
 import qtemp_alter_table
+import qtemp_bulk
 import qtemp_catalog
 import qtemp_check_constraint_unjournaled
 import qtemp_compound_parts
 import qtemp_connect
 import qtemp_constraint_errors
+import qtemp_cursors
 import qtemp_drop_column
 import qtemp_durations
 import qtemp_extract
 import qtemp_features
 import qtemp_fetch_errors
 import qtemp_in_subquery
+import qtemp_indexes
 import qtemp_journal_check
 import qtemp_later_flags
 import qtemp_leftovers
@@ -54,6 +58,7 @@ import qtemp_qaqqini_lifecycle
 import qtemp_queries
 import qtemp_reachability
 import qtemp_renames
+import qtemp_returning
 import qtemp_selected_predicates
 import qtemp_session
 import qtemp_string_limits
@@ -63,6 +68,7 @@ import qtemp_trunc
 import qtemp_tuple_in
 import qtemp_tuple_lookups
 import qtemp_type_changes
+import qtemp_unique_nulls
 from _common import ProbeError, Settings, connect, write_result
 
 PROBES = {
@@ -105,6 +111,11 @@ PROBES = {
     "qaqqini_lifecycle": qtemp_qaqqini_lifecycle,
     "lob_index": qtemp_lob_index,
     "later_flags": qtemp_later_flags,
+    "returning": qtemp_returning,
+    "bulk": qtemp_bulk,
+    "indexes": qtemp_indexes,
+    "unique_nulls": qtemp_unique_nulls,
+    "cursors": qtemp_cursors,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
