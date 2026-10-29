@@ -1,0 +1,139 @@
+{
+  "probe": "unique_nulls",
+  "utc": "20261029T205226Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables and indexes gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (A): create": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (A): one NULL": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (A): a second NULL": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE INDEX (A): A=1": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (A): A=1 again (duplicate)": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A): create": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A): one NULL": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A): a second NULL": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A): A=1": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A): A=1 again (duplicate)": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE INDEX (A) NULLS DISTINCT: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword NULLS not expected. Valid tokens: NOT KEEP NONE PAGE UNIT WITH ALLOW DEFER USING DEFINE EXTEND. (-199)"
+  },
+  "UNIQUE INDEX (A) NULLS NOT DISTINCT: create": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword NULLS not expected. Valid tokens: NOT KEEP NONE PAGE UNIT WITH ALLOW DEFER USING DEFINE EXTEND. (-199)"
+  },
+  "UNIQUE INDEX (A) WHERE A IS NOT NULL: create": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (A) WHERE A IS NOT NULL: one NULL": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (A) WHERE A IS NOT NULL: a second NULL": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (A) WHERE A IS NOT NULL: A=1": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (A) WHERE A IS NOT NULL: A=1 again (duplicate)": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE INDEX (A, B): create": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (A, B): (1, NULL)": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (A, B): (1, NULL) again": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE INDEX (A, B): (NULL, NULL) twice": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE INDEX (A, B): (1, 2)": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (A, B): (1, 2) again (duplicate)": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B): create": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B): (1, NULL)": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B): (1, NULL) again": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B): (NULL, NULL) twice": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B): (1, 2)": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B): (1, 2) again (duplicate)": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE constraint in CREATE TABLE": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - PUNQC in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "UNIQUE constraint NULLS NOT DISTINCT in CREATE TABLE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword NULLS not expected. Valid tokens: (. (-199) (SQLExecDirectW)"
+  }
+}

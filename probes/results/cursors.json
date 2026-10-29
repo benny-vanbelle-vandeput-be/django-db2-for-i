@@ -1,0 +1,93 @@
+{
+  "probe": "cursors",
+  "utc": "20261029T205237Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "chunked reads, nothing in between (control)": {
+    "result": "ok",
+    "between_chunks": [],
+    "rows": 300,
+    "all_rows_in_order": true
+  },
+  "chunked reads, a SELECT on another table in between": {
+    "result": "ok",
+    "between_chunks": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "rows": 300,
+    "all_rows_in_order": true
+  },
+  "chunked reads, an INSERT into another table in between": {
+    "result": "ok",
+    "between_chunks": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "rows": 300,
+    "all_rows_in_order": true
+  },
+  "chunked reads, an UPDATE of the same table in between": {
+    "result": "ok",
+    "between_chunks": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "rows": 300,
+    "all_rows_in_order": true
+  },
+  "chunked reads, a SELECT of the same table in between": {
+    "result": "ok",
+    "between_chunks": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "rows": 300,
+    "all_rows_in_order": true
+  },
+  "DELETE ... WHERE ID IN (SELECT ... FROM the same table)": {
+    "result": "ok"
+  },
+  "DELETE ... WHERE ID IN (SELECT ... FROM the same table ... FETCH FIRST)": {
+    "result": "ok"
+  },
+  "UPDATE ... SET X = (SELECT MAX(X) FROM the same table)": {
+    "result": "ok"
+  },
+  "UPDATE ... WHERE ID IN (SELECT ... FROM the same table)": {
+    "result": "ok"
+  },
+  "UPDATE ... SET X = (correlated SELECT FROM the same table)": {
+    "result": "ok"
+  },
+  "after the statements": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "253",
+        "252"
+      ]
+    ]
+  }
+}

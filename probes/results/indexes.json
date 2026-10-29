@@ -1,0 +1,105 @@
+{
+  "probe": "indexes",
+  "utc": "20261029T205214Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables and indexes gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "partial: WHERE C > 0": {
+    "result": "ok"
+  },
+  "partial: WHERE B IS NOT NULL": {
+    "result": "ok"
+  },
+  "partial, quoted names (Django's form)": {
+    "result": "ok"
+  },
+  "partial: function, WHERE UPPER(B) = 'X'": {
+    "result": "ok"
+  },
+  "partial: function, WHERE LENGTH(B) > 3": {
+    "result": "ok"
+  },
+  "partial: WHERE with OR and IN": {
+    "result": "ok"
+  },
+  "expression: UPPER(B)": {
+    "result": "ok"
+  },
+  "expression: A + C": {
+    "result": "ok"
+  },
+  "expression: LOWER(B) DESC": {
+    "result": "ok"
+  },
+  "expression mixed with a column: (A, UPPER(B))": {
+    "result": "ok"
+  },
+  "expression in parentheses (Django's form): ((UPPER(B)))": {
+    "result": "ok"
+  },
+  "expression: CAST(A AS VARCHAR(10))": {
+    "result": "ok"
+  },
+  "expression with a partial condition": {
+    "result": "ok"
+  },
+  "covering: INCLUDE (B)": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ) was not valid. Valid tokens: . /. (-104) (SQLExecDirectW)"
+  },
+  "covering, unique: UNIQUE ... INCLUDE (B)": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ) was not valid. Valid tokens: . /. (-104) (SQLExecDirectW)"
+  },
+  "unique partial: UNIQUE ... (A) WHERE C > 0": {
+    "result": "ok"
+  },
+  "unique partial: two rows A=1 outside the condition (C = 0)": {
+    "result": "ok"
+  },
+  "unique partial: a row A=1 inside the condition (C = 5)": {
+    "result": "ok"
+  },
+  "unique partial: a second row A=1 inside the condition (duplicate)": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "unique expression: UNIQUE ... (UPPER(B))": {
+    "result": "ok"
+  },
+  "unique expression: 'abc' then 'ABC' (duplicate under UPPER)": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "query with the partial condition": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "A",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "3"
+      ]
+    ]
+  }
+}
