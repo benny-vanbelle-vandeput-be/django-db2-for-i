@@ -1,7 +1,8 @@
 # Installation
 
-> **Alpha, not on PyPI.** Releases are published as
-> [GitHub releases](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases) with an sdist and a wheel.
+> **Beta, not on PyPI.** Releases are published as
+> [GitHub releases](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases)
+> from signed tags; pip installs them from the tag.
 
 ## Requirements
 
@@ -20,12 +21,10 @@
 A release (replace the version with the one you want):
 
 ```sh
-pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0a3"
+pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0b1"
 ```
 
-Or download the wheel from the release page and install it with
-`pip install django_db2_for_i-<version>-py3-none-any.whl`. The latest
-development state (unreleased, may break):
+The latest development state (unreleased, may break):
 
 ```sh
 pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git"

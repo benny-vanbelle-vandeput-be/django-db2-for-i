@@ -1,0 +1,1 @@
+Docs: the installation examples install `v0.1.0b1`, README and the installation guide say beta, and they no longer mention an sdist or wheel on the release page (releases are signed tags only since #94).

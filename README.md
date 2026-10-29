@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2958 | 2 | 0 | 0 | 2026-10-29 13:10:09 UTC |
+| Offline tests | 2958 | 2 | 0 | 0 | 2026-10-29 20:12:39 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 12:56:12 UTC |
 | Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-29 12:04:46 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 13:11:07 UTC |
+| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 20:13:26 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2959 | 1 | 0 | 0 | 2026-10-29 13:05:01 UTC |
+| Offline tests | 2959 | 1 | 0 | 0 | 2026-10-29 20:08:31 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 10:35:19 UTC |
 | Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-29 09:48:04 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 13:05:50 UTC |
+| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 20:09:10 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2957 | 1 | 0 | 0 | 2026-10-29 13:00:24 UTC |
+| Offline tests | 2957 | 1 | 0 | 0 | 2026-10-29 20:05:05 UTC |
 | IBM i tests | 323 | 3 | 1 | 0 | 2026-10-29 08:22:24 UTC |
 | Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-29 07:35:19 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 13:01:16 UTC |
+| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 20:05:43 UTC |
 
 ### About the tests
 
@@ -101,11 +101,11 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (34 enabled on Django 6.1) �
 | [2](docs/phases/phase-2.md) | Queries & pagination (ordering, lookup, aggregation, expressions, queries) | done |
 | [3](docs/phases/phase-3.md) | Django 6.0 and 5.2 support | done |
 | [4](docs/phases/phase-4.md) | Schema editor completeness | done |
-| 5 | Returning & bulk | planned |
+| [5](docs/phases/phase-5.md) | Returning & bulk | planned |
 | 6 | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
 | 7 | PUB400 tier & release prep | planned |
 
-Latest release: **`v0.1.0a4`** (2026-10-21): Phase 3: Django 6.0 and 5.2 support (status runs on 5.2, 6.0 and 6.1, 17 runs each, 0 failed; offline query corpora for all three). ([CHANGELOG](CHANGELOG.md))
+Latest release: **`v0.1.0b1`** (2026-10-29): First beta: the pre-beta review (#190, #191) done; status runs on 5.2, 6.0 and 6.1, 22 runs each, 0 failed. ([CHANGELOG](CHANGELOG.md))
 
 Open tracks:
 
@@ -114,7 +114,7 @@ Open tracks:
 <!-- status:end -->
 
 > [!WARNING]
-> **Alpha.** Connections, transactions and savepoints, the basic field types,
+> **Beta.** Connections, transactions and savepoints, the basic field types,
 > test databases in an existing library, the queries covered by the Django
 > test modules above (filters, lookups, ordering, pagination, aggregation,
 > expressions, compound queries) and the schema editor (migrations that
@@ -124,7 +124,7 @@ Open tracks:
 > returned keys, unique constraint variants, partial and expression indexes
 > (phase 5), window functions, `JSONField` and database functions (phase 6)
 > are not done yet. Not for production use; APIs and settings may change
-> between alpha releases.
+> between beta releases.
 
 ## What it is
 
@@ -149,12 +149,12 @@ the IBM i Access ODBC Driver.
 
 ## Installation
 
-Alpha releases are published as
+Releases are published as
 [GitHub releases](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/releases)
-(sdist and wheel), not on PyPI:
+from signed tags, not on PyPI. Install one from its tag:
 
 ```sh
-pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0a3"
+pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0b1"
 ```
 
 Details: [Installation](docs/user/Installation.md).
