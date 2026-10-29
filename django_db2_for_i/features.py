@@ -247,7 +247,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         REASON_TIME_FRACTIONS: {
             "expressions.tests.FTimeDeltaTests.test_time_subtraction",
         },
-        REASON_IDENTITY_RESTART_DEFERRED: set(),
+        # sequence_reset_sql() inside TestCase's transaction: the restart waits
+        # for a commit that never comes (operations.py, SQL0910).
+        REASON_IDENTITY_RESTART_DEFERRED: {
+            "backends.tests.SequenceResetTest.test_generic_relation",
+        },
         # A custom transform with template "NULL" gives WHERE NULL IS NULL.
         REASON_UNTYPED_NULL: {
             "lookup.tests.LookupTests.test_exact_none_transform",
