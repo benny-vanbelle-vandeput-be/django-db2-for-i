@@ -5,7 +5,7 @@ django_commit = "52e5ba169694cbd70c538ce62275cd2abd7647fd"
 profile = "7.5"
 
 [modules.aggregation]
-captured = "2026-10-27"
+captured = "2026-10-29"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.0.10.dev20261009120642"
 needs_database = 0
 no_sql = 6
@@ -18,7 +18,7 @@ unpicklable = 5
 volatile = 0
 
 [modules.basic]
-captured = "2026-10-27"
+captured = "2026-10-29"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.0.10.dev20261009120642"
 needs_database = 0
 no_sql = 4
@@ -31,7 +31,7 @@ unpicklable = 0
 volatile = 0
 
 [modules.expressions]
-captured = "2026-10-27"
+captured = "2026-10-29"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.0.10.dev20261009120642"
 needs_database = 1
 no_sql = 0
@@ -44,7 +44,7 @@ unpicklable = 3
 volatile = 0
 
 [modules.lookup]
-captured = "2026-10-27"
+captured = "2026-10-29"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.0.10.dev20261009120642"
 needs_database = 0
 no_sql = 10
@@ -57,7 +57,7 @@ unpicklable = 1
 volatile = 0
 
 [modules.migrations]
-captured = "2026-10-27"
+captured = "2026-10-29"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.0.10.dev20261009120642"
 needs_database = 0
 no_sql = 0
@@ -70,7 +70,7 @@ unpicklable = 0
 volatile = 0
 
 [modules.ordering]
-captured = "2026-10-27"
+captured = "2026-10-29"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.0.10.dev20261009120642"
 needs_database = 0
 no_sql = 0
@@ -83,7 +83,7 @@ unpicklable = 0
 volatile = 0
 
 [modules.queries]
-captured = "2026-10-28"
+captured = "2026-10-29"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.0.10.dev20261009120642"
 needs_database = 3
 no_sql = 49
@@ -96,7 +96,7 @@ unpicklable = 1
 volatile = 4
 
 [modules.transactions]
-captured = "2026-10-27"
+captured = "2026-10-29"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.0.10.dev20261009120642"
 needs_database = 0
 no_sql = 0

@@ -10,6 +10,237 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Changes since the last release are in [changelog.d/](changelog.d/), one
 fragment per pull request; they are assembled here at release time.
 
+## [0.1.0b1] - 2026-10-29
+
+### Added
+- Every pull request is classified from its changed files (needs full tier,
+  SQL-affecting, docs/tests only) by `scripts/classify_pr.py`; the CI job
+  `classify` comments the result and adds the labels `needs-full-tier` and
+  `run-ibmi` that decide which IBM i run a pull request needs
+  (CONTRIBUTING.md, "Pull requests and IBM i runs"). (#126)
+- A verification gate in CI (`nox -s gate`): every golden and corpus entry must
+  carry a verification stamp, except the goldens in
+  `tests/offline/golden/unverifiable.toml`, each with its reason and the
+  condition under which it becomes verifiable; TEST_STATUS shows their count.
+  The status generator ignores logs outside the current run set (modules not
+  supported yet, leftovers of older layouts). (#127)
+- `bin/check` (what CI does, locally) and `bin/status` (status pages, the
+  PUB400 lock holder, the pull requests waiting for an IBM i run), with
+  `--help` and `--dry-run`. Every PUB400 run holds a lock outside the checkout
+  (`scripts/pub400.sh`, `scripts/pub400_lock.py`): a second job stops with
+  "PUB400 busy: <holder>", or waits with `--wait`. (#128)
+- `bin/doctor` (environment check and one PUB400 connection), `bin/probe`
+  (read-only probes by name), `bin/ibmi-test` (own IBM i tests, Django test
+  labels or the full tier) and `bin/ibmi-cleanup` (drops the leftover test
+  objects of a crashed run, only those test runs listed before creating them,
+  only in a library with the test marker table), all through the PUB400 lock.
+  The own IBM i test modules now write the marker before they create their
+  tables, so `bin/ibmi-cleanup` also covers a crash in any of them. (#129)
+- `bin/verify`: runs the offline tests and the corpus replay, writes changed SQL
+  to the goldens and corpus, then runs exactly what needs IBM i (unverified
+  goldens, new or changed own IBM i tests, one Django test per unverified corpus
+  entry, tests that left the skip lists) and writes the stamps of what passed to
+  the working tree, with a report. `bin/ibmi-test --affected` runs the same
+  selection without writing stamps. Git inside the container now trusts only the
+  checkout's mount (`/workspace`), which fixes "dubious ownership" in `bin/check`. (#130)
+- `bin/setup`: first-time setup: images, `.env` from `.env.example` (values
+  typed in a terminal; an existing `.env` is never touched), the `vendor/`
+  Django checkouts at their pinned commits, then `bin/doctor --offline`. (#131)
+- `bin/release-run`: the release run per Django version, resumable: results
+  are recorded as they come, and a later start on the same commits skips what
+  passed (`--restart`, `--limit N`); the corpus is rebuilt when a version
+  passed completely. (#131)
+- `bin/release-prepare <version>`: checks the release preconditions and opens
+  the release pull request; it never tags and never creates releases, and
+  prints the maintainer's manual steps. (#131)
+- `docs/WORKFLOW.md`, the workflow guide: a quick start (the five commands of
+  a change) and topics from setup to release, with the exact commands;
+  `bin/help` shows the quick start and the topics, `bin/help <topic>` one of
+  them. README and CONTRIBUTING list every `bin/` script in one table. (#132)
+- Column order of created tables verified (issue #23): `CREATE TABLE` follows
+  the model's fields (`_meta.local_fields`) exactly, also with fields from
+  abstract base classes and mixins; Troubleshooting explains why such fields
+  usually come first, and that `AddField` appends at the end. (#136)
+- `bin/worktree-remove` removes a merged worktree after copying its
+  `test-results/` to the main checkout (`test-results/archive/<worktree>/`);
+  `bin/probe --publish` puts a probe result into the repository
+  (`probes/results/<probe>.json`) with host, user and library names replaced. (#137)
+- Introspection reads constraints and indexes: `get_constraints()` returns the
+  primary key, unique, foreign key and check constraints and the indexes of a
+  table (with the column order of each index) from the `QSYS2` catalog, and
+  `get_primary_key_column()` follows from it. (#138)
+- Introspection finds foreign keys: `get_relations()` reads them from the `QSYS2`
+  catalog (on Django 6.1 with the delete rule as `db_on_delete`), and
+  `can_introspect_foreign_keys` is on. (#140)
+- Probe w14 (`nox -s probe_column_types`) records how the `QSYS2` catalog
+  describes each column type, identity and default the backend writes
+  (docs/IBMI_NOTES.md). (#141)
+- Introspection maps every column type the backend writes back to a Django
+  field (`data_types_reverse`, identity columns as `AutoField` /
+  `BigAutoField` / `SmallAutoField`), reports character lengths and column
+  defaults, and `can_introspect_default` and `can_introspect_check_constraints`
+  are on, so `inspectdb` writes fields with the right types and lengths. (#144)
+- `AlterField` changes that widen a column (a longer `max_length`, a larger
+  integer or decimal type), make it nullable or change its default work on
+  Db2 for i: the schema editor writes `ALTER COLUMN ... SET DATA TYPE`. The
+  CPA32B2 error for narrowing changes and `NOT NULL` now names `NOT NULL` and
+  points to the documentation; Known limitations explains that a cancelled
+  change to `NOT NULL` can leave NULLs set to the default. (#146)
+- `RenameModel` / `AlterModelTable` (`RENAME TABLE`) and `RenameIndex`
+  (`RENAME INDEX`, `can_rename_index`) work, and so do identity changes in
+  `AlterField`: AutoField to IntegerField drops the identity, IntegerField to
+  AutoField adds it and continues after the largest key, and AutoField to
+  BigAutoField widens it. Renaming a column raises `NotSupportedError`: Db2 for
+  i has no statement for it; keep the column with `db_column` (Known
+  limitations). (#147)
+- System check `django_db2_for_i.W001`: a warning when new tables in the library of an alias (`NAME` or `TEST["NAME"]`) would not be journaled, because it has no `QSQJRN` journal and isn't journaled with `STRJRNLIB`. Without a journal, transactions and constraints fail with SQL7008. `django_db2_for_i.W002` means the state couldn't be read. Both can be silenced with `SILENCED_SYSTEM_CHECKS`. `bin/doctor` runs the same check on both test libraries. (#157)
+- CI: the commit status `ibmi-gate`. It is red while a pull request needs an
+  IBM i run and no posted run result (a comment with the `ibmi-run` marker by
+  the machine account or the maintainer) covers its current content, so a
+  missing label can't let a pull request through. It always runs main's
+  workflow and script, and treats the pull request only as data. (#161)
+
+### Enabled features
+- Check constraints (`supports_column_check_constraints`,
+  `supports_table_check_constraints`): model `CheckConstraint`s are created
+  in `CREATE TABLE` and by `AddConstraint` / `RemoveConstraint`, and a
+  violation raises `IntegrityError` (SQL0545). Tables need a journal for
+  constraints (SQL7008 otherwise; IBM i requirements). (#155)
+- `can_rollback_ddl`: migrations run in one transaction. When a statement fails or is cancelled (for example by CPA32B2), the earlier operations of the same migration are rolled back too, including data changes such as the `UPDATE` before `SET NOT NULL`. `sqlmigrate` prints no start statement, because Db2 for i has none. (#158)
+- `supports_foreign_keys`: migrations create a foreign key constraint for every
+  `ForeignKey` and `OneToOneField`, as a separate `ALTER TABLE ... ADD
+  CONSTRAINT` statement. Violations raise `IntegrityError`. Introspection
+  (`inspectdb`, the schema editor) does not report a foreign key that Db2 for i
+  no longer enforces. See Known limitations for exact type matching (SQL0538),
+  fixtures that refer to rows loaded later, and constraint checks that can't be
+  switched off. (#170)
+- `supports_index_column_ordering`: an index on `Index(fields=["-field"])` is
+  created with `DESC` (until now the order was dropped), and introspection
+  reports each column's order. (#178)
+- `supports_inspectdb` and `ignores_table_name_case`: `manage.py inspectdb`
+  writes models for existing tables (also with `NUMERIC` and `CLOB` columns,
+  which are now introspected as `DecimalField` and `TextField`), and a
+  `db_table` that differs only in case is the same table. (#186)
+
+### Changed
+- A push whose own files are docs/tests that do not run on IBM i (such as a
+  changelog fragment renamed to the pull request number) no longer brings back
+  the `run-ibmi` / `needs-full-tier` labels after a passed IBM i run. (#139)
+- Probes are named after where they act: `qtemp_` (read-only or QTEMP) and
+  `lib_` (changes a library). A `lib_` probe runs only through
+  `bin/probe --approved <link>`, which checks on GitHub that the link is the
+  maintainer's approval comment; the link is stored with the probe result. (#143)
+- The Django test runs on IBM i and the offline query corpus use Django's own
+  `DEFAULT_AUTO_FIELD` per version (`AutoField` on 5.2, `BigAutoField` from
+  6.0 on) instead of `AutoField` everywhere, as Django's reference settings do. (#145)
+- `bin/ibmi-cleanup` also finds a test table that a crashed run had renamed:
+  a `RENAME TABLE` of a table on the cleanup list updates its entry to the
+  new name before the statement runs. (#148)
+- An `AlterField` that changes a column to a type Db2 for i cannot convert in
+  place (for example text to a date, a number to text, or `DateField` to
+  `DateTimeField`) raises `NotSupportedError` before any SQL is sent, with the
+  workaround (new field, data migration, remove the old field); see Known
+  limitations. (#152)
+- CI: a conflict-free rebase over `main` commits that change only the IBM i gate
+  (`.github/workflows/ibmi-gate.yml`, `scripts/ibmi_gate.py`) no longer needs a
+  new IBM i run. In their own pull request those files still count as "needs
+  full tier" for the maintainer's review. The gate workflow's job is now called
+  `ibmi-gate-check`. The status it sets, `ibmi-gate`, is unchanged.
+  A failure before the gate knows the head still gets an error status, and the
+  maintainer can re-evaluate one pull request with `workflow_dispatch` (main
+  only; its only input is the pull request number). A rebase may carry the
+  run's verification stamps commit along without a new run, and
+  `scripts/classify_pr.py`, which decides the gate's verdict, now counts as a
+  gate file (needs full tier, flagged for the maintainer's review). (#166)
+- Migrations can now drop columns, narrow them and make them `NOT NULL`
+  without a system reply list entry: while a migration removes or alters a
+  field, the backend suppresses inquiry message CPA32B2 for its own job
+  (`QSYS2.OVERRIDE_QAQQINI`, query option `SUPPRESS_INQUIRY_MESSAGES`) and
+  turns it back on when the migration is done. A narrowing change that would
+  truncate a string or round a number is refused with `DataError` first. New
+  option `OPTIONS["suppress_inquiry_messages"]` (default `True`); `False` keeps
+  CPA32B2 for migrations too. `RunSQL` and your own cursors keep CPA32B2. (#172)
+- `OPTIONS["inquiry_message_reply"]` stays, documented as the fallback for
+  systems where `QSYS2.OVERRIDE_QAQQINI` is not allowed: turn
+  `suppress_inquiry_messages` off and answer CPA32B2 with a system reply list
+  entry. (#180)
+- Contributor rule: `.env` and its link in a worktree are never moved, renamed, copied, deleted or re-linked; a throwaway worktree without `.env` rules it out as a cause. `.claude/settings.json` denies those commands. (#192)
+- The dev and test tooling (pytest, pytest-django, ruff) is pinned in `uv.lock`; Dependabot proposes updates weekly as one pull request, for releases at least 7 days old. Django and pyodbc stay unpinned in the test sessions. (#193)
+- Docs: README's alpha notice lists what works after phase 4 (the schema editor), CLAUDE.md's directory tree and phase list match the repository, and the IBM i notes use the current probe names. (#196)
+- `bin/probe qtemp_<topic>` runs the QTEMP probes that have their own entry point (`qtemp_encoding`, `qtemp_locale`, ...) through one nox session, `probe_qtemp`, instead of one session per probe; the unused pytest marker `full` is gone, and `qtemp_check_journal` is now `qtemp_check_constraint_unjournaled`. (#197)
+- Pull requests that change the core backend (`schema.py`, `introspection.py`, `compiler.py`, `operations.py`, `features.py`, `expressions.py`, `compat.py`) now need the full own IBM i tier, not only a targeted run. (#199)
+- One name per test set, in the docs and the code: offline tests, golden files, replay tests (`nox -s replay`), IBM i tests (`nox -s ibmi`, `tests/ibmi/`), Django suite on IBM i (`scripts/django_suite.sh`), targeted and full IBM i runs (label `needs-full-ibmi-run`), and the status run (`bin/status-run`, was the release run). (#202)
+- `scripts/django_suite.sh` checks its arguments with the rules of `scripts/run_django_tests.py` (`--check-only`, on the host, before the PUB400 lock), so they live in one place: a label must be a test module label, and options may come between the labels. (#205)
+- The release workflow is removed: the maintainer creates each GitHub release by hand from the signed tag, so nothing runs on a tag push anymore (#94). `scripts/changelog_section.py <version>` prints the release notes. (#207)
+
+### Fixed
+- `bin/ibmi-test django <label>...` runs every label, also after one failed,
+  and names the failed labels at the end; before, the first failing label
+  stopped the rest. (#133)
+- SQL that ends in `;` (raw SQL in user code and in Django's tests) no longer
+  fails with SQL0104: the cursor removes one trailing `;`, as Django's Oracle
+  backend does. (#142)
+- An `AlterField` that changes or removes the check of a positive integer
+  field (for example `PositiveIntegerField` to `IntegerField`) failed with
+  `SQL0199 - Keyword NONE not expected`; it now drops the check (#151). (#155)
+- CI classification: a pull request always gets its `run-ibmi` /
+  `needs-full-tier` labels, also when a quick second push cancelled the run
+  for the first one. The previous head now comes from the last completed
+  classification, which the PR comment names, not from the push event;
+  without such a comment the whole pull request is classified. The labels
+  are set before the comment is updated (#158 got no label). (#159)
+- A deferred statement of a migration that fails (for example an index the
+  database refuses) now rolls the migration's transaction back. Before, the
+  connection stayed inside the transaction, and later statements failed with
+  "Attempt to use a closed connection". (#160)
+- Foreign key violations (SQL0530, SQL0531, SQL0532) now raise
+  `IntegrityError` instead of `DatabaseError`: Db2 for i reports them with
+  the generic SQLSTATE `HY000`, so they are classified by SQLCODE, as CHECK
+  violations are. This matters for foreign key constraints that exist in the
+  database already, such as on tables not managed by Django migrations. (#163)
+- A CHECK constraint that existing rows violate (SQL0544, for example
+  `AlterField` to a `PositiveIntegerField` over negative values) now raises
+  `IntegrityError` instead of `DatabaseError`. (#163)
+- AddField of a NOT NULL field without any default no longer fails with
+  SQL0109 ("NOT NULL clause not allowed"). The column is added with the type's
+  system default, which is dropped right after. A table that already has rows
+  is refused with `IntegrityError` instead of silently giving those rows the
+  system default, as on PostgreSQL. In a migration's transaction the table is
+  locked during the check. (#164)
+- Tooling: stopping a PUB400 run released the PUB400 lock while the run's
+  container kept its connection open, so a second job could start. The lock
+  now stops the run's container (`docker stop`, then `docker kill` after a
+  timeout) before it releases the lock. A new run removes an exited container
+  of an earlier run and refuses to start while one still runs. (#167)
+- Tooling: a stop signal that arrived right after the PUB400 lock was taken,
+  before the run started, ended the lock process without its container
+  cleanup. The lock now handles signals from the moment it holds the lock. A
+  signal before the start skips the run, and the container check still runs
+  before the lock is released. (#169)
+- A column default containing `%` (`default` or `db_default`) was stored
+  with the `%` doubled when a migration created the table or added the
+  column (`DEFAULT '100%%'` for `"100%"`), and a one-character default `"%"`
+  failed with SQL0574. `sqlmigrate` showed the doubled `%` too. Changing a
+  default with `AlterField` was not affected. (#183)
+- Each git worktree gets its own nox virtualenvs (a Docker volume per checkout), so `bin/check` and other nox runs in two worktrees no longer break each other; `bin/worktree-remove` removes the volume. (#194)
+- The test runner accepts a test library journaled with `STRJRNLIB` (new objects inheriting journaling, to an active journal), the same rule as the system check `django_db2_for_i.W001`; before, it accepted only a `QSQJRN` journal in the library. (#205)
+- The replay tests are counted per corpus entry again in the test status (since the test set rename they were counted per pytest test, 8 per Django version). (#209)
+- `bin/release-prepare` no longer refuses its own staged release files, and runs `bin/check` before it regenerates the status pages, so their offline and replay rows come from a fresh run. (#209)
+
+### Known limitations
+- Known limitations: SQL0910 in a migration only hits a column that really
+  holds NULLs (verified), or rows changed by `RunPython`/`RunSQL` before a
+  schema change of the same table. The workaround is stated plainly:
+  `atomic = False`, or a separate data migration before the schema change. (#175)
+- `db_index=True` on a `TextField` or `BinaryField` no longer fails with
+  SQL0350: Db2 for i cannot index a LOB column, so the index is skipped, as
+  Django's Oracle and MySQL backends do. (#176)
+- A `CheckConstraint` that matches a column against a pattern built from
+  another column (for example `~Q(surname__startswith=F("name"))`) is
+  refused by Db2 for i (SQL0546); patterns with a constant work. See Known
+  Limitations. (#184)
+- Known limitations: `GeneratedField`, `db_collation` and `CharField` without `max_length` are not available on Db2 for i (verified on IBM i 7.5), and `inspectdb` lists no materialized query tables. Every feature flag that was "later" now names phase 5, phase 6, "needs probe" or why it is off. (#198)
+
 ## [0.1.0a4] - 2026-10-21
 
 ### Added
@@ -371,7 +602,8 @@ The tag is not moved or recreated.
   escaped quotes in DEFAULT constants wrongly. Unsupported values raise
   `NotSupportedError`.
 
-[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a4...HEAD
+[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b1...HEAD
+[0.1.0b1]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a4...v0.1.0b1
 [0.1.0a4]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a3...v0.1.0a4
 [0.1.0a3]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a2...v0.1.0a3
 [0.1.0a2]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a1...v0.1.0a2
