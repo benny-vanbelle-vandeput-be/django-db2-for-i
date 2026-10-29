@@ -121,7 +121,7 @@
     "supports_select_for_update_with_limit": false,
     "supports_select_intersection": true,
     "supports_select_union": true,
-    "supports_sequence_reset": false,
+    "supports_sequence_reset": true,
     "supports_slicing_ordering_in_compound": true,
     "supports_stored_generated_columns": false,
     "supports_subqueries_in_group_by": true,
@@ -142,7 +142,7 @@
     "supports_uuid7_function_shift": false,
     "supports_virtual_generated_columns": false,
     "test_db_allows_multiple_connections": false,
-    "truncates_names": false,
+    "truncates_names": true,
     "update_can_self_select": false,
     "uses_savepoints": true
   }

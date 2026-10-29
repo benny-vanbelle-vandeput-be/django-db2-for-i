@@ -47,12 +47,14 @@ supports_regex_backreferencing.description = "`regex` / `iregex` lookups support
 supports_select_difference.description = "`QuerySet.difference()` (`EXCEPT`)."
 supports_select_intersection.description = "`QuerySet.intersection()` (`INTERSECT`)."
 supports_select_union.description = "`QuerySet.union()` (`UNION` / `UNION ALL`)."
+supports_sequence_reset.description = "`sqlsequencereset` and `TransactionTestCase.reset_sequences` restart identity values."
 supports_slicing_ordering_in_compound.description = "Slicing and ordering of the parts of a compound query."
 supports_subqueries_in_group_by.description = "A subquery can be used in `GROUP BY`."
 supports_table_check_constraints.description = "Model `CheckConstraint`s are enforced by the database."
 supports_temporal_subtraction.description = "Subtracting dates, times and datetimes gives an exact `timedelta`."
 supports_transactions.description = "Transactions with commit and rollback (on journaled tables)."
 supports_tuple_lookups.description = "Lookups on several columns at once (composite keys, multi-column relations)."
+truncates_names.description = "Names longer than the database allows are shortened with a hash, the same way everywhere."
 uses_savepoints.description = "Nested `atomic()` blocks use savepoints."
 
 # --- Intentionally off ------------------------------------------------------
@@ -169,10 +171,6 @@ supports_nulls_distinct_unique_constraints.off = "Db2 for i takes no `NULLS DIST
 # Phase 5: returning columns, bulk operations, constraints, indexes.
 # Probed in step 0 (IBMI_NOTES, 2026-10-29); each is turned on in its step with
 # Django's tests and an own IBM i test.
-supports_sequence_reset.description = "`sqlsequencereset` resets identity values."
-supports_sequence_reset.planned = "phase 5"
-truncates_names.description = "Names longer than the database allows are shortened with a hash, the same way everywhere."
-truncates_names.planned = "phase 5"
 allows_auto_pk_0.description = "An `AutoField` primary key may be 0."
 allows_auto_pk_0.planned = "phase 5"
 can_return_columns_from_insert.description = "Inserted rows return their primary key and defaults in one statement."

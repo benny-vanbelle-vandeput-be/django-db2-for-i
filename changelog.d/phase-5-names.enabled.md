@@ -1,0 +1,2 @@
+- `supports_sequence_reset`: `TransactionTestCase(reset_sequences=True)` restarts the identities at their start value (new `sequence_reset_by_name_sql()`), and `sqlsequencereset` is reported as supported.
+- `truncates_names`: names over 128 characters were already shortened with a hash; Django now does the same when it looks up constraint columns, and its name length check (`models.E018`, `models.E019`) no longer reports such names.

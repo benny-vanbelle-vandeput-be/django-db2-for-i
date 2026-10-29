@@ -751,3 +751,24 @@ def test_a_check_with_a_like_pattern_keeps_its_percent() -> None:
     with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         editor.add_constraint(Author, constraint)
     assert editor.collected_sql == [f"{LIKE_CHECK};"]
+
+
+@isolate_apps("tests.testapp")
+def test_long_names_are_truncated_and_pass_the_name_check() -> None:
+    """truncates_names: a column name over 128 characters (SQL0107) is
+    shortened with a hash, so Django's name length check (models.E018) does
+    not apply."""
+    long_name = "f" * 130
+
+    class Wide(models.Model):
+        class Meta:
+            app_label = "testapp"
+
+    field = models.IntegerField(null=True)
+    field.contribute_to_class(Wide, long_name)
+    (create,) = collect(("create_model", Wide))
+    column = connection.ops.quote_name(long_name)
+    assert len(column) == 128 + 2  # quotes
+    assert column[1:-1].startswith("F" * 100)
+    assert column in create
+    assert Wide.check(databases=["default"]) == []
