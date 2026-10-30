@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2958 | 2 | 0 | 0 | 2026-10-29 21:02:46 UTC |
+| Offline tests | 3023 | 2 | 0 | 0 | 2026-10-30 07:49:51 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 12:56:12 UTC |
 | Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-29 12:04:46 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 21:02:56 UTC |
+| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-30 07:51:37 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2959 | 1 | 0 | 0 | 2026-10-29 21:00:45 UTC |
+| Offline tests | 3024 | 1 | 0 | 0 | 2026-10-30 07:46:14 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 10:35:19 UTC |
 | Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-29 09:48:04 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 21:00:58 UTC |
+| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-30 07:52:18 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2957 | 1 | 0 | 0 | 2026-10-29 20:58:19 UTC |
+| Offline tests | 3022 | 1 | 0 | 0 | 2026-10-30 07:42:46 UTC |
 | IBM i tests | 323 | 3 | 1 | 0 | 2026-10-29 08:22:24 UTC |
 | Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-29 07:35:19 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 20:58:33 UTC |
+| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-30 07:53:12 UTC |
 
 ### About the tests
 
@@ -88,7 +88,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 database; **expected failures** are known Db2 for i limitations, each with a reason
 ([Known limitations](docs/user/Known-Limitations.md)).
 
-Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (34 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
+Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (42 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
 <!-- tests:end -->
 
 <!-- status:start -->
@@ -98,9 +98,9 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (34 enabled on Django 6.1) �
 
 | Step | State | Pull requests |
 |---|---|---|
-| 0: QTEMP probes and the baseline of the four modules | in progress |  |
-| Names: truncates_names, supports_sequence_reset | planned |  |
-| A: returning and bulk insert (bulk_create) | planned |  |
+| 0: QTEMP probes and the baseline of the four modules | done | [#212](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/212) |
+| Names: truncates_names, supports_sequence_reset | done | [#214](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/214) |
+| A: returning and bulk insert (bulk_create) | in progress | [#215](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/215) |
 | C: partial and expression indexes (indexes, model_indexes) | planned |  |
 | D: unique variants (constraints) | planned |  |
 | E: chunked reads, self-referencing UPDATE / DELETE | planned |  |
@@ -133,8 +133,9 @@ Open tracks:
 > expressions, compound queries) and the schema editor (migrations that
 > create and alter tables, foreign keys, check constraints, indexes,
 > introspection and `inspectdb`) work on Django 5.2, 6.0 and 6.1, within the
-> [known limitations](docs/user/Known-Limitations.md). `bulk_create()` with
-> returned keys, unique constraint variants, partial and expression indexes
+> [known limitations](docs/user/Known-Limitations.md). Inserts return their
+> keys and `db_default` values, and `bulk_create()` inserts many rows per
+> statement. Unique constraint variants, partial and expression indexes
 > (phase 5), window functions, `JSONField` and database functions (phase 6)
 > are not done yet. Not for production use; APIs and settings may change
 > between beta releases.

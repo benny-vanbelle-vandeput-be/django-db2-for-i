@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2958 | 2 | 0 | 0 | 2026-10-29 21:02:46 UTC |
+| Offline tests | 3023 | 2 | 0 | 0 | 2026-10-30 07:49:51 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 12:56:12 UTC |
 | Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-29 12:04:46 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 21:02:56 UTC |
+| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-30 07:51:37 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2959 | 1 | 0 | 0 | 2026-10-29 21:00:45 UTC |
+| Offline tests | 3024 | 1 | 0 | 0 | 2026-10-30 07:46:14 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 10:35:19 UTC |
 | Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-29 09:48:04 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 21:00:58 UTC |
+| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-30 07:52:18 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2957 | 1 | 0 | 0 | 2026-10-29 20:58:19 UTC |
+| Offline tests | 3022 | 1 | 0 | 0 | 2026-10-30 07:42:46 UTC |
 | IBM i tests | 323 | 3 | 1 | 0 | 2026-10-29 08:22:24 UTC |
 | Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-29 07:35:19 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 20:58:33 UTC |
+| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-30 07:53:12 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -125,12 +125,16 @@ The Django suite on IBM i per module and Django version.
 ## Feature flags set to True by the backend
 
 - `allow_sliced_subqueries_with_in`
+- `allows_auto_pk_0`
 - `can_introspect_check_constraints`
 - `can_introspect_default`
 - `can_introspect_foreign_keys`
 - `can_release_savepoints`
 - `can_rename_index`
+- `can_return_columns_from_insert`
+- `can_return_rows_from_bulk_insert`
 - `can_rollback_ddl`
+- `has_bulk_insert`
 - `ignores_table_name_case`
 - `implied_column_null`
 - `indexes_foreign_keys`
@@ -142,6 +146,8 @@ The Django suite on IBM i per module and Django version.
 - `supports_any_value`
 - `supports_boolean_expr_in_select_clause`
 - `supports_column_check_constraints`
+- `supports_default_keyword_in_bulk_insert`
+- `supports_default_keyword_in_insert`
 - `supports_foreign_keys`
 - `supports_index_column_ordering`
 - `supports_inspectdb`
@@ -150,12 +156,14 @@ The Django suite on IBM i per module and Django version.
 - `supports_select_difference`
 - `supports_select_intersection`
 - `supports_select_union`
+- `supports_sequence_reset`
 - `supports_slicing_ordering_in_compound`
 - `supports_subqueries_in_group_by`
 - `supports_table_check_constraints`
 - `supports_temporal_subtraction`
 - `supports_transactions`
 - `supports_tuple_lookups`
+- `truncates_names`
 - `uses_savepoints`
 - `has_native_boolean_field` (from the `has_boolean_type` capability)
 
@@ -170,10 +178,10 @@ The Django suite on IBM i per module and Django version.
 | Db2 for i rejects an untyped NULL as an expression (SQL0206) | 1 | 0 |
 | JSONField is not supported yet (phase 6) | 0 | 0 |
 | a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 3 | 0 |
-| identity restart deferred in TestCase (SQL0910) | 0 | 0 |
+| identity restart deferred in TestCase (SQL0910) | 1 | 0 |
 | null=True to null=False with a default sets the NULLs (UPDATE) and then runs SET NOT NULL in the same transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910) | 7 | 0 |
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
 
 ## Golden files
 
-520 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
+535 goldens, 9 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).

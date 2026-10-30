@@ -158,15 +158,18 @@ status = "in progress"
 
 [[phases.steps]]
 step = "0: QTEMP probes and the baseline of the four modules"
-status = "in progress"
+status = "done"
+prs = [212]
 
 [[phases.steps]]
 step = "Names: truncates_names, supports_sequence_reset"
-status = "planned"
+status = "done"
+prs = [214]
 
 [[phases.steps]]
 step = "A: returning and bulk insert (bulk_create)"
-status = "planned"
+status = "in progress"
+prs = [215]
 
 [[phases.steps]]
 step = "C: partial and expression indexes (indexes, model_indexes)"
