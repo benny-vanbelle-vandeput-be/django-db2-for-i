@@ -174,6 +174,12 @@ In this order (answers e and f):
 
 About 12 to 16 PRs. IBM i runs stay one at a time.
 
+**Changed 2026-10-30 (maintainer):** A2, C and E go into one pull request,
+with a commit per step, to save PUB400 time: one IBM i cycle for the three
+(the full IBM i tests on 6.1, `bin/verify` per Django version, the affected
+modules on 6.1, 6.0 and 5.2) instead of three. While building, only small
+targeted runs. D (after the `lib_` probe #213) and B stay separate.
+
 ## Before the beta
 Until the tag `v0.1.0b1` exists (checked read-only with
 `git ls-remote --tags origin`; the maintainer sets it):
