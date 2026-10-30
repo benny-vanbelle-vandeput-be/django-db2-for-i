@@ -477,17 +477,21 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
         if not keys:
             return [plain]
         rows = ", ".join(
-            "(%s)" % ", ".join(self._cast(field, sql) for field, sql in zip(fields, row))
+            "({})".format(
+                ", ".join(self._cast(field, sql) for field, sql in zip(fields, row, strict=True))
+            )
             for row in placeholder_rows
         )
         on = " OR ".join(
-            "(%s)" % " AND ".join(f"TGT.{qn(c)} = SRC.{qn(c)}" for c in key) for key in keys
+            "({})".format(" AND ".join(f"TGT.{qn(c)} = SRC.{qn(c)}" for c in key)) for key in keys
         )
         names = ", ".join(qn(c) for c in columns)
-        sql = f"MERGE INTO {qn(opts.db_table)} AS TGT USING (VALUES {rows}) AS SRC ({names}) ON {on}"
+        table = qn(opts.db_table)
+        sql = f"MERGE INTO {table} AS TGT USING (VALUES {rows}) AS SRC ({names}) ON {on}"
         if self.query.on_conflict == OnConflict.UPDATE:
             assignments = ", ".join(
-                f"TGT.{qn(field.column)} = SRC.{qn(field.column)}" for field in self.query.update_fields
+                f"TGT.{qn(field.column)} = SRC.{qn(field.column)}"
+                for field in self.query.update_fields
             )
             sql += f" WHEN MATCHED THEN UPDATE SET {assignments}"
         values = ", ".join(f"SRC.{qn(c)}" for c in columns)

@@ -1179,7 +1179,7 @@ def unique_model(live):
 
         class Meta:
             app_label = "testapp"
-            unique_together = [("a", "b")]
+            unique_together = (("a", "b"),)
 
     try:
         with live.schema_editor() as editor:
