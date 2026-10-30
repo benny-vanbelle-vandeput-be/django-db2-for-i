@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3023 | 2 | 0 | 0 | 2026-10-30 07:49:51 UTC |
+| Offline tests | 3106 | 2 | 0 | 0 | 2026-10-30 09:34:36 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 12:56:12 UTC |
 | Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-29 12:04:46 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-30 07:51:37 UTC |
+| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-30 09:35:20 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3024 | 1 | 0 | 0 | 2026-10-30 07:46:14 UTC |
+| Offline tests | 3107 | 1 | 0 | 0 | 2026-10-30 09:30:33 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 10:35:19 UTC |
 | Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-29 09:48:04 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-30 07:52:18 UTC |
+| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-30 09:31:12 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3022 | 1 | 0 | 0 | 2026-10-30 07:42:46 UTC |
+| Offline tests | 3105 | 1 | 0 | 0 | 2026-10-30 09:26:52 UTC |
 | IBM i tests | 323 | 3 | 1 | 0 | 2026-10-29 08:22:24 UTC |
 | Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-29 07:35:19 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-30 07:53:12 UTC |
+| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-30 09:27:32 UTC |
 
 ### About the tests
 
@@ -88,7 +88,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 database; **expected failures** are known Db2 for i limitations, each with a reason
 ([Known limitations](docs/user/Known-Limitations.md)).
 
-Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (42 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
+Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (53 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
 <!-- tests:end -->
 
 <!-- status:start -->
@@ -100,11 +100,11 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (42 enabled on Django 6.1) �
 |---|---|---|
 | 0: QTEMP probes and the baseline of the four modules | done | [#212](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/212) |
 | Names: truncates_names, supports_sequence_reset | done | [#214](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/214) |
-| A: returning and bulk insert (bulk_create) | in progress | [#215](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/215) |
-| C: partial and expression indexes (indexes, model_indexes) | planned |  |
-| D: unique variants (constraints) | planned |  |
-| E: chunked reads, self-referencing UPDATE / DELETE | planned |  |
-| B: conflicts through MERGE, or the exit | planned |  |
+| A: returning and bulk insert (bulk_create) | in progress | [#215](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/215), [#216](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/216) |
+| C: partial and expression indexes (indexes, model_indexes) | in progress | [#216](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/216) |
+| D: unique variants (constraints) | in progress | [#216](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/216) |
+| E: chunked reads, self-referencing UPDATE / DELETE | in progress | [#216](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/216) |
+| B: conflicts through MERGE, or the exit | in progress | [#216](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/216) |
 | Close-out: supported modules, status run, phase record | planned |  |
 
 | Phase | Content | Status |

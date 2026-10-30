@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3023 | 2 | 0 | 0 | 2026-10-30 07:49:51 UTC |
+| Offline tests | 3106 | 2 | 0 | 0 | 2026-10-30 09:34:36 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 12:56:12 UTC |
 | Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-29 12:04:46 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-30 07:51:37 UTC |
+| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-30 09:35:20 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3024 | 1 | 0 | 0 | 2026-10-30 07:46:14 UTC |
+| Offline tests | 3107 | 1 | 0 | 0 | 2026-10-30 09:30:33 UTC |
 | IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 10:35:19 UTC |
 | Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-29 09:48:04 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-30 07:52:18 UTC |
+| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-30 09:31:12 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3022 | 1 | 0 | 0 | 2026-10-30 07:42:46 UTC |
+| Offline tests | 3105 | 1 | 0 | 0 | 2026-10-30 09:26:52 UTC |
 | IBM i tests | 323 | 3 | 1 | 0 | 2026-10-29 08:22:24 UTC |
 | Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-29 07:35:19 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-30 07:53:12 UTC |
+| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-30 09:27:32 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -134,6 +134,8 @@ The Django suite on IBM i per module and Django version.
 - `can_return_columns_from_insert`
 - `can_return_rows_from_bulk_insert`
 - `can_rollback_ddl`
+- `can_use_chunked_reads`
+- `delete_can_self_reference_subquery`
 - `has_bulk_insert`
 - `ignores_table_name_case`
 - `implied_column_null`
@@ -148,10 +150,16 @@ The Django suite on IBM i per module and Django version.
 - `supports_column_check_constraints`
 - `supports_default_keyword_in_bulk_insert`
 - `supports_default_keyword_in_insert`
+- `supports_expression_indexes`
 - `supports_foreign_keys`
+- `supports_functions_in_partial_indexes`
+- `supports_ignore_conflicts`
 - `supports_index_column_ordering`
 - `supports_inspectdb`
+- `supports_nullable_unique_constraints`
 - `supports_parentheses_in_compound`
+- `supports_partial_indexes`
+- `supports_partially_nullable_unique_constraints`
 - `supports_regex_backreferencing`
 - `supports_select_difference`
 - `supports_select_intersection`
@@ -163,7 +171,10 @@ The Django suite on IBM i per module and Django version.
 - `supports_temporal_subtraction`
 - `supports_transactions`
 - `supports_tuple_lookups`
+- `supports_update_conflicts`
+- `supports_update_conflicts_with_target`
 - `truncates_names`
+- `update_can_self_select`
 - `uses_savepoints`
 - `has_native_boolean_field` (from the `has_boolean_type` capability)
 
@@ -178,10 +189,12 @@ The Django suite on IBM i per module and Django version.
 | Db2 for i rejects an untyped NULL as an expression (SQL0206) | 1 | 0 |
 | JSONField is not supported yet (phase 6) | 0 | 0 |
 | a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 3 | 0 |
+| bulk_create(update_conflicts=True) is a MERGE, which returns no rows (FINAL TABLE takes only INSERT): the objects get no primary keys | 7 | 0 |
 | identity restart deferred in TestCase (SQL0910) | 1 | 0 |
 | null=True to null=False with a default sets the NULLs (UPDATE) and then runs SET NOT NULL in the same transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910) | 7 | 0 |
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
+| the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i | 1 | 0 |
 
 ## Golden files
 
-535 goldens, 9 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
+559 goldens, 36 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).

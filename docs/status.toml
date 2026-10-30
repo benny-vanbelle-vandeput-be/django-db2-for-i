@@ -169,23 +169,27 @@ prs = [214]
 [[phases.steps]]
 step = "A: returning and bulk insert (bulk_create)"
 status = "in progress"
-prs = [215]
+prs = [215, 216]
 
 [[phases.steps]]
 step = "C: partial and expression indexes (indexes, model_indexes)"
-status = "planned"
+status = "in progress"
+prs = [216]
 
 [[phases.steps]]
 step = "D: unique variants (constraints)"
-status = "planned"
+status = "in progress"
+prs = [216]
 
 [[phases.steps]]
 step = "E: chunked reads, self-referencing UPDATE / DELETE"
-status = "planned"
+status = "in progress"
+prs = [216]
 
 [[phases.steps]]
 step = "B: conflicts through MERGE, or the exit"
-status = "planned"
+status = "in progress"
+prs = [216]
 
 [[phases.steps]]
 step = "Close-out: supported modules, status run, phase record"
