@@ -80,11 +80,9 @@ def _conflicts(on_conflict, update_fields=(), unique_fields=()):
     """bulk_create() with ignore_conflicts / update_conflicts: a MERGE."""
 
     def build(connection):
-        fields = [
-            f
-            for f in Book._meta.local_concrete_fields
-            if f.name in ("id", "author", "title", "pages")
-        ]
+        # Every concrete field, as bulk_create() inserts them: AVAILABLE is
+        # NOT NULL with only a Python default.
+        fields = Book._meta.local_concrete_fields
         objs = [
             Book(id=1, author_id=1, title="Db2 for i", pages=10),
             Book(id=2, author_id=1, title="IBM i", pages=20),
@@ -96,7 +94,12 @@ def _conflicts(on_conflict, update_fields=(), unique_fields=()):
             unique_fields=[Book._meta.get_field(n) for n in unique_fields],
         )
         query.insert_values(fields, objs)
-        return [(sql, params) for sql, params in query.get_compiler(connection.alias).as_sql()]
+        # The author first (an explicit primary key): Book's foreign key needs it.
+        author = InsertQuery(Author)
+        author.insert_values(Author._meta.local_concrete_fields, [Author(id=1, name="IBM i")])
+        statements = list(author.get_compiler(connection.alias).as_sql())
+        statements += query.get_compiler(connection.alias).as_sql()
+        return [(sql, params) for sql, params in statements]
 
     return build
 
