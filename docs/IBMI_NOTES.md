@@ -1935,6 +1935,25 @@ then bisecting):
   characters, which fits Db2 for i's documented 2,097,152 (2 MB, not
   verified to the byte).
 
+**LOB columns have a much lower limit** (`probes/qtemp_bulk_types.py`; found by
+Django's `test_in_bulk_lots_of_ids`, 1998 rows with one `NCLOB`):
+
+| Columns | Largest that worked | Smallest refused | Refusal |
+|---|---|---|---|
+| `NCLOB`, also `NCLOB(1M)`, `NCLOB(100M)`, `CLOB(1M)`, `BLOB(1M)` | 1,024 rows | 1,056 rows | `HY000` PWS0001 (19188) at prepare |
+| two `NCLOB(1M)` | 512 rows (1,024 LOB markers) | 528 rows | PWS0001 |
+| `NVARCHAR(100)`, `NVARCHAR(50)`, `NCLOB`, with and without `FINAL TABLE` | 1,024 rows | 1,056 rows | PWS0001 |
+| `NVARCHAR(100)`, `NVARCHAR(50)`, `FINAL TABLE` | 16,128 rows (32,256 markers) | 16,384 rows (32,768 markers) | SQL0901 |
+| `NCLOB(1K)`, `NVARCHAR(255)`, `NVARCHAR(16000)` | 16,384 rows | none up to 16,384 | |
+
+- The limit counts the LOB markers of the statement, between 1,024 and 1,056
+  (the probe's bisection stopped there). It does not depend on the declared
+  length from 1M up, on the values (`NULL` or not) or on `FINAL TABLE`;
+  `NCLOB(1K)` is not affected (where between 1K and 1M it starts was not
+  measured). The connection stays usable after the refusal.
+- `bulk_batch_size()` allows 512 LOB markers per statement, for every LOB
+  column whatever its declared length.
+
 **Indexes** (`probes/qtemp_indexes.py`): accepted, on a QTEMP table:
 `CREATE INDEX ... WHERE` with comparisons, `IS NOT NULL`, `IN`/`OR`, functions
 (`UPPER(B) = 'X'`, `LENGTH(B) > 3`) and quoted names; indexes on expressions

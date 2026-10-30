@@ -243,6 +243,9 @@ The answers of the plan's approval (2026-10-28), also in
 - `qtemp_bulk`: at most 32,767 parameter markers (32,640 worked, 32,768 got
   SQL0901, a system error); statements up to about 2 MB; at most about
   32,700 rows. `bulk_batch_size()` stays well below.
+- `qtemp_bulk_types` (added during A2, after `test_in_bulk_lots_of_ids` failed
+  on 1998 rows): LOB columns allow only about 1,024 markers per statement
+  (1,056 got PWS0001 at prepare). `bulk_batch_size()` allows 512.
 - `qtemp_indexes`: partial indexes (with functions), expression indexes
   and unique variants of both work; `INCLUDE` does not (SQL0104):
   `supports_covering_indexes` is off.
