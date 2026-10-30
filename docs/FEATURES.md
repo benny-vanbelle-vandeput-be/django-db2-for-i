@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**42 flags enabled on Django 6.1.**
+**45 flags enabled on Django 6.1.**
 
-## Enabled (42)
+## Enabled (45)
 
 On in at least one supported Django version.
 
@@ -41,10 +41,13 @@ On in at least one supported Django version.
 | `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | ✅ | ✅ | ✅ |
 | `supports_default_keyword_in_bulk_insert` | `bulk_create()` writes `DEFAULT` for fields with a `db_default`. | ✅ | ✅ | ✅ |
 | `supports_default_keyword_in_insert` | An insert writes `DEFAULT` for fields with a `db_default`. | ✅ | ✅ | ✅ |
+| `supports_expression_indexes` | Indexes on expressions (`Index(Lower('name'))`). | ✅ | ✅ | ✅ |
 | `supports_foreign_keys` | Foreign keys are enforced by the database. | ✅ | ✅ | ✅ |
+| `supports_functions_in_partial_indexes` | Functions in the `condition` of a partial index. | ✅ | ✅ | ✅ |
 | `supports_index_column_ordering` | Index columns can be ordered `DESC` (`Index(fields=["-field"])`). | ✅ | ✅ | ✅ |
 | `supports_inspectdb` | `manage.py inspectdb` generates models from existing tables. | – | – | ✅ |
 | `supports_parentheses_in_compound` | Parts of a compound query may have their own `ORDER BY` / slice. | ✅ | ✅ | ✅ |
+| `supports_partial_indexes` | Indexes and unique constraints with a `condition`. | ✅ | ✅ | ✅ |
 | `supports_regex_backreferencing` | `regex` / `iregex` lookups support backreferences (ICU regular expressions). | ✅ | ✅ | ✅ |
 | `supports_select_difference` | `QuerySet.difference()` (`EXCEPT`). | ✅ | ✅ | ✅ |
 | `supports_select_intersection` | `QuerySet.intersection()` (`INTERSECT`). | ✅ | ✅ | ✅ |
@@ -114,7 +117,7 @@ Off on purpose, with the reason.
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (37)
+## Planned (34)
 
 Off for now; planned for the phase shown.
 
@@ -136,10 +139,8 @@ Off for now; planned for the phase shown.
 | `supports_aggregate_distinct_multiple_argument` | `StringAgg(..., distinct=True)` with a delimiter (`distinct` with several arguments). | – | 🗓️ | 🗓️ | phase 6 |
 | `supports_cast_with_precision` | `Cast()` to a type with a length or precision, e.g. `DecimalField(max_digits=...)`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_default_in_lead_lag` | `Lead()` / `Lag()` with a `default`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_expression_indexes` | Indexes on expressions (`Index(Lower('name'))`). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_frame_exclusion` | Window frames with `exclusion` (`EXCLUDE ...`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_frame_range_fixed_distance` | Window `RANGE` frames with a fixed distance (`ValueRange(start=-5)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_functions_in_partial_indexes` | Functions in the `condition` of a partial index. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_ignore_conflicts` | `bulk_create(ignore_conflicts=True)`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_json_field` | `JSONField`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_field_contains` | `JSONField` `contains` / `contained_by` lookups. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
@@ -150,7 +151,6 @@ Off for now; planned for the phase shown.
 | `supports_on_delete_db_default` | `on_delete=DB_SET_DEFAULT` (Django 6.1+). | – | – | 🗓️ | phase 6 |
 | `supports_on_delete_db_null` | `on_delete=DB_SET_NULL` (Django 6.1+). | – | – | 🗓️ | phase 6 |
 | `supports_over_clause` | Window functions (`Window`, `OVER (...)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_partial_indexes` | Indexes and unique constraints with a `condition`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_partially_nullable_unique_constraints` | Multi-column unique constraints where some columns are NULL. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | 🗓️ | 🗓️ | 🗓️ | phase 6 |

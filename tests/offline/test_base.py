@@ -323,6 +323,7 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
         features.REASON_TYPE_NOT_IN_PLACE,
         features.REASON_CHECK_LIKE_COLUMN_PATTERN,
         features.REASON_JSON_FIELD,
+        features.REASON_LOWERCASE_NAME_IN_SQL,
     }
     # Each entry is one test id, never a whole class.
     for test_ids in cls.expected_failures.values():

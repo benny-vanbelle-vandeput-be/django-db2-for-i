@@ -1068,3 +1068,95 @@ def test_descending_index(live, ranking_model) -> None:
         "b",
         "c",
     ]
+
+
+# --- Partial and expression indexes (phase 5, step C) -------------------------------
+
+
+def _index(live, name):
+    with live.cursor() as cursor:
+        return live.introspection.get_constraints(cursor, Book._meta.db_table).get(name)
+
+
+def test_partial_index_used_by_a_migration(live, empty) -> None:
+    """AddIndex with a condition: the index exists with its column, queries
+    on the table still work, RemoveIndex drops it."""
+    index = models.Index(
+        fields=["title"], condition=models.Q(pages__gt=100), name="testapp_book_long_idx"
+    )
+    author = Author.objects.create(name="a")
+    Book.objects.create(author=author, title="short", pages=10)
+    Book.objects.create(author=author, title="long", pages=500)
+    with live.schema_editor() as editor:
+        editor.add_index(Book, index)
+    try:
+        entry = _index(live, index.name)
+        assert entry["index"] and entry["columns"] == ["title"] and not entry["unique"]
+        titles = Book.objects.filter(pages__gt=100).values_list("title", flat=True)
+        assert list(titles) == ["long"]
+    finally:
+        with live.schema_editor() as editor:
+            editor.remove_index(Book, index)
+    assert _index(live, index.name) is None
+
+
+def test_expression_index_has_no_columns(live, empty) -> None:
+    """An index on Lower(title) is introspected like Django's other backends
+    report it: an index without columns (SYSKEYS.COLUMN_IS_EXPRESSION)."""
+    from django.db.models.functions import Lower
+
+    index = models.Index(Lower("title"), name="testapp_book_lower_idx")
+    mixed = models.Index("pages", Lower("title"), name="testapp_book_mixed_idx")
+    with live.schema_editor() as editor:
+        editor.add_index(Book, index)
+        editor.add_index(Book, mixed)
+    try:
+        assert _index(live, index.name)["columns"] == []
+        assert _index(live, mixed.name)["columns"] == ["pages", None]
+    finally:
+        with live.schema_editor() as editor:
+            editor.remove_index(Book, index)
+            editor.remove_index(Book, mixed)
+
+
+def test_conditional_unique_constraint(live, empty) -> None:
+    """UniqueConstraint(condition=...) is a unique index with WHERE: duplicates
+    outside the condition are allowed, inside it they raise IntegrityError."""
+    from django.db import IntegrityError, transaction
+
+    constraint = models.UniqueConstraint(
+        fields=["title"], condition=models.Q(available=True), name="testapp_book_avail_uniq"
+    )
+    author = Author.objects.create(name="a")
+    with live.schema_editor() as editor:
+        editor.add_constraint(Book, constraint)
+    try:
+        assert _index(live, constraint.name)["unique"]
+        Book.objects.create(author=author, title="same", available=False)
+        Book.objects.create(author=author, title="same", available=False)
+        Book.objects.create(author=author, title="same", available=True)
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Book.objects.create(author=author, title="same", available=True)
+        assert Book.objects.filter(title="same").count() == 3
+    finally:
+        with live.schema_editor() as editor:
+            editor.remove_constraint(Book, constraint)
+
+
+def test_functional_unique_constraint(live, empty) -> None:
+    """UniqueConstraint(Upper("title")): titles that differ only in case clash."""
+    from django.db import IntegrityError, transaction
+    from django.db.models.functions import Upper
+
+    constraint = models.UniqueConstraint(Upper("title"), name="testapp_book_upper_uniq")
+    author = Author.objects.create(name="a")
+    with live.schema_editor() as editor:
+        editor.add_constraint(Book, constraint)
+    try:
+        Book.objects.create(author=author, title="Db2 for i")
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Book.objects.create(author=author, title="DB2 FOR I")
+        assert _index(live, constraint.name)["unique"]
+    finally:
+        with live.schema_editor() as editor:
+            editor.remove_constraint(Book, constraint)

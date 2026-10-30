@@ -19,7 +19,9 @@ from django.db.models import (
     IntegerField,
     OneToOneField,
     Q,
+    UniqueConstraint,
 )
+from django.db.models.functions import Lower, Upper
 
 from tests.golden_cases.base import (
     ACCOUNT,
@@ -377,6 +379,58 @@ CASES: tuple[Case, ...] = (
         "alter",
         _add_and_remove_index(
             Book, Index(fields=["-published", "title"], name="testapp_book_pub_desc")
+        ),
+        (BOOK,),
+    ),
+    # Partial and expression indexes (phase 5, step C): CREATE [UNIQUE] INDEX
+    # ... WHERE, keys on expressions; a conditional or functional
+    # UniqueConstraint is a unique index (probe qtemp_indexes).
+    Case(
+        "ddl/add_index_partial",
+        "alter",
+        _add_and_remove_index(
+            Book,
+            Index(
+                fields=["title"],
+                condition=Q(pages__gt=100, available=True),
+                name="testapp_book_long_idx",
+            ),
+        ),
+        (BOOK,),
+    ),
+    Case(
+        "ddl/add_index_partial_function",
+        "alter",
+        _add_and_remove_index(
+            Book,
+            Index(
+                fields=["pages"], condition=Q(title__istartswith="db2"), name="testapp_book_db2_idx"
+            ),
+        ),
+        (BOOK,),
+    ),
+    Case(
+        "ddl/add_index_expression",
+        "alter",
+        _add_and_remove_index(Book, Index(Lower("title"), "pages", name="testapp_book_lower_idx")),
+        (BOOK,),
+    ),
+    Case(
+        "ddl/add_unique_constraint_partial",
+        "alter",
+        _add_and_remove_constraint(
+            Book,
+            UniqueConstraint(
+                fields=["title"], condition=Q(available=True), name="testapp_book_title_avail_uniq"
+            ),
+        ),
+        (BOOK,),
+    ),
+    Case(
+        "ddl/add_unique_constraint_expression",
+        "alter",
+        _add_and_remove_constraint(
+            Book, UniqueConstraint(Upper("title"), name="testapp_book_upper_title_uniq")
         ),
         (BOOK,),
     ),

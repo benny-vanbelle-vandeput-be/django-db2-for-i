@@ -1,0 +1,2 @@
+- `supports_partial_indexes`, `supports_functions_in_partial_indexes`: `Index(condition=...)` and `UniqueConstraint(condition=...)` create an index with `WHERE` (a unique one for the constraint), also with functions in the condition.
+- `supports_expression_indexes`: indexes and `UniqueConstraint`s on expressions (`Index(Lower("title"))`, `UniqueConstraint(Upper("title"), ...)`); introspection reports an expression key without a column, as Django's other backends do.

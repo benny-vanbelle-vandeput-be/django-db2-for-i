@@ -38,6 +38,9 @@ REASON_CHECK_LIKE_COLUMN_PATTERN = (
     "Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546)"
 )
 REASON_JSON_FIELD = "JSONField is not supported yet (phase 6)"
+REASON_LOWERCASE_NAME_IN_SQL = (
+    "the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i"
+)
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -184,9 +187,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_table_check_constraints = True
     supports_expression_defaults = False
     supports_index_on_text_field = False
-    supports_partial_indexes = False
-    supports_functions_in_partial_indexes = False
-    supports_expression_indexes = False
+    # CREATE [UNIQUE] INDEX ... WHERE, also with functions, and indexes on
+    # expressions (probe qtemp_indexes); Django's sql_create_index fits as is.
+    # No INCLUDE (supports_covering_indexes).
+    supports_partial_indexes = True
+    supports_functions_in_partial_indexes = True
+    supports_expression_indexes = True
     allows_multiple_constraints_on_same_fields = False
     supports_collation_on_charfield = False
     supports_collation_on_textfield = False
@@ -348,6 +354,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         # A JSONField db_default (a dict). On Django 5.2 only: 6.0 and later
         # skip the test without supports_json_field (compat.py).
         REASON_JSON_FIELD: set(compat.FAILING_ON_THIS_VERSION_ONLY),
+        # sql.rfind("headline") on the CREATE INDEX of a partial index, which
+        # quotes "HEADLINE"; the index itself is covered by the golden
+        # ddl/add_index_partial and tests/ibmi/test_schema.py.
+        REASON_LOWERCASE_NAME_IN_SQL: {
+            "indexes.tests.PartialIndexTests.test_multiple_conditions",
+        },
     }
     # Per Django version: the entries above that pass on the running version
     # (compat.PASSING_ON_THIS_VERSION) are left out, since an expected failure

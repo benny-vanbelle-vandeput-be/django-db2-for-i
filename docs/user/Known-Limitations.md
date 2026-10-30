@@ -126,9 +126,10 @@ Django, with these IBM i specifics:
 `iexact`, `icontains`, `istartswith` and `iendswith` compare
 `UPPER(column)` with `UPPER(value)`. A normal index on the column cannot be
 used for `UPPER(column)`, so these lookups scan the table. (`icontains` and
-`iendswith` cannot use an index anyway, as with every `LIKE '%...'`.) Options
-for a later version: a derived index on `UPPER(column)`, or a case-insensitive
-sort sequence for the connection; neither is implemented yet.
+`iendswith` cannot use an index anyway, as with every `LIKE '%...'`.) An
+index on the expression, `Index(Upper("name"), name=...)` in `Meta.indexes`,
+can be created (expression indexes, phase 5); whether Db2 for i's optimizer
+uses it for a given lookup has not been measured.
 
 ## No index on TextField and BinaryField
 
@@ -543,6 +544,9 @@ Db2 for i has no equivalent for these Django features, so they stay off
   `TextField` for text without a limit.
 - **Materialized views in `inspectdb`.** `inspectdb --include-views` lists
   views, but not materialized query tables.
+- **Covering indexes** (`Index(include=...)`, `UniqueConstraint(include=...)`).
+  `CREATE INDEX` takes no `INCLUDE` (SQL0104); Django leaves the clause out
+  and its system checks warn about it.
 
 Django's system checks report the first three when a model uses them.
 
