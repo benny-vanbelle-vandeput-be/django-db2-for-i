@@ -1,0 +1,865 @@
+{
+  "probe": "lib_unique_catalog",
+  "utc": "20261030T084037Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "approved": "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/213#issuecomment-6518630670",
+  "approved_by": "benny-vanbelle-vandeput-be",
+  "cases": {
+    "1. UNIQUE constraint (A)": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P5UNQ ADD CONSTRAINT DJDB2I_P5UNQ_UA UNIQUE (A)",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "CONSTRAINT_NAME": "DJDB2I_P5UNQ_UA",
+            "CONSTRAINT_TYPE": "UNIQUE",
+            "CONSTRAINT_KEYS": 1
+          },
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY",
+            "CONSTRAINT_KEYS": 1
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "CONSTRAINT_NAME": "DJDB2I_P5UNQ_UA",
+            "COLUMN_NAME": "A",
+            "ORDINAL_POSITION": 1
+          },
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "COLUMN_NAME": "ID",
+            "ORDINAL_POSITION": 1
+          }
+        ],
+        "SYSINDEXES": [],
+        "SYSKEYS": []
+      },
+      "inserts": {
+        "one NULL in A": "ok",
+        "a second NULL in A": "ok",
+        "(1, NULL)": "ok",
+        "(1, NULL) again": "-803",
+        "(NULL, NULL) again": "ok",
+        "(2, 2)": "ok",
+        "(2, 2) again: a real duplicate": "-803"
+      },
+      "rollback": "ok",
+      "dropped": true
+    },
+    "2. UNIQUE constraint (A, B)": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P5UNQ ADD CONSTRAINT DJDB2I_P5UNQ_UAB UNIQUE (A, B)",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "CONSTRAINT_NAME": "DJDB2I_P5UNQ_UAB",
+            "CONSTRAINT_TYPE": "UNIQUE",
+            "CONSTRAINT_KEYS": 2
+          },
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY",
+            "CONSTRAINT_KEYS": 1
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "CONSTRAINT_NAME": "DJDB2I_P5UNQ_UAB",
+            "COLUMN_NAME": "A",
+            "ORDINAL_POSITION": 1
+          },
+          {
+            "CONSTRAINT_NAME": "DJDB2I_P5UNQ_UAB",
+            "COLUMN_NAME": "B",
+            "ORDINAL_POSITION": 2
+          },
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "COLUMN_NAME": "ID",
+            "ORDINAL_POSITION": 1
+          }
+        ],
+        "SYSINDEXES": [],
+        "SYSKEYS": []
+      },
+      "inserts": {
+        "one NULL in A": "ok",
+        "a second NULL in A": "ok",
+        "(1, NULL)": "ok",
+        "(1, NULL) again": "ok",
+        "(NULL, NULL) again": "ok",
+        "(2, 2)": "ok",
+        "(2, 2) again: a real duplicate": "-803"
+      },
+      "rollback": "ok",
+      "dropped": true
+    },
+    "3. partial index (A) WHERE B > 0": {
+      "ddl": "CREATE INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_P ON <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (A) WHERE B > 0",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY",
+            "CONSTRAINT_KEYS": 1
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "COLUMN_NAME": "ID",
+            "ORDINAL_POSITION": 1
+          }
+        ],
+        "SYSINDEXES": [
+          {
+            "INDEX_NAME": "DJDB2I_P5UNQ_P",
+            "IS_UNIQUE": "D",
+            "COLUMN_COUNT": 1,
+            "INDEX_HAS_SEARCH_CONDITION": "Y",
+            "SEARCH_CONDITION": "B > 0"
+          }
+        ],
+        "SYSKEYS": [
+          {
+            "INDEX_NAME": "DJDB2I_P5UNQ_P",
+            "COLUMN_NAME": "A",
+            "ORDINAL_POSITION": 1,
+            "ORDERING": "A",
+            "COLUMN_IS_EXPRESSION": "N",
+            "KEY_EXPRESSION": "A"
+          }
+        ]
+      },
+      "dropped": true
+    },
+    "4. expression index (UPPER(C))": {
+      "ddl": "CREATE INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_E ON <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (UPPER(C))",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY",
+            "CONSTRAINT_KEYS": 1
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "COLUMN_NAME": "ID",
+            "ORDINAL_POSITION": 1
+          }
+        ],
+        "SYSINDEXES": [
+          {
+            "INDEX_NAME": "DJDB2I_P5UNQ_E",
+            "IS_UNIQUE": "D",
+            "COLUMN_COUNT": 1,
+            "INDEX_HAS_SEARCH_CONDITION": "N",
+            "SEARCH_CONDITION": null
+          }
+        ],
+        "SYSKEYS": [
+          {
+            "INDEX_NAME": "DJDB2I_P5UNQ_E",
+            "COLUMN_NAME": "IXCOL00001",
+            "ORDINAL_POSITION": 1,
+            "ORDERING": "A",
+            "COLUMN_IS_EXPRESSION": "Y",
+            "KEY_EXPRESSION": "UPPER ( C )"
+          }
+        ]
+      },
+      "dropped": true
+    },
+    "5. unique partial index (A) WHERE B > 0": {
+      "ddl": "CREATE UNIQUE INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_UP ON <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (A) WHERE B > 0",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY",
+            "CONSTRAINT_KEYS": 1
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "COLUMN_NAME": "ID",
+            "ORDINAL_POSITION": 1
+          }
+        ],
+        "SYSINDEXES": [
+          {
+            "INDEX_NAME": "DJDB2I_P5UNQ_UP",
+            "IS_UNIQUE": "U",
+            "COLUMN_COUNT": 1,
+            "INDEX_HAS_SEARCH_CONDITION": "Y",
+            "SEARCH_CONDITION": "B > 0"
+          }
+        ],
+        "SYSKEYS": [
+          {
+            "INDEX_NAME": "DJDB2I_P5UNQ_UP",
+            "COLUMN_NAME": "A",
+            "ORDINAL_POSITION": 1,
+            "ORDERING": "A",
+            "COLUMN_IS_EXPRESSION": "N",
+            "KEY_EXPRESSION": "A"
+          }
+        ]
+      },
+      "inserts": {
+        "one NULL in A": "ok",
+        "a second NULL in A": "ok",
+        "(1, NULL)": "ok",
+        "(1, NULL) again": "ok",
+        "(NULL, NULL) again": "ok",
+        "(2, 2)": "ok",
+        "(2, 2) again: a real duplicate": "-803",
+        "A=5, B=1 (inside)": "ok",
+        "A=5, B=2 (inside): duplicate A": "-803",
+        "A=6, B=0 (outside)": "ok",
+        "A=6, B=0 (outside) again": "ok",
+        "A=7, B=NULL (outside)": "ok",
+        "A=7, B=NULL (outside) again": "ok"
+      },
+      "rollback": "ok",
+      "dropped": true
+    },
+    "6. UNIQUE WHERE NOT NULL index (A)": {
+      "ddl": "CREATE UNIQUE WHERE NOT NULL INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_UN ON <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (A)",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY",
+            "CONSTRAINT_KEYS": 1
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "COLUMN_NAME": "ID",
+            "ORDINAL_POSITION": 1
+          }
+        ],
+        "SYSINDEXES": [
+          {
+            "INDEX_NAME": "DJDB2I_P5UNQ_UN",
+            "IS_UNIQUE": "V",
+            "COLUMN_COUNT": 1,
+            "INDEX_HAS_SEARCH_CONDITION": "N",
+            "SEARCH_CONDITION": null
+          }
+        ],
+        "SYSKEYS": [
+          {
+            "INDEX_NAME": "DJDB2I_P5UNQ_UN",
+            "COLUMN_NAME": "A",
+            "ORDINAL_POSITION": 1,
+            "ORDERING": "A",
+            "COLUMN_IS_EXPRESSION": "N",
+            "KEY_EXPRESSION": "A"
+          }
+        ]
+      },
+      "inserts": {
+        "one NULL in A": "ok",
+        "a second NULL in A": "ok",
+        "(1, NULL)": "ok",
+        "(1, NULL) again": "-803",
+        "(NULL, NULL) again": "ok",
+        "(2, 2)": "ok",
+        "(2, 2) again: a real duplicate": "-803"
+      },
+      "rollback": "ok",
+      "dropped": true
+    },
+    "7. index (A, UPPER(C)) WHERE B > 0": {
+      "ddl": "CREATE INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_EP ON <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (A, UPPER(C)) WHERE B > 0",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY",
+            "CONSTRAINT_KEYS": 1
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "COLUMN_NAME": "ID",
+            "ORDINAL_POSITION": 1
+          }
+        ],
+        "SYSINDEXES": [
+          {
+            "INDEX_NAME": "DJDB2I_P5UNQ_EP",
+            "IS_UNIQUE": "D",
+            "COLUMN_COUNT": 2,
+            "INDEX_HAS_SEARCH_CONDITION": "Y",
+            "SEARCH_CONDITION": "B > 0"
+          }
+        ],
+        "SYSKEYS": [
+          {
+            "INDEX_NAME": "DJDB2I_P5UNQ_EP",
+            "COLUMN_NAME": "A",
+            "ORDINAL_POSITION": 1,
+            "ORDERING": "A",
+            "COLUMN_IS_EXPRESSION": "N",
+            "KEY_EXPRESSION": "A"
+          },
+          {
+            "INDEX_NAME": "DJDB2I_P5UNQ_EP",
+            "COLUMN_NAME": "IXCOL00001",
+            "ORDINAL_POSITION": 2,
+            "ORDERING": "A",
+            "COLUMN_IS_EXPRESSION": "Y",
+            "KEY_EXPRESSION": "UPPER ( C )"
+          }
+        ]
+      },
+      "dropped": true
+    }
+  },
+  "left": [],
+  "statements": [
+    {
+      "label": "create DJDB2I_P5UNQ",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID INTEGER NOT NULL PRIMARY KEY, A INTEGER, B INTEGER, C NVARCHAR(20))",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "UNIQUE constraint (A)",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P5UNQ ADD CONSTRAINT DJDB2I_P5UNQ_UA UNIQUE (A)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "one NULL in A",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        1,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "a second NULL in A",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        2,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(1, NULL)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        3,
+        1,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(1, NULL) again",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        4,
+        1,
+        null,
+        "x"
+      ],
+      "ok": false,
+      "sqlstate": "23000",
+      "message": "[23000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+    },
+    {
+      "label": "(NULL, NULL) again",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        5,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(2, 2)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        6,
+        2,
+        2,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(2, 2) again: a real duplicate",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        7,
+        2,
+        2,
+        "x"
+      ],
+      "ok": false,
+      "sqlstate": "23000",
+      "message": "[23000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop: UNIQUE constraint (A)",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P5UNQ DROP CONSTRAINT DJDB2I_P5UNQ_UA",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "UNIQUE constraint (A, B)",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P5UNQ ADD CONSTRAINT DJDB2I_P5UNQ_UAB UNIQUE (A, B)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "one NULL in A",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        1,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "a second NULL in A",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        2,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(1, NULL)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        3,
+        1,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(1, NULL) again",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        4,
+        1,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(NULL, NULL) again",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        5,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(2, 2)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        6,
+        2,
+        2,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(2, 2) again: a real duplicate",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        7,
+        2,
+        2,
+        "x"
+      ],
+      "ok": false,
+      "sqlstate": "23000",
+      "message": "[23000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop: UNIQUE constraint (A, B)",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P5UNQ DROP CONSTRAINT DJDB2I_P5UNQ_UAB",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "partial index (A) WHERE B > 0",
+      "sql": "CREATE INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_P ON <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (A) WHERE B > 0",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop: partial index (A) WHERE B > 0",
+      "sql": "DROP INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_P",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "expression index (UPPER(C))",
+      "sql": "CREATE INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_E ON <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (UPPER(C))",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop: expression index (UPPER(C))",
+      "sql": "DROP INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_E",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "unique partial index (A) WHERE B > 0",
+      "sql": "CREATE UNIQUE INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_UP ON <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (A) WHERE B > 0",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "one NULL in A",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        1,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "a second NULL in A",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        2,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(1, NULL)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        3,
+        1,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(1, NULL) again",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        4,
+        1,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(NULL, NULL) again",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        5,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(2, 2)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        6,
+        2,
+        2,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(2, 2) again: a real duplicate",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        7,
+        2,
+        2,
+        "x"
+      ],
+      "ok": false,
+      "sqlstate": "23000",
+      "message": "[23000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+    },
+    {
+      "label": "A=5, B=1 (inside)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        11,
+        5,
+        1,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "A=5, B=2 (inside): duplicate A",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        12,
+        5,
+        2,
+        "x"
+      ],
+      "ok": false,
+      "sqlstate": "23000",
+      "message": "[23000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+    },
+    {
+      "label": "A=6, B=0 (outside)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        13,
+        6,
+        0,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "A=6, B=0 (outside) again",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        14,
+        6,
+        0,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "A=7, B=NULL (outside)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        15,
+        7,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "A=7, B=NULL (outside) again",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        16,
+        7,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "drop: unique partial index (A) WHERE B > 0",
+      "sql": "DROP INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_UP",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "UNIQUE WHERE NOT NULL index (A)",
+      "sql": "CREATE UNIQUE WHERE NOT NULL INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_UN ON <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (A)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "one NULL in A",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        1,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "a second NULL in A",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        2,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(1, NULL)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        3,
+        1,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(1, NULL) again",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        4,
+        1,
+        null,
+        "x"
+      ],
+      "ok": false,
+      "sqlstate": "23000",
+      "message": "[23000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+    },
+    {
+      "label": "(NULL, NULL) again",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        5,
+        null,
+        null,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(2, 2)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        6,
+        2,
+        2,
+        "x"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "(2, 2) again: a real duplicate",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (ID, A, B, C) VALUES (?, ?, ?, ?)",
+      "params": [
+        7,
+        2,
+        2,
+        "x"
+      ],
+      "ok": false,
+      "sqlstate": "23000",
+      "message": "[23000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop: UNIQUE WHERE NOT NULL index (A)",
+      "sql": "DROP INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_UN",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "index (A, UPPER(C)) WHERE B > 0",
+      "sql": "CREATE INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_EP ON <DEFAULT_LIBRARY>.DJDB2I_P5UNQ (A, UPPER(C)) WHERE B > 0",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop: index (A, UPPER(C)) WHERE B > 0",
+      "sql": "DROP INDEX <DEFAULT_LIBRARY>.DJDB2I_P5UNQ_EP",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJDB2I_P5UNQ",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJDB2I_P5UNQ",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    }
+  ]
+}

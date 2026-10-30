@@ -1,0 +1,2 @@
+- `supports_nullable_unique_constraints`, `supports_partially_nullable_unique_constraints`: a nullable `unique=True` field, `unique_together` and `UniqueConstraint(fields=...)` take several NULLs, also in part of a multi-column key (a Db2 for i `UNIQUE` constraint treats NULLs as distinct; probe `lib_unique_catalog`, #213).
+- A `UniqueConstraint` with a `condition` or expressions is created as `CREATE UNIQUE WHERE NOT NULL INDEX`, so its NULLs are distinct as well; a plain unique index would treat them as equal.

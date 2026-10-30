@@ -1986,6 +1986,61 @@ journaled table is what step E checks with Django's tests.
 - Step E: `can_use_chunked_reads`, `delete_can_self_reference_subquery`,
   `update_can_self_select`.
 
+### Unique constraints, NULLs and the index catalog (phase 5, step D)
+2026-10-30, PUB400 (IBM i 7.5).
+
+**`lib_unique_catalog`** (issue #213, approved in
+[comment 6518630670](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/213#issuecomment-6518630670)):
+one table, `DJDB2I_P5UNQ`, in the journaled default library. It was on the
+cleanup list before its `CREATE TABLE` and was dropped at the end (nothing
+left). Each constraint or index was created, then the catalog rows of this
+table were read. For a unique case, the inserts ran in their own transaction,
+ended with `ROLLBACK` before the `DROP`. The connection had the backend's
+attributes (`CMT=1`, `TRUEAUTOCOMMIT=1`). Result: `probes/results/lib_unique_catalog.json`.
+
+| Case | Second NULL in `A` | `(1, NULL)` twice | `(NULL, NULL)` twice | Real duplicate |
+|---|---|---|---|---|
+| `UNIQUE` constraint `(A)` | ok | SQL0803 (`A` = 1 twice) | ok | SQL0803 |
+| `UNIQUE` constraint `(A, B)` | ok | ok | ok | SQL0803 |
+| unique index `(A) WHERE B > 0` | ok (outside the condition) | ok | ok | SQL0803 inside the condition, ok outside it (also `B` NULL) |
+| `UNIQUE WHERE NOT NULL` index `(A)` | ok | SQL0803 | ok | SQL0803 |
+
+- **NULLs in a unique constraint are distinct.** This is unlike a plain
+  unique index (step 0: NULLs are equal). Several NULLs are allowed, and so
+  are partially NULL keys.
+- **Unique constraints have no row in `SYSINDEXES`** (only `SYSCST` /
+  `SYSKEYCST`), so `get_constraints()` does not list them twice.
+- **`SYSINDEXES.IS_UNIQUE`:** `D` for a plain index, `U` for a unique index,
+  `V` for `UNIQUE WHERE NOT NULL`.
+- **Partial indexes:** `INDEX_HAS_SEARCH_CONDITION` is `Y`, and
+  `SEARCH_CONDITION` holds the condition as text (`B > 0`).
+- **Expression keys:** in `SYSKEYS`, `COLUMN_IS_EXPRESSION` is `Y`,
+  `COLUMN_NAME` is a generated name (`IXCOL00001`), and `KEY_EXPRESSION`
+  holds the expression (`UPPER ( C )`). For a column key they are `N`, the
+  column name and the column name. A mixed index `(A, UPPER(C)) WHERE B > 0`
+  shows one row of each.
+
+**`qtemp_unique_nulls`, extended for step D** (QTEMP only, `CMT=0`):
+`UNIQUE WHERE NOT NULL` combined with a condition and with expression keys.
+Result: `probes/results/unique_nulls.json`.
+
+| Index | `(1, NULL)` twice | NULL expression twice | Duplicate | Outside the condition |
+|---|---|---|---|---|
+| `UNIQUE WHERE NOT NULL (A, B) WHERE C = 'x'` | ok | ok | SQL0803 | ok |
+| `UNIQUE WHERE NOT NULL (UPPER(C))` | n/a | ok | SQL0803 (also `'x'` / `'X'`) | n/a |
+| `UNIQUE WHERE NOT NULL ((UPPER(C)), A) WHERE B > 0` | ok | ok | SQL0803 (also `'x'` / `'X'`) | ok |
+| `UNIQUE INDEX (UPPER(C))` (baseline) | n/a | SQL0803 | SQL0803 | n/a |
+
+**Consequences (step D):**
+- `supports_nullable_unique_constraints` and
+  `supports_partially_nullable_unique_constraints` go on: `unique=True` and
+  `UniqueConstraint(fields=...)` are `UNIQUE` constraints, whose NULLs are
+  distinct.
+- A `UniqueConstraint` with a condition or expressions is a unique index
+  (step C). The backend writes it as `CREATE UNIQUE WHERE NOT NULL INDEX`,
+  so its NULLs are distinct as well, as Django assumes by default
+  (`nulls_distinct` stays off: no `NULLS [NOT] DISTINCT`).
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

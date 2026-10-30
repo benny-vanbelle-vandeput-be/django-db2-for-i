@@ -164,8 +164,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_ignore_conflicts = False
 
     # Schema and constraints
-    supports_nullable_unique_constraints = False
-    supports_partially_nullable_unique_constraints = False
+    # NULLs in a UNIQUE constraint are distinct: several NULLs, also in part of
+    # a multi-column key (probe lib_unique_catalog, #213). Unique indexes use
+    # UNIQUE WHERE NOT NULL for the same (schema.sql_create_unique_index).
+    supports_nullable_unique_constraints = True
+    supports_partially_nullable_unique_constraints = True
     # Identities restart at IDENTITY_START (sequence_reset_by_name_sql); in
     # TestCase, sequence_reset_sql is deferred to the commit (SQL0910).
     supports_sequence_reset = True

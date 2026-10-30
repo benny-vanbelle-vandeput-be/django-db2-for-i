@@ -1160,3 +1160,85 @@ def test_functional_unique_constraint(live, empty) -> None:
     finally:
         with live.schema_editor() as editor:
             editor.remove_constraint(Book, constraint)
+
+
+# --- Unique constraints and NULLs (phase 5, step D) ----------------------------------
+
+
+@pytest.fixture
+def unique_model(live):
+    """A model of its own (testapp_uniquenulls) with nullable unique fields;
+    created for the test and dropped after it."""
+    from django.apps import apps
+
+    class UniqueNulls(models.Model):
+        code = models.CharField(max_length=10, null=True, unique=True)
+        a = models.IntegerField(null=True)
+        b = models.IntegerField(null=True)
+        name = models.CharField(max_length=20, null=True)
+
+        class Meta:
+            app_label = "testapp"
+            unique_together = [("a", "b")]
+
+    try:
+        with live.schema_editor() as editor:
+            editor.create_model(UniqueNulls)
+        yield UniqueNulls
+    finally:
+        replace_if_unusable(live)
+        with live.cursor() as cursor:
+            cursor.execute('DROP TABLE "TESTAPP_UNIQUENULLS"')
+        apps.all_models["testapp"].pop("uniquenulls", None)
+        apps.clear_cache()
+
+
+def test_nullable_unique_field_takes_several_nulls(live, unique_model) -> None:
+    from django.db import IntegrityError, transaction
+
+    unique_model.objects.create(code=None)
+    unique_model.objects.create(code=None)
+    unique_model.objects.create(code="x")
+    with pytest.raises(IntegrityError), transaction.atomic():
+        unique_model.objects.create(code="x")
+    assert unique_model.objects.filter(code__isnull=True).count() == 2
+
+
+def test_partially_nullable_unique_together(live, unique_model) -> None:
+    from django.db import IntegrityError, transaction
+
+    unique_model.objects.create(a=1, b=None)
+    unique_model.objects.create(a=1, b=None)
+    unique_model.objects.create(a=None, b=None)
+    unique_model.objects.create(a=None, b=None)
+    unique_model.objects.create(a=1, b=2)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        unique_model.objects.create(a=1, b=2)
+    assert unique_model.objects.count() == 5
+
+
+def test_unique_index_constraints_take_several_nulls(live, unique_model) -> None:
+    """A conditional and a functional UniqueConstraint are unique indexes;
+    UNIQUE WHERE NOT NULL lets NULLs repeat, duplicates still clash, and
+    introspection reports them as unique."""
+    from django.db import IntegrityError, transaction
+    from django.db.models.functions import Upper
+
+    conditional = models.UniqueConstraint(
+        fields=["name"], condition=models.Q(a__gt=0), name="testapp_uniquenulls_name_pos"
+    )
+    functional = models.UniqueConstraint(Upper("name"), name="testapp_uniquenulls_upper")
+    model = unique_model
+    with live.schema_editor() as editor:
+        editor.add_constraint(model, conditional)
+        editor.add_constraint(model, functional)
+    with live.cursor() as cursor:
+        constraints = live.introspection.get_constraints(cursor, model._meta.db_table)
+    assert constraints[conditional.name]["unique"] and constraints[conditional.name]["index"]
+    assert constraints[functional.name]["unique"] and constraints[functional.name]["columns"] == []
+    model.objects.create(name=None, a=1)
+    model.objects.create(name=None, a=2)
+    model.objects.create(name="abc", a=3)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        model.objects.create(name="ABC", a=-1)
+    assert model.objects.count() == 3
