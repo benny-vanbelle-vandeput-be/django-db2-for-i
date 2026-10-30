@@ -1,0 +1,1 @@
+- `supports_ignore_conflicts`, `supports_update_conflicts`, `supports_update_conflicts_with_target`: `bulk_create(ignore_conflicts=True)` and `bulk_create(update_conflicts=True, unique_fields=..., update_fields=...)` work, as a `MERGE` (Db2 for i has no `ON CONFLICT`; probe `qtemp_merge`).

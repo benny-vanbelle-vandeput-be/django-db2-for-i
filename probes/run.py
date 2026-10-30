@@ -10,7 +10,7 @@ Usage (inside the "tests" container):
                     alter_column | renames | type_changes | check_constraint_unjournaled |
                     transaction_start | add_column_default | qaqqini_inquiry |
                     qaqqini_lifecycle | lob_index | later_flags | returning |
-                    bulk | indexes | unique_nulls | cursors
+                    bulk | indexes | unique_nulls | cursors | merge
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -51,6 +51,7 @@ import qtemp_listagg
 import qtemp_lob_index
 import qtemp_long_string_params
 import qtemp_mapping_errors
+import qtemp_merge
 import qtemp_numeric_params
 import qtemp_packages
 import qtemp_qaqqini_inquiry
@@ -116,6 +117,7 @@ PROBES = {
     "indexes": qtemp_indexes,
     "unique_nulls": qtemp_unique_nulls,
     "cursors": qtemp_cursors,
+    "merge": qtemp_merge,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 

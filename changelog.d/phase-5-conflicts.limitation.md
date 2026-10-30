@@ -1,0 +1,1 @@
+- `bulk_create(update_conflicts=True)` does not set the primary keys of the objects (a `MERGE` returns no rows); the same key twice in one `bulk_create()` call with conflict handling raises `IntegrityError`; `ignore_conflicts` matches only unconditional unique keys. See Known Limitations.

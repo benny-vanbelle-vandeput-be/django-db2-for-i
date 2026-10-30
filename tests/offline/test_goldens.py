@@ -211,7 +211,8 @@ def test_golden_contains_no_library_or_profile_names(path) -> None:
         # turning the preceding keyword into a qualifier.
         for qualifier in UNQUOTED_QUALIFIED.findall(QUOTED.sub(QUOTED_PLACEHOLDER, sql)):
             # Django before 6.1 leaves its aliases unquoted (U0."ID").
-            known = qualifier.upper() in {"SYSIBM", "QSYS2", QUOTED_PLACEHOLDER}
+            # TGT and SRC: the aliases of the MERGE for bulk_create() conflicts.
+            known = qualifier.upper() in {"SYSIBM", "QSYS2", "TGT", "SRC", QUOTED_PLACEHOLDER}
             assert known or DJANGO_ALIAS.match(qualifier), f"unexpected qualifier {qualifier!r}"
     text = path.read_text().upper()
     for variable in ("DB2I_USER", "DB2I_DEFAULT_LIBRARY", "DB2I_OTHER_LIBRARY"):

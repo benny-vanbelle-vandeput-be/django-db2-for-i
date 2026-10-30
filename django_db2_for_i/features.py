@@ -38,6 +38,10 @@ REASON_CHECK_LIKE_COLUMN_PATTERN = (
     "Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546)"
 )
 REASON_JSON_FIELD = "JSONField is not supported yet (phase 6)"
+REASON_MERGE_RETURNS_NO_ROWS = (
+    "bulk_create(update_conflicts=True) is a MERGE, which returns no rows (FINAL TABLE takes "
+    "only INSERT): the objects get no primary keys"
+)
 REASON_LOWERCASE_NAME_IN_SQL = (
     "the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i"
 )
@@ -161,7 +165,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # DEFAULT in VALUES, also with several rows (probe qtemp_returning).
     supports_default_keyword_in_insert = True
     supports_default_keyword_in_bulk_insert = True
-    supports_ignore_conflicts = False
+    # bulk_create(ignore_conflicts / update_conflicts) as a MERGE (compiler.py,
+    # probe qtemp_merge); update_conflicts needs its unique_fields as the ON.
+    supports_ignore_conflicts = True
+    supports_update_conflicts = True
+    supports_update_conflicts_with_target = True
 
     # Schema and constraints
     # NULLs in a UNIQUE constraint are distinct: several NULLs, also in part of
@@ -365,6 +373,17 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         # sql.rfind("headline") on the CREATE INDEX of a partial index, which
         # quotes "HEADLINE"; the index itself is covered by the golden
         # ddl/add_index_partial and tests/ibmi/test_schema.py.
+        # assertIsNotNone(instance.pk) after an upsert; the rows themselves are
+        # right (probe qtemp_merge, Known Limitations).
+        REASON_MERGE_RETURNS_NO_ROWS: {
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_two_fields_unique_fields_both",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_two_fields_unique_fields_first",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_two_fields_unique_fields_second",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_fields",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_fields_update_fields_db_column",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_two_fields_unique_fields_both",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_two_fields_unique_fields_one",
+        },
         REASON_LOWERCASE_NAME_IN_SQL: {
             "indexes.tests.PartialIndexTests.test_multiple_conditions",
         },

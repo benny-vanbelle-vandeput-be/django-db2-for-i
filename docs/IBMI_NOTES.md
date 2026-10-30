@@ -2041,6 +2041,42 @@ Result: `probes/results/unique_nulls.json`.
   so its NULLs are distinct as well, as Django assumes by default
   (`nulls_distinct` stays off: no `NULLS [NOT] DISTINCT`).
 
+### MERGE for conflicts in bulk_create() (phase 5, step B)
+2026-10-30, PUB400 (IBM i 7.5), `probes/qtemp_merge.py`: QTEMP only,
+`CMT=0`. Result: `probes/results/merge.json`. The table had a generated
+identity, a unique `K` and a nullable `UNIQUE WHERE NOT NULL` `U`, with the
+rows `K` = 1 and 2. QTEMP refuses `PRIMARY KEY` (SQL7008, as every
+constraint), so the key was a unique index. Each case ran on fresh rows:
+
+| Statement | Result |
+|---|---|
+| `MERGE ... USING (VALUES (?, ?, ?), ...)` (untyped markers) | SQL0584: no parameter marker in `VALUES` |
+| the same with `CAST(? AS <type>)` per marker | ok |
+| ignore form (`WHEN NOT MATCHED THEN INSERT`), one row exists | ok, row count 1 (only the new row) |
+| update form (`WHEN MATCHED THEN UPDATE ... WHEN NOT MATCHED THEN INSERT`) | ok, row count 2 (one updated, one inserted) |
+| a new key twice in one source, ignore or update form | SQL0803 |
+| an existing key twice in one source, update form | SQL0788 (duplicate row for the MERGE target) |
+| ignore form, `ON` the key `K` only, conflict in `U` | SQL0803 |
+| ignore form, `ON (K match OR U match)` | ok: the conflicting row is skipped |
+| the same with `U` NULL in two new rows | ok, both inserted (a NULL never matches) |
+| `... NOT ATOMIC CONTINUE ON SQLEXCEPTION`, conflict in `U` | SQL0803: no help |
+| `SELECT ... FROM FINAL TABLE (MERGE ...)` | SQL0199: `FINAL TABLE` takes only `INSERT` |
+
+**Consequences (step B):**
+- `bulk_create(ignore_conflicts=True)` and `update_conflicts=True` are a
+  `MERGE` with cast markers (compiler.py).
+- **`ON`:**
+  - `ignore_conflicts` matches every unconditional unique key whose columns
+    are inserted (`OR`);
+  - `update_conflicts` matches its `unique_fields`
+    (`supports_update_conflicts_with_target`).
+- **No keys back:** a `MERGE` returns no rows, so `update_conflicts` leaves
+  the keys of the objects unset.
+- **Duplicates in one batch:** the same key twice in one batch is refused
+  (SQL0803 / SQL0788), where PostgreSQL skips or refuses it.
+- **Unique indexes are not matched:** conflicts in a conditional or
+  functional unique constraint raise `IntegrityError`.
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

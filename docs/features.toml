@@ -50,6 +50,7 @@ supports_default_keyword_in_insert.description = "An insert writes `DEFAULT` for
 supports_expression_indexes.description = "Indexes on expressions (`Index(Lower('name'))`)."
 supports_foreign_keys.description = "Foreign keys are enforced by the database."
 supports_functions_in_partial_indexes.description = "Functions in the `condition` of a partial index."
+supports_ignore_conflicts.description = "`bulk_create(ignore_conflicts=True)`."
 supports_index_column_ordering.description = "Index columns can be ordered `DESC` (`Index(fields=[\"-field\"])`)."
 supports_inspectdb.description = "`manage.py inspectdb` generates models from existing tables."
 supports_nullable_unique_constraints.description = "Unique constraints on nullable columns allow several NULLs."
@@ -67,6 +68,8 @@ supports_table_check_constraints.description = "Model `CheckConstraint`s are enf
 supports_temporal_subtraction.description = "Subtracting dates, times and datetimes gives an exact `timedelta`."
 supports_transactions.description = "Transactions with commit and rollback (on journaled tables)."
 supports_tuple_lookups.description = "Lookups on several columns at once (composite keys, multi-column relations)."
+supports_update_conflicts.description = "`bulk_create(update_conflicts=True)` (upsert)."
+supports_update_conflicts_with_target.description = "`bulk_create(update_conflicts=True, unique_fields=...)`: an upsert on named columns."
 truncates_names.description = "Names longer than the database allows are shortened with a hash, the same way everywhere."
 update_can_self_select.description = "An update whose filter has a subquery on the same table runs as one statement."
 uses_savepoints.description = "Nested `atomic()` blocks use savepoints."
@@ -185,12 +188,6 @@ supports_nulls_distinct_unique_constraints.off = "Db2 for i takes no `NULLS DIST
 # Phase 5: returning columns, bulk operations, constraints, indexes.
 # Probed in step 0 (IBMI_NOTES, 2026-10-29); each is turned on in its step with
 # Django's tests and an own IBM i test.
-supports_ignore_conflicts.description = "`bulk_create(ignore_conflicts=True)`."
-supports_ignore_conflicts.planned = "phase 5"
-supports_update_conflicts.description = "`bulk_create(update_conflicts=True)` (upsert)."
-supports_update_conflicts.planned = "phase 5"
-supports_update_conflicts_with_target.description = "`bulk_create(update_conflicts=True, unique_fields=...)`: an upsert on named columns."
-supports_update_conflicts_with_target.planned = "phase 5"
 
 # Phase 6: window functions, JSONField, database functions, DB-level on_delete.
 # Also the row locks of select_for_update() and query flags left from phase 2.

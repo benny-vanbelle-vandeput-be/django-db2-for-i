@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 
+from django.db.models.constants import OnConflict
 from django.db.models.sql import DeleteQuery, InsertQuery, UpdateQuery
 
 from tests.golden_cases.base import AUTHOR, AWARE, BOOK, DEFAULTS, Case
@@ -75,6 +76,31 @@ def _bulk_insert_db_defaults(connection):
     return _returning(connection, Defaults, objs, fields, Defaults._meta.db_returning_fields)
 
 
+def _conflicts(on_conflict, update_fields=(), unique_fields=()):
+    """bulk_create() with ignore_conflicts / update_conflicts: a MERGE."""
+
+    def build(connection):
+        fields = [
+            f
+            for f in Book._meta.local_concrete_fields
+            if f.name in ("id", "author", "title", "pages")
+        ]
+        objs = [
+            Book(id=1, author_id=1, title="Db2 for i", pages=10),
+            Book(id=2, author_id=1, title="IBM i", pages=20),
+        ]
+        query = InsertQuery(
+            Book,
+            on_conflict=on_conflict,
+            update_fields=[Book._meta.get_field(n) for n in update_fields],
+            unique_fields=[Book._meta.get_field(n) for n in unique_fields],
+        )
+        query.insert_values(fields, objs)
+        return [(sql, params) for sql, params in query.get_compiler(connection.alias).as_sql()]
+
+    return build
+
+
 def _update_boolean(connection):
     query = Book.objects.filter(pk=1).query.chain(UpdateQuery)
     query.add_update_values({"available": False})
@@ -131,6 +157,19 @@ CASES: tuple[Case, ...] = (
     Case("dml/bulk_insert", "dml", _bulk_insert, (AUTHOR,)),
     Case("dml/bulk_insert_returning", "dml", _bulk_insert_returning, (AUTHOR,)),
     Case("dml/bulk_insert_db_defaults", "dml", _bulk_insert_db_defaults, (DEFAULTS,)),
+    # ignore_conflicts / update_conflicts: MERGE, no ON CONFLICT on Db2 for i (step B).
+    Case(
+        "dml/bulk_insert_ignore_conflicts",
+        "dml",
+        _conflicts(OnConflict.IGNORE),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "dml/bulk_insert_update_conflicts",
+        "dml",
+        _conflicts(OnConflict.UPDATE, update_fields=["title", "pages"], unique_fields=["id"]),
+        (AUTHOR, BOOK),
+    ),
     Case("dml/update_boolean", "dml", _update_boolean, (BOOK,)),
     Case("dml/delete_filtered", "dml", _delete_filtered, (AUTHOR,)),
     # The outer query's WHERE is a search condition too (no CASE WHEN around the IN).

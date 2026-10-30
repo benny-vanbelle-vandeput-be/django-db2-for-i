@@ -528,6 +528,21 @@ out rows whose result would pass year 9999, or check the duration first).
 `TimeField + DurationField` wraps at 24 hours, as on PostgreSQL, and has no
 fractional seconds (see "TimeField has no fractional seconds").
 
+## bulk_create() with ignore_conflicts or update_conflicts
+
+Db2 for i has no `INSERT ... ON CONFLICT`. The backend writes a `MERGE`
+instead, which differs from PostgreSQL in three ways:
+
+- **No keys back:** `update_conflicts=True` does not set the primary keys of
+  the objects. A `MERGE` returns no rows (`FINAL TABLE` takes only an
+  `INSERT`). Read the objects again if you need their keys.
+- **Duplicates in one call:** the same key twice in one call raises
+  `IntegrityError`. PostgreSQL skips the second one with `ignore_conflicts`.
+- **Only unconditional unique keys are matched:** `ignore_conflicts` matches
+  the primary key, `unique` fields, `unique_together` and `UniqueConstraint`s
+  without a `condition` or expressions. A conflict in a conditional or
+  functional unique constraint raises `IntegrityError`.
+
 ## Not available on Db2 for i
 
 Db2 for i has no equivalent for these Django features, so they stay off

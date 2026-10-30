@@ -14,7 +14,7 @@ from django.db import IntegrityError, transaction
 from django.test.utils import CaptureQueriesContext
 
 from django_db2_for_i.operations import BULK_MAX_PARAMS
-from tests.testapp.models import Author, Book, Defaults
+from tests.testapp.models import Author, Book, Defaults, Tag
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")
 
@@ -131,3 +131,42 @@ def test_bulk_create_with_a_duplicate_key_inserts_nothing(live, empty) -> None:
     with pytest.raises(IntegrityError), transaction.atomic():
         Author.objects.bulk_create([Author(pk=8, name="new"), Author(pk=7, name="duplicate")])
     assert list(Author.objects.values_list("pk", flat=True)) == [7]
+
+
+# --- ignore_conflicts / update_conflicts as MERGE (phase 5, step B) ------------------
+
+
+def test_bulk_create_ignore_conflicts(live, empty) -> None:
+    Author.objects.bulk_create([Author(pk=1, name="one"), Author(pk=2, name="two")])
+    Author.objects.bulk_create(
+        [Author(pk=2, name="TWO"), Author(pk=3, name="three")], ignore_conflicts=True
+    )
+    assert dict(Author.objects.values_list("pk", "name")) == {1: "one", 2: "two", 3: "three"}
+
+
+def test_bulk_create_update_conflicts(live, empty) -> None:
+    author = Author.objects.create(name="a")
+    Book.objects.bulk_create(
+        [Book(pk=1, author=author, title="old", pages=1), Book(pk=2, author=author, title="x")]
+    )
+    books = Book.objects.bulk_create(
+        [
+            Book(pk=1, author=author, title="new", pages=99),
+            Book(pk=3, author=author, title="added", pages=3),
+        ],
+        update_conflicts=True,
+        unique_fields=["id"],
+        update_fields=["title", "pages"],
+    )
+    assert len(books) == 2
+    rows = dict(Book.objects.values_list("pk", "title"))
+    assert rows == {1: "new", 2: "x", 3: "added"}
+    assert Book.objects.get(pk=1).pages == 99
+
+
+def test_bulk_create_ignore_conflicts_on_another_unique_key(live, empty) -> None:
+    """ignore_conflicts matches every unique key, not only the primary key:
+    a new UUID key with an existing unique label is skipped."""
+    Tag.objects.create(label="same")
+    Tag.objects.bulk_create([Tag(label="same"), Tag(label="other")], ignore_conflicts=True)
+    assert sorted(Tag.objects.values_list("label", flat=True)) == ["other", "same"]

@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**50 flags enabled on Django 6.1.**
+**53 flags enabled on Django 6.1.**
 
-## Enabled (50)
+## Enabled (53)
 
 On in at least one supported Django version.
 
@@ -46,6 +46,7 @@ On in at least one supported Django version.
 | `supports_expression_indexes` | Indexes on expressions (`Index(Lower('name'))`). | ✅ | ✅ | ✅ |
 | `supports_foreign_keys` | Foreign keys are enforced by the database. | ✅ | ✅ | ✅ |
 | `supports_functions_in_partial_indexes` | Functions in the `condition` of a partial index. | ✅ | ✅ | ✅ |
+| `supports_ignore_conflicts` | `bulk_create(ignore_conflicts=True)`. | ✅ | ✅ | ✅ |
 | `supports_index_column_ordering` | Index columns can be ordered `DESC` (`Index(fields=["-field"])`). | ✅ | ✅ | ✅ |
 | `supports_inspectdb` | `manage.py inspectdb` generates models from existing tables. | – | – | ✅ |
 | `supports_nullable_unique_constraints` | Unique constraints on nullable columns allow several NULLs. | ✅ | ✅ | ✅ |
@@ -63,6 +64,8 @@ On in at least one supported Django version.
 | `supports_temporal_subtraction` | Subtracting dates, times and datetimes gives an exact `timedelta`. | ✅ | ✅ | ✅ |
 | `supports_transactions` | Transactions with commit and rollback (on journaled tables). | ✅ | ✅ | ✅ |
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
+| `supports_update_conflicts` | `bulk_create(update_conflicts=True)` (upsert). | ✅ | ✅ | ✅ |
+| `supports_update_conflicts_with_target` | `bulk_create(update_conflicts=True, unique_fields=...)`: an upsert on named columns. | ✅ | ✅ | ✅ |
 | `truncates_names` | Names longer than the database allows are shortened with a hash, the same way everywhere. | ✅ | ✅ | ✅ |
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
@@ -122,7 +125,7 @@ Off on purpose, with the reason.
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (29)
+## Planned (26)
 
 Off for now; planned for the phase shown.
 
@@ -144,7 +147,6 @@ Off for now; planned for the phase shown.
 | `supports_default_in_lead_lag` | `Lead()` / `Lag()` with a `default`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_frame_exclusion` | Window frames with `exclusion` (`EXCLUDE ...`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_frame_range_fixed_distance` | Window `RANGE` frames with a fixed distance (`ValueRange(start=-5)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_ignore_conflicts` | `bulk_create(ignore_conflicts=True)`. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_json_field` | `JSONField`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_field_contains` | `JSONField` `contains` / `contained_by` lookups. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_negative_indexing` | `JSONField` key transforms with a negative array index (Django 6.0+). | – | 🗓️ | 🗓️ | phase 6 |
@@ -155,8 +157,6 @@ Off for now; planned for the phase shown.
 | `supports_over_clause` | Window functions (`Window`, `OVER (...)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_update_conflicts` | `bulk_create(update_conflicts=True)` (upsert). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
-| `supports_update_conflicts_with_target` | `bulk_create(update_conflicts=True, unique_fields=...)`: an upsert on named columns. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 
 ## Not applicable (17)
 
