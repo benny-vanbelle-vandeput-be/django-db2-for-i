@@ -46,7 +46,7 @@ from django.utils.duration import duration_microseconds
 
 from .compat import Before60OperationsMixin
 from .expressions import DAY_MICROSECONDS, NVARCHAR_MAX
-from .schema import default_literal
+from .schema import LOB_TYPES, base_type, default_literal
 
 logger = logging.getLogger("django_db2_for_i")
 
@@ -62,8 +62,12 @@ BIGINT_MIN, BIGINT_MAX = -(2**63), 2**63 - 1
 # (32,768 gives SQL0901) and about 32,500 rows (32,768 gives SQL0101; probe
 # qtemp_bulk). Half of each leaves room for longer placeholders and the
 # FINAL TABLE wrapper, well under the statement length limit (about 2 MB).
+# A LOB column has a much lower limit, whatever else the statement holds: 1024
+# markers of NCLOB, CLOB or BLOB work, 1056 give PWS0001 at prepare, inside
+# FINAL TABLE and without it (probe qtemp_bulk_types). Half of that here too.
 BULK_MAX_PARAMS = 16_000
 BULK_MAX_ROWS = 16_000
+BULK_MAX_LOB_PARAMS = 512
 
 _DATE_PARTS = {
     "year": "YEAR(%s)",
@@ -271,13 +275,25 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
         return None if value is None else int(value)
 
     def bulk_batch_size(self, fields, objs):
-        """Rows per multi-row statement: at most BULK_MAX_PARAMS markers and
-        BULK_MAX_ROWS rows. Django's own version differs per release (6.1 reads
-        max_query_params, 5.2 and 6.0 have no limit), so it is not used."""
-        columns = sum(len(getattr(field, "fields", None) or [field]) for field in fields)
-        if not columns:
-            return max(min(len(objs), BULK_MAX_ROWS), 1)
-        return max(min(len(objs), BULK_MAX_PARAMS // columns, BULK_MAX_ROWS), 1)
+        """Rows per multi-row statement: at most BULK_MAX_PARAMS markers,
+        BULK_MAX_LOB_PARAMS of them for LOB columns, and BULK_MAX_ROWS rows.
+        Django's own version differs per release (6.1 reads max_query_params,
+        5.2 and 6.0 have no limit), so it is not used."""
+        columns = [
+            column for field in fields for column in getattr(field, "fields", None) or [field]
+        ]
+        limits = [len(objs), BULK_MAX_ROWS]
+        if columns:
+            limits.append(BULK_MAX_PARAMS // len(columns))
+        # Django also passes names here ("pk"), which are never LOB columns.
+        lobs = sum(
+            base_type(column.db_type(self.connection)) in LOB_TYPES
+            for column in columns
+            if hasattr(column, "db_type")
+        )
+        if lobs:
+            limits.append(BULK_MAX_LOB_PARAMS // lobs)
+        return max(min(limits), 1)
 
     def returning_columns(self, fields):
         """No ``RETURNING`` clause: the insert compiler wraps the statement in

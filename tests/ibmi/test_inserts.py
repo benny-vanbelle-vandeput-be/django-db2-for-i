@@ -13,8 +13,8 @@ import pytest
 from django.db import IntegrityError, transaction
 from django.test.utils import CaptureQueriesContext
 
-from django_db2_for_i.operations import BULK_MAX_PARAMS
-from tests.testapp.models import Author, Book, Defaults, Tag
+from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS, BULK_MAX_PARAMS
+from tests.testapp.models import Author, Book, Defaults, Document, Tag
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")
 
@@ -117,6 +117,20 @@ def test_bulk_create_splits_at_the_parameter_limit(live, empty) -> None:
     assert Book.objects.count() == count
     assert [book.pages for book in books[-3:]] == [count - 3, count - 2, count - 1]
     assert Book.objects.get(pk=books[-1].pk).pages == count - 1
+
+
+def test_bulk_create_splits_at_the_lob_limit(live, empty) -> None:
+    # Two LOB columns, 1200 LOB markers in all: one statement would get PWS0001.
+    count = 600
+    with CaptureQueriesContext(live) as queries:
+        documents = Document.objects.bulk_create(
+            [Document(text=f"text {i}", data=None) for i in range(count)]
+        )
+    per_statement = BULK_MAX_LOB_PARAMS // 2
+    assert len(_inserts(queries)) == 3
+    assert per_statement * 2 < count <= per_statement * 3
+    assert Document.objects.count() == count
+    assert Document.objects.get(pk=documents[-1].pk).text == f"text {count - 1}"
 
 
 def test_bulk_create_in_a_transaction_is_rolled_back(live, empty) -> None:

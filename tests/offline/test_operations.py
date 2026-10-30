@@ -7,7 +7,7 @@ from decimal import Decimal
 import pytest
 from django.core.management.color import no_style
 from django.db import NotSupportedError, connection
-from django.db.models import CharField, DateTimeField, UUIDField
+from django.db.models import BinaryField, CharField, DateTimeField, TextField, UUIDField
 from django.db.models.expressions import Col
 from django.test.utils import override_settings
 from django.utils import timezone
@@ -745,6 +745,26 @@ def test_bulk_batch_size_counts_the_columns_of_a_composite_field() -> None:
 
     fields = [FakeComposite(3), CharField()]
     assert ops.bulk_batch_size(fields, range(100_000)) == BULK_MAX_PARAMS // 4
+
+
+def test_bulk_batch_size_is_limited_by_the_lob_columns() -> None:
+    from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS
+
+    assert ops.bulk_batch_size([TextField()], range(5000)) == BULK_MAX_LOB_PARAMS
+    assert ops.bulk_batch_size([BinaryField()], range(5000)) == BULK_MAX_LOB_PARAMS
+    columns = [CharField(), TextField(), BinaryField()]
+    assert ops.bulk_batch_size(columns, range(5000)) == BULK_MAX_LOB_PARAMS // 2
+    assert ops.bulk_batch_size(columns, range(10)) == 10
+    # Without a LOB column the limit does not apply.
+    assert ops.bulk_batch_size([CharField()], range(5000)) == 5000
+
+
+def test_bulk_batch_size_takes_field_names() -> None:
+    from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS
+
+    # bulk_update() and the deletion collector pass names along with the fields.
+    assert ops.bulk_batch_size(["pk", "pk"], range(10)) == 10
+    assert ops.bulk_batch_size(["pk", "pk", TextField()], range(5000)) == BULK_MAX_LOB_PARAMS
 
 
 def test_bulk_batch_size_is_at_least_one() -> None:
