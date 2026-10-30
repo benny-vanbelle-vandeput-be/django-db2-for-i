@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**45 flags enabled on Django 6.1.**
+**48 flags enabled on Django 6.1.**
 
-## Enabled (45)
+## Enabled (48)
 
 On in at least one supported Django version.
 
@@ -26,6 +26,8 @@ On in at least one supported Django version.
 | `can_return_columns_from_insert` | Inserted rows return their primary key and defaults in one statement. | ✅ | ✅ | ✅ |
 | `can_return_rows_from_bulk_insert` | `bulk_create()` sets the primary keys of the created objects. | ✅ | ✅ | ✅ |
 | `can_rollback_ddl` | Schema changes inside a transaction are rolled back with it: a migration that fails halfway leaves nothing behind. | ✅ | ✅ | ✅ |
+| `can_use_chunked_reads` | `QuerySet.iterator()` fetches rows in chunks from an open cursor while other queries run. | ✅ | ✅ | ✅ |
+| `delete_can_self_reference_subquery` | A delete whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `has_bulk_insert` | `bulk_create()` inserts many rows in one statement. | ✅ | ✅ | ✅ |
 | `has_native_boolean_field` | `BooleanField` is a native `BOOLEAN` column (IBM i 7.5). | – | – | ✅ |
 | `ignores_table_name_case` | Table names that differ only in case are the same table (names are uppercase). | ✅ | ✅ | ✅ |
@@ -60,6 +62,7 @@ On in at least one supported Django version.
 | `supports_transactions` | Transactions with commit and rollback (on journaled tables). | ✅ | ✅ | ✅ |
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
 | `truncates_names` | Names longer than the database allows are shortened with a hash, the same way everywhere. | ✅ | ✅ | ✅ |
+| `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
 ## Intentionally off (48)
@@ -117,7 +120,7 @@ Off on purpose, with the reason.
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (34)
+## Planned (31)
 
 Off for now; planned for the phase shown.
 
@@ -125,8 +128,6 @@ Off for now; planned for the phase shown.
 |---|---|---|---|---|---|
 | `allows_group_by_lob` | `TextField` and `BinaryField` columns can be grouped by. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `can_introspect_json_field` | Introspection recognizes a `JSONField` column. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `can_use_chunked_reads` | `QuerySet.iterator()` fetches rows in chunks from an open cursor while other queries run. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
-| `delete_can_self_reference_subquery` | A delete whose filter has a subquery on the same table runs as one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `has_json_object_function` | JSON objects can be built in SQL (`JSONObject`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `has_real_datatype` | The database has a single-precision `REAL` type besides `DOUBLE`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `has_select_for_update` | `select_for_update()` locks the selected rows. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
@@ -156,7 +157,6 @@ Off for now; planned for the phase shown.
 | `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_update_conflicts` | `bulk_create(update_conflicts=True)` (upsert). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_update_conflicts_with_target` | `bulk_create(update_conflicts=True, unique_fields=...)`: an upsert on named columns. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
-| `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 
 ## Not applicable (17)
 

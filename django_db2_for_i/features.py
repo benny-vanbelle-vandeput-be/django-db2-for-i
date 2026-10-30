@@ -92,8 +92,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # Queries
     allows_group_by_lob = False
     allows_group_by_select_index = False
-    update_can_self_select = False
-    delete_can_self_reference_subquery = False
+    # An UPDATE / DELETE whose subquery reads the same table runs as one
+    # statement, without materializing the subquery first (probe qtemp_cursors).
+    update_can_self_select = True
+    delete_can_self_reference_subquery = True
     # IN (SELECT ... FETCH FIRST n ROWS ONLY), also with OFFSET (probe queries).
     allow_sliced_subqueries_with_in = True
     # A scalar subquery in GROUP BY works (probe queries).
@@ -149,7 +151,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # rows back in input order (ORDER BY INPUT SEQUENCE, probe qtemp_returning).
     # The batch size stays below the statement limits (operations.bulk_batch_size).
     can_return_rows_from_bulk_insert = True
-    can_use_chunked_reads = False
+    # QuerySet.iterator() keeps its cursor open and fetches in chunks while
+    # other statements run on the connection (probe qtemp_cursors; with
+    # commitment control: tests/ibmi/test_queries.py).
+    can_use_chunked_reads = True
     has_bulk_insert = True
     # An explicit 0 in an identity column is a normal key (probe qtemp_returning).
     allows_auto_pk_0 = True

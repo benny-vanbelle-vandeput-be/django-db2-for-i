@@ -23,10 +23,10 @@
     "can_return_rows_from_bulk_insert": true,
     "can_return_rows_from_update": false,
     "can_rollback_ddl": true,
-    "can_use_chunked_reads": false,
+    "can_use_chunked_reads": true,
     "collate_as_index_expression": false,
     "connection_persists_old_columns": false,
-    "delete_can_self_reference_subquery": false,
+    "delete_can_self_reference_subquery": true,
     "for_update_after_from": false,
     "gis_enabled": false,
     "greatest_least_ignores_nulls": false,
@@ -129,7 +129,7 @@
     "supports_virtual_generated_columns": false,
     "test_db_allows_multiple_connections": false,
     "truncates_names": true,
-    "update_can_self_select": false,
+    "update_can_self_select": true,
     "uses_savepoints": true
   }
 }

@@ -1,0 +1,2 @@
+- `can_use_chunked_reads`: `QuerySet.iterator()` fetches rows in chunks from an open cursor, also while other statements run and commit on the same connection.
+- `update_can_self_select`, `delete_can_self_reference_subquery`: an `update()` or `delete()` whose filter reads the same table runs as one statement, without selecting the keys first.
