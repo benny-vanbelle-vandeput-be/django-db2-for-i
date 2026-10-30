@@ -549,7 +549,6 @@ Django's system checks report the first three when a model uses them.
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and
-enabled one at a time: bulk insert,
-returning columns, JSONField, window functions, `select_for_update`,
+enabled one at a time: JSONField, window functions, `select_for_update`,
 and creating test schemas (tests
 run in an existing library, see [Configuration](Configuration.md#test-database-test)).

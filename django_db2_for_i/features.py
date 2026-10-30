@@ -142,13 +142,17 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # SELECT ... FROM FINAL TABLE (INSERT ...) returns the key and the column
     # defaults of the inserted row (probe qtemp_returning, compiler.py).
     can_return_columns_from_insert = True
+    # bulk_create() as one multi-row INSERT; with returning, FINAL TABLE gives the
+    # rows back in input order (ORDER BY INPUT SEQUENCE, probe qtemp_returning).
+    # The batch size stays below the statement limits (operations.bulk_batch_size).
+    can_return_rows_from_bulk_insert = True
     can_use_chunked_reads = False
-    has_bulk_insert = False
+    has_bulk_insert = True
     # An explicit 0 in an identity column is a normal key (probe qtemp_returning).
     allows_auto_pk_0 = True
     # DEFAULT in VALUES, also with several rows (probe qtemp_returning).
     supports_default_keyword_in_insert = True
-    supports_default_keyword_in_bulk_insert = False
+    supports_default_keyword_in_bulk_insert = True
     supports_ignore_conflicts = False
 
     # Schema and constraints

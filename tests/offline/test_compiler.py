@@ -318,3 +318,19 @@ def test_returning_clause_is_empty() -> None:
     # Django appends nothing; the compiler wraps the statement instead.
     assert connection.ops.returning_columns([Author._meta.pk]) == ("", ())
     assert connection.ops.return_insert_columns([Author._meta.pk]) == ("", ())
+
+
+def test_bulk_insert_is_one_statement() -> None:
+    assert insert_sql([Author(name="a"), Author(name="b")]) == [
+        ('INSERT INTO "TESTAPP_AUTHOR" ("NAME") VALUES (%s), (%s)', ("a", "b"))
+    ]
+
+
+def test_bulk_insert_with_returning_keeps_the_input_order() -> None:
+    assert insert_sql([Author(name="a"), Author(name="b")], [Author._meta.pk]) == [
+        (
+            'SELECT "ID" FROM FINAL TABLE (INSERT INTO "TESTAPP_AUTHOR" ("NAME") '
+            "VALUES (%s), (%s)) ORDER BY INPUT SEQUENCE",
+            ("a", "b"),
+        )
+    ]

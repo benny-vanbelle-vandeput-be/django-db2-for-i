@@ -58,6 +58,13 @@ BIGINT_MIN, BIGINT_MAX = -(2**63), 2**63 - 1
 # scalar functions are used throughout. DAYOFWEEK is 1 = Sunday .. 7 = Saturday
 # and DAYOFWEEK_ISO 1 = Monday .. 7 = Sunday, Django's week_day and
 # iso_week_day; WEEK_ISO is the ISO-8601 week, Django's week.
+# bulk_batch_size(): a multi-row INSERT takes at most 32,767 parameter markers
+# (32,768 gives SQL0901) and about 32,500 rows (32,768 gives SQL0101; probe
+# qtemp_bulk). Half of each leaves room for longer placeholders and the
+# FINAL TABLE wrapper, well under the statement length limit (about 2 MB).
+BULK_MAX_PARAMS = 16_000
+BULK_MAX_ROWS = 16_000
+
 _DATE_PARTS = {
     "year": "YEAR(%s)",
     "iso_year": "INTEGER(VARCHAR_FORMAT(%s, 'IYYY'))",
@@ -262,6 +269,15 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
         value = cursor.fetchone()[0]
         # IDENTITY_VAL_LOCAL() is DECIMAL(31, 0).
         return None if value is None else int(value)
+
+    def bulk_batch_size(self, fields, objs):
+        """Rows per multi-row statement: at most BULK_MAX_PARAMS markers and
+        BULK_MAX_ROWS rows. Django's own version differs per release (6.1 reads
+        max_query_params, 5.2 and 6.0 have no limit), so it is not used."""
+        columns = sum(len(getattr(field, "fields", None) or [field]) for field in fields)
+        if not columns:
+            return max(min(len(objs), BULK_MAX_ROWS), 1)
+        return max(min(len(objs), BULK_MAX_PARAMS // columns, BULK_MAX_ROWS), 1)
 
     def returning_columns(self, fields):
         """No ``RETURNING`` clause: the insert compiler wraps the statement in

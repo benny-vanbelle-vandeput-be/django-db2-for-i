@@ -58,11 +58,16 @@ class Before60OperationsMixin:
     renamed return_insert_columns() to returning_columns() (the insert
     compiler calls it for the returning clause); 5.2's base version returns
     None, which the compiler cannot unpack. Harmless on 6.0+, which never
-    calls it. When 5.2 is dropped: delete this class and its base in
+    calls these. When 5.2 is dropped: delete this class and its base in
     operations.py."""
 
     def return_insert_columns(self, fields):
         return self.returning_columns(fields)
+
+    # The rows of a multi-row insert with returning: 5.2 calls this hook, which
+    # its base class lacks (6.0+ calls fetch_returned_rows(), a plain fetchall()).
+    def fetch_returned_insert_rows(self, cursor):
+        return cursor.fetchall()
 
 
 # --- Before 6.1: Django 6.0 and 5.2 (delete when both are dropped) -------------------

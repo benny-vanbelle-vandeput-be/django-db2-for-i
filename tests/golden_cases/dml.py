@@ -53,6 +53,28 @@ def _insert_returning_db_defaults(connection):
     return _returning(connection, Defaults, [Defaults(number=5)], fields, returning)
 
 
+def _bulk_insert(connection):
+    """bulk_create() without returning: one multi-row VALUES."""
+    fields = [f for f in Author._meta.local_concrete_fields if not f.primary_key]
+    objs = [Author(name=name) for name in ("one", "two", "three")]
+    return _returning(connection, Author, objs, fields, None)
+
+
+def _bulk_insert_returning(connection):
+    """bulk_create() setting the keys: the rows come back in input order."""
+    fields = [f for f in Author._meta.local_concrete_fields if not f.primary_key]
+    objs = [Author(name=name) for name in ("one", "two", "three")]
+    return _returning(connection, Author, objs, fields, [Author._meta.pk])
+
+
+def _bulk_insert_db_defaults(connection):
+    """bulk_create() with db_default fields set in one row and not in the
+    other: DEFAULT per row, the defaults returned with the keys."""
+    fields = [f for f in Defaults._meta.local_concrete_fields if not f.primary_key]
+    objs = [Defaults(number=5), Defaults(text="set", flag=False)]
+    return _returning(connection, Defaults, objs, fields, Defaults._meta.db_returning_fields)
+
+
 def _update_boolean(connection):
     query = Book.objects.filter(pk=1).query.chain(UpdateQuery)
     query.add_update_values({"available": False})
@@ -95,6 +117,10 @@ CASES: tuple[Case, ...] = (
     # Returning columns: SELECT ... FROM FINAL TABLE (INSERT ...) (phase 5, step A).
     Case("dml/insert_returning", "dml", _insert_returning, (AUTHOR,)),
     Case("dml/insert_returning_db_defaults", "dml", _insert_returning_db_defaults, (DEFAULTS,)),
+    # bulk_create(): multi-row VALUES, with returning in input order (step A2).
+    Case("dml/bulk_insert", "dml", _bulk_insert, (AUTHOR,)),
+    Case("dml/bulk_insert_returning", "dml", _bulk_insert_returning, (AUTHOR,)),
+    Case("dml/bulk_insert_db_defaults", "dml", _bulk_insert_db_defaults, (DEFAULTS,)),
     Case("dml/update_boolean", "dml", _update_boolean, (BOOK,)),
     Case("dml/delete_filtered", "dml", _delete_filtered, (AUTHOR,)),
     # The outer query's WHERE is a search condition too (no CASE WHEN around the IN).

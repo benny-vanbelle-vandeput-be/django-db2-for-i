@@ -1,0 +1,3 @@
+- `has_bulk_insert`: `bulk_create()` inserts many rows per statement (multi-row `VALUES`), in batches of at most 16,000 parameter markers and 16,000 rows, half of what Db2 for i takes (probe `qtemp_bulk`).
+- `can_return_rows_from_bulk_insert`: `bulk_create()` sets the primary keys and `db_default` values of the created objects, read in input order from `SELECT ... FROM FINAL TABLE (INSERT ...) ORDER BY INPUT SEQUENCE`.
+- `supports_default_keyword_in_bulk_insert`: an unset `db_default` field is written as `DEFAULT` in a multi-row insert.

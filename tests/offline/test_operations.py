@@ -710,3 +710,52 @@ def test_iexact_values_are_not_escaped_for_like() -> None:
     """iexact is UPPER(col) = UPPER(%s); LIKE escaping would change the value."""
     assert ops.prep_for_iexact_query("a_b%c\\d") == "a_b%c\\d"
     assert ops.prep_for_like_query("a_b") == "a\\_b"  # contains & co. still escape
+
+
+# --- bulk_batch_size ---------------------------------------------------------------
+
+
+class FakeComposite:
+    """A field with sub-fields, as CompositePrimaryKey has."""
+
+    def __init__(self, count):
+        self.fields = [CharField()] * count
+
+
+def test_bulk_batch_size_is_limited_by_the_parameter_markers() -> None:
+    from django_db2_for_i.operations import BULK_MAX_PARAMS
+
+    fields = [CharField()] * 7
+    assert ops.bulk_batch_size(fields, range(100_000)) == BULK_MAX_PARAMS // 7
+
+
+def test_bulk_batch_size_is_limited_by_the_rows() -> None:
+    from django_db2_for_i.operations import BULK_MAX_ROWS
+
+    assert ops.bulk_batch_size([CharField()], range(100_000)) == BULK_MAX_ROWS
+    assert ops.bulk_batch_size([], range(100_000)) == BULK_MAX_ROWS
+
+
+def test_bulk_batch_size_takes_all_objects_when_they_fit() -> None:
+    assert ops.bulk_batch_size([CharField()] * 3, range(10)) == 10
+
+
+def test_bulk_batch_size_counts_the_columns_of_a_composite_field() -> None:
+    from django_db2_for_i.operations import BULK_MAX_PARAMS
+
+    fields = [FakeComposite(3), CharField()]
+    assert ops.bulk_batch_size(fields, range(100_000)) == BULK_MAX_PARAMS // 4
+
+
+def test_bulk_batch_size_is_at_least_one() -> None:
+    assert ops.bulk_batch_size([CharField()] * 20_000, range(5)) == 1
+    assert ops.bulk_batch_size([CharField()], []) == 1
+
+
+def test_fetch_returned_insert_rows_reads_every_row() -> None:
+    # Django 5.2's hook for the rows of a multi-row insert (compat.py).
+    class Rows:
+        def fetchall(self):
+            return [(1,), (2,)]
+
+    assert ops.fetch_returned_insert_rows(Rows()) == [(1,), (2,)]
