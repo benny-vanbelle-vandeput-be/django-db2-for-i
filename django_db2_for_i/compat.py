@@ -52,6 +52,19 @@ FAILING_ON_THIS_VERSION_ONLY: frozenset[str] = (
 # comparison, which Db2 for i rejects (SQL0115). The tuple hook refuses it there.
 DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON = django.VERSION >= (6, 0)
 
+
+class Before60OperationsMixin:
+    """DatabaseOperations hooks under their Django 5.2 names. Django 6.0
+    renamed return_insert_columns() to returning_columns() (the insert
+    compiler calls it for the returning clause); 5.2's base version returns
+    None, which the compiler cannot unpack. Harmless on 6.0+, which never
+    calls it. When 5.2 is dropped: delete this class and its base in
+    operations.py."""
+
+    def return_insert_columns(self, fields):
+        return self.returning_columns(fields)
+
+
 # --- Before 6.1: Django 6.0 and 5.2 (delete when both are dropped) -------------------
 
 # Django 6.1 prepares duration values through ops.adapt_durationfield_value();

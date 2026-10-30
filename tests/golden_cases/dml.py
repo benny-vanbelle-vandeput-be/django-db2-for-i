@@ -6,8 +6,8 @@ import datetime as dt
 
 from django.db.models.sql import DeleteQuery, InsertQuery, UpdateQuery
 
-from tests.golden_cases.base import AUTHOR, AWARE, BOOK, Case
-from tests.testapp.models import Author, Book
+from tests.golden_cases.base import AUTHOR, AWARE, BOOK, DEFAULTS, Case
+from tests.testapp.models import Author, Book, Defaults
 
 
 def _insert_book(connection):
@@ -29,6 +29,28 @@ def _insert_book(connection):
     query.insert_values(fields, [book])
     statements += query.get_compiler(connection.alias).as_sql()
     return [(sql, params) for sql, params in statements]
+
+
+def _returning(connection, model, objs, fields, returning):
+    query = InsertQuery(model)
+    query.insert_values(fields, objs)
+    compiler = query.get_compiler(connection.alias)
+    compiler.returning_fields = returning  # as SQLInsertCompiler.execute_sql sets it
+    return [(sql, params) for sql, params in compiler.as_sql()]
+
+
+def _insert_returning(connection):
+    """Model.save() / create(): the generated key from the insert itself."""
+    fields = [f for f in Author._meta.local_concrete_fields if not f.primary_key]
+    return _returning(connection, Author, [Author(name="returned")], fields, [Author._meta.pk])
+
+
+def _insert_returning_db_defaults(connection):
+    """The db_default fields left unset are written as DEFAULT and returned
+    with the key (``Options.db_returning_fields``, as Model.save() uses it)."""
+    fields = [f for f in Defaults._meta.local_concrete_fields if not f.primary_key]
+    returning = Defaults._meta.db_returning_fields
+    return _returning(connection, Defaults, [Defaults(number=5)], fields, returning)
 
 
 def _update_boolean(connection):
@@ -70,6 +92,9 @@ def _savepoints(connection):
 
 CASES: tuple[Case, ...] = (
     Case("dml/insert_book", "dml", _insert_book, (AUTHOR, BOOK)),
+    # Returning columns: SELECT ... FROM FINAL TABLE (INSERT ...) (phase 5, step A).
+    Case("dml/insert_returning", "dml", _insert_returning, (AUTHOR,)),
+    Case("dml/insert_returning_db_defaults", "dml", _insert_returning_db_defaults, (DEFAULTS,)),
     Case("dml/update_boolean", "dml", _update_boolean, (BOOK,)),
     Case("dml/delete_filtered", "dml", _delete_filtered, (AUTHOR,)),
     # The outer query's WHERE is a search condition too (no CASE WHEN around the IN).

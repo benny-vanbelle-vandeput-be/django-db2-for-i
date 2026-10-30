@@ -315,9 +315,11 @@ CASES: tuple[Case, ...] = (
         _add_relation(Schedule, "owner", lambda: ForeignKey(Author, PROTECT)),
         (SCHEDULE, AUTHOR),
     ),
+    # "alter", like the other added columns: as a "create" golden its NOT NULL
+    # column without a default broke the insert of dml/insert_returning_db_defaults.
     Case(
         "ddl/add_field_not_null_default",
-        "create",
+        "alter",
         _add_not_null_with_python_default,
         (DEFAULTS,),
     ),

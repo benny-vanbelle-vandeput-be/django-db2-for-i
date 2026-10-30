@@ -1,0 +1,3 @@
+- `can_return_columns_from_insert`: `save()` and `create()` read the primary key and the `db_default` values from the insert itself, `SELECT ... FROM FINAL TABLE (INSERT ...)`, instead of a second query (`IDENTITY_VAL_LOCAL()`).
+- `supports_default_keyword_in_insert`: an unset `db_default` field is written as `DEFAULT`.
+- `allows_auto_pk_0`: an `AutoField` may be saved with the key 0.
