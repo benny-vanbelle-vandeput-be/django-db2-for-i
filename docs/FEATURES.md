@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**34 flags enabled on Django 6.1.**
+**36 flags enabled on Django 6.1.**
 
-## Enabled (34)
+## Enabled (36)
 
 On in at least one supported Django version.
 
@@ -43,12 +43,14 @@ On in at least one supported Django version.
 | `supports_select_difference` | `QuerySet.difference()` (`EXCEPT`). | ✅ | ✅ | ✅ |
 | `supports_select_intersection` | `QuerySet.intersection()` (`INTERSECT`). | ✅ | ✅ | ✅ |
 | `supports_select_union` | `QuerySet.union()` (`UNION` / `UNION ALL`). | ✅ | ✅ | ✅ |
+| `supports_sequence_reset` | `sqlsequencereset` and `TransactionTestCase.reset_sequences` restart identity values. | ✅ | ✅ | ✅ |
 | `supports_slicing_ordering_in_compound` | Slicing and ordering of the parts of a compound query. | ✅ | ✅ | ✅ |
 | `supports_subqueries_in_group_by` | A subquery can be used in `GROUP BY`. | ✅ | ✅ | ✅ |
 | `supports_table_check_constraints` | Model `CheckConstraint`s are enforced by the database. | ✅ | ✅ | ✅ |
 | `supports_temporal_subtraction` | Subtracting dates, times and datetimes gives an exact `timedelta`. | ✅ | ✅ | ✅ |
 | `supports_transactions` | Transactions with commit and rollback (on journaled tables). | ✅ | ✅ | ✅ |
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
+| `truncates_names` | Names longer than the database allows are shortened with a hash, the same way everywhere. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
 ## Intentionally off (48)
@@ -106,7 +108,7 @@ Off on purpose, with the reason.
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (45)
+## Planned (43)
 
 Off for now; planned for the phase shown.
 
@@ -152,10 +154,8 @@ Off for now; planned for the phase shown.
 | `supports_partially_nullable_unique_constraints` | Multi-column unique constraints where some columns are NULL. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_sequence_reset` | `sqlsequencereset` resets identity values. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_update_conflicts` | `bulk_create(update_conflicts=True)` (upsert). | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `supports_update_conflicts_with_target` | `bulk_create(update_conflicts=True, unique_fields=...)`: an upsert on named columns. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
-| `truncates_names` | Names longer than the database allows are shortened with a hash, the same way everywhere. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | 🗓️ | 🗓️ | 🗓️ | phase 5 |
 
 ## Not applicable (17)

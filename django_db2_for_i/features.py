@@ -149,7 +149,13 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # Schema and constraints
     supports_nullable_unique_constraints = False
     supports_partially_nullable_unique_constraints = False
-    supports_sequence_reset = False
+    # Identities restart at IDENTITY_START (sequence_reset_by_name_sql); in
+    # TestCase, sequence_reset_sql is deferred to the commit (SQL0910).
+    supports_sequence_reset = True
+    # Names over 128 characters (SQL0107, probe qtemp_later_flags) are shortened
+    # with Django's truncate_name() in quote_name(), so Django does the same
+    # when it looks up constraint columns and skips its name length check.
+    truncates_names = True
     # Foreign keys (phase 4 step C): separate ALTER TABLE ... ADD CONSTRAINT
     # statements (decision 4), violations SQL0530-0532 -> IntegrityError
     # (drivers/base.py), the column types must match exactly (SQL0538), and a
@@ -241,7 +247,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         REASON_TIME_FRACTIONS: {
             "expressions.tests.FTimeDeltaTests.test_time_subtraction",
         },
-        REASON_IDENTITY_RESTART_DEFERRED: set(),
+        # sequence_reset_sql() inside TestCase's transaction: the restart waits
+        # for a commit that never comes (operations.py, SQL0910).
+        REASON_IDENTITY_RESTART_DEFERRED: {
+            "backends.tests.SequenceResetTest.test_generic_relation",
+        },
         # A custom transform with template "NULL" gives WHERE NULL IS NULL.
         REASON_UNTYPED_NULL: {
             "lookup.tests.LookupTests.test_exact_none_transform",

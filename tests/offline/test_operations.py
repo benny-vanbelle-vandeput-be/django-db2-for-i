@@ -232,6 +232,32 @@ def test_sequence_reset_sql(monkeypatch) -> None:
     assert ("testapp_tag", "id") not in queried
 
 
+def test_sequence_reset_by_name_restarts_at_the_identity_start(monkeypatch) -> None:
+    # TransactionTestCase.reset_sequences, from introspection.sequence_list().
+    seen = {}
+
+    def starts(names):
+        seen["names"] = names
+        return {"TESTAPP_BOOK": ("ID", 100), "TESTAPP_AUTHOR": ("ID", 1)}
+
+    monkeypatch.setattr(ops, "_identity_starts", starts)
+    sequences = [
+        {"table": "testapp_author", "column": "id"},
+        {"table": "testapp_book", "column": "id"},
+        {"table": "testapp_tag", "column": None},  # no identity in the catalog
+    ]
+    assert ops.sequence_reset_by_name_sql(no_style(), sequences) == [
+        'ALTER TABLE "TESTAPP_AUTHOR" ALTER COLUMN "ID" RESTART WITH 1',
+        'ALTER TABLE "TESTAPP_BOOK" ALTER COLUMN "ID" RESTART WITH 100',
+    ]
+    assert seen["names"] == ["TESTAPP_AUTHOR", "TESTAPP_BOOK", "TESTAPP_TAG"]
+
+
+def test_sequence_reset_by_name_without_sequences_does_not_query(monkeypatch) -> None:
+    monkeypatch.setattr(ops, "_identity_starts", lambda names: pytest.fail("queried"))
+    assert ops.sequence_reset_by_name_sql(no_style(), []) == []
+
+
 # --- Identity restarts outside transactions (SQL0910) --------------------------------
 
 

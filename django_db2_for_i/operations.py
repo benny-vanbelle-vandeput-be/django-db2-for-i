@@ -437,6 +437,29 @@ class DatabaseOperations(BaseDatabaseOperations):
             return []
         return self._identity_reset_statements(style, model_list)
 
+    def sequence_reset_by_name_sql(self, style, sequences) -> list[str]:
+        """Restart the identities ``sequences`` names (``{"table", "column"}``,
+        from ``introspection.sequence_list()``) at their start value.
+
+        Django calls it for ``TransactionTestCase.reset_sequences`` right after
+        a flush, so the tables are empty; ``RESTART WITH`` takes the identity's
+        ``IDENTITY_START`` from the catalog, as ``sql_flush()`` does.
+        """
+        names = {sequence["table"].upper(): sequence["table"] for sequence in sequences}
+        if not names:
+            return []
+        identities = self._identity_starts(list(names))
+        return [
+            "{} {} {} {} {}".format(
+                style.SQL_KEYWORD("ALTER TABLE"),
+                style.SQL_TABLE(self.quote_name(names[name])),
+                style.SQL_KEYWORD("ALTER COLUMN"),
+                style.SQL_FIELD(self.quote_name(column)),
+                style.SQL_KEYWORD(f"RESTART WITH {start}"),
+            )
+            for name, (column, start) in sorted(identities.items())
+        ]
+
     def _identity_reset_statements(self, style, model_list) -> list[str]:
         from django.db import models
 
@@ -569,17 +592,23 @@ class DatabaseOperations(BaseDatabaseOperations):
                 tables,
             )
             references = {(child.rstrip(), parent.rstrip()) for child, parent in cursor.fetchall()}
+        return references, self._identity_starts(tables)
+
+    def _identity_starts(self, tables: list[str]) -> dict[str, tuple[str, int]]:
+        """``{table: (identity column, start)}`` with uppercase names, for the
+        tables in the connection's current schema that have an identity."""
+        placeholders = ", ".join(["%s"] * len(tables))
+        with self.connection.cursor() as cursor:
             cursor.execute(
                 "SELECT TABLE_NAME, COLUMN_NAME, IDENTITY_START FROM QSYS2.SYSCOLUMNS "
                 "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND IS_IDENTITY = 'YES' "
                 f"AND TABLE_NAME IN ({placeholders})",
                 tables,
             )
-            identities = {
+            return {
                 table.rstrip(): (column.rstrip(), int(start))
                 for table, column, start in cursor.fetchall()
             }
-        return references, identities
 
 
 def _is_identity_restart(sql: str) -> bool:
