@@ -192,8 +192,9 @@ status = "done"
 prs = [216]
 
 [[phases.steps]]
-step = "Close-out: supported modules, status run, phase record"
+step = "Close-out: supported modules, phase record"
 status = "done"
+prs = [217]
 
 [[phases]]
 phase = "6"
