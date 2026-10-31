@@ -1953,6 +1953,15 @@ Django's `test_in_bulk_lots_of_ids`, 1998 rows with one `NCLOB`):
   measured). The connection stays usable after the refusal.
 - `bulk_batch_size()` allows 512 LOB markers per statement, for every LOB
   column whatever its declared length.
+- **Three or more LOB columns and `MERGE`** (2026-10-31, own IBM i tests in
+  `tests/ibmi/test_inserts.py`, run once with the division by the LOB columns
+  taken out): 360 rows with 3 `NCLOB` columns (1,080 markers), 220 rows with 5
+  (1,100 markers) and a `MERGE` of 220 rows with 5 (1,100 `CAST(? AS NCLOB)`
+  markers) each got PWS0001 at prepare; split by `bulk_batch_size()` they work.
+  So a `MERGE` has a limit as well, at or below 1,100. The probe measured where the
+  limit lies for `INSERT` with 1 and 2 LOB columns only; for 3 or more, and for
+  `MERGE`, it is known only to lie below these sizes (open track in
+  `docs/status.toml`).
 
 **Indexes** (`probes/qtemp_indexes.py`): accepted, on a QTEMP table:
 `CREATE INDEX ... WHERE` with comparisons, `IS NOT NULL`, `IN`/`OR`, functions
