@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3112 | 2 | 0 | 0 | 2026-10-31 10:31:17 UTC |
-| IBM i tests | 21 | 0 | 0 | 0 | 2026-10-31 10:14:04 UTC |
+| Offline tests | 3112 | 2 | 0 | 0 | 2026-10-31 10:33:23 UTC |
+| IBM i tests | 373 | 0 | 1 | 0 | 2026-10-31 10:58:13 UTC |
 | Django suite on IBM i | 2286 | 235 | 61 | 0 | 2026-10-31 07:55:55 UTC |
-| Replay tests | 2516 | 0 | 0 | 0 | 2026-10-31 10:32:18 UTC |
+| Replay tests | 2516 | 0 | 0 | 0 | 2026-10-31 10:34:29 UTC |
 
 ## Django 6.0 ✅
 
