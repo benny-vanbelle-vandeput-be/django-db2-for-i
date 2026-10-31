@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3106 | 2 | 0 | 0 | 2026-10-30 09:34:36 UTC |
-| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 12:56:12 UTC |
-| Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-29 12:04:46 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-30 09:35:20 UTC |
+| Offline tests | 3112 | 2 | 0 | 0 | 2026-10-31 08:48:55 UTC |
+| IBM i tests | 20 | 0 | 0 | 1 | 2026-10-31 08:58:51 UTC |
+| Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-31 07:39:26 UTC |
+| Replay tests | 2516 | 0 | 0 | 0 | 2026-10-31 08:49:47 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3107 | 1 | 0 | 0 | 2026-10-30 09:30:33 UTC |
-| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 10:35:19 UTC |
-| Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-29 09:48:04 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-30 09:31:12 UTC |
+| Offline tests | 3110 | 1 | 0 | 0 | 2026-10-31 07:15:11 UTC |
+| IBM i tests | 367 | 0 | 1 | 0 | 2026-10-31 05:48:23 UTC |
+| Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-31 07:57:28 UTC |
+| Replay tests | 2456 | 0 | 0 | 0 | 2026-10-31 07:15:50 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3105 | 1 | 0 | 0 | 2026-10-30 09:26:52 UTC |
-| IBM i tests | 323 | 3 | 1 | 0 | 2026-10-29 08:22:24 UTC |
-| Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-29 07:35:19 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-30 09:27:32 UTC |
+| Offline tests | 3108 | 1 | 0 | 0 | 2026-10-31 07:11:45 UTC |
+| IBM i tests | 362 | 3 | 1 | 0 | 2026-10-31 06:20:10 UTC |
+| Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-31 08:16:43 UTC |
+| Replay tests | 2412 | 0 | 0 | 0 | 2026-10-31 07:12:24 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,10 +73,10 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-10-29 06:11:36 UTC to 2026-10-29 12:04:46 UTC
+- **Runs:** 2026-10-29 06:13:06 UTC to 2026-10-31 08:16:43 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
 - **Python:** 3.14.8
-- **Backend commits:** 55d0e65 2026-10-29 (per module in the table)
+- **Backend commits:** 36c1ca4 2026-10-31, 55d0e65 2026-10-29, 4919cf7 2026-10-31, 55d0e65 2026-10-29, 55d0e65 2026-10-29, d0cb7bf 2026-10-30 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
@@ -88,9 +88,9 @@ The Django suite on IBM i per module and Django version.
 | aggregation | 5.2 | 140 | 139 | 0 | 0 | 1 | 0 | 0 | OK | 2026-10-29 06:23:42 UTC | 55d0e65 2026-10-29 |
 | aggregation | 6.0 | 156 | 151 | 0 | 0 | 5 | 0 | 0 | OK | 2026-10-29 08:35:11 UTC | 55d0e65 2026-10-29 |
 | aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-10-29 10:48:52 UTC | 55d0e65 2026-10-29 |
-| basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-29 06:11:36 UTC | 55d0e65 2026-10-29 |
-| basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-29 08:23:09 UTC | 55d0e65 2026-10-29 |
-| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-29 10:36:16 UTC | 55d0e65 2026-10-29 |
+| basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-31 08:16:43 UTC | 4919cf7 2026-10-31 |
+| basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-31 07:57:28 UTC | 4919cf7 2026-10-31 |
+| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-31 07:39:26 UTC | 4919cf7 2026-10-31 |
 | expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-29 06:25:40 UTC | 55d0e65 2026-10-29 |
 | expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-29 08:37:05 UTC | 55d0e65 2026-10-29 |
 | expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-29 10:50:49 UTC | 55d0e65 2026-10-29 |
@@ -112,9 +112,9 @@ The Django suite on IBM i per module and Django version.
 | ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-29 06:17:41 UTC | 55d0e65 2026-10-29 |
 | ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-29 08:29:26 UTC | 55d0e65 2026-10-29 |
 | ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-29 10:42:41 UTC | 55d0e65 2026-10-29 |
-| queries | 5.2 | 493 | 469 | 0 | 0 | 20 | 4 | 0 | OK | 2026-10-29 07:35:19 UTC | 55d0e65 2026-10-29 |
-| queries | 6.0 | 495 | 470 | 0 | 0 | 21 | 4 | 0 | OK | 2026-10-29 09:48:04 UTC | 55d0e65 2026-10-29 |
-| queries | 6.1 | 506 | 482 | 0 | 0 | 21 | 3 | 0 | OK | 2026-10-29 12:04:46 UTC | 55d0e65 2026-10-29 |
+| queries | 5.2 | 493 | 469 | 0 | 0 | 20 | 4 | 0 | PARTIAL (different commits 36c1ca4 2026-10-31, 55d0e65 2026-10-29) | 2026-10-29 07:35:19 UTC | 36c1ca4 2026-10-31, 55d0e65 2026-10-29 |
+| queries | 6.0 | 495 | 470 | 0 | 0 | 21 | 4 | 0 | PARTIAL (different commits 36c1ca4 2026-10-31, 55d0e65 2026-10-29) | 2026-10-29 09:48:04 UTC | 36c1ca4 2026-10-31, 55d0e65 2026-10-29 |
+| queries | 6.1 | 506 | 482 | 0 | 0 | 21 | 3 | 0 | PARTIAL (different commits 55d0e65 2026-10-29, d0cb7bf 2026-10-30) | 2026-10-29 12:04:46 UTC | 55d0e65 2026-10-29, d0cb7bf 2026-10-30 |
 | schema | 5.2 | 220 | 110 | 0 | 0 | 87 | 23 | 0 | OK | 2026-10-29 07:20:17 UTC | 55d0e65 2026-10-29 |
 | schema | 6.0 | 222 | 111 | 0 | 0 | 89 | 22 | 0 | OK | 2026-10-29 09:32:47 UTC | 55d0e65 2026-10-29 |
 | schema | 6.1 | 227 | 113 | 0 | 0 | 92 | 22 | 0 | OK | 2026-10-29 11:49:10 UTC | 55d0e65 2026-10-29 |
@@ -197,4 +197,4 @@ The Django suite on IBM i per module and Django version.
 
 ## Golden files
 
-559 goldens, 36 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
+559 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).

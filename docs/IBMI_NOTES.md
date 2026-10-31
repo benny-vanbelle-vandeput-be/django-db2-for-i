@@ -2096,6 +2096,62 @@ constraint), so the key was a unique index. Each case ran on fresh rows:
 - **Unique indexes are not matched:** conflicts in a conditional or
   functional unique constraint raise `IntegrityError`.
 
+### MERGE under concurrency (not verified on IBM i)
+
+**Not verified on IBM i.** A concurrent insert needs two jobs, so two
+connections and a shared table: QTEMP is private to one job, and PUB400 allows
+one connection per run. No probe has run this, and none may on PUB400. Phase 5
+answer a asked for this to be investigated and documented; what follows is the
+documented part, and the investigation waits for a dedicated IBM i.
+
+**From IBM's documentation**
+([MERGE, IBM i 7.5](https://www.ibm.com/docs/en/i/7.5?topic=statements-merge),
+read 2026-10-31):
+
+- `MERGE` works out which target rows are affected before it runs its inserts.
+  Other jobs can insert or change rows in between, unless a restrictive isolation
+  level such as repeatable read is used. IBM's own example is a concurrent insert
+  of the same key, which gives a duplicate key error when `MERGE` inserts its row.
+- `ATOMIC`: on an error the entire statement is rolled back; honored only with an
+  isolation level other than No Commit. The page does not say in words which of
+  `ATOMIC` / `NOT ATOMIC` is the default (`ATOMIC` comes first in the syntax
+  diagram).
+- A successful `MERGE` takes exclusive locks, held until commit or rollback, which
+  can keep other jobs from their operations on the table.
+- SQLCODE -913 / SQLSTATE 57033 is "deadlock or timeout occurred without automatic
+  rollback" ([SQL messages and codes, 7.6](https://www.ibm.com/docs/en/ssw_ibm_i_76/pdf/rzalapdf.pdf);
+  no 7.5 page was found). Whether a `MERGE` waiting for another job's uncommitted
+  row ends in this error is our expectation, not IBM's statement.
+
+**Verified with one job** (own IBM i tests, `tests/ibmi/test_inserts.py`): a
+duplicate key met by the `MERGE`'s own insert, here the same new key twice in one
+source, raises SQL0803, mapped to `IntegrityError`, and undoes the whole statement
+under `*CS`, in autocommit and in a transaction, also its rows without a conflict.
+This is the same error the race should give, reached another way; it says nothing
+about the timing or the locks between two jobs.
+
+**Not specific to `MERGE`:** without `supports_ignore_conflicts` Django's `m2m.add()`
+does a `SELECT` and then an `INSERT`, with the same race and the same error. With
+it, `add()` sends one `MERGE`, and with no `m2m_changed` listener no `SELECT` first
+(`_get_add_plan()` in `related_descriptors.py`). The window is not larger. PostgreSQL's
+`ON CONFLICT` does not have it, which is why this is a limitation here.
+
+**Open verification, for a dedicated IBM i:** a `lib_` probe (`lib_merge_concurrency`,
+with its own approval), one journaled table with a unique key, two connections:
+
+| Case | To see |
+|---|---|
+| A merges a new key and does not commit; B merges the same key | does B wait, for how long, and with which error (SQL0913?) |
+| the same, A commits while B waits | B: SQL0803, or the row skipped? |
+| the same, A rolls back while B waits | B inserts its row? |
+| both loop over the same new keys, with `ignore_conflicts` and with `m2m.add()` | how often SQL0803 occurs in a real race |
+| a multi-row batch, one row in conflict | the whole batch undone, as with one job? |
+| the retry of Known Limitations | does it succeed once A has committed, also inside `transaction.atomic()` |
+| isolation `*RR` | does it prevent the error, as IBM's text suggests, and what it costs in locks |
+
+Afterwards, Known Limitations and this section state results instead of
+expectations, with an own IBM i test if it can be made reliable.
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3106 | 2 | 0 | 0 | 2026-10-30 09:34:36 UTC |
-| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 12:56:12 UTC |
-| Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-29 12:04:46 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-30 09:35:20 UTC |
+| Offline tests | 3112 | 2 | 0 | 0 | 2026-10-31 08:48:55 UTC |
+| IBM i tests | 20 | 0 | 0 | 1 | 2026-10-31 08:58:51 UTC |
+| Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-31 07:39:26 UTC |
+| Replay tests | 2516 | 0 | 0 | 0 | 2026-10-31 08:49:47 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3107 | 1 | 0 | 0 | 2026-10-30 09:30:33 UTC |
-| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 10:35:19 UTC |
-| Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-29 09:48:04 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-30 09:31:12 UTC |
+| Offline tests | 3110 | 1 | 0 | 0 | 2026-10-31 07:15:11 UTC |
+| IBM i tests | 367 | 0 | 1 | 0 | 2026-10-31 05:48:23 UTC |
+| Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-31 07:57:28 UTC |
+| Replay tests | 2456 | 0 | 0 | 0 | 2026-10-31 07:15:50 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3105 | 1 | 0 | 0 | 2026-10-30 09:26:52 UTC |
-| IBM i tests | 323 | 3 | 1 | 0 | 2026-10-29 08:22:24 UTC |
-| Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-29 07:35:19 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-30 09:27:32 UTC |
+| Offline tests | 3108 | 1 | 0 | 0 | 2026-10-31 07:11:45 UTC |
+| IBM i tests | 362 | 3 | 1 | 0 | 2026-10-31 06:20:10 UTC |
+| Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-31 08:16:43 UTC |
+| Replay tests | 2412 | 0 | 0 | 0 | 2026-10-31 07:12:24 UTC |
 
 ### About the tests
 
@@ -124,6 +124,7 @@ Open tracks:
 
 - Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82)).
 - Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier.
+- `MERGE` under concurrency (`ignore_conflicts`, `m2m.add()`) is documented from IBM's documentation, not verified on IBM i: it needs two connections, so a dedicated IBM i ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#merge-under-concurrency-not-verified-on-ibm-i)).
 <!-- status:end -->
 
 > [!WARNING]

@@ -118,6 +118,11 @@ and documents what Db2 for i does there (one connection on PUB400 cannot
 run two jobs at once, so the probe covers what a single job can show, and
 the rest is documented as a limitation), and maps the error to
 `IntegrityError` as for a plain insert.
+**Status:** documented from IBM's documentation and marked "not verified on
+IBM i"; what one job can show is an own IBM i test. Step B itself left this out;
+it was added in #216 after the maintainer asked. The two-job probe is an open
+verification for a dedicated IBM i
+([IBMI_NOTES](../IBMI_NOTES.md#merge-under-concurrency-not-verified-on-ibm-i)).
 
 ## 5. Design
 - **Returning:** `return_insert_columns()` and the insert compiler write
