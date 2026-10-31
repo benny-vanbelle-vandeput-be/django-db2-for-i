@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3112 | 2 | 0 | 0 | 2026-10-31 09:09:42 UTC |
-| IBM i tests | 373 | 0 | 1 | 0 | 2026-10-31 09:37:55 UTC |
-| Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-31 07:39:26 UTC |
-| Replay tests | 2516 | 0 | 0 | 0 | 2026-10-31 09:10:22 UTC |
+| Offline tests | 3112 | 2 | 0 | 0 | 2026-10-31 10:33:23 UTC |
+| IBM i tests | 373 | 0 | 1 | 0 | 2026-10-31 10:58:13 UTC |
+| Django suite on IBM i | 2286 | 235 | 61 | 0 | 2026-10-31 07:55:55 UTC |
+| Replay tests | 2516 | 0 | 0 | 0 | 2026-10-31 10:34:29 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3113 | 1 | 0 | 0 | 2026-10-31 09:05:48 UTC |
+| Offline tests | 3113 | 1 | 0 | 0 | 2026-10-31 10:25:55 UTC |
 | IBM i tests | 367 | 0 | 1 | 0 | 2026-10-31 05:48:23 UTC |
-| Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-31 07:57:28 UTC |
-| Replay tests | 2456 | 0 | 0 | 0 | 2026-10-31 09:06:39 UTC |
+| Django suite on IBM i | 2190 | 213 | 62 | 0 | 2026-10-31 08:15:17 UTC |
+| Replay tests | 2456 | 0 | 0 | 0 | 2026-10-31 10:27:04 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3111 | 1 | 0 | 0 | 2026-10-31 09:02:06 UTC |
+| Offline tests | 3111 | 1 | 0 | 0 | 2026-10-31 10:21:52 UTC |
 | IBM i tests | 362 | 3 | 1 | 0 | 2026-10-31 06:20:10 UTC |
-| Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-31 08:16:43 UTC |
-| Replay tests | 2412 | 0 | 0 | 0 | 2026-10-31 09:02:47 UTC |
+| Django suite on IBM i | 2148 | 205 | 63 | 0 | 2026-10-31 08:32:01 UTC |
+| Replay tests | 2412 | 0 | 0 | 0 | 2026-10-31 10:22:36 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,7 +73,7 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-10-29 06:13:06 UTC to 2026-10-31 08:16:43 UTC
+- **Runs:** 2026-10-29 06:13:06 UTC to 2026-10-31 08:32:01 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
 - **Python:** 3.14.8
 - **Backend commits:** 36c1ca4 2026-10-31, 55d0e65 2026-10-29, 4919cf7 2026-10-31, 55d0e65 2026-10-29, 55d0e65 2026-10-29, d0cb7bf 2026-10-30 (per module in the table)
@@ -91,9 +91,18 @@ The Django suite on IBM i per module and Django version.
 | basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-31 08:16:43 UTC | 4919cf7 2026-10-31 |
 | basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-31 07:57:28 UTC | 4919cf7 2026-10-31 |
 | basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-31 07:39:26 UTC | 4919cf7 2026-10-31 |
+| bulk_create | 5.2 | 52 | 38 | 0 | 0 | 7 | 7 | 0 | OK | 2026-10-31 08:18:32 UTC | 4919cf7 2026-10-31 |
+| bulk_create | 6.0 | 59 | 43 | 0 | 0 | 9 | 7 | 0 | OK | 2026-10-31 07:59:15 UTC | 4919cf7 2026-10-31 |
+| bulk_create | 6.1 | 60 | 43 | 0 | 0 | 10 | 7 | 0 | OK | 2026-10-31 07:41:11 UTC | 4919cf7 2026-10-31 |
+| constraints | 5.2 | 103 | 89 | 0 | 0 | 14 | 0 | 0 | OK | 2026-10-31 08:32:01 UTC | 4919cf7 2026-10-31 |
+| constraints | 6.0 | 101 | 87 | 0 | 0 | 14 | 0 | 0 | OK | 2026-10-31 08:15:17 UTC | 4919cf7 2026-10-31 |
+| constraints | 6.1 | 102 | 87 | 0 | 0 | 15 | 0 | 0 | OK | 2026-10-31 07:55:55 UTC | 4919cf7 2026-10-31 |
 | expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-29 06:25:40 UTC | 55d0e65 2026-10-29 |
 | expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-29 08:37:05 UTC | 55d0e65 2026-10-29 |
 | expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-29 10:50:49 UTC | 55d0e65 2026-10-29 |
+| indexes | 5.2 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-10-31 08:20:46 UTC | 4919cf7 2026-10-31 |
+| indexes | 6.0 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-10-31 08:02:34 UTC | 4919cf7 2026-10-31 |
+| indexes | 6.1 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-10-31 07:44:35 UTC | 4919cf7 2026-10-31 |
 | inspectdb | 5.2 | 28 | 17 | 0 | 0 | 11 | 0 | 0 | OK | 2026-10-29 07:32:56 UTC | 55d0e65 2026-10-29 |
 | inspectdb | 6.0 | 28 | 17 | 0 | 0 | 11 | 0 | 0 | OK | 2026-10-29 09:45:43 UTC | 55d0e65 2026-10-29 |
 | inspectdb | 6.1 | 31 | 17 | 0 | 0 | 14 | 0 | 0 | OK | 2026-10-29 12:02:25 UTC | 55d0e65 2026-10-29 |
@@ -109,6 +118,9 @@ The Django suite on IBM i per module and Django version.
 | migrations | 5.2 | 784 | 736 | 0 | 0 | 24 | 24 | 0 | OK | 2026-10-29 06:28:15 UTC | 55d0e65 2026-10-29 |
 | migrations | 6.0 | 811 | 762 | 0 | 0 | 25 | 24 | 0 | OK | 2026-10-29 08:39:41 UTC | 55d0e65 2026-10-29 |
 | migrations | 6.1 | 825 | 776 | 0 | 0 | 25 | 24 | 0 | OK | 2026-10-29 10:53:32 UTC | 55d0e65 2026-10-29 |
+| model_indexes | 5.2 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-31 08:22:23 UTC | 4919cf7 2026-10-31 |
+| model_indexes | 6.0 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-31 08:04:10 UTC | 4919cf7 2026-10-31 |
+| model_indexes | 6.1 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-31 07:46:04 UTC | 4919cf7 2026-10-31 |
 | ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-29 06:17:41 UTC | 55d0e65 2026-10-29 |
 | ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-29 08:29:26 UTC | 55d0e65 2026-10-29 |
 | ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-29 10:42:41 UTC | 55d0e65 2026-10-29 |

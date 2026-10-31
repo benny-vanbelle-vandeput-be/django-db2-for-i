@@ -390,7 +390,7 @@ django-db2-for-i/
    they need: foreign keys, check constraints, introspection of every constraint, index ordering
    and text-field indexes.
    Also: the column order of created tables is the model's field order (issue #23, closed).
-5. **Returning & bulk.** `FINAL TABLE` returning columns, `bulk_create`, unique constraint variants,
+5. **Returning & bulk** (done, [record](docs/phases/phase-5.md)). `FINAL TABLE` returning columns, `bulk_create`, unique constraint variants,
    partial / expression / covering indexes; the `constraints`, `indexes` and `model_indexes` modules.
 6. **Advanced.** Window functions, `JSONField`, db functions, DB-level `on_delete` (6.1+).
 7. **PUB400 tier & release prep.** Curated smoke set, golden verification job, README, packaging.

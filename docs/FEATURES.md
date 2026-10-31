@@ -150,7 +150,7 @@ Off for now; planned for the phase shown.
 | `supports_json_field` | `JSONField`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_field_contains` | `JSONField` `contains` / `contained_by` lookups. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_negative_indexing` | `JSONField` key transforms with a negative array index (Django 6.0+). | – | 🗓️ | 🗓️ | phase 6 |
-| `supports_no_precision_decimalfield` | `DecimalField` without `max_digits` and `decimal_places` (Django 6.1+). | – | – | 🗓️ | needs probe (`DECFLOAT(34)` binding) |
+| `supports_no_precision_decimalfield` | `DecimalField` without `max_digits` and `decimal_places` (Django 6.1+). | – | – | 🗓️ | phase 6, after a probe (`DECFLOAT(34)` binding) |
 | `supports_on_delete_db_cascade` | `on_delete=DB_CASCADE`: the database deletes related rows (Django 6.1+). | – | – | 🗓️ | phase 6 |
 | `supports_on_delete_db_default` | `on_delete=DB_SET_DEFAULT` (Django 6.1+). | – | – | 🗓️ | phase 6 |
 | `supports_on_delete_db_null` | `on_delete=DB_SET_NULL` (Django 6.1+). | – | – | 🗓️ | phase 6 |

@@ -154,7 +154,7 @@ prs = [187]
 [[phases]]
 phase = "5"
 content = "Returning & bulk"
-status = "in progress"
+status = "done"
 
 [[phases.steps]]
 step = "0: QTEMP probes and the baseline of the four modules"
@@ -168,32 +168,33 @@ prs = [214]
 
 [[phases.steps]]
 step = "A: returning and bulk insert (bulk_create)"
-status = "in progress"
+status = "done"
 prs = [215, 216]
 
 [[phases.steps]]
 step = "C: partial and expression indexes (indexes, model_indexes)"
-status = "in progress"
+status = "done"
 prs = [216]
 
 [[phases.steps]]
 step = "D: unique variants (constraints)"
-status = "in progress"
+status = "done"
 prs = [216]
 
 [[phases.steps]]
 step = "E: chunked reads, self-referencing UPDATE / DELETE"
-status = "in progress"
+status = "done"
 prs = [216]
 
 [[phases.steps]]
-step = "B: conflicts through MERGE, or the exit"
-status = "in progress"
+step = "B: conflicts through MERGE"
+status = "done"
 prs = [216]
 
 [[phases.steps]]
-step = "Close-out: supported modules, status run, phase record"
-status = "planned"
+step = "Close-out: supported modules, phase record"
+status = "done"
+prs = [217]
 
 [[phases]]
 phase = "6"
@@ -259,6 +260,22 @@ module = "migrate_signals"
 status = "done"
 
 [[modules]]
+module = "bulk_create"
+status = "done"
+
+[[modules]]
+module = "constraints"
+status = "done"
+
+[[modules]]
+module = "indexes"
+status = "done"
+
+[[modules]]
+module = "model_indexes"
+status = "done"
+
+[[modules]]
 module = "queries"
 status = "done"
 # Run as these labels (Q1-Q5); the module row sums their logs.
@@ -283,4 +300,7 @@ text = "Errors in `annotations` / `expressions_case`, outside the phase 2 module
 text = "Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier."
 
 [[tracks]]
-text = "`MERGE` under concurrency (`ignore_conflicts`, `m2m.add()`) is documented from IBM's documentation, not verified on IBM i: it needs two connections, so a dedicated IBM i ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#merge-under-concurrency-not-verified-on-ibm-i))."
+text = "`lib_merge_concurrency`: `MERGE` under concurrency (`ignore_conflicts`, `update_conflicts`, `m2m.add()`) is documented from IBM's documentation, not verified on IBM i. The probe needs two connections, so a dedicated IBM i ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#merge-under-concurrency-not-verified-on-ibm-i))."
+
+[[tracks]]
+text = "The LOB limit of a multi-row statement is measured for 1 and 2 LOB columns only (about 1,024 markers); with 3 and 5 own IBM i tests show that the batches work and that 1,080 or 1,100 markers are refused, not where the limit lies ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#returning-bulk-inserts-indexes-unique-nulls-cursors-phase-5-step-0))."

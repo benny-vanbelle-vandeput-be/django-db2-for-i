@@ -10,7 +10,8 @@ import datetime as dt
 from decimal import Decimal
 
 import pytest
-from django.db import IntegrityError, transaction
+from django.core.management.color import no_style
+from django.db import IntegrityError, connection, transaction
 from django.test.utils import CaptureQueriesContext
 
 from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS, BULK_MAX_PARAMS
@@ -26,6 +27,34 @@ from tests.testapp.models import (
 )
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")
+
+# Only this module uses these tables. In MODELS they would be created in every
+# module and flushed after every test of it, minutes on PUB400.
+INSERT_ONLY_MODELS = (ThreeTexts, FiveTexts, Shelf)
+INSERT_ONLY_TABLES = sorted(
+    {model._meta.db_table for model in INSERT_ONLY_MODELS} | {Shelf.authors.through._meta.db_table}
+)
+
+# The smallest number of LOB markers in one statement that probe qtemp_bulk_types
+# saw refused (PWS0001); 1,024 worked. The LOB tests just cross it, to stay short.
+LOB_MARKERS_REFUSED = 1056
+
+
+@pytest.fixture(scope="module")
+def insert_only_tables(testapp_tables, django_db_blocker):
+    """Created in the module's marked library, which drops them at its end."""
+    with django_db_blocker.unblock(), connection.schema_editor() as editor:
+        for model in INSERT_ONLY_MODELS:
+            editor.create_model(model)
+
+
+@pytest.fixture
+def empty_insert_only(insert_only_tables, live, empty):
+    """Empty those tables too, before ``empty``: the many-to-many table refers to Author."""
+    yield
+    live.ops.execute_sql_flush(
+        live.ops.sql_flush(no_style(), INSERT_ONLY_TABLES, reset_sequences=True)
+    )
 
 
 def test_create_reads_the_key_from_the_insert(live, empty) -> None:
@@ -129,8 +158,9 @@ def test_bulk_create_splits_at_the_parameter_limit(live, empty) -> None:
 
 
 def test_bulk_create_splits_at_the_lob_limit(live, empty) -> None:
-    # Two LOB columns, 1200 LOB markers in all: one statement would get PWS0001.
-    count = 600
+    # Two LOB columns: all rows in one statement would get PWS0001.
+    count = 540
+    assert count * 2 >= LOB_MARKERS_REFUSED
     with CaptureQueriesContext(live) as queries:
         documents = Document.objects.bulk_create(
             [Document(text=f"text {i}", data=None) for i in range(count)]
@@ -143,12 +173,15 @@ def test_bulk_create_splits_at_the_lob_limit(live, empty) -> None:
 
 
 @pytest.mark.parametrize(
-    ("model", "lobs"), [(ThreeTexts, 3), (FiveTexts, 5)], ids=["three", "five"]
+    ("model", "lobs", "count"),
+    [(ThreeTexts, 3, 360), (FiveTexts, 5, 220)],
+    ids=["three", "five"],
 )
-def test_bulk_create_divides_the_lob_limit_by_the_lob_columns(live, empty, model, lobs) -> None:
-    # 600 rows in one statement or in batches of BULK_MAX_LOB_PARAMS rows would be
-    # 1,800 or 3,000 LOB markers: PWS0001 above about 1,024 (probe qtemp_bulk_types).
-    count = 600
+def test_bulk_create_divides_the_lob_limit_by_the_lob_columns(
+    live, empty_insert_only, model, lobs, count
+) -> None:
+    # Just enough rows that a batch not divided by the LOB columns gets PWS0001.
+    assert count * lobs >= LOB_MARKERS_REFUSED
     texts = [f.name for f in model._meta.fields if f.get_internal_type() == "TextField"]
     assert len(texts) == lobs
     code = {"code": lambda i: f"c{i}"} if model is FiveTexts else {}
@@ -168,10 +201,11 @@ def test_bulk_create_divides_the_lob_limit_by_the_lob_columns(live, empty, model
     assert model.objects.get(pk=created[-1].pk).first == f"first {count - 1}"
 
 
-def test_bulk_create_ignore_conflicts_splits_at_the_lob_limit(live, empty) -> None:
-    # A MERGE has the same limit: its markers are CAST(? AS NCLOB) in the source.
+def test_bulk_create_ignore_conflicts_splits_at_the_lob_limit(live, empty_insert_only) -> None:
+    # Its markers are CAST(? AS NCLOB) in the source.
     FiveTexts.objects.create(code="c1", first="old", second="", third="", fourth="", fifth="")
-    count = 300
+    count = 220
+    assert count * 5 >= LOB_MARKERS_REFUSED
     rows = [
         FiveTexts(code=f"c{i}", first="new", second="b", third="c", fourth="d", fifth="e")
         for i in range(count)
@@ -210,7 +244,7 @@ def test_bulk_create_ignore_conflicts(live, empty) -> None:
     assert dict(Author.objects.values_list("pk", "name")) == {1: "one", 2: "two", 3: "three"}
 
 
-def test_m2m_add_goes_through_merge_and_skips_existing_rows(live, empty) -> None:
+def test_m2m_add_goes_through_merge_and_skips_existing_rows(live, empty_insert_only) -> None:
     shelf = Shelf.objects.create()
     one, two = Author.objects.create(name="one"), Author.objects.create(name="two")
     with CaptureQueriesContext(live) as queries:

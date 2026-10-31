@@ -128,7 +128,7 @@ Django, with these IBM i specifics:
 used for `UPPER(column)`, so these lookups scan the table. (`icontains` and
 `iendswith` cannot use an index anyway, as with every `LIKE '%...'`.) An
 index on the expression, `Index(Upper("name"), name=...)` in `Meta.indexes`,
-can be created (expression indexes, phase 5); whether Db2 for i's optimizer
+can be created; whether Db2 for i's optimizer
 uses it for a given lookup has not been measured.
 
 ## No index on TextField and BinaryField
