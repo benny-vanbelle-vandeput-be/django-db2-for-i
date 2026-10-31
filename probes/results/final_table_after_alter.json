@@ -1,0 +1,712 @@
+{
+  "probe": "final_table_after_alter",
+  "utc": "20261031T175128Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "FINAL TABLE, only sent after the ALTER": {
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "after it, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    "again, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "3"
+        ]
+      ]
+    }
+  },
+  "plain INSERT, the same text": {
+    "before the ALTER, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    },
+    "before the ALTER, again": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    },
+    "after it, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    },
+    "again, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    }
+  },
+  "FINAL TABLE, the same text": {
+    "before the ALTER, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "before the ALTER, again": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "3"
+        ]
+      ]
+    },
+    "after it, a big value": {
+      "result": "error",
+      "sqlstate": "HY019",
+      "sqlcode": 30018,
+      "message": "Numeric value out of range. (30018) (SQLExecDirectW)",
+      "rows": null
+    },
+    "again, a big value": {
+      "result": "error",
+      "sqlstate": "HY019",
+      "sqlcode": 30018,
+      "message": "Numeric value out of range. (30018) (SQLExecDirectW)",
+      "rows": null
+    }
+  },
+  "FINAL TABLE, a trailing space after": {
+    "before the ALTER, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "before the ALTER, again": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "3"
+        ]
+      ]
+    },
+    "after it, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "4"
+        ]
+      ]
+    },
+    "again, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "5"
+        ]
+      ]
+    }
+  },
+  "FINAL TABLE, a line comment after": {
+    "before the ALTER, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "before the ALTER, again": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "3"
+        ]
+      ]
+    },
+    "after it, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "4"
+        ]
+      ]
+    },
+    "again, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "5"
+        ]
+      ]
+    }
+  },
+  "FINAL TABLE, a typed marker both times": {
+    "before the ALTER, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "before the ALTER, again": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "2"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "3"
+        ]
+      ]
+    },
+    "after it, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "4"
+        ]
+      ]
+    },
+    "again, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "5"
+        ]
+      ]
+    }
+  },
+  "UPDATE, the same text": {
+    "before the ALTER, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    },
+    "before the ALTER, again": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    },
+    "after it, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    },
+    "again, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    }
+  },
+  "SELECT with the column compared, the same text": {
+    "before the ALTER, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": []
+    },
+    "before the ALTER, again": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": []
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a small value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": []
+    },
+    "after it, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": []
+    },
+    "again, a big value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": []
+    }
+  },
+  "NVARCHAR(10) to NVARCHAR(100)": {
+    "before the ALTER": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, the longer value": {
+      "result": "error",
+      "sqlstate": "22001",
+      "sqlcode": 30207,
+      "message": "Column 1: CWB0111 - Input data is too big to fit into field (30207) (SQLExecDirectW)",
+      "rows": null
+    },
+    "read back": [
+      [
+        "'short'",
+        "5"
+      ],
+      [
+        "'short'",
+        "5"
+      ]
+    ],
+    "expected": "'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'",
+    "the same plain INSERT, the longer value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    },
+    "the same UPDATE, the longer value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    }
+  },
+  "VARCHAR(10) to VARCHAR(100)": {
+    "before the ALTER": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, the longer value": {
+      "result": "error",
+      "sqlstate": "22001",
+      "sqlcode": 30207,
+      "message": "Column 1: CWB0111 - Input data is too big to fit into field (30207) (SQLExecDirectW)",
+      "rows": null
+    },
+    "read back": [
+      [
+        "'short'",
+        "5"
+      ],
+      [
+        "'short'",
+        "5"
+      ]
+    ],
+    "expected": "'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'",
+    "the same plain INSERT, the longer value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    },
+    "the same UPDATE, the longer value": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": null
+    }
+  },
+  "DECIMAL(5, 2) to DECIMAL(12, 2)": {
+    "before the ALTER": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, the longer value": {
+      "result": "error",
+      "sqlstate": "22003",
+      "sqlcode": 30160,
+      "message": "Column 1: Numeric value out of range. (30160) (SQLExecDirectW)",
+      "rows": null
+    },
+    "read back": [
+      [
+        "Decimal('1.50')",
+        "7"
+      ]
+    ],
+    "expected": "Decimal('1234567.25')"
+  },
+  "DECIMAL(5, 2) to DECIMAL(9, 4)": {
+    "before the ALTER": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, the longer value": {
+      "result": "error",
+      "sqlstate": "22001",
+      "sqlcode": 30126,
+      "message": "Column 1: Character data right truncation. (30126) (SQLExecDirectW)",
+      "rows": null
+    },
+    "read back": [
+      [
+        "Decimal('1.5000')",
+        "5"
+      ]
+    ],
+    "expected": "Decimal('1.2345')"
+  },
+  "nothing in between (the control)": {
+    "before the ALTER": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a big value": {
+      "result": "error",
+      "sqlstate": "HY019",
+      "sqlcode": 30018,
+      "message": "Numeric value out of range. (30018) (SQLExecDirectW)",
+      "rows": null
+    }
+  },
+  "after a commit": {
+    "before the ALTER": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a big value": {
+      "result": "error",
+      "sqlstate": "HY019",
+      "sqlcode": 30018,
+      "message": "Numeric value out of range. (30018) (SQLExecDirectW)",
+      "rows": null
+    }
+  },
+  "after a rollback": {
+    "before the ALTER": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a big value": {
+      "result": "error",
+      "sqlstate": "HY019",
+      "sqlcode": 30018,
+      "message": "Numeric value out of range. (30018) (SQLExecDirectW)",
+      "rows": null
+    }
+  },
+  "after a plain INSERT of the big value": {
+    "before the ALTER": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a big value": {
+      "result": "error",
+      "sqlstate": "HY019",
+      "sqlcode": 30018,
+      "message": "Numeric value out of range. (30018) (SQLExecDirectW)",
+      "rows": null
+    }
+  },
+  "after a query without parameters": {
+    "before the ALTER": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a big value": {
+      "result": "error",
+      "sqlstate": "HY019",
+      "sqlcode": 30018,
+      "message": "Numeric value out of range. (30018) (SQLExecDirectW)",
+      "rows": null
+    }
+  },
+  "after DROP and CREATE, the column already wide": {
+    "before the ALTER": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "recreated": true,
+    "after it, a big value": {
+      "result": "error",
+      "sqlstate": "HY019",
+      "sqlcode": 30018,
+      "message": "Numeric value out of range. (30018) (SQLExecDirectW)",
+      "rows": null
+    }
+  },
+  "after a closed and new cursor, explicitly": {
+    "before the ALTER": {
+      "result": "ok",
+      "sqlstate": null,
+      "sqlcode": null,
+      "message": null,
+      "rows": [
+        [
+          "1"
+        ]
+      ]
+    },
+    "ALTER": {
+      "result": "ok"
+    },
+    "after it, a big value": {
+      "result": "error",
+      "sqlstate": "HY019",
+      "sqlcode": 30018,
+      "message": "Numeric value out of range. (30018) (SQLExecDirectW)",
+      "rows": null
+    }
+  }
+}

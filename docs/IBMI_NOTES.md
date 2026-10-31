@@ -2069,6 +2069,42 @@ Result: `probes/results/unique_nulls.json`.
   so its NULLs are distinct as well, as Django assumes by default
   (`nulls_distinct` stays off: no `NULLS [NOT] DISTINCT`).
 
+### A repeated FINAL TABLE insert after a column grows
+
+2026-10-31, PUB400 (IBM i 7.5), `probes/qtemp_final_table_after_alter.py`: QTEMP only,
+`CMT=0`, one connection. Result: `probes/results/final_table_after_alter.json`. Found by
+`migrations...test_*_foreignfield_growth`, which inserts, widens a column and sends the same
+insert with a value that needs the new size.
+
+**The first prepare of a `SELECT ... FROM FINAL TABLE (INSERT ...)` text on a connection fixes
+the parameter types of that text.** It is not pyodbc's reuse of a prepared statement, which is
+per cursor: every attempt here had a new cursor. Whether the driver or the job holds it was not
+separated; a new connection does not have it.
+
+| The same statement text before and after `ALTER COLUMN ... SET DATA TYPE` | After it |
+|---|---|
+| `SELECT ... FINAL TABLE`, `INTEGER` to `BIGINT`, a value over the old range | **HY019 "Numeric value out of range"** (30018) |
+| the same, `NVARCHAR(10)` or `VARCHAR(10)` to length 100, a longer string | **22001, CWB0111** "Input data is too big" (30207) |
+| the same, `DECIMAL(5, 2)` to `(12, 2)`, a larger value | **22003** (30160) |
+| the same, `DECIMAL(5, 2)` to `(9, 4)`, more decimals | **22001** (30126) |
+| the same text, a value that fits the old type | ok |
+| plain `INSERT`, `UPDATE ... SET`, `SELECT ... WHERE col = ?` | ok, also the new sizes |
+| `SELECT ... FINAL TABLE` first sent after the `ALTER` | ok, and that text then keeps the wide types, also on a table with the old ones |
+| a trailing space, or a line comment (`-- 1` and a line end) after the `ALTER` | ok: a new text |
+| a typed marker, `VALUES (CAST(? AS BIGINT))`, both times | ok |
+
+- **Never silent:** the longer value is refused with an error; nothing was cut off in these cases.
+- **Nothing on the connection clears it:** the control and each of a commit, a rollback, a plain
+  insert of the big value, a query without parameters and a new cursor all still fail with HY019.
+  So does `DROP` and `CREATE` of the table with the wide column.
+- **Fix:** once a connection has run `ALTER`, `CREATE`, `DROP` or `RENAME`, the driver layer adds a
+  comment with the number of such statements to a `FINAL TABLE` statement
+  (`drivers/pyodbc.py`). A typed marker in every insert would also work, also for another
+  job's change, but changes every insert's SQL.
+- **Not verified on IBM i:** a column changed by another connection while this one stays open. It
+  needs two connections. The driver cannot see that change, so the same error is expected until
+  this connection closes (Known Limitations).
+
 ### MERGE for conflicts in bulk_create() (phase 5, step B)
 2026-10-30, PUB400 (IBM i 7.5), `probes/qtemp_merge.py`: QTEMP only,
 `CMT=0`. Result: `probes/results/merge.json`. The table had a generated
