@@ -185,10 +185,6 @@ supports_nulls_distinct_unique_constraints.off = "Db2 for i takes no `NULLS DIST
 
 # --- Planned ----------------------------------------------------------------
 
-# Phase 5: returning columns, bulk operations, constraints, indexes.
-# Probed in step 0 (IBMI_NOTES, 2026-10-29); each is turned on in its step with
-# Django's tests and an own IBM i test.
-
 # Phase 6: window functions, JSONField, database functions, DB-level on_delete.
 # Also the row locks of select_for_update() and query flags left from phase 2.
 # Not verified on IBM i yet, except: LOB columns in GROUP BY (probe queries) and
@@ -202,7 +198,7 @@ has_real_datatype.planned = "phase 6"
 # Open: how the driver binds such values, and whether 34 digits fit Django's
 # meaning of an unconstrained DecimalField.
 supports_no_precision_decimalfield.description = "`DecimalField` without `max_digits` and `decimal_places` (Django 6.1+)."
-supports_no_precision_decimalfield.planned = "needs probe (`DECFLOAT(34)` binding)"
+supports_no_precision_decimalfield.planned = "phase 6, after a probe (`DECFLOAT(34)` binding)"
 allows_group_by_lob.description = "`TextField` and `BinaryField` columns can be grouped by."
 allows_group_by_lob.planned = "phase 6"
 can_introspect_json_field.description = "Introspection recognizes a `JSONField` column."
