@@ -13,7 +13,7 @@ not_compiled = 2
 pickle_format = 2
 recorded = 347
 unencodable = 0
-unique = 329
+unique = 317
 unpicklable = 5
 volatile = 0
 
@@ -52,7 +52,7 @@ not_compiled = 5
 pickle_format = 2
 recorded = 308
 unencodable = 0
-unique = 267
+unique = 258
 unpicklable = 1
 volatile = 0
 
@@ -91,7 +91,7 @@ not_compiled = 8
 pickle_format = 2
 recorded = 1429
 unencodable = 0
-unique = 1124
+unique = 1118
 unpicklable = 1
 volatile = 4
 

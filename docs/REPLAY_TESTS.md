@@ -163,3 +163,9 @@ entries differ are captured again on the next PUB400 run.
   `pytest ... --update-corpus` (never in CI) rewrites those entries and clears
   their verification stamp, like `--update-goldens`; the new SQL is verified on
   the next capture.
+- A rewritten entry a run can never stamp is removed, and the next status run
+  captures the statements that replace it. An entry is stamped only when a
+  passing test sends exactly its statement and params, which never happens for
+  a statement the backend no longer sends (the plain many-to-many inserts,
+  which became `MERGE` with `supports_ignore_conflicts`; a batch above the LOB
+  limit) or for params with the clock in them (`datetime.now()` in a test).
