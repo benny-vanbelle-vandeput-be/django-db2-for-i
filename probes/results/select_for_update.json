@@ -1,0 +1,449 @@
+{
+  "probe": "select_for_update",
+  "utc": "20261031T175314Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "plain": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA FOR UPDATE",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "OF a column": {
+    "sql": "SELECT I, V FROM QTEMP.P6LOCKA FOR UPDATE OF V",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "V",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ]
+    ]
+  },
+  "OF a qualified column": {
+    "sql": "SELECT T.I FROM QTEMP.P6LOCKA T FOR UPDATE OF T.V",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token . was not valid. Valid tokens: FOR USE SKIP WAIT WITH OPTIMIZE. (-104) (SQLExecDirectW)"
+  },
+  "OF the key column": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA FOR UPDATE OF I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "WHERE": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA WHERE I = 1 FOR UPDATE",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "ORDER BY": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA ORDER BY I FOR UPDATE",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "FETCH FIRST": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA FETCH FIRST 1 ROWS ONLY FOR UPDATE",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "ORDER BY, FETCH FIRST": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA ORDER BY I FETCH FIRST 1 ROWS ONLY FOR UPDATE",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "OFFSET": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA ORDER BY I OFFSET 1 ROWS FETCH FIRST 1 ROWS ONLY FOR UPDATE",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "a join": {
+    "sql": "SELECT A.I FROM QTEMP.P6LOCKA A JOIN QTEMP.P6LOCKB B ON A.I = B.I FOR UPDATE",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -511,
+    "message": "SQL0511 - FOR UPDATE clause not valid. (-511) (SQLExecDirectW)"
+  },
+  "a join, OF the first table": {
+    "sql": "SELECT A.I FROM QTEMP.P6LOCKA A JOIN QTEMP.P6LOCKB B ON A.I = B.I FOR UPDATE OF V",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -511,
+    "message": "SQL0511 - FOR UPDATE clause not valid. (-511) (SQLExecDirectW)"
+  },
+  "a subquery in WHERE": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA WHERE I IN (SELECT I FROM QTEMP.P6LOCKB) FOR UPDATE",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "a subquery in FROM": {
+    "sql": "SELECT I FROM (SELECT I FROM QTEMP.P6LOCKA) X FOR UPDATE",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "DISTINCT": {
+    "sql": "SELECT DISTINCT I FROM QTEMP.P6LOCKA FOR UPDATE",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -511,
+    "message": "SQL0511 - FOR UPDATE clause not valid. (-511) (SQLExecDirectW)"
+  },
+  "GROUP BY": {
+    "sql": "SELECT I, COUNT(*) FROM QTEMP.P6LOCKA GROUP BY I FOR UPDATE",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -511,
+    "message": "SQL0511 - FOR UPDATE clause not valid. (-511) (SQLExecDirectW)"
+  },
+  "UNION": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA UNION SELECT I FROM QTEMP.P6LOCKB FOR UPDATE",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -511,
+    "message": "SQL0511 - FOR UPDATE clause not valid. (-511) (SQLExecDirectW)"
+  },
+  "WITH RS": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA FOR UPDATE WITH RS",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - P6LOCKA in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "WITH RS USE AND KEEP EXCLUSIVE LOCKS": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA WITH RS USE AND KEEP EXCLUSIVE LOCKS",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "WITH RR USE AND KEEP EXCLUSIVE LOCKS": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA WITH RR USE AND KEEP EXCLUSIVE LOCKS",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "a join, USE AND KEEP": {
+    "sql": "SELECT A.I FROM QTEMP.P6LOCKA A JOIN QTEMP.P6LOCKB B ON A.I = B.I WITH RS USE AND KEEP EXCLUSIVE LOCKS",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "FETCH FIRST, USE AND KEEP": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA FETCH FIRST 1 ROWS ONLY WITH RS USE AND KEEP EXCLUSIVE LOCKS",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "SKIP LOCKED DATA": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA FOR UPDATE SKIP LOCKED DATA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "SKIP LOCKED DATA without FOR UPDATE": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA SKIP LOCKED DATA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "WITH CS SKIP LOCKED DATA": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA WITH CS SKIP LOCKED DATA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "SKIP LOCKED": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA FOR UPDATE SKIP LOCKED",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token <END-OF-STATEMENT> was not valid. Valid tokens: DATA. (-104) (SQLExecDirectW)"
+  },
+  "WAIT FOR OUTCOME": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA WAIT FOR OUTCOME",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "NOWAIT": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA FOR UPDATE NOWAIT",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token NOWAIT was not valid. Valid tokens: FOR USE SKIP WAIT WITH OPTIMIZE. (-104) (SQLExecDirectW)"
+  },
+  "WAIT 0": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA FOR UPDATE WAIT 0",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token 0 was not valid. Valid tokens: FOR. (-104) (SQLExecDirectW)"
+  }
+}

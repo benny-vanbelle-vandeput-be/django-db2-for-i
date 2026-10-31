@@ -2197,6 +2197,93 @@ with its own approval), one journaled table with a unique key, two connections:
 Afterwards, Known Limitations and this section state results instead of
 expectations, with an own IBM i test if it can be made reliable.
 
+### Phase 6 probes: window functions, JSON, db functions, row locks
+
+2026-10-31, PUB400 (IBM i 7.5). QTEMP only, `CMT=0`, one connection, before the plan was approved
+([phase-6.md](phases/phase-6.md)). Results: `probes/results/window.json`, `json_functions.json`,
+`db_functions.json`, `select_for_update.json`, `phase6_flags.json`, with every case and value.
+
+**Window functions** (`probes/qtemp_window.py`):
+
+| Form | Result |
+|---|---|
+| `ROW_NUMBER`, `RANK`, `DENSE_RANK`, `NTILE`, `LAG`, `LEAD`, `FIRST_VALUE`, `LAST_VALUE`, `NTH_VALUE` | ok, right values |
+| `PERCENT_RANK`, `CUME_DIST` | ok; fetched as `str` (`'0.25'`) |
+| `OVER ()`, `PARTITION BY`, `ORDER BY`, `SUM(SUM(V)) OVER`, a window in `ORDER BY`, in a subquery | ok |
+| over `NVARCHAR`, `FIRST_VALUE` over `NCLOB` | ok |
+| `NTILE(?)`, `NTILE(CAST(? AS INTEGER))`, `NTH_VALUE(V, ?)` | ok |
+| `NTH_VALUE(V, CAST(? AS INTEGER))` | SQL0171 |
+| `LAG(V, ?)`, `LAG(V, CAST(? AS INTEGER))` | SQL0104, SQL0199: the offset must be a constant |
+| `LAG(V, 1, ?)` / `LAG(V, 1, CAST(? AS DOUBLE))` | SQL0418 / ok |
+| `PARTITION BY MOD(I, ?)` | SQL0402 |
+| `ROWS BETWEEN ...`, `RANGE BETWEEN UNBOUNDED ...`, `RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING` on a number | ok |
+| `RANGE` on a date: `7 DAYS PRECEDING` / `7 PRECEDING` | SQL0104 / SQL0182 |
+| `EXCLUDE CURRENT ROW`, `EXCLUDE TIES`, `GROUPS` | SQL0104 |
+| a window directly in `WHERE` | SQL0120 (Django wraps it in a subquery) |
+
+**JSON** (`probes/qtemp_json_functions.py`):
+
+| Form | Result |
+|---|---|
+| `NCLOB`, `CLOB(1M) CCSID 1208`: round trip with `é` and an emoji, `IS JSON`, `JSON_VALUE`, `JSON_QUERY`, `JSON_EXISTS` | ok, text intact |
+| **`BLOB`** holding the same UTF-8 document | **`IS JSON` false, every function NULL or false, no error** |
+| a path as a marker, also typed | ok |
+| `$."g h"`, `$.d[1]`, `$.d[last]`, `$.d[last-1]` | ok |
+| `$.d[-1]` | NULL, no error |
+| `JSON_VALUE` of an array, or of a string with `RETURNING INTEGER` | NULL, no error |
+| `JSON_VALUE` of JSON null and of a missing key | NULL for both |
+| `JSON_EXISTS` of JSON null / of a missing key | true / false |
+| `JSON_QUERY` of a scalar | `1`; with `WITH CONDITIONAL WRAPPER` `[1]` |
+| `RETURNING BOOLEAN`, `DOUBLE`; in `WHERE`, `ORDER BY`, `GROUP BY`; `JSON_TABLE` | ok |
+| `DISTINCT` on the column; the column `= ?` | ok |
+| the filters `$.d[*]?(@ == 20)` and `$?(@.a == 1)` in `JSON_EXISTS` | **false, where they should match** |
+| a root array: `$[1]` | ok; IBM's `$.SYSIBM_ROOT_ARRAY[1]` gives NULL |
+| a root number, string, `true`, `null`: `IS JSON` | true |
+| the same: `JSON_VALUE(C, '$')`, `JSON_QUERY(C, '$')` | NULL; **on a root `null` `JSON_QUERY` gives `{}`** |
+| not JSON: `IS JSON` / `JSON_VALUE` | false / NULL |
+| `JSON_OBJECT` with constants, typed markers, a key marker, NULL, nesting, `FORMAT JSON`, `RETURNING NCLOB`; `JSON_ARRAY` | ok |
+
+**Db functions** (`probes/qtemp_db_functions.py`), on `héllo 😀`, NULL, 7, 2.5 and 2.50:
+
+| Function | Result |
+|---|---|
+| `LENGTH` / `CHARACTER_LENGTH` | 8 / 7: `LENGTH` counts UTF-16 units |
+| `CHR(65)` / `CHR(233)` / `CHR(128512)` | `A` / a substitute character / NULL |
+| `ASCII`, `LOWER`, `UPPER`, `LPAD`, `RPAD` (also cutting), `LTRIM`, `RTRIM`, `TRIM`, `REPLACE`, `INSTR`, `LOCATE`, `POSITION`, `SUBSTRING`, `SUBSTR`, `COALESCE`, `NULLIF`, `GREATEST`, `LEAST`, `MAX(a, b)`, `MIN(a, b)` | ok; `GREATEST` of a NULL gives NULL |
+| `CONCAT(S, N)` with N NULL / `CONCAT` of three | NULL / SQL0170 |
+| `LEFT(S, ?)`, `RIGHT(S, ?)`, `REPEAT(S, ?)`, `SUBSTRING(S, ?, ?)`, `ROUND(D, ?)` | SQL0171 or SQL0418: a plain marker is refused |
+| `ROUND(D, CAST(? AS INTEGER))` | ok; other functions with a typed marker were not tried |
+| `REVERSE`, `UNICODE`, `MD5`, `HASH_SHA224`, `HASH_SHA384` | SQL0204: no such function |
+| `HASH_MD5`, `HASH_SHA1`, `HASH_SHA256`, `HASH_SHA512`, `HASH(x, 0)`, `HASH(x, 3)` | ok; on UTF-8 only through `CAST(S AS VARCHAR(100) CCSID 1208)`, `HASH_MD5(S)` hashes other bytes |
+| all math functions Django writes, `RAND()`, `RANDOM()` | ok; `LOG(2, 8)` SQL0170 (it takes one argument) |
+| `ROUND` of 2.5, 3.5, 0.5, -2.5 | 3, 4, 1, -3: away from zero; also with no second argument |
+| `CAST(2.55 AS DECIMAL(9, 1))`, `CAST(D AS DECIMAL(9, 0))`, `CAST(3.7 AS INTEGER)` | 2.5, 2, 3: cut off, not rounded |
+
+**Row locks** (`probes/qtemp_select_for_update.py`): **syntax only**: `CMT=0` on an unjournaled table, one
+job, so it shows nothing about what is locked.
+
+| Form | Result |
+|---|---|
+| `FOR UPDATE` alone, with `WHERE`, `ORDER BY`, `FETCH FIRST`, `OFFSET`, a subquery in `WHERE` or `FROM` | accepted |
+| `FOR UPDATE OF V` / `OF T.V` | accepted / SQL0104 |
+| `FOR UPDATE` with a join, also with `OF`, `DISTINCT`, `GROUP BY`, `UNION` | SQL0511 |
+| `WITH RS USE AND KEEP EXCLUSIVE LOCKS`, `WITH RR ...`, also with a join and `FETCH FIRST` | accepted |
+| `FOR UPDATE SKIP LOCKED DATA`, `SKIP LOCKED DATA`, `WITH CS SKIP LOCKED DATA`, `WAIT FOR OUTCOME` | accepted |
+| `SKIP LOCKED`, `NOWAIT`, `WAIT 0` | SQL0104 |
+
+**Smaller flags** (`probes/qtemp_phase6_flags.py`):
+
+| Form | Result |
+|---|---|
+| `GROUP BY` an `NCLOB` or a `BLOB`, `DISTINCT` and `ORDER BY` an `NCLOB` | ok |
+| `ORDER BY` in an `IN`, `FROM` or `EXISTS` subquery | ok |
+| `LISTAGG(DISTINCT S, ',')`, also `WITHIN GROUP (ORDER BY S)` or `(ORDER BY I)` | ok |
+| `REAL` | a float; 0.1 reads `0.10000000149011612` |
+| `DECFLOAT(34)`: `Decimal('1E+300')` | 01004 (30002) at bind, also with a typed marker |
+| the same as a string, a float | ok |
+| `Decimal` with 34 digits, `Decimal('1E-300')` | ok, exact |
+| a string with 35 digits | ok, rounded without an error (`1.234...234E+34`) |
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

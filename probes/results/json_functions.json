@@ -1,0 +1,1441 @@
+{
+  "probe": "json_functions",
+  "utc": "20261031T175238Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "NCLOB: insert": {
+    "result": "ok"
+  },
+  "NCLOB: round trip": {
+    "sql": "SELECT C FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "C",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"a\": 1, \"b\": \"téxt 😀\", \"c\": null, \"d\": [10, 20, 30], \"e\": {\"f\": true}, \"g h\": 2, \"i\": 1.5}'"
+      ]
+    ]
+  },
+  "NCLOB: IS JSON": {
+    "sql": "SELECT CASE WHEN C IS JSON THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "NCLOB: JSON_VALUE number": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' RETURNING INTEGER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "NCLOB: JSON_VALUE text": {
+    "sql": "SELECT JSON_VALUE(C, '$.b' RETURNING NVARCHAR(100)) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'téxt 😀'"
+      ]
+    ]
+  },
+  "NCLOB: JSON_VALUE default type": {
+    "sql": "SELECT JSON_VALUE(C, '$.b') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'téxt 😀'"
+      ]
+    ]
+  },
+  "NCLOB: JSON_QUERY object": {
+    "sql": "SELECT JSON_QUERY(C, '$.e') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"f\":true}'"
+      ]
+    ]
+  },
+  "NCLOB: JSON_EXISTS": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a') THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "path as a marker": {
+    "sql": "SELECT JSON_VALUE(C, ?) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1'"
+      ]
+    ]
+  },
+  "path as a typed marker": {
+    "sql": "SELECT JSON_VALUE(C, CAST(? AS VARCHAR(100))) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1'"
+      ]
+    ]
+  },
+  "JSON_QUERY path as a marker": {
+    "sql": "SELECT JSON_QUERY(C, ?) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"f\":true}'"
+      ]
+    ]
+  },
+  "JSON_EXISTS path as a marker": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, ?) THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "quoted key": {
+    "sql": "SELECT JSON_VALUE(C, '$.\"g h\"' RETURNING INTEGER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "array position": {
+    "sql": "SELECT JSON_VALUE(C, '$.d[1]' RETURNING INTEGER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "20"
+      ]
+    ]
+  },
+  "last array position": {
+    "sql": "SELECT JSON_VALUE(C, '$.d[last]' RETURNING INTEGER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "30"
+      ]
+    ]
+  },
+  "negative array position": {
+    "sql": "SELECT JSON_VALUE(C, '$.d[-1]' RETURNING INTEGER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "last minus one": {
+    "sql": "SELECT JSON_VALUE(C, '$.d[last-1]' RETURNING INTEGER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "20"
+      ]
+    ]
+  },
+  "JSON_VALUE of an array": {
+    "sql": "SELECT JSON_VALUE(C, '$.d') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY of a scalar": {
+    "sql": "SELECT JSON_QUERY(C, '$.a') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1'"
+      ]
+    ]
+  },
+  "JSON_QUERY of a scalar, wrapper": {
+    "sql": "SELECT JSON_QUERY(C, '$.a' WITH CONDITIONAL WRAPPER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'[1]'"
+      ]
+    ]
+  },
+  "JSON_QUERY of a string": {
+    "sql": "SELECT JSON_QUERY(C, '$.b' WITH CONDITIONAL WRAPPER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'[\"téxt 😀\"]'"
+      ]
+    ]
+  },
+  "JSON_QUERY of an array": {
+    "sql": "SELECT JSON_QUERY(C, '$.d' WITH CONDITIONAL WRAPPER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'[10,20,30]'"
+      ]
+    ]
+  },
+  "JSON_VALUE of JSON null": {
+    "sql": "SELECT JSON_VALUE(C, '$.c'), JSON_VALUE(C, '$.z') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None",
+        "None"
+      ]
+    ]
+  },
+  "JSON_EXISTS of JSON null and of a missing key": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.c') THEN 1 ELSE 0 END, CASE WHEN JSON_EXISTS(C, '$.z') THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "0"
+      ]
+    ]
+  },
+  "JSON_QUERY of JSON null": {
+    "sql": "SELECT JSON_QUERY(C, '$.c' WITH CONDITIONAL WRAPPER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE boolean": {
+    "sql": "SELECT JSON_VALUE(C, '$.e.f') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'true'"
+      ]
+    ]
+  },
+  "JSON_VALUE RETURNING BOOLEAN": {
+    "sql": "SELECT JSON_VALUE(C, '$.e.f' RETURNING BOOLEAN) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "bool",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "True"
+      ]
+    ]
+  },
+  "JSON_VALUE RETURNING DOUBLE": {
+    "sql": "SELECT JSON_VALUE(C, '$.i' RETURNING DOUBLE) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1.5"
+      ]
+    ]
+  },
+  "JSON_VALUE of the wrong type": {
+    "sql": "SELECT JSON_VALUE(C, '$.b' RETURNING INTEGER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "in WHERE, typed marker": {
+    "sql": "SELECT 1 FROM QTEMP.P6JSON WHERE JSON_VALUE(C, '$.a' RETURNING INTEGER) = ?",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "in ORDER BY": {
+    "sql": "SELECT 1 FROM QTEMP.P6JSON ORDER BY JSON_VALUE(C, '$.a' RETURNING INTEGER)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "in GROUP BY": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' RETURNING INTEGER), COUNT(*) FROM QTEMP.P6JSON GROUP BY JSON_VALUE(C, '$.a' RETURNING INTEGER)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ]
+    ]
+  },
+  "a filter in the path": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d[*]?(@ == 20)') THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "a filter on a key": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$?(@.a == 1)') THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "DISTINCT on the column": {
+    "sql": "SELECT DISTINCT C FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "C",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"a\": 1, \"b\": \"téxt 😀\", \"c\": null, \"d\": [10, 20, 30], \"e\": {\"f\": true}, \"g h\": 2, \"i\": 1.5}'"
+      ]
+    ]
+  },
+  "equal to a marker": {
+    "sql": "SELECT 1 FROM QTEMP.P6JSON WHERE C = ?",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_TABLE": {
+    "sql": "SELECT J.A FROM QTEMP.P6JSON, JSON_TABLE(C, '$' COLUMNS(A INTEGER PATH '$.a')) AS J",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "A",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "CLOB 1208: insert": {
+    "result": "ok"
+  },
+  "CLOB 1208: round trip": {
+    "sql": "SELECT C FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "C",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"a\": 1, \"b\": \"téxt 😀\", \"c\": null, \"d\": [10, 20, 30], \"e\": {\"f\": true}, \"g h\": 2, \"i\": 1.5}'"
+      ]
+    ]
+  },
+  "CLOB 1208: IS JSON": {
+    "sql": "SELECT CASE WHEN C IS JSON THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "CLOB 1208: JSON_VALUE number": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' RETURNING INTEGER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "CLOB 1208: JSON_VALUE text": {
+    "sql": "SELECT JSON_VALUE(C, '$.b' RETURNING NVARCHAR(100)) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'téxt 😀'"
+      ]
+    ]
+  },
+  "CLOB 1208: JSON_VALUE default type": {
+    "sql": "SELECT JSON_VALUE(C, '$.b') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'téxt 😀'"
+      ]
+    ]
+  },
+  "CLOB 1208: JSON_QUERY object": {
+    "sql": "SELECT JSON_QUERY(C, '$.e') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"f\":true}'"
+      ]
+    ]
+  },
+  "CLOB 1208: JSON_EXISTS": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a') THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "BLOB: insert": {
+    "result": "ok"
+  },
+  "BLOB: round trip": {
+    "sql": "SELECT C FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "C",
+        "type": "bytearray",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "b'{\"a\": 1, \"b\": \"t\\xc3\\xa9xt \\xf0\\x9f\\x98\\x80\", \"c\": null, \"d\": [10, 20, 30], \"e\": {\"f\": true}, \"g h\": 2, \"i\": 1.5}'"
+      ]
+    ]
+  },
+  "BLOB: IS JSON": {
+    "sql": "SELECT CASE WHEN C IS JSON THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "BLOB: JSON_VALUE number": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' RETURNING INTEGER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "BLOB: JSON_VALUE text": {
+    "sql": "SELECT JSON_VALUE(C, '$.b' RETURNING NVARCHAR(100)) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "BLOB: JSON_VALUE default type": {
+    "sql": "SELECT JSON_VALUE(C, '$.b') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "BLOB: JSON_QUERY object": {
+    "sql": "SELECT JSON_QUERY(C, '$.e') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "BLOB: JSON_EXISTS": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a') THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "root array: insert": {
+    "result": "ok"
+  },
+  "root array: IS JSON": {
+    "sql": "SELECT CASE WHEN C IS JSON THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "root array: JSON_VALUE": {
+    "sql": "SELECT JSON_VALUE(C, '$[1]') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'2'"
+      ]
+    ]
+  },
+  "root array: JSON_QUERY": {
+    "sql": "SELECT JSON_QUERY(C, '$[1]' WITH CONDITIONAL WRAPPER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'[2]'"
+      ]
+    ]
+  },
+  "root number: insert": {
+    "result": "ok"
+  },
+  "root number: IS JSON": {
+    "sql": "SELECT CASE WHEN C IS JSON THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "root number: JSON_VALUE": {
+    "sql": "SELECT JSON_VALUE(C, '$') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "root number: JSON_QUERY": {
+    "sql": "SELECT JSON_QUERY(C, '$' WITH CONDITIONAL WRAPPER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "root string: insert": {
+    "result": "ok"
+  },
+  "root string: IS JSON": {
+    "sql": "SELECT CASE WHEN C IS JSON THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "root string: JSON_VALUE": {
+    "sql": "SELECT JSON_VALUE(C, '$') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "root string: JSON_QUERY": {
+    "sql": "SELECT JSON_QUERY(C, '$' WITH CONDITIONAL WRAPPER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "root true: insert": {
+    "result": "ok"
+  },
+  "root true: IS JSON": {
+    "sql": "SELECT CASE WHEN C IS JSON THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "root true: JSON_VALUE": {
+    "sql": "SELECT JSON_VALUE(C, '$') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "root true: JSON_QUERY": {
+    "sql": "SELECT JSON_QUERY(C, '$' WITH CONDITIONAL WRAPPER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "root null: insert": {
+    "result": "ok"
+  },
+  "root null: IS JSON": {
+    "sql": "SELECT CASE WHEN C IS JSON THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "root null: JSON_VALUE": {
+    "sql": "SELECT JSON_VALUE(C, '$') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "root null: JSON_QUERY": {
+    "sql": "SELECT JSON_QUERY(C, '$' WITH CONDITIONAL WRAPPER) FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{}'"
+      ]
+    ]
+  },
+  "root array: its wrapper key": {
+    "sql": "SELECT JSON_VALUE('[1, 2]', '$.SYSIBM_ROOT_ARRAY[1]') FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "invalid document: IS JSON": {
+    "sql": "SELECT CASE WHEN C IS JSON THEN 1 ELSE 0 END FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "invalid document: JSON_VALUE": {
+    "sql": "SELECT JSON_VALUE(C, '$.a') FROM QTEMP.P6JSON",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_OBJECT constant": {
+    "sql": "SELECT JSON_OBJECT('a' VALUE 1) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"a\":1}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT typed marker": {
+    "sql": "SELECT JSON_OBJECT('a' VALUE CAST(? AS INTEGER)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"a\":1}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT key marker": {
+    "sql": "SELECT JSON_OBJECT(KEY CAST(? AS VARCHAR(20)) VALUE 1) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"a\":1}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT text marker": {
+    "sql": "SELECT JSON_OBJECT('a' VALUE CAST(? AS NVARCHAR(20))) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"a\":\"téxt\"}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT NULL": {
+    "sql": "SELECT JSON_OBJECT('a' VALUE CAST(NULL AS INTEGER) NULL ON NULL) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"a\":null}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT nested": {
+    "sql": "SELECT JSON_OBJECT('a' VALUE JSON_OBJECT('b' VALUE 1)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"a\":{\"b\":1}}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT with FORMAT JSON": {
+    "sql": "SELECT JSON_OBJECT('a' VALUE '[1, 2]' FORMAT JSON) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"a\":[1, 2]}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT RETURNING": {
+    "sql": "SELECT JSON_OBJECT('a' VALUE 1 RETURNING NCLOB) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"a\":1}'"
+      ]
+    ]
+  },
+  "JSON_ARRAY": {
+    "sql": "SELECT JSON_ARRAY(1, 'x') FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'[1,\"x\"]'"
+      ]
+    ]
+  }
+}

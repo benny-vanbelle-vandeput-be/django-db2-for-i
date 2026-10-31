@@ -1,0 +1,1521 @@
+{
+  "probe": "window",
+  "utc": "20261031T175215Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (a table gone with the job)",
+  "ROW_NUMBER": {
+    "sql": "SELECT I, ROW_NUMBER() OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ],
+      [
+        "3",
+        "3"
+      ],
+      [
+        "4",
+        "4"
+      ],
+      [
+        "5",
+        "5"
+      ]
+    ]
+  },
+  "ROW_NUMBER without ORDER BY": {
+    "sql": "SELECT I, ROW_NUMBER() OVER () FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ],
+      [
+        "3",
+        "3"
+      ],
+      [
+        "4",
+        "4"
+      ],
+      [
+        "5",
+        "5"
+      ]
+    ]
+  },
+  "RANK": {
+    "sql": "SELECT I, RANK() OVER (ORDER BY V) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ],
+      [
+        "3",
+        "2"
+      ],
+      [
+        "4",
+        "4"
+      ],
+      [
+        "5",
+        "5"
+      ]
+    ]
+  },
+  "DENSE_RANK": {
+    "sql": "SELECT I, DENSE_RANK() OVER (ORDER BY V) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ],
+      [
+        "3",
+        "2"
+      ],
+      [
+        "4",
+        "3"
+      ],
+      [
+        "5",
+        "4"
+      ]
+    ]
+  },
+  "PERCENT_RANK": {
+    "sql": "SELECT I, PERCENT_RANK() OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'0'"
+      ],
+      [
+        "2",
+        "'0.25'"
+      ],
+      [
+        "3",
+        "'0.5'"
+      ],
+      [
+        "4",
+        "'0.75'"
+      ],
+      [
+        "5",
+        "'1'"
+      ]
+    ]
+  },
+  "CUME_DIST": {
+    "sql": "SELECT I, CUME_DIST() OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'0.2'"
+      ],
+      [
+        "2",
+        "'0.4'"
+      ],
+      [
+        "3",
+        "'0.6'"
+      ],
+      [
+        "4",
+        "'0.8'"
+      ],
+      [
+        "5",
+        "'1'"
+      ]
+    ]
+  },
+  "NTILE constant": {
+    "sql": "SELECT I, NTILE(2) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "1"
+      ],
+      [
+        "3",
+        "1"
+      ],
+      [
+        "4",
+        "2"
+      ],
+      [
+        "5",
+        "2"
+      ]
+    ]
+  },
+  "NTILE marker": {
+    "sql": "SELECT I, NTILE(?) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "1"
+      ],
+      [
+        "3",
+        "1"
+      ],
+      [
+        "4",
+        "2"
+      ],
+      [
+        "5",
+        "2"
+      ]
+    ]
+  },
+  "NTILE typed marker": {
+    "sql": "SELECT I, NTILE(CAST(? AS INTEGER)) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "1"
+      ],
+      [
+        "3",
+        "1"
+      ],
+      [
+        "4",
+        "2"
+      ],
+      [
+        "5",
+        "2"
+      ]
+    ]
+  },
+  "LAG": {
+    "sql": "SELECT I, LAG(V) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "10.0"
+      ],
+      [
+        "3",
+        "20.0"
+      ],
+      [
+        "4",
+        "20.0"
+      ],
+      [
+        "5",
+        "40.0"
+      ]
+    ]
+  },
+  "LAG constants": {
+    "sql": "SELECT I, LAG(V, 1, 0) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "0.0"
+      ],
+      [
+        "2",
+        "10.0"
+      ],
+      [
+        "3",
+        "20.0"
+      ],
+      [
+        "4",
+        "20.0"
+      ],
+      [
+        "5",
+        "40.0"
+      ]
+    ]
+  },
+  "LAG offset marker": {
+    "sql": "SELECT I, LAG(V, ?) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ? was not valid. Valid tokens: <BIGINT> <INTEGER>. (-104) (SQLPrepare)"
+  },
+  "LAG typed offset marker": {
+    "sql": "SELECT I, LAG(V, CAST(? AS INTEGER)) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword CAST not expected. Valid tokens: <BIGINT> <INTEGER>. (-199) (SQLPrepare)"
+  },
+  "LAG default marker": {
+    "sql": "SELECT I, LAG(V, 1, ?) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -418,
+    "message": "SQL0418 - Use of parameter marker, NULL, or UNKNOWN not valid. (-418) (SQLPrepare)"
+  },
+  "LAG typed default marker": {
+    "sql": "SELECT I, LAG(V, 1, CAST(? AS DOUBLE)) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "0.0"
+      ],
+      [
+        "2",
+        "10.0"
+      ],
+      [
+        "3",
+        "20.0"
+      ],
+      [
+        "4",
+        "20.0"
+      ],
+      [
+        "5",
+        "40.0"
+      ]
+    ]
+  },
+  "LAG both typed markers": {
+    "sql": "SELECT I, LAG(V, CAST(? AS INTEGER), CAST(? AS DOUBLE)) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword CAST not expected. Valid tokens: <BIGINT> <INTEGER>. (-199) (SQLPrepare)"
+  },
+  "LEAD": {
+    "sql": "SELECT I, LEAD(V, 1) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "20.0"
+      ],
+      [
+        "2",
+        "20.0"
+      ],
+      [
+        "3",
+        "40.0"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "FIRST_VALUE": {
+    "sql": "SELECT I, FIRST_VALUE(V) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "10.0"
+      ],
+      [
+        "2",
+        "10.0"
+      ],
+      [
+        "3",
+        "10.0"
+      ],
+      [
+        "4",
+        "10.0"
+      ],
+      [
+        "5",
+        "10.0"
+      ]
+    ]
+  },
+  "LAST_VALUE": {
+    "sql": "SELECT I, LAST_VALUE(V) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "10.0"
+      ],
+      [
+        "2",
+        "20.0"
+      ],
+      [
+        "3",
+        "20.0"
+      ],
+      [
+        "4",
+        "40.0"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "NTH_VALUE constant": {
+    "sql": "SELECT I, NTH_VALUE(V, 2) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "20.0"
+      ],
+      [
+        "3",
+        "20.0"
+      ],
+      [
+        "4",
+        "20.0"
+      ],
+      [
+        "5",
+        "20.0"
+      ]
+    ]
+  },
+  "NTH_VALUE marker": {
+    "sql": "SELECT I, NTH_VALUE(V, ?) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "20.0"
+      ],
+      [
+        "3",
+        "20.0"
+      ],
+      [
+        "4",
+        "20.0"
+      ],
+      [
+        "5",
+        "20.0"
+      ]
+    ]
+  },
+  "NTH_VALUE typed marker": {
+    "sql": "SELECT I, NTH_VALUE(V, CAST(? AS INTEGER)) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -171,
+    "message": "SQL0171 - Argument 2 of function NTH_VALUE not valid. (-171) (SQLPrepare)"
+  },
+  "SUM empty window": {
+    "sql": "SELECT I, SUM(V) OVER () FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "90.0"
+      ],
+      [
+        "2",
+        "90.0"
+      ],
+      [
+        "3",
+        "90.0"
+      ],
+      [
+        "4",
+        "90.0"
+      ],
+      [
+        "5",
+        "90.0"
+      ]
+    ]
+  },
+  "SUM partition": {
+    "sql": "SELECT I, SUM(V) OVER (PARTITION BY G) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "50.0"
+      ],
+      [
+        "2",
+        "50.0"
+      ],
+      [
+        "3",
+        "50.0"
+      ],
+      [
+        "4",
+        "40.0"
+      ],
+      [
+        "5",
+        "40.0"
+      ]
+    ]
+  },
+  "SUM partition and order": {
+    "sql": "SELECT I, SUM(V) OVER (PARTITION BY G ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "10.0"
+      ],
+      [
+        "2",
+        "30.0"
+      ],
+      [
+        "3",
+        "50.0"
+      ],
+      [
+        "4",
+        "40.0"
+      ],
+      [
+        "5",
+        "40.0"
+      ]
+    ]
+  },
+  "AVG cast as the backend does": {
+    "sql": "SELECT I, AVG(CAST(V AS DOUBLE)) OVER (PARTITION BY G) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "16.666666666666668"
+      ],
+      [
+        "2",
+        "16.666666666666668"
+      ],
+      [
+        "3",
+        "16.666666666666668"
+      ],
+      [
+        "4",
+        "40.0"
+      ],
+      [
+        "5",
+        "40.0"
+      ]
+    ]
+  },
+  "COUNT star": {
+    "sql": "SELECT I, COUNT(*) OVER (PARTITION BY G) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "3"
+      ],
+      [
+        "2",
+        "3"
+      ],
+      [
+        "3",
+        "3"
+      ],
+      [
+        "4",
+        "2"
+      ],
+      [
+        "5",
+        "2"
+      ]
+    ]
+  },
+  "PARTITION BY expression": {
+    "sql": "SELECT I, SUM(V) OVER (PARTITION BY MOD(I, 2)) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "30.0"
+      ],
+      [
+        "2",
+        "60.0"
+      ],
+      [
+        "3",
+        "30.0"
+      ],
+      [
+        "4",
+        "60.0"
+      ],
+      [
+        "5",
+        "30.0"
+      ]
+    ]
+  },
+  "PARTITION BY marker expression": {
+    "sql": "SELECT I, SUM(V) OVER (PARTITION BY MOD(I, ?)) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -402,
+    "message": "SQL0402 - MOD use not valid. (-402) (SQLPrepare)"
+  },
+  "ROWS unbounded to current": {
+    "sql": "SELECT I, SUM(V) OVER (ORDER BY I ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "10.0"
+      ],
+      [
+        "2",
+        "30.0"
+      ],
+      [
+        "3",
+        "50.0"
+      ],
+      [
+        "4",
+        "90.0"
+      ],
+      [
+        "5",
+        "90.0"
+      ]
+    ]
+  },
+  "ROWS 1 to 1": {
+    "sql": "SELECT I, SUM(V) OVER (ORDER BY I ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "30.0"
+      ],
+      [
+        "2",
+        "50.0"
+      ],
+      [
+        "3",
+        "80.0"
+      ],
+      [
+        "4",
+        "60.0"
+      ],
+      [
+        "5",
+        "40.0"
+      ]
+    ]
+  },
+  "ROWS current to unbounded": {
+    "sql": "SELECT I, SUM(V) OVER (ORDER BY I ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "90.0"
+      ],
+      [
+        "2",
+        "80.0"
+      ],
+      [
+        "3",
+        "60.0"
+      ],
+      [
+        "4",
+        "40.0"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "RANGE unbounded to current": {
+    "sql": "SELECT I, SUM(V) OVER (ORDER BY V RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "10.0"
+      ],
+      [
+        "2",
+        "50.0"
+      ],
+      [
+        "3",
+        "50.0"
+      ],
+      [
+        "4",
+        "90.0"
+      ],
+      [
+        "5",
+        "90.0"
+      ]
+    ]
+  },
+  "RANGE fixed distance": {
+    "sql": "SELECT I, SUM(V) OVER (ORDER BY V RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "10.0"
+      ],
+      [
+        "2",
+        "40.0"
+      ],
+      [
+        "3",
+        "40.0"
+      ],
+      [
+        "4",
+        "40.0"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "RANGE fixed distance, integer key": {
+    "sql": "SELECT I, SUM(V) OVER (ORDER BY I RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "30.0"
+      ],
+      [
+        "2",
+        "50.0"
+      ],
+      [
+        "3",
+        "80.0"
+      ],
+      [
+        "4",
+        "60.0"
+      ],
+      [
+        "5",
+        "40.0"
+      ]
+    ]
+  },
+  "RANGE fixed distance, date key": {
+    "sql": "SELECT I, SUM(V) OVER (ORDER BY D RANGE BETWEEN 7 DAYS PRECEDING AND CURRENT ROW) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token DAYS was not valid. Valid tokens: PRECEDING FOLLOWING. (-104) (SQLExecDirectW)"
+  },
+  "RANGE fixed distance, date key, plain number": {
+    "sql": "SELECT I, SUM(V) OVER (ORDER BY D RANGE BETWEEN 7 PRECEDING AND CURRENT ROW) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -182,
+    "message": "SQL0182 - A date, time, or timestamp expression not valid. (-182) (SQLExecDirectW)"
+  },
+  "EXCLUDE CURRENT ROW": {
+    "sql": "SELECT I, SUM(V) OVER (ORDER BY I ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING EXCLUDE CURRENT ROW) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token EXCLUDE was not valid. Valid tokens: ). (-104) (SQLExecDirectW)"
+  },
+  "EXCLUDE TIES": {
+    "sql": "SELECT I, SUM(V) OVER (ORDER BY I ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING EXCLUDE TIES) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token EXCLUDE was not valid. Valid tokens: ). (-104) (SQLExecDirectW)"
+  },
+  "GROUPS": {
+    "sql": "SELECT I, SUM(V) OVER (ORDER BY I GROUPS BETWEEN 1 PRECEDING AND 1 FOLLOWING) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token GROUPS was not valid. Valid tokens: ROWS RANGE. (-104) (SQLExecDirectW)"
+  },
+  "NULL ordering emulation": {
+    "sql": "SELECT I, ROW_NUMBER() OVER (ORDER BY CASE WHEN V IS NULL THEN 0 ELSE 1 END, V) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "2"
+      ],
+      [
+        "2",
+        "3"
+      ],
+      [
+        "3",
+        "4"
+      ],
+      [
+        "4",
+        "5"
+      ],
+      [
+        "5",
+        "1"
+      ]
+    ]
+  },
+  "over a text column": {
+    "sql": "SELECT I, LAG(S) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "'a'"
+      ],
+      [
+        "3",
+        "'b'"
+      ],
+      [
+        "4",
+        "'c'"
+      ],
+      [
+        "5",
+        "'d'"
+      ]
+    ]
+  },
+  "over an NCLOB column": {
+    "sql": "SELECT I, FIRST_VALUE(T) OVER (ORDER BY I) FROM QTEMP.P6WIN ORDER BY I",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'a'"
+      ],
+      [
+        "2",
+        "'a'"
+      ],
+      [
+        "3",
+        "'a'"
+      ],
+      [
+        "4",
+        "'a'"
+      ],
+      [
+        "5",
+        "'a'"
+      ]
+    ]
+  },
+  "window in a subquery, filtered outside (QUALIFY as Django writes it)": {
+    "sql": "SELECT * FROM (SELECT I, ROW_NUMBER() OVER (ORDER BY I) AS QUAL0 FROM QTEMP.P6WIN) QUALIFY WHERE QUAL0 = ?",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "QUAL0",
+        "type": "int",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2",
+        "2"
+      ]
+    ]
+  },
+  "window directly in WHERE": {
+    "sql": "SELECT I FROM QTEMP.P6WIN WHERE ROW_NUMBER() OVER (ORDER BY I) = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -120,
+    "message": "SQL0120 - Use of function ROW_NUMBER not valid. (-120) (SQLExecDirectW)"
+  },
+  "aggregate of an aggregate in GROUP BY": {
+    "sql": "SELECT G, SUM(SUM(V)) OVER (ORDER BY G) FROM QTEMP.P6WIN GROUP BY G ORDER BY G",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "G",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "50.0"
+      ],
+      [
+        "2",
+        "90.0"
+      ]
+    ]
+  },
+  "window in ORDER BY": {
+    "sql": "SELECT I FROM QTEMP.P6WIN ORDER BY ROW_NUMBER() OVER (ORDER BY I DESC)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "5"
+      ],
+      [
+        "4"
+      ],
+      [
+        "3"
+      ],
+      [
+        "2"
+      ],
+      [
+        "1"
+      ]
+    ]
+  }
+}
