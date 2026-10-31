@@ -11,7 +11,8 @@ Usage (inside the "tests" container):
                     transaction_start | add_column_default | qaqqini_inquiry |
                     qaqqini_lifecycle | lob_index | later_flags | returning |
                     bulk | bulk_types | indexes | unique_nulls | cursors | merge |
-                    final_table_after_alter
+                    final_table_after_alter |
+                    window | json_functions | db_functions | select_for_update | phase6_flags
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -37,6 +38,7 @@ import qtemp_compound_parts
 import qtemp_connect
 import qtemp_constraint_errors
 import qtemp_cursors
+import qtemp_db_functions
 import qtemp_drop_column
 import qtemp_durations
 import qtemp_extract
@@ -46,6 +48,7 @@ import qtemp_final_table_after_alter
 import qtemp_in_subquery
 import qtemp_indexes
 import qtemp_journal_check
+import qtemp_json_functions
 import qtemp_later_flags
 import qtemp_leftovers
 import qtemp_libraries
@@ -57,12 +60,14 @@ import qtemp_mapping_errors
 import qtemp_merge
 import qtemp_numeric_params
 import qtemp_packages
+import qtemp_phase6_flags
 import qtemp_qaqqini_inquiry
 import qtemp_qaqqini_lifecycle
 import qtemp_queries
 import qtemp_reachability
 import qtemp_renames
 import qtemp_returning
+import qtemp_select_for_update
 import qtemp_selected_predicates
 import qtemp_session
 import qtemp_string_limits
@@ -73,6 +78,7 @@ import qtemp_tuple_in
 import qtemp_tuple_lookups
 import qtemp_type_changes
 import qtemp_unique_nulls
+import qtemp_window
 from _common import ProbeError, Settings, connect, write_result
 
 PROBES = {
@@ -123,6 +129,11 @@ PROBES = {
     "cursors": qtemp_cursors,
     "merge": qtemp_merge,
     "final_table_after_alter": qtemp_final_table_after_alter,
+    "window": qtemp_window,
+    "json_functions": qtemp_json_functions,
+    "db_functions": qtemp_db_functions,
+    "select_for_update": qtemp_select_for_update,
+    "phase6_flags": qtemp_phase6_flags,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
