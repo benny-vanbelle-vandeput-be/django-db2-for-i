@@ -37,6 +37,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 
 from django.conf import settings
+from django.core.exceptions import FieldDoesNotExist
 from django.core.management.color import no_style
 from django.db import NotSupportedError
 from django.db.backends.base.operations import BaseDatabaseOperations
@@ -285,15 +286,20 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
         limits = [len(objs), BULK_MAX_ROWS]
         if columns:
             limits.append(BULK_MAX_PARAMS // len(columns))
-        # Django also passes names here ("pk"), which are never LOB columns.
-        lobs = sum(
-            base_type(column.db_type(self.connection)) in LOB_TYPES
-            for column in columns
-            if hasattr(column, "db_type")
-        )
+        lobs = sum(self._is_lob(column, objs) for column in columns)
         if lobs:
             limits.append(BULK_MAX_LOB_PARAMS // lobs)
         return max(min(limits), 1)
+
+    def _is_lob(self, column, objs) -> bool:
+        """Django passes fields or their names ("pk", which is no field and no
+        LOB); a name is looked up on the objects' model."""
+        if isinstance(column, str):
+            try:
+                column = objs[0]._meta.get_field(column)
+            except (AttributeError, FieldDoesNotExist, IndexError):
+                return False
+        return base_type(column.db_type(self.connection)) in LOB_TYPES
 
     def returning_columns(self, fields):
         """No ``RETURNING`` clause: the insert compiler wraps the statement in

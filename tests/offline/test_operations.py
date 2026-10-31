@@ -761,10 +761,17 @@ def test_bulk_batch_size_is_limited_by_the_lob_columns() -> None:
 
 def test_bulk_batch_size_takes_field_names() -> None:
     from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS
+    from tests.testapp.models import Document
 
     # bulk_update() and the deletion collector pass names along with the fields.
     assert ops.bulk_batch_size(["pk", "pk"], range(10)) == 10
     assert ops.bulk_batch_size(["pk", "pk", TextField()], range(5000)) == BULK_MAX_LOB_PARAMS
+    # A name counts like its field: Django's test_max_batch_size asks with names.
+    documents = [Document(text="x") for _ in range(5000)]
+    assert ops.bulk_batch_size(["text"], documents) == BULK_MAX_LOB_PARAMS
+    assert ops.bulk_batch_size(["pk", "pk", "text", "data"], documents) == BULK_MAX_LOB_PARAMS // 2
+    assert ops.bulk_batch_size(["pk"], documents) == 5000
+    assert ops.bulk_batch_size(["text"], []) == 1
 
 
 def test_bulk_batch_size_is_at_least_one() -> None:
