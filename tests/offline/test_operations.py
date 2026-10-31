@@ -759,6 +759,34 @@ def test_bulk_batch_size_is_limited_by_the_lob_columns() -> None:
     assert ops.bulk_batch_size([CharField()], range(5000)) == 5000
 
 
+@pytest.mark.parametrize(("model_name", "lobs"), [("ThreeTexts", 3), ("FiveTexts", 5)])
+def test_bulk_batch_size_divides_by_the_lob_columns_of_a_model(model_name, lobs) -> None:
+    from django.db.models import AutoField
+
+    from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS
+    from tests.testapp import models
+
+    model = getattr(models, model_name)
+    objs = [model() for _ in range(5000)]
+    # The fields bulk_create() passes for objects without a key.
+    fields = [f for f in model._meta.concrete_fields if not isinstance(f, AutoField)]
+    size = ops.bulk_batch_size(fields, objs)
+    assert size == BULK_MAX_LOB_PARAMS // lobs
+    # 1,024 LOB markers per statement is the most the probe saw work.
+    assert size * lobs <= 1024
+    assert ops.bulk_batch_size([f.name for f in fields], objs) == size
+
+
+def test_bulk_batch_size_counts_only_the_fields_passed() -> None:
+    from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS
+    from tests.testapp.models import FiveTexts
+
+    fields = [FiveTexts._meta.get_field(name) for name in ("code", "first", "second")]
+    objs = [FiveTexts() for _ in range(5000)]
+    assert ops.bulk_batch_size(fields, objs) == BULK_MAX_LOB_PARAMS // 2
+    assert ops.bulk_batch_size(fields[:1], objs) == 5000
+
+
 def test_bulk_batch_size_takes_field_names() -> None:
     from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS
     from tests.testapp.models import Document

@@ -14,7 +14,16 @@ from django.db import IntegrityError, transaction
 from django.test.utils import CaptureQueriesContext
 
 from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS, BULK_MAX_PARAMS
-from tests.testapp.models import Author, Book, Defaults, Document, Tag
+from tests.testapp.models import (
+    Author,
+    Book,
+    Defaults,
+    Document,
+    FiveTexts,
+    Shelf,
+    Tag,
+    ThreeTexts,
+)
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")
 
@@ -133,6 +142,49 @@ def test_bulk_create_splits_at_the_lob_limit(live, empty) -> None:
     assert Document.objects.get(pk=documents[-1].pk).text == f"text {count - 1}"
 
 
+@pytest.mark.parametrize(
+    ("model", "lobs"), [(ThreeTexts, 3), (FiveTexts, 5)], ids=["three", "five"]
+)
+def test_bulk_create_divides_the_lob_limit_by_the_lob_columns(live, empty, model, lobs) -> None:
+    # 600 rows in one statement or in batches of BULK_MAX_LOB_PARAMS rows would be
+    # 1,800 or 3,000 LOB markers: PWS0001 above about 1,024 (probe qtemp_bulk_types).
+    count = 600
+    texts = [f.name for f in model._meta.fields if f.get_internal_type() == "TextField"]
+    assert len(texts) == lobs
+    code = {"code": lambda i: f"c{i}"} if model is FiveTexts else {}
+    rows = [
+        model(
+            **{name: f"{name} {i}" for name in texts},
+            **{name: make(i) for name, make in code.items()},
+        )
+        for i in range(count)
+    ]
+    with CaptureQueriesContext(live) as queries:
+        created = model.objects.bulk_create(rows)
+    per_statement = BULK_MAX_LOB_PARAMS // lobs
+    assert per_statement * lobs <= 1024
+    assert len(_inserts(queries)) == -(-count // per_statement)
+    assert model.objects.count() == count
+    assert model.objects.get(pk=created[-1].pk).first == f"first {count - 1}"
+
+
+def test_bulk_create_ignore_conflicts_splits_at_the_lob_limit(live, empty) -> None:
+    # A MERGE has the same limit: its markers are CAST(? AS NCLOB) in the source.
+    FiveTexts.objects.create(code="c1", first="old", second="", third="", fourth="", fifth="")
+    count = 300
+    rows = [
+        FiveTexts(code=f"c{i}", first="new", second="b", third="c", fourth="d", fifth="e")
+        for i in range(count)
+    ]
+    with CaptureQueriesContext(live) as queries:
+        FiveTexts.objects.bulk_create(rows, ignore_conflicts=True)
+    merges = [q["sql"] for q in queries.captured_queries if q["sql"].startswith("MERGE INTO")]
+    assert len(merges) == -(-count // (BULK_MAX_LOB_PARAMS // 5))
+    assert FiveTexts.objects.count() == count
+    assert FiveTexts.objects.get(code="c1").first == "old"
+    assert FiveTexts.objects.get(code="c2").first == "new"
+
+
 def test_bulk_create_in_a_transaction_is_rolled_back(live, empty) -> None:
     with pytest.raises(RuntimeError), transaction.atomic():
         Author.objects.bulk_create([Author(name="a"), Author(name="b")])
@@ -156,6 +208,38 @@ def test_bulk_create_ignore_conflicts(live, empty) -> None:
         [Author(pk=2, name="TWO"), Author(pk=3, name="three")], ignore_conflicts=True
     )
     assert dict(Author.objects.values_list("pk", "name")) == {1: "one", 2: "two", 3: "three"}
+
+
+def test_m2m_add_goes_through_merge_and_skips_existing_rows(live, empty) -> None:
+    shelf = Shelf.objects.create()
+    one, two = Author.objects.create(name="one"), Author.objects.create(name="two")
+    with CaptureQueriesContext(live) as queries:
+        shelf.authors.add(one)
+        shelf.authors.add(one, two)
+    on_the_table = [q["sql"] for q in queries.captured_queries if "SHELF_AUTHORS" in q["sql"]]
+    assert len(on_the_table) == 2
+    assert all(sql.startswith("MERGE INTO") for sql in on_the_table)
+    assert sorted(shelf.authors.values_list("name", flat=True)) == ["one", "two"]
+
+
+# What one job can show of a concurrent insert of the same key: the MERGE's own
+# insert meets a duplicate key. Two jobs need a dedicated IBM i (docs/IBMI_NOTES.md,
+# "MERGE under concurrency").
+@pytest.mark.parametrize("in_transaction", [False, True], ids=["autocommit", "atomic"])
+def test_a_duplicate_key_in_a_merge_raises_and_undoes_the_statement(
+    live, empty, in_transaction
+) -> None:
+    Author.objects.create(pk=1, name="existing")
+    rows = [Author(pk=2, name="new"), Author(pk=3, name="other"), Author(pk=2, name="again")]
+    with pytest.raises(IntegrityError) as caught:
+        if in_transaction:
+            with transaction.atomic():
+                Author.objects.bulk_create(rows, ignore_conflicts=True)
+        else:
+            Author.objects.bulk_create(rows, ignore_conflicts=True)
+    assert "SQL0803" in str(caught.value)
+    # Also the rows without a conflict: the whole statement is undone.
+    assert list(Author.objects.values_list("pk", flat=True)) == [1]
 
 
 def test_bulk_create_update_conflicts(live, empty) -> None:

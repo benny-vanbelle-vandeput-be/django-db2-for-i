@@ -21,6 +21,12 @@ class Book(models.Model):
     pages = models.PositiveIntegerField(default=0)
 
 
+class Shelf(models.Model):
+    """An auto-created many-to-many table: m2m add() is a MERGE (ignore_conflicts)."""
+
+    authors = models.ManyToManyField(Author)
+
+
 class Node(models.Model):
     id = models.SmallAutoField(primary_key=True)
     parent = models.ForeignKey("self", models.CASCADE, null=True)
@@ -36,6 +42,25 @@ class Document(models.Model):
 
     text = models.TextField()
     data = models.BinaryField(null=True)
+
+
+class ThreeTexts(models.Model):
+    """Three LOB columns, for the LOB limit of bulk_batch_size()."""
+
+    first = models.TextField()
+    second = models.TextField()
+    third = models.TextField()
+
+
+class FiveTexts(models.Model):
+    """Five LOB columns and a unique key, so bulk_create() can also write a MERGE."""
+
+    code = models.CharField(max_length=10, unique=True)
+    first = models.TextField()
+    second = models.TextField()
+    third = models.TextField()
+    fourth = models.TextField()
+    fifth = models.TextField()
 
 
 class Defaults(models.Model):
