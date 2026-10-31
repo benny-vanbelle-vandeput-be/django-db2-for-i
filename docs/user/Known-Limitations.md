@@ -591,6 +591,25 @@ same key twice in one call, fails again on every attempt and is raised at the en
 IBM names a restrictive isolation level such as repeatable read as a way to avoid
 the race. It takes more locks and has not been tested with this backend.
 
+## A column that grew while a connection stays open
+
+> **Not verified on IBM i.** This needs two connections, which the current test
+> system does not allow. It is expected from the behaviour below, which was tested on
+> one connection.
+
+Db2 for i remembers, per connection, the parameter types of the statement Django uses
+to insert a row and read back its key. If **another process** widens a column, for
+example a deployment that runs `migrate` while your web workers keep their connections
+open (`CONN_MAX_AGE`), those workers may refuse inserts with a value that needs the new
+size, until the connection closes:
+
+- `DataError` or `DatabaseError` with `HY019` ("Numeric value out of range"), `22001`
+  (CWB0111, "Input data is too big") or `22003`.
+
+Values that fit the old size keep working, and nothing is cut off. **Restart your
+workers after a migration that widens a column**, or close their connections. A
+migration on the same connection is handled by the backend.
+
 ## Not available on Db2 for i
 
 Db2 for i has no equivalent for these Django features, so they stay off

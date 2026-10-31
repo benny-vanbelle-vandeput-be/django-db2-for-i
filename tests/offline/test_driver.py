@@ -391,6 +391,58 @@ def test_cursor_execute_with_params() -> None:
     assert raw.calls == [("VALUES ?", [1])]
 
 
+FINAL_TABLE = 'SELECT "ID" FROM FINAL TABLE (INSERT INTO "T" ("I") VALUES (?))'
+
+
+def test_a_returning_insert_is_a_new_text_after_a_schema_change() -> None:
+    # The first prepare of a text fixes its parameter types (qtemp_final_table_after_alter).
+    raw = FakeRawCursor()
+    cursor = wrap(raw)
+    cursor.execute(FINAL_TABLE, [1])
+    cursor.execute('ALTER TABLE "T" ALTER COLUMN "I" SET DATA TYPE BIGINT')
+    cursor.execute(FINAL_TABLE, [2])
+    cursor.execute(FINAL_TABLE, [3])
+    cursor.execute('ALTER TABLE "T" ALTER COLUMN "I" SET DATA TYPE DECIMAL(31, 0)')
+    cursor.execute(FINAL_TABLE, [4])
+    assert raw.calls[0] == (FINAL_TABLE, [1])
+    assert raw.calls[2] == (f"{FINAL_TABLE} -- schema change 1\n", [2])
+    assert raw.calls[3] == (f"{FINAL_TABLE} -- schema change 1\n", [3])
+    assert raw.calls[5] == (f"{FINAL_TABLE} -- schema change 2\n", [4])
+
+
+@pytest.mark.parametrize(
+    "ddl",
+    [
+        'CREATE TABLE "T" ("I" BIGINT)',
+        'DROP TABLE "T"',
+        'RENAME TABLE "T" TO "U"',
+        " alter table T",
+    ],
+)
+def test_every_schema_change_counts(ddl) -> None:
+    raw = FakeRawCursor()
+    cursor = wrap(raw)
+    cursor.execute(ddl)
+    cursor.execute(FINAL_TABLE, [1])
+    assert raw.calls[1][0] == f"{FINAL_TABLE} -- schema change 1\n"
+
+
+def test_other_statements_keep_their_text_after_a_schema_change() -> None:
+    raw = FakeRawCursor()
+    cursor = wrap(raw)
+    cursor.execute('ALTER TABLE "T" ADD COLUMN "J" INTEGER')
+    for sql in ('INSERT INTO "T" ("I") VALUES (?)', 'SELECT "I" FROM "T" WHERE "I" = ?'):
+        cursor.execute(sql, [1])
+        assert raw.calls[-1] == (sql, [1])
+
+
+def test_a_new_connection_starts_without_schema_changes() -> None:
+    raw = FakeRawCursor()
+    wrap(raw).execute('ALTER TABLE "T" ADD COLUMN "J" INTEGER')
+    wrap(raw).execute(FINAL_TABLE, [1])
+    assert raw.calls[-1] == (FINAL_TABLE, [1])
+
+
 def test_cursor_execute_translates_errors() -> None:
     raw = FakeRawCursor(pyodbc.IntegrityError("23000", DUPLICATE_KEY))
     with pytest.raises(base.IntegrityError) as info:

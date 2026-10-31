@@ -1,0 +1,1 @@
+After a migration that widens a column, restart workers that keep connections open (`CONN_MAX_AGE`): their inserts may refuse values that need the new size until the connection closes. Nothing is cut off. Not verified on IBM i: testing it needs two connections.
