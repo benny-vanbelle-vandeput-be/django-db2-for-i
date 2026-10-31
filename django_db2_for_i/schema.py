@@ -285,6 +285,16 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     # the check for rows and the ADD COLUMN of a NOT NULL column (add_field()).
     sql_lock_table = "LOCK TABLE %(table)s IN EXCLUSIVE MODE"
     sql_rename_index = "RENAME INDEX %(old_name)s TO %(new_name)s"
+    # A UniqueConstraint with a condition or expressions is a unique index. A
+    # plain unique index treats NULLs as equal; UNIQUE WHERE NOT NULL treats
+    # them as distinct, as a UNIQUE constraint does and Django assumes, also
+    # with a WHERE condition and expression keys (probes lib_unique_catalog,
+    # qtemp_unique_nulls). %(nulls_distinct)s stays empty: no NULLS [NOT]
+    # DISTINCT on Db2 for i (supports_nulls_distinct_unique_constraints).
+    sql_create_unique_index = (
+        "CREATE UNIQUE WHERE NOT NULL INDEX %(name)s ON %(table)s "
+        "(%(columns)s)%(include)s%(nulls_distinct)s%(condition)s"
+    )
     # A column that becomes an identity numbers from 1, below the keys it
     # already holds; RESTART WITH takes only a constant, so a dynamic compound
     # statement reads MAX() itself (also for collected SQL, qtemp_renames).

@@ -38,6 +38,13 @@ REASON_CHECK_LIKE_COLUMN_PATTERN = (
     "Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546)"
 )
 REASON_JSON_FIELD = "JSONField is not supported yet (phase 6)"
+REASON_MERGE_RETURNS_NO_ROWS = (
+    "bulk_create(update_conflicts=True) is a MERGE, which returns no rows (FINAL TABLE takes "
+    "only INSERT): the objects get no primary keys"
+)
+REASON_LOWERCASE_NAME_IN_SQL = (
+    "the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i"
+)
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -89,8 +96,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # Queries
     allows_group_by_lob = False
     allows_group_by_select_index = False
-    update_can_self_select = False
-    delete_can_self_reference_subquery = False
+    # An UPDATE / DELETE whose subquery reads the same table runs as one
+    # statement, without materializing the subquery first (probe qtemp_cursors).
+    update_can_self_select = True
+    delete_can_self_reference_subquery = True
     # IN (SELECT ... FETCH FIRST n ROWS ONLY), also with OFFSET (probe queries).
     allow_sliced_subqueries_with_in = True
     # A scalar subquery in GROUP BY works (probe queries).
@@ -142,18 +151,32 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # SELECT ... FROM FINAL TABLE (INSERT ...) returns the key and the column
     # defaults of the inserted row (probe qtemp_returning, compiler.py).
     can_return_columns_from_insert = True
-    can_use_chunked_reads = False
-    has_bulk_insert = False
+    # bulk_create() as one multi-row INSERT; with returning, FINAL TABLE gives the
+    # rows back in input order (ORDER BY INPUT SEQUENCE, probe qtemp_returning).
+    # The batch size stays below the statement limits (operations.bulk_batch_size).
+    can_return_rows_from_bulk_insert = True
+    # QuerySet.iterator() keeps its cursor open and fetches in chunks while
+    # other statements run on the connection (probe qtemp_cursors; with
+    # commitment control: tests/ibmi/test_queries.py).
+    can_use_chunked_reads = True
+    has_bulk_insert = True
     # An explicit 0 in an identity column is a normal key (probe qtemp_returning).
     allows_auto_pk_0 = True
     # DEFAULT in VALUES, also with several rows (probe qtemp_returning).
     supports_default_keyword_in_insert = True
-    supports_default_keyword_in_bulk_insert = False
-    supports_ignore_conflicts = False
+    supports_default_keyword_in_bulk_insert = True
+    # bulk_create(ignore_conflicts / update_conflicts) as a MERGE (compiler.py,
+    # probe qtemp_merge); update_conflicts needs its unique_fields as the ON.
+    supports_ignore_conflicts = True
+    supports_update_conflicts = True
+    supports_update_conflicts_with_target = True
 
     # Schema and constraints
-    supports_nullable_unique_constraints = False
-    supports_partially_nullable_unique_constraints = False
+    # NULLs in a UNIQUE constraint are distinct: several NULLs, also in part of
+    # a multi-column key (probe lib_unique_catalog, #213). Unique indexes use
+    # UNIQUE WHERE NOT NULL for the same (schema.sql_create_unique_index).
+    supports_nullable_unique_constraints = True
+    supports_partially_nullable_unique_constraints = True
     # Identities restart at IDENTITY_START (sequence_reset_by_name_sql); in
     # TestCase, sequence_reset_sql is deferred to the commit (SQL0910).
     supports_sequence_reset = True
@@ -180,9 +203,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_table_check_constraints = True
     supports_expression_defaults = False
     supports_index_on_text_field = False
-    supports_partial_indexes = False
-    supports_functions_in_partial_indexes = False
-    supports_expression_indexes = False
+    # CREATE [UNIQUE] INDEX ... WHERE, also with functions, and indexes on
+    # expressions (probe qtemp_indexes); Django's sql_create_index fits as is.
+    # No INCLUDE (supports_covering_indexes).
+    supports_partial_indexes = True
+    supports_functions_in_partial_indexes = True
+    supports_expression_indexes = True
     allows_multiple_constraints_on_same_fields = False
     supports_collation_on_charfield = False
     supports_collation_on_textfield = False
@@ -344,6 +370,23 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         # A JSONField db_default (a dict). On Django 5.2 only: 6.0 and later
         # skip the test without supports_json_field (compat.py).
         REASON_JSON_FIELD: set(compat.FAILING_ON_THIS_VERSION_ONLY),
+        # sql.rfind("headline") on the CREATE INDEX of a partial index, which
+        # quotes "HEADLINE"; the index itself is covered by the golden
+        # ddl/add_index_partial and tests/ibmi/test_schema.py.
+        # assertIsNotNone(instance.pk) after an upsert; the rows themselves are
+        # right (probe qtemp_merge, Known Limitations).
+        REASON_MERGE_RETURNS_NO_ROWS: {
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_two_fields_unique_fields_both",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_two_fields_unique_fields_first",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_two_fields_unique_fields_second",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_fields",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_fields_update_fields_db_column",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_two_fields_unique_fields_both",
+            "bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_two_fields_unique_fields_one",
+        },
+        REASON_LOWERCASE_NAME_IN_SQL: {
+            "indexes.tests.PartialIndexTests.test_multiple_conditions",
+        },
     }
     # Per Django version: the entries above that pass on the running version
     # (compat.PASSING_ON_THIS_VERSION) are left out, since an expected failure

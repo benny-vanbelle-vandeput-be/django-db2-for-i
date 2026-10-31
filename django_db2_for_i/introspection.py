@@ -86,9 +86,12 @@ RELATIONS_SQL = (
 )
 # The SQL indexes of a table with their key columns in order. The access
 # paths that constraints use are not listed in SYSINDEXES (probe lib_constraints), so a
-# constraint does not show up twice.
+# constraint does not show up twice. A key on an expression has no column
+# (SYSKEYS.COLUMN_IS_EXPRESSION, probe 25): NULL, as Django's other backends
+# report it.
 INDEXES_SQL = (
-    "SELECT I.INDEX_NAME, I.IS_UNIQUE, K.COLUMN_NAME, K.ORDERING "
+    "SELECT I.INDEX_NAME, I.IS_UNIQUE, "
+    "CASE WHEN K.COLUMN_IS_EXPRESSION = 'Y' THEN NULL ELSE K.COLUMN_NAME END, K.ORDERING "
     "FROM QSYS2.SYSINDEXES I JOIN QSYS2.SYSKEYS K "
     "ON K.INDEX_SCHEMA = I.INDEX_SCHEMA AND K.INDEX_NAME = I.INDEX_NAME "
     "WHERE I.TABLE_SCHEMA = CURRENT SCHEMA AND I.TABLE_NAME = %s "
@@ -285,6 +288,12 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
                     "type": Index.suffix,
                 },
             )
-            entry["columns"].append(self.identifier_converter(column.rstrip()))
+            entry["columns"].append(
+                None if column is None else self.identifier_converter(column.rstrip())
+            )
             entry["orders"].append(ORDERS.get(ordering.rstrip(), "ASC"))
+        # An index on expressions only lists no columns (as on PostgreSQL).
+        for entry in constraints.values():
+            if entry["index"] and entry["columns"] and all(c is None for c in entry["columns"]):
+                entry["columns"] = []
         return constraints

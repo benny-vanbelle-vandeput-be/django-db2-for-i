@@ -119,6 +119,20 @@ def test_one_test_per_unverified_corpus_entry(tmp_path, monkeypatch) -> None:
     assert verify.corpus_test_ids("6.1") == ["ordering.tests.A.test_b"]
 
 
+def test_a_statement_of_set_up_test_data_runs_with_its_class(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(verify.store, "corpus_dir", lambda django: tmp_path)
+    store.write_module(
+        tmp_path,
+        "ordering",
+        [
+            entry("SELECT 1", ["ordering.tests.A.setUpTestData"]),
+            entry("SELECT 2", ["ordering.tests.B.test_a"]),
+        ],
+    )
+    # "<class>.setUpTestData" is how the capture stores it, not a test to run.
+    assert verify.corpus_test_ids("6.1") == ["ordering.tests.A", "ordering.tests.B.test_a"]
+
+
 # --- select: own IBM i tests -------------------------------------------------------------
 
 BEFORE = textwrap.dedent(

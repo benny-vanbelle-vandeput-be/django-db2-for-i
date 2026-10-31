@@ -118,6 +118,11 @@ and documents what Db2 for i does there (one connection on PUB400 cannot
 run two jobs at once, so the probe covers what a single job can show, and
 the rest is documented as a limitation), and maps the error to
 `IntegrityError` as for a plain insert.
+**Status:** documented from IBM's documentation and marked "not verified on
+IBM i"; what one job can show is an own IBM i test. Step B itself left this out;
+it was added in #216 after the maintainer asked. The two-job probe is an open
+verification for a dedicated IBM i
+([IBMI_NOTES](../IBMI_NOTES.md#merge-under-concurrency-not-verified-on-ibm-i)).
 
 ## 5. Design
 - **Returning:** `return_insert_columns()` and the insert compiler write
@@ -173,6 +178,14 @@ In this order (answers e and f):
 | Close-out | 2 | the four modules into `docs/status.toml`, a status run on 5.2 / 6.0 / 6.1, TEST_STATUS, this file rewritten as the record |
 
 About 12 to 16 PRs. IBM i runs stay one at a time.
+
+**Changed 2026-10-30 (maintainer):** A2, B, C, D and E go into one pull
+request (#216), with a commit per step, to save PUB400 time: one IBM i cycle
+for all of them (the full IBM i tests on 6.1, `bin/verify` per Django
+version, the affected modules on 6.1, 6.0 and 5.2) instead of five. While
+building, only small targeted runs. D came in after the approval of the
+`lib_` probe (#213), B after the `qtemp_merge` probe; the close-out stays a
+separate pull request.
 
 ## Before the beta
 Until the tag `v0.1.0b1` exists (checked read-only with
@@ -235,6 +248,9 @@ The answers of the plan's approval (2026-10-28), also in
 - `qtemp_bulk`: at most 32,767 parameter markers (32,640 worked, 32,768 got
   SQL0901, a system error); statements up to about 2 MB; at most about
   32,700 rows. `bulk_batch_size()` stays well below.
+- `qtemp_bulk_types` (added during A2, after `test_in_bulk_lots_of_ids` failed
+  on 1998 rows): LOB columns allow only about 1,024 markers per statement
+  (1,056 got PWS0001 at prepare). `bulk_batch_size()` allows 512.
 - `qtemp_indexes`: partial indexes (with functions), expression indexes
   and unique variants of both work; `INCLUDE` does not (SQL0104):
   `supports_covering_indexes` is off.

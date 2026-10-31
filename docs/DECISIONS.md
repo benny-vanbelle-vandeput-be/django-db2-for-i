@@ -1709,3 +1709,18 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   ship the cleaned-up code, not half of phase 5.
 - **Alternatives:** conflicts in a later phase from the start; the step
   order A, B, C, D, E of the proposal; starting phase 5 before the beta.
+
+## 2026-10-31: MERGE under concurrency is documented, its verification waits for a dedicated IBM i
+- **Decision:** the behaviour of `MERGE` when two jobs insert the same key is
+  documented from IBM's documentation and marked "not verified on IBM i", in
+  Known Limitations and IBMI_NOTES. Own IBM i tests cover what one job can show.
+  The two-job probe is an open track, for a dedicated IBM i. The conflict flags
+  stay on.
+- **Why:** the maintainer's decision before merging #216. A concurrent insert needs
+  two connections on a shared table; QTEMP is private to one job and PUB400 allows
+  one connection per run. The race is no larger than Django's own `SELECT` then
+  `INSERT` without the flags, so it does not meet the plan's exit ("`MERGE` is
+  unreliable").
+- **Alternatives:** two connections on PUB400 (not allowed); moving the conflict
+  flags to later until it can be verified (`bulk_create` would lose them, and
+  `m2m.add()` would keep the same race).

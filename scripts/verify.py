@@ -204,7 +204,9 @@ def corpus_test_ids(django: str) -> list[str]:
         best = max(sorted(counts), key=lambda test: counts[test])
         chosen.add(best)
         pending = [entry for entry in pending if best not in entry.tests]
-    return sorted(chosen)
+    # A statement of setUpTestData is stored under "<class>.setUpTestData", which
+    # is no test to run: its class runs it.
+    return sorted({test.removesuffix(".setUpTestData") for test in chosen})
 
 
 # --- select: git -------------------------------------------------------------------------

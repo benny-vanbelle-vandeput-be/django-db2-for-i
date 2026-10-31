@@ -318,3 +318,66 @@ def test_returning_clause_is_empty() -> None:
     # Django appends nothing; the compiler wraps the statement instead.
     assert connection.ops.returning_columns([Author._meta.pk]) == ("", ())
     assert connection.ops.return_insert_columns([Author._meta.pk]) == ("", ())
+
+
+def test_bulk_insert_is_one_statement() -> None:
+    assert insert_sql([Author(name="a"), Author(name="b")]) == [
+        ('INSERT INTO "TESTAPP_AUTHOR" ("NAME") VALUES (%s), (%s)', ("a", "b"))
+    ]
+
+
+def test_bulk_insert_with_returning_keeps_the_input_order() -> None:
+    assert insert_sql([Author(name="a"), Author(name="b")], [Author._meta.pk]) == [
+        (
+            'SELECT "ID" FROM FINAL TABLE (INSERT INTO "TESTAPP_AUTHOR" ("NAME") '
+            "VALUES (%s), (%s)) ORDER BY INPUT SEQUENCE",
+            ("a", "b"),
+        )
+    ]
+
+
+def conflict_sql(on_conflict, objs, **kwargs):
+    from django.db.models.sql import InsertQuery
+
+    fields = Author._meta.local_concrete_fields
+    query = InsertQuery(Author, on_conflict=on_conflict, **kwargs)
+    query.insert_values(fields, objs)
+    return [
+        (sql, tuple(params)) for sql, params in query.get_compiler(connection=connection).as_sql()
+    ]
+
+
+def test_ignore_conflicts_is_a_merge_on_every_unique_key() -> None:
+    from django.db.models.constants import OnConflict
+
+    ((sql, params),) = conflict_sql(OnConflict.IGNORE, [Author(id=1, name="a")])
+    assert sql == (
+        'MERGE INTO "TESTAPP_AUTHOR" AS TGT USING (VALUES (CAST(%s AS INTEGER), '
+        'CAST(%s AS NVARCHAR(100)))) AS SRC ("ID", "NAME") ON (TGT."ID" = SRC."ID") '
+        'WHEN NOT MATCHED THEN INSERT ("ID", "NAME") VALUES (SRC."ID", SRC."NAME")'
+    )
+    assert params == (1, "a")
+
+
+def test_update_conflicts_matches_the_unique_fields() -> None:
+    from django.db.models.constants import OnConflict
+
+    name = Author._meta.get_field("name")
+    ((sql, _params),) = conflict_sql(
+        OnConflict.UPDATE,
+        [Author(id=1, name="a"), Author(id=2, name="b")],
+        update_fields=[name],
+        unique_fields=[Author._meta.pk],
+    )
+    assert ' ON (TGT."ID" = SRC."ID") WHEN MATCHED THEN UPDATE SET TGT."NAME" = SRC."NAME" ' in sql
+    assert sql.count("CAST(%s AS INTEGER)") == 2
+
+
+def test_ignore_conflicts_without_a_matchable_key_is_a_plain_insert() -> None:
+    from django.db.models.constants import OnConflict
+    from django.db.models.sql import InsertQuery
+
+    query = InsertQuery(Author, on_conflict=OnConflict.IGNORE)
+    query.insert_values([Author._meta.get_field("name")], [Author(name="a")])
+    ((sql, _params),) = query.get_compiler(connection=connection).as_sql()
+    assert sql == 'INSERT INTO "TESTAPP_AUTHOR" ("NAME") VALUES (%s)'

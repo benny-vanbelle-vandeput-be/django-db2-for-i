@@ -7,7 +7,7 @@ from decimal import Decimal
 import pytest
 from django.core.management.color import no_style
 from django.db import NotSupportedError, connection
-from django.db.models import CharField, DateTimeField, UUIDField
+from django.db.models import BinaryField, CharField, DateTimeField, TextField, UUIDField
 from django.db.models.expressions import Col
 from django.test.utils import override_settings
 from django.utils import timezone
@@ -710,3 +710,107 @@ def test_iexact_values_are_not_escaped_for_like() -> None:
     """iexact is UPPER(col) = UPPER(%s); LIKE escaping would change the value."""
     assert ops.prep_for_iexact_query("a_b%c\\d") == "a_b%c\\d"
     assert ops.prep_for_like_query("a_b") == "a\\_b"  # contains & co. still escape
+
+
+# --- bulk_batch_size ---------------------------------------------------------------
+
+
+class FakeComposite:
+    """A field with sub-fields, as CompositePrimaryKey has."""
+
+    def __init__(self, count):
+        self.fields = [CharField()] * count
+
+
+def test_bulk_batch_size_is_limited_by_the_parameter_markers() -> None:
+    from django_db2_for_i.operations import BULK_MAX_PARAMS
+
+    fields = [CharField()] * 7
+    assert ops.bulk_batch_size(fields, range(100_000)) == BULK_MAX_PARAMS // 7
+
+
+def test_bulk_batch_size_is_limited_by_the_rows() -> None:
+    from django_db2_for_i.operations import BULK_MAX_ROWS
+
+    assert ops.bulk_batch_size([CharField()], range(100_000)) == BULK_MAX_ROWS
+    assert ops.bulk_batch_size([], range(100_000)) == BULK_MAX_ROWS
+
+
+def test_bulk_batch_size_takes_all_objects_when_they_fit() -> None:
+    assert ops.bulk_batch_size([CharField()] * 3, range(10)) == 10
+
+
+def test_bulk_batch_size_counts_the_columns_of_a_composite_field() -> None:
+    from django_db2_for_i.operations import BULK_MAX_PARAMS
+
+    fields = [FakeComposite(3), CharField()]
+    assert ops.bulk_batch_size(fields, range(100_000)) == BULK_MAX_PARAMS // 4
+
+
+def test_bulk_batch_size_is_limited_by_the_lob_columns() -> None:
+    from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS
+
+    assert ops.bulk_batch_size([TextField()], range(5000)) == BULK_MAX_LOB_PARAMS
+    assert ops.bulk_batch_size([BinaryField()], range(5000)) == BULK_MAX_LOB_PARAMS
+    columns = [CharField(), TextField(), BinaryField()]
+    assert ops.bulk_batch_size(columns, range(5000)) == BULK_MAX_LOB_PARAMS // 2
+    assert ops.bulk_batch_size(columns, range(10)) == 10
+    # Without a LOB column the limit does not apply.
+    assert ops.bulk_batch_size([CharField()], range(5000)) == 5000
+
+
+@pytest.mark.parametrize(("model_name", "lobs"), [("ThreeTexts", 3), ("FiveTexts", 5)])
+def test_bulk_batch_size_divides_by_the_lob_columns_of_a_model(model_name, lobs) -> None:
+    from django.db.models import AutoField
+
+    from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS
+    from tests.testapp import models
+
+    model = getattr(models, model_name)
+    objs = [model() for _ in range(5000)]
+    # The fields bulk_create() passes for objects without a key.
+    fields = [f for f in model._meta.concrete_fields if not isinstance(f, AutoField)]
+    size = ops.bulk_batch_size(fields, objs)
+    assert size == BULK_MAX_LOB_PARAMS // lobs
+    # 1,024 LOB markers per statement is the most the probe saw work.
+    assert size * lobs <= 1024
+    assert ops.bulk_batch_size([f.name for f in fields], objs) == size
+
+
+def test_bulk_batch_size_counts_only_the_fields_passed() -> None:
+    from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS
+    from tests.testapp.models import FiveTexts
+
+    fields = [FiveTexts._meta.get_field(name) for name in ("code", "first", "second")]
+    objs = [FiveTexts() for _ in range(5000)]
+    assert ops.bulk_batch_size(fields, objs) == BULK_MAX_LOB_PARAMS // 2
+    assert ops.bulk_batch_size(fields[:1], objs) == 5000
+
+
+def test_bulk_batch_size_takes_field_names() -> None:
+    from django_db2_for_i.operations import BULK_MAX_LOB_PARAMS
+    from tests.testapp.models import Document
+
+    # bulk_update() and the deletion collector pass names along with the fields.
+    assert ops.bulk_batch_size(["pk", "pk"], range(10)) == 10
+    assert ops.bulk_batch_size(["pk", "pk", TextField()], range(5000)) == BULK_MAX_LOB_PARAMS
+    # A name counts like its field: Django's test_max_batch_size asks with names.
+    documents = [Document(text="x") for _ in range(5000)]
+    assert ops.bulk_batch_size(["text"], documents) == BULK_MAX_LOB_PARAMS
+    assert ops.bulk_batch_size(["pk", "pk", "text", "data"], documents) == BULK_MAX_LOB_PARAMS // 2
+    assert ops.bulk_batch_size(["pk"], documents) == 5000
+    assert ops.bulk_batch_size(["text"], []) == 1
+
+
+def test_bulk_batch_size_is_at_least_one() -> None:
+    assert ops.bulk_batch_size([CharField()] * 20_000, range(5)) == 1
+    assert ops.bulk_batch_size([CharField()], []) == 1
+
+
+def test_fetch_returned_insert_rows_reads_every_row() -> None:
+    # Django 5.2's hook for the rows of a multi-row insert (compat.py).
+    class Rows:
+        def fetchall(self):
+            return [(1,), (2,)]
+
+    assert ops.fetch_returned_insert_rows(Rows()) == [(1,), (2,)]

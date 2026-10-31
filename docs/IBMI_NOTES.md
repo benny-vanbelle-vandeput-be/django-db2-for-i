@@ -1935,6 +1935,25 @@ then bisecting):
   characters, which fits Db2 for i's documented 2,097,152 (2 MB, not
   verified to the byte).
 
+**LOB columns have a much lower limit** (`probes/qtemp_bulk_types.py`; found by
+Django's `test_in_bulk_lots_of_ids`, 1998 rows with one `NCLOB`):
+
+| Columns | Largest that worked | Smallest refused | Refusal |
+|---|---|---|---|
+| `NCLOB`, also `NCLOB(1M)`, `NCLOB(100M)`, `CLOB(1M)`, `BLOB(1M)` | 1,024 rows | 1,056 rows | `HY000` PWS0001 (19188) at prepare |
+| two `NCLOB(1M)` | 512 rows (1,024 LOB markers) | 528 rows | PWS0001 |
+| `NVARCHAR(100)`, `NVARCHAR(50)`, `NCLOB`, with and without `FINAL TABLE` | 1,024 rows | 1,056 rows | PWS0001 |
+| `NVARCHAR(100)`, `NVARCHAR(50)`, `FINAL TABLE` | 16,128 rows (32,256 markers) | 16,384 rows (32,768 markers) | SQL0901 |
+| `NCLOB(1K)`, `NVARCHAR(255)`, `NVARCHAR(16000)` | 16,384 rows | none up to 16,384 | |
+
+- The limit counts the LOB markers of the statement, between 1,024 and 1,056
+  (the probe's bisection stopped there). It does not depend on the declared
+  length from 1M up, on the values (`NULL` or not) or on `FINAL TABLE`;
+  `NCLOB(1K)` is not affected (where between 1K and 1M it starts was not
+  measured). The connection stays usable after the refusal.
+- `bulk_batch_size()` allows 512 LOB markers per statement, for every LOB
+  column whatever its declared length.
+
 **Indexes** (`probes/qtemp_indexes.py`): accepted, on a QTEMP table:
 `CREATE INDEX ... WHERE` with comparisons, `IS NOT NULL`, `IN`/`OR`, functions
 (`UPPER(B) = 'X'`, `LENGTH(B) > 3`) and quoted names; indexes on expressions
@@ -1985,6 +2004,153 @@ journaled table is what step E checks with Django's tests.
   indexes or what the `lib_` probe shows for constraints.
 - Step E: `can_use_chunked_reads`, `delete_can_self_reference_subquery`,
   `update_can_self_select`.
+
+### Unique constraints, NULLs and the index catalog (phase 5, step D)
+2026-10-30, PUB400 (IBM i 7.5).
+
+**`lib_unique_catalog`** (issue #213, approved in
+[comment 6518630670](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/213#issuecomment-6518630670)):
+one table, `DJDB2I_P5UNQ`, in the journaled default library. It was on the
+cleanup list before its `CREATE TABLE` and was dropped at the end (nothing
+left). Each constraint or index was created, then the catalog rows of this
+table were read. For a unique case, the inserts ran in their own transaction,
+ended with `ROLLBACK` before the `DROP`. The connection had the backend's
+attributes (`CMT=1`, `TRUEAUTOCOMMIT=1`). Result: `probes/results/lib_unique_catalog.json`.
+
+| Case | Second NULL in `A` | `(1, NULL)` twice | `(NULL, NULL)` twice | Real duplicate |
+|---|---|---|---|---|
+| `UNIQUE` constraint `(A)` | ok | SQL0803 (`A` = 1 twice) | ok | SQL0803 |
+| `UNIQUE` constraint `(A, B)` | ok | ok | ok | SQL0803 |
+| unique index `(A) WHERE B > 0` | ok (outside the condition) | ok | ok | SQL0803 inside the condition, ok outside it (also `B` NULL) |
+| `UNIQUE WHERE NOT NULL` index `(A)` | ok | SQL0803 | ok | SQL0803 |
+
+- **NULLs in a unique constraint are distinct.** This is unlike a plain
+  unique index (step 0: NULLs are equal). Several NULLs are allowed, and so
+  are partially NULL keys.
+- **Unique constraints have no row in `SYSINDEXES`** (only `SYSCST` /
+  `SYSKEYCST`), so `get_constraints()` does not list them twice.
+- **`SYSINDEXES.IS_UNIQUE`:** `D` for a plain index, `U` for a unique index,
+  `V` for `UNIQUE WHERE NOT NULL`.
+- **Partial indexes:** `INDEX_HAS_SEARCH_CONDITION` is `Y`, and
+  `SEARCH_CONDITION` holds the condition as text (`B > 0`).
+- **Expression keys:** in `SYSKEYS`, `COLUMN_IS_EXPRESSION` is `Y`,
+  `COLUMN_NAME` is a generated name (`IXCOL00001`), and `KEY_EXPRESSION`
+  holds the expression (`UPPER ( C )`). For a column key they are `N`, the
+  column name and the column name. A mixed index `(A, UPPER(C)) WHERE B > 0`
+  shows one row of each.
+
+**`qtemp_unique_nulls`, extended for step D** (QTEMP only, `CMT=0`):
+`UNIQUE WHERE NOT NULL` combined with a condition and with expression keys.
+Result: `probes/results/unique_nulls.json`.
+
+| Index | `(1, NULL)` twice | NULL expression twice | Duplicate | Outside the condition |
+|---|---|---|---|---|
+| `UNIQUE WHERE NOT NULL (A, B) WHERE C = 'x'` | ok | ok | SQL0803 | ok |
+| `UNIQUE WHERE NOT NULL (UPPER(C))` | n/a | ok | SQL0803 (also `'x'` / `'X'`) | n/a |
+| `UNIQUE WHERE NOT NULL ((UPPER(C)), A) WHERE B > 0` | ok | ok | SQL0803 (also `'x'` / `'X'`) | ok |
+| `UNIQUE INDEX (UPPER(C))` (baseline) | n/a | SQL0803 | SQL0803 | n/a |
+
+**Consequences (step D):**
+- `supports_nullable_unique_constraints` and
+  `supports_partially_nullable_unique_constraints` go on: `unique=True` and
+  `UniqueConstraint(fields=...)` are `UNIQUE` constraints, whose NULLs are
+  distinct.
+- A `UniqueConstraint` with a condition or expressions is a unique index
+  (step C). The backend writes it as `CREATE UNIQUE WHERE NOT NULL INDEX`,
+  so its NULLs are distinct as well, as Django assumes by default
+  (`nulls_distinct` stays off: no `NULLS [NOT] DISTINCT`).
+
+### MERGE for conflicts in bulk_create() (phase 5, step B)
+2026-10-30, PUB400 (IBM i 7.5), `probes/qtemp_merge.py`: QTEMP only,
+`CMT=0`. Result: `probes/results/merge.json`. The table had a generated
+identity, a unique `K` and a nullable `UNIQUE WHERE NOT NULL` `U`, with the
+rows `K` = 1 and 2. QTEMP refuses `PRIMARY KEY` (SQL7008, as every
+constraint), so the key was a unique index. Each case ran on fresh rows:
+
+| Statement | Result |
+|---|---|
+| `MERGE ... USING (VALUES (?, ?, ?), ...)` (untyped markers) | SQL0584: no parameter marker in `VALUES` |
+| the same with `CAST(? AS <type>)` per marker | ok |
+| ignore form (`WHEN NOT MATCHED THEN INSERT`), one row exists | ok, row count 1 (only the new row) |
+| update form (`WHEN MATCHED THEN UPDATE ... WHEN NOT MATCHED THEN INSERT`) | ok, row count 2 (one updated, one inserted) |
+| a new key twice in one source, ignore or update form | SQL0803 |
+| an existing key twice in one source, update form | SQL0788 (duplicate row for the MERGE target) |
+| ignore form, `ON` the key `K` only, conflict in `U` | SQL0803 |
+| ignore form, `ON (K match OR U match)` | ok: the conflicting row is skipped |
+| the same with `U` NULL in two new rows | ok, both inserted (a NULL never matches) |
+| `... NOT ATOMIC CONTINUE ON SQLEXCEPTION`, conflict in `U` | SQL0803: no help |
+| `SELECT ... FROM FINAL TABLE (MERGE ...)` | SQL0199: `FINAL TABLE` takes only `INSERT` |
+
+**Consequences (step B):**
+- `bulk_create(ignore_conflicts=True)` and `update_conflicts=True` are a
+  `MERGE` with cast markers (compiler.py).
+- **`ON`:**
+  - `ignore_conflicts` matches every unconditional unique key whose columns
+    are inserted (`OR`);
+  - `update_conflicts` matches its `unique_fields`
+    (`supports_update_conflicts_with_target`).
+- **No keys back:** a `MERGE` returns no rows, so `update_conflicts` leaves
+  the keys of the objects unset.
+- **Duplicates in one batch:** the same key twice in one batch is refused
+  (SQL0803 / SQL0788), where PostgreSQL skips or refuses it.
+- **Unique indexes are not matched:** conflicts in a conditional or
+  functional unique constraint raise `IntegrityError`.
+
+### MERGE under concurrency (not verified on IBM i)
+
+**Not verified on IBM i.** A concurrent insert needs two jobs, so two
+connections and a shared table: QTEMP is private to one job, and PUB400 allows
+one connection per run. No probe has run this, and none may on PUB400. Phase 5
+answer a asked for this to be investigated and documented; what follows is the
+documented part, and the investigation waits for a dedicated IBM i.
+
+**From IBM's documentation**
+([MERGE, IBM i 7.5](https://www.ibm.com/docs/en/i/7.5?topic=statements-merge),
+read 2026-10-31):
+
+- `MERGE` works out which target rows are affected before it runs its inserts.
+  Other jobs can insert or change rows in between, unless a restrictive isolation
+  level such as repeatable read is used. IBM's own example is a concurrent insert
+  of the same key, which gives a duplicate key error when `MERGE` inserts its row.
+- `ATOMIC`: on an error the entire statement is rolled back; honored only with an
+  isolation level other than No Commit. The page does not say in words which of
+  `ATOMIC` / `NOT ATOMIC` is the default (`ATOMIC` comes first in the syntax
+  diagram).
+- A successful `MERGE` takes exclusive locks, held until commit or rollback, which
+  can keep other jobs from their operations on the table.
+- SQLCODE -913 / SQLSTATE 57033 is "deadlock or timeout occurred without automatic
+  rollback" ([SQL messages and codes, 7.6](https://www.ibm.com/docs/en/ssw_ibm_i_76/pdf/rzalapdf.pdf);
+  no 7.5 page was found). Whether a `MERGE` waiting for another job's uncommitted
+  row ends in this error is our expectation, not IBM's statement.
+
+**Verified with one job** (own IBM i tests, `tests/ibmi/test_inserts.py`): a
+duplicate key met by the `MERGE`'s own insert, here the same new key twice in one
+source, raises SQL0803, mapped to `IntegrityError`, and undoes the whole statement
+under `*CS`, in autocommit and in a transaction, also its rows without a conflict.
+This is the same error the race should give, reached another way; it says nothing
+about the timing or the locks between two jobs.
+
+**Not specific to `MERGE`:** without `supports_ignore_conflicts` Django's `m2m.add()`
+does a `SELECT` and then an `INSERT`, with the same race and the same error. With
+it, `add()` sends one `MERGE`, and with no `m2m_changed` listener no `SELECT` first
+(`_get_add_plan()` in `related_descriptors.py`). The window is not larger. PostgreSQL's
+`ON CONFLICT` does not have it, which is why this is a limitation here.
+
+**Open verification, for a dedicated IBM i:** a `lib_` probe (`lib_merge_concurrency`,
+with its own approval), one journaled table with a unique key, two connections:
+
+| Case | To see |
+|---|---|
+| A merges a new key and does not commit; B merges the same key | does B wait, for how long, and with which error (SQL0913?) |
+| the same, A commits while B waits | B: SQL0803, or the row skipped? |
+| the same, A rolls back while B waits | B inserts its row? |
+| both loop over the same new keys, with `ignore_conflicts` and with `m2m.add()` | how often SQL0803 occurs in a real race |
+| a multi-row batch, one row in conflict | the whole batch undone, as with one job? |
+| the retry of Known Limitations | does it succeed once A has committed, also inside `transaction.atomic()` |
+| isolation `*RR` | does it prevent the error, as IBM's text suggests, and what it costs in locks |
+
+Afterwards, Known Limitations and this section state results instead of
+expectations, with an own IBM i test if it can be made reliable.
 
 ## String encoding investigation (`nox -s probe_encoding`)
 

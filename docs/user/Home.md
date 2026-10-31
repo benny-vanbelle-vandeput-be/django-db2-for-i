@@ -11,7 +11,7 @@ DATABASES = {"default": {"ENGINE": "django_db2_for_i", ...}}
 > The backend connects, creates tables, and runs basic queries, inserts and
 > pagination against IBM i 7.5, with transactions and savepoints (nested
 > `atomic()`). Many Django features are still switched off
-> (foreign key constraints, bulk insert, JSON, window functions,
+> (foreign key constraints, JSON, window functions,
 > ...) and are enabled one at a time as Django's test suite proves them.
 > Settings and behaviour may still change without notice.
 

@@ -1,6 +1,6 @@
 {
   "probe": "unique_nulls",
-  "utc": "20261029T205226Z",
+  "utc": "20261030T084159Z",
   "host": "<HOST>",
   "ssl": true,
   "scope": "QTEMP only (tables and indexes gone with the job)",
@@ -119,6 +119,168 @@
     "result": "ok"
   },
   "UNIQUE WHERE NOT NULL INDEX (A, B): (1, 2) again (duplicate)": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B) WHERE C = 'x': create": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B) WHERE C = 'x': (1, NULL, 'x')": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B) WHERE C = 'x': (1, NULL, 'x') again": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B) WHERE C = 'x': (NULL, 1, NULL)": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B) WHERE C = 'x': (NULL, 1, NULL) again: NULL expression": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B) WHERE C = 'x': (1, 2, 'x')": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B) WHERE C = 'x': (1, 2, 'x') again": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B) WHERE C = 'x': (1, 2, 'X'): same UPPER": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B) WHERE C = 'x': (1, 0, 'y')": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (A, B) WHERE C = 'x': (1, 0, 'y') again: outside B > 0 / C = 'x'": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (UPPER(C)): create": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (UPPER(C)): (1, NULL, 'x')": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (UPPER(C)): (1, NULL, 'x') again": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (UPPER(C)): (NULL, 1, NULL)": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (UPPER(C)): (NULL, 1, NULL) again: NULL expression": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (UPPER(C)): (1, 2, 'x')": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (UPPER(C)): (1, 2, 'x') again": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (UPPER(C)): (1, 2, 'X'): same UPPER": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (UPPER(C)): (1, 0, 'y')": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX (UPPER(C)): (1, 0, 'y') again: outside B > 0 / C = 'x'": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE WHERE NOT NULL INDEX ((UPPER(C)), A) WHERE B > 0: create": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX ((UPPER(C)), A) WHERE B > 0: (1, NULL, 'x')": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX ((UPPER(C)), A) WHERE B > 0: (1, NULL, 'x') again": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX ((UPPER(C)), A) WHERE B > 0: (NULL, 1, NULL)": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX ((UPPER(C)), A) WHERE B > 0: (NULL, 1, NULL) again: NULL expression": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX ((UPPER(C)), A) WHERE B > 0: (1, 2, 'x')": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX ((UPPER(C)), A) WHERE B > 0: (1, 2, 'x') again": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE WHERE NOT NULL INDEX ((UPPER(C)), A) WHERE B > 0: (1, 2, 'X'): same UPPER": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE WHERE NOT NULL INDEX ((UPPER(C)), A) WHERE B > 0: (1, 0, 'y')": {
+    "result": "ok"
+  },
+  "UNIQUE WHERE NOT NULL INDEX ((UPPER(C)), A) WHERE B > 0: (1, 0, 'y') again: outside B > 0 / C = 'x'": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (UPPER(C)) (baseline): create": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (UPPER(C)) (baseline): (1, NULL, 'x')": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (UPPER(C)) (baseline): (1, NULL, 'x') again": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE INDEX (UPPER(C)) (baseline): (NULL, 1, NULL)": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (UPPER(C)) (baseline): (NULL, 1, NULL) again: NULL expression": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE INDEX (UPPER(C)) (baseline): (1, 2, 'x')": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE INDEX (UPPER(C)) (baseline): (1, 2, 'x') again": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE INDEX (UPPER(C)) (baseline): (1, 2, 'X'): same UPPER": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "UNIQUE INDEX (UPPER(C)) (baseline): (1, 0, 'y')": {
+    "result": "ok"
+  },
+  "UNIQUE INDEX (UPPER(C)) (baseline): (1, 0, 'y') again: outside B > 0 / C = 'x'": {
     "result": "error",
     "sqlstate": "23000",
     "sqlcode": -803,

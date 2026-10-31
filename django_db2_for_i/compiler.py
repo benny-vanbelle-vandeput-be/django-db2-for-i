@@ -80,7 +80,9 @@ with an expression, the other schema use of these queries.
 
 from __future__ import annotations
 
+from django.db import NotSupportedError
 from django.db.models import IntegerField
+from django.db.models.constants import OnConflict
 from django.db.models.expressions import (
     Col,
     ColPairs,
@@ -407,13 +409,27 @@ class SQLCompiler(compiler.SQLCompiler):
 
 
 class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
+    _assembled = None
+
+    def assemble_as_sql(self, fields, value_rows):
+        """Django's placeholders and parameters, kept for _merge_sql(): the
+        columns Django leaves out (6.1 drops a db_default column that is
+        DEFAULT in every row) are already gone here, on every version."""
+        placeholder_rows, param_rows = super().assemble_as_sql(fields, value_rows)
+        self._assembled = (fields, placeholder_rows, param_rows)
+        return placeholder_rows, param_rows
+
     def as_sql(self):
         """Db2 for i has no ``INSERT ... RETURNING``: the insert is wrapped in
         ``SELECT <columns> FROM FINAL TABLE (INSERT ...)``, which returns the
         inserted rows, generated identities and column defaults included
         (probe ``qtemp_returning``). Several rows come back in input order
         with ``ORDER BY INPUT SEQUENCE``. ``DatabaseOperations`` returns an
-        empty returning clause, so Django builds the plain ``INSERT`` here."""
+        empty returning clause, so Django builds the plain ``INSERT`` here.
+        ``bulk_create()`` with ignore_conflicts / update_conflicts is a
+        ``MERGE`` instead (_merge_sql())."""
+        if self.query.on_conflict:
+            return self._merge_sql()
         statements = super().as_sql()
         if not (self.returning_fields and self.connection.features.can_return_columns_from_insert):
             return statements
@@ -422,6 +438,92 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
         columns = ", ".join(qn(field.column) for field in self.returning_fields)
         order = " ORDER BY INPUT SEQUENCE" if len(self.query.objs) > 1 else ""
         return [(f"SELECT {columns} FROM FINAL TABLE ({sql}){order}", params)]
+
+    def execute_sql(self, returning_fields=None):
+        """A MERGE returns no rows (FINAL TABLE takes only INSERT, probe
+        qtemp_merge): bulk_create(update_conflicts=True) leaves the keys of
+        the objects unset, which Django accepts for a conflict insert."""
+        if not self.query.on_conflict:
+            return super().execute_sql(returning_fields)
+        self.returning_fields = None
+        with self.connection.cursor() as cursor:
+            for sql, params in self.as_sql():
+                cursor.execute(sql, params)
+        return []
+
+    def _merge_sql(self):
+        """``MERGE INTO <table> AS TGT USING (VALUES ...) AS SRC (<columns>) ON <key
+        match> [WHEN MATCHED THEN UPDATE SET ...] WHEN NOT MATCHED THEN
+        INSERT ...`` (probe qtemp_merge). Db2 for i has no ON CONFLICT.
+
+        The source's parameter markers are cast (untyped ones: SQL0584).
+        ignore_conflicts matches every unique key whose columns are inserted
+        (OR); update_conflicts matches its unique_fields. A key with a NULL
+        never matches, as NULLs in a unique key are distinct (step D). The
+        same key twice in one batch is refused (SQL0803 / SQL0788), where
+        PostgreSQL skips it."""
+        self.returning_fields = None
+        (plain,) = super().as_sql()
+        fields, placeholder_rows, param_rows = self._assembled
+        if fields == [None]:
+            return [plain]
+        qn = self.connection.ops.quote_name
+        opts = self.query.get_meta()
+        columns = [field.column for field in fields]
+        if self.query.on_conflict == OnConflict.UPDATE:
+            keys = [[field.column for field in self.query.unique_fields]]
+        else:
+            keys = [key for key in self._unique_keys(opts) if set(key) <= set(columns)]
+        if not keys:
+            return [plain]
+        rows = ", ".join(
+            "({})".format(
+                ", ".join(self._cast(field, sql) for field, sql in zip(fields, row, strict=True))
+            )
+            for row in placeholder_rows
+        )
+        on = " OR ".join(
+            "({})".format(" AND ".join(f"TGT.{qn(c)} = SRC.{qn(c)}" for c in key)) for key in keys
+        )
+        names = ", ".join(qn(c) for c in columns)
+        table = qn(opts.db_table)
+        sql = f"MERGE INTO {table} AS TGT USING (VALUES {rows}) AS SRC ({names}) ON {on}"
+        if self.query.on_conflict == OnConflict.UPDATE:
+            assignments = ", ".join(
+                f"TGT.{qn(field.column)} = SRC.{qn(field.column)}"
+                for field in self.query.update_fields
+            )
+            sql += f" WHEN MATCHED THEN UPDATE SET {assignments}"
+        values = ", ".join(f"SRC.{qn(c)}" for c in columns)
+        sql += f" WHEN NOT MATCHED THEN INSERT ({names}) VALUES ({values})"
+        return [(sql, tuple(p for row in param_rows for p in row))]
+
+    def _cast(self, field, sql):
+        if sql == "DEFAULT":
+            raise NotSupportedError(
+                "Db2 for i backend: bulk_create() with ignore_conflicts or update_conflicts "
+                "cannot write DEFAULT for a db_default field (MERGE takes no DEFAULT in its "
+                "source); give the field a value."
+            )
+        return f"CAST({sql} AS {field.cast_db_type(self.connection)})"
+
+    @staticmethod
+    def _unique_keys(opts):
+        """The column sets of the model's unconditional unique keys."""
+        keys = [[field.column for field in getattr(opts.pk, "fields", None) or [opts.pk]]]
+        keys += [[field.column] for field in opts.local_concrete_fields if field.unique]
+        keys += [
+            [opts.get_field(name).column for name in fields] for fields in opts.unique_together
+        ]
+        keys += [
+            [opts.get_field(name).column for name in constraint.fields]
+            for constraint in opts.total_unique_constraints
+        ]
+        unique = []
+        for key in keys:
+            if key not in unique:
+                unique.append(key)
+        return unique
 
 
 class SQLDeleteCompiler(compiler.SQLDeleteCompiler, SQLCompiler):

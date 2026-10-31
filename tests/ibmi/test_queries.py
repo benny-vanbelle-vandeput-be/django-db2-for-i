@@ -625,3 +625,51 @@ def test_check_constraint_violations_raise_integrity_error(live, empty) -> None:
     with pytest.raises(IntegrityError, match="SQL0545"), transaction.atomic():
         book.save()
     assert list(Book.objects.values_list("title", "pages")) == [("t", 0)]
+
+
+# --- Chunked reads and self-referencing UPDATE / DELETE (phase 5, step E) -----------
+
+
+def test_iterator_keeps_reading_while_rows_are_saved(live, empty) -> None:
+    """QuerySet.iterator() fetches in chunks from an open cursor; each row is
+    saved meanwhile, in autocommit, so every save commits under commitment
+    control while the cursor stays open (can_use_chunked_reads)."""
+    Author.objects.bulk_create([Author(name=f"author {i:02}") for i in range(25)])
+    seen = []
+    for author in Author.objects.order_by("pk").iterator(chunk_size=4):
+        seen.append(author.name)
+        author.name = author.name.upper()
+        author.save(update_fields=["name"])
+        Book.objects.create(author=author, title=author.name)
+    assert len(seen) == 25
+    assert Author.objects.filter(name__startswith="AUTHOR").count() == 25
+    assert Book.objects.count() == 25
+
+
+def test_iterator_in_a_transaction(live, empty) -> None:
+    Author.objects.bulk_create([Author(name=f"a{i}") for i in range(10)])
+    with transaction.atomic():
+        names = []
+        for author in Author.objects.order_by("pk").iterator(chunk_size=3):
+            names.append(author.name)
+            Book.objects.create(author=author, title=author.name)
+    assert names == [f"a{i}" for i in range(10)]
+    assert Book.objects.count() == 10
+
+
+def test_delete_with_a_subquery_on_the_same_table(live, empty) -> None:
+    author = Author.objects.create(name="a")
+    Book.objects.bulk_create([Book(author=author, title=f"b{i}", pages=i * 100) for i in range(5)])
+    long_books = Book.objects.filter(pages__gt=200).values("pk")
+    deleted, _ = Book.objects.filter(pk__in=long_books).delete()
+    assert deleted == 2
+    assert sorted(Book.objects.values_list("pages", flat=True)) == [0, 100, 200]
+
+
+def test_update_through_a_join(live, empty) -> None:
+    ibm, other = Author.objects.bulk_create([Author(name="IBM i"), Author(name="other")])
+    Book.objects.bulk_create(
+        [Book(author=ibm, title="x", pages=5), Book(author=other, title="y", pages=5)]
+    )
+    assert Book.objects.filter(author__name="IBM i").update(pages=1) == 1
+    assert dict(Book.objects.values_list("title", "pages")) == {"x": 1, "y": 5}

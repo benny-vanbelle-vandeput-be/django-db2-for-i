@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 
+from django.db.models.constants import OnConflict
 from django.db.models.sql import DeleteQuery, InsertQuery, UpdateQuery
 
 from tests.golden_cases.base import AUTHOR, AWARE, BOOK, DEFAULTS, Case
@@ -53,6 +54,56 @@ def _insert_returning_db_defaults(connection):
     return _returning(connection, Defaults, [Defaults(number=5)], fields, returning)
 
 
+def _bulk_insert(connection):
+    """bulk_create() without returning: one multi-row VALUES."""
+    fields = [f for f in Author._meta.local_concrete_fields if not f.primary_key]
+    objs = [Author(name=name) for name in ("one", "two", "three")]
+    return _returning(connection, Author, objs, fields, None)
+
+
+def _bulk_insert_returning(connection):
+    """bulk_create() setting the keys: the rows come back in input order."""
+    fields = [f for f in Author._meta.local_concrete_fields if not f.primary_key]
+    objs = [Author(name=name) for name in ("one", "two", "three")]
+    return _returning(connection, Author, objs, fields, [Author._meta.pk])
+
+
+def _bulk_insert_db_defaults(connection):
+    """bulk_create() with db_default fields set in one row and not in the
+    other: DEFAULT per row, the defaults returned with the keys."""
+    fields = [f for f in Defaults._meta.local_concrete_fields if not f.primary_key]
+    objs = [Defaults(number=5), Defaults(text="set", flag=False)]
+    return _returning(connection, Defaults, objs, fields, Defaults._meta.db_returning_fields)
+
+
+def _conflicts(on_conflict, update_fields=(), unique_fields=()):
+    """bulk_create() with ignore_conflicts / update_conflicts: a MERGE."""
+
+    def build(connection):
+        # Every concrete field, as bulk_create() inserts them: AVAILABLE is
+        # NOT NULL with only a Python default.
+        fields = Book._meta.local_concrete_fields
+        objs = [
+            Book(id=1, author_id=1, title="Db2 for i", pages=10),
+            Book(id=2, author_id=1, title="IBM i", pages=20),
+        ]
+        query = InsertQuery(
+            Book,
+            on_conflict=on_conflict,
+            update_fields=[Book._meta.get_field(n) for n in update_fields],
+            unique_fields=[Book._meta.get_field(n) for n in unique_fields],
+        )
+        query.insert_values(fields, objs)
+        # The author first (an explicit primary key): Book's foreign key needs it.
+        author = InsertQuery(Author)
+        author.insert_values(Author._meta.local_concrete_fields, [Author(id=1, name="IBM i")])
+        statements = list(author.get_compiler(connection.alias).as_sql())
+        statements += query.get_compiler(connection.alias).as_sql()
+        return [(sql, params) for sql, params in statements]
+
+    return build
+
+
 def _update_boolean(connection):
     query = Book.objects.filter(pk=1).query.chain(UpdateQuery)
     query.add_update_values({"available": False})
@@ -67,9 +118,19 @@ def _delete_filtered(connection):
 
 
 def _delete_self_reference(connection):
-    """A subquery on the deleted table: Django filters pk IN (SELECT * FROM (...) subquery)."""
+    """A subquery on the deleted table, in one statement
+    (delete_can_self_reference_subquery)."""
     long_books = Book.objects.filter(pages__gt=100).values("pk")
     query = Book.objects.filter(pk__in=long_books).query.chain(DeleteQuery)
+    sql, params = query.get_compiler(connection.alias).as_sql()
+    return [(sql, params)]
+
+
+def _update_self_select(connection):
+    """An update filtered through a join: pk IN (SELECT ...) on the updated
+    table itself, without selecting the keys first (update_can_self_select)."""
+    query = Book.objects.filter(author__name="IBM i").query.chain(UpdateQuery)
+    query.add_update_values({"pages": 1})
     sql, params = query.get_compiler(connection.alias).as_sql()
     return [(sql, params)]
 
@@ -95,10 +156,28 @@ CASES: tuple[Case, ...] = (
     # Returning columns: SELECT ... FROM FINAL TABLE (INSERT ...) (phase 5, step A).
     Case("dml/insert_returning", "dml", _insert_returning, (AUTHOR,)),
     Case("dml/insert_returning_db_defaults", "dml", _insert_returning_db_defaults, (DEFAULTS,)),
+    # bulk_create(): multi-row VALUES, with returning in input order (step A2).
+    Case("dml/bulk_insert", "dml", _bulk_insert, (AUTHOR,)),
+    Case("dml/bulk_insert_returning", "dml", _bulk_insert_returning, (AUTHOR,)),
+    Case("dml/bulk_insert_db_defaults", "dml", _bulk_insert_db_defaults, (DEFAULTS,)),
+    # ignore_conflicts / update_conflicts: MERGE, no ON CONFLICT on Db2 for i (step B).
+    Case(
+        "dml/bulk_insert_ignore_conflicts",
+        "dml",
+        _conflicts(OnConflict.IGNORE),
+        (AUTHOR, BOOK),
+    ),
+    Case(
+        "dml/bulk_insert_update_conflicts",
+        "dml",
+        _conflicts(OnConflict.UPDATE, update_fields=["title", "pages"], unique_fields=["id"]),
+        (AUTHOR, BOOK),
+    ),
     Case("dml/update_boolean", "dml", _update_boolean, (BOOK,)),
     Case("dml/delete_filtered", "dml", _delete_filtered, (AUTHOR,)),
     # The outer query's WHERE is a search condition too (no CASE WHEN around the IN).
     Case("dml/delete_self_reference", "dml", _delete_self_reference, (AUTHOR, BOOK)),
+    Case("dml/update_self_select", "dml", _update_self_select, (AUTHOR, BOOK)),
     # Savepoints, as nested atomic() blocks use them (in the rolled-back transaction).
     Case("dml/savepoints", "dml", _savepoints, (AUTHOR,)),
 )

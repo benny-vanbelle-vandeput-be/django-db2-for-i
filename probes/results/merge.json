@@ -1,0 +1,179 @@
+{
+  "probe": "merge",
+  "utc": "20261030T085232Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "index: CREATE UNIQUE INDEX QTEMP.PMRGID": {
+    "result": "ok"
+  },
+  "index: CREATE UNIQUE INDEX QTEMP.PMRGK": {
+    "result": "ok"
+  },
+  "index: CREATE UNIQUE WHERE NOT NULL INDEX QTEMP.PMRGU": {
+    "result": "ok"
+  },
+  "ignore, untyped markers": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -584,
+    "message": "SQL0584 - NULL, UNKNOWN, or parameter marker in VALUES not allowed. (-584) (SQLPrepare)"
+  },
+  "ignore, typed markers": {
+    "result": "ok",
+    "rowcount": 1,
+    "rows after": [
+      [
+        "1",
+        "'one'",
+        "10"
+      ],
+      [
+        "2",
+        "'two'",
+        "20"
+      ],
+      [
+        "3",
+        "'three'",
+        "30"
+      ]
+    ]
+  },
+  "update, typed markers": {
+    "result": "ok",
+    "rowcount": 2,
+    "rows after": [
+      [
+        "1",
+        "'one'",
+        "10"
+      ],
+      [
+        "2",
+        "'TWO'",
+        "20"
+      ],
+      [
+        "3",
+        "'three'",
+        "30"
+      ]
+    ]
+  },
+  "ignore, new key twice": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "update, new key twice": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "update, existing key twice": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -788,
+    "message": "SQL0788 - Duplicate row identified for MERGE target PMRG in QTEMP. (-788) (SQLExecDirectW)"
+  },
+  "ignore, ON K only, conflict in U": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "ignore, ON K OR U": {
+    "result": "ok",
+    "rowcount": 1,
+    "rows after": [
+      [
+        "1",
+        "'one'",
+        "10"
+      ],
+      [
+        "2",
+        "'two'",
+        "20"
+      ],
+      [
+        "6",
+        "'six'",
+        "60"
+      ]
+    ]
+  },
+  "ignore, ON K OR U, NULL U twice": {
+    "result": "ok",
+    "rowcount": 2,
+    "rows after": [
+      [
+        "1",
+        "'one'",
+        "10"
+      ],
+      [
+        "2",
+        "'two'",
+        "20"
+      ],
+      [
+        "7",
+        "'seven'",
+        "None"
+      ],
+      [
+        "8",
+        "'eight'",
+        "None"
+      ]
+    ]
+  },
+  "ignore, ON K only, NOT ATOMIC CONTINUE ON SQLEXCEPTION": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "SELECT FROM FINAL TABLE (MERGE update)": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword MERGE not expected. Valid tokens: INSERT. (-199) (SQLPrepare)"
+  },
+  "identities after the merges": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "33",
+        "1"
+      ],
+      [
+        "34",
+        "2"
+      ]
+    ]
+  }
+}

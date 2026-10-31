@@ -1,0 +1,145 @@
+{
+  "probe": "bulk_types",
+  "utc": "20261030T231853Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "as the failing test, FINAL TABLE": {
+    "largest_ok": 1024,
+    "smallest_refused": 1056,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 3168
+    },
+    "connection_usable_after": true
+  },
+  "as the failing test, plain INSERT": {
+    "largest_ok": 1024,
+    "smallest_refused": 1056,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 3168
+    },
+    "connection_usable_after": true
+  },
+  "no NCLOB, FINAL TABLE": {
+    "largest_ok": 16128,
+    "smallest_refused": 16384,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -901,
+      "message": "SQL0901 - SQL system error. (-901) (SQLPrepare)",
+      "markers": 32768
+    },
+    "connection_usable_after": true
+  },
+  "one NCLOB, plain INSERT": {
+    "largest_ok": 1024,
+    "smallest_refused": 1056,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1056
+    },
+    "connection_usable_after": true
+  },
+  "one NCLOB, non-NULL values": {
+    "largest_ok": 1024,
+    "smallest_refused": 1056,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1056
+    },
+    "connection_usable_after": true
+  },
+  "one NCLOB(1K)": {
+    "largest_ok": 16384,
+    "smallest_refused": null,
+    "refusal": null,
+    "connection_usable_after": true
+  },
+  "one NCLOB(1M)": {
+    "largest_ok": 1024,
+    "smallest_refused": 1056,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1056
+    },
+    "connection_usable_after": true
+  },
+  "one NCLOB(100M)": {
+    "largest_ok": 1024,
+    "smallest_refused": 1056,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1056
+    },
+    "connection_usable_after": true
+  },
+  "one CLOB(1M)": {
+    "largest_ok": 1024,
+    "smallest_refused": 1056,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1056
+    },
+    "connection_usable_after": true
+  },
+  "one BLOB(1M)": {
+    "largest_ok": 1024,
+    "smallest_refused": 1056,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1056
+    },
+    "connection_usable_after": true
+  },
+  "two NCLOB(1M)": {
+    "largest_ok": 512,
+    "smallest_refused": 528,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1056
+    },
+    "connection_usable_after": true
+  },
+  "one NVARCHAR(16000)": {
+    "largest_ok": 16384,
+    "smallest_refused": null,
+    "refusal": null,
+    "connection_usable_after": true
+  },
+  "one NVARCHAR(255)": {
+    "largest_ok": 16384,
+    "smallest_refused": null,
+    "refusal": null,
+    "connection_usable_after": true
+  }
+}

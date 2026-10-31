@@ -1,0 +1,8 @@
+-- golden: dml/bulk_insert_ignore_conflicts
+-- django: 6.1
+-- profile: 7.5
+-- depends: ddl/create_author, ddl/create_book
+-- params: [[1, "IBM i"], [1, 1, "Db2 for i", null, null, true, 10, 2, 1, "IBM i", null, null, true, 20]]
+-- verified: IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.1.2, 2026-10-30
+INSERT INTO "TESTAPP_AUTHOR" ("ID", "NAME") VALUES (%s, %s);
+MERGE INTO "TESTAPP_BOOK" AS TGT USING (VALUES (CAST(%s AS BIGINT), CAST(%s AS INTEGER), CAST(%s AS NVARCHAR(200)), CAST(%s AS TIMESTAMP(6)), CAST(%s AS TIME), CAST(%s AS BOOLEAN), CAST(%s AS INTEGER)), (CAST(%s AS BIGINT), CAST(%s AS INTEGER), CAST(%s AS NVARCHAR(200)), CAST(%s AS TIMESTAMP(6)), CAST(%s AS TIME), CAST(%s AS BOOLEAN), CAST(%s AS INTEGER))) AS SRC ("ID", "AUTHOR_ID", "TITLE", "PUBLISHED", "READING_TIME", "AVAILABLE", "PAGES") ON (TGT."ID" = SRC."ID") WHEN NOT MATCHED THEN INSERT ("ID", "AUTHOR_ID", "TITLE", "PUBLISHED", "READING_TIME", "AVAILABLE", "PAGES") VALUES (SRC."ID", SRC."AUTHOR_ID", SRC."TITLE", SRC."PUBLISHED", SRC."READING_TIME", SRC."AVAILABLE", SRC."PAGES");

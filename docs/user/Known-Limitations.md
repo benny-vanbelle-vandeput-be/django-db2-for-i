@@ -126,9 +126,10 @@ Django, with these IBM i specifics:
 `iexact`, `icontains`, `istartswith` and `iendswith` compare
 `UPPER(column)` with `UPPER(value)`. A normal index on the column cannot be
 used for `UPPER(column)`, so these lookups scan the table. (`icontains` and
-`iendswith` cannot use an index anyway, as with every `LIKE '%...'`.) Options
-for a later version: a derived index on `UPPER(column)`, or a case-insensitive
-sort sequence for the connection; neither is implemented yet.
+`iendswith` cannot use an index anyway, as with every `LIKE '%...'`.) An
+index on the expression, `Index(Upper("name"), name=...)` in `Meta.indexes`,
+can be created (expression indexes, phase 5); whether Db2 for i's optimizer
+uses it for a given lookup has not been measured.
 
 ## No index on TextField and BinaryField
 
@@ -527,6 +528,69 @@ out rows whose result would pass year 9999, or check the duration first).
 `TimeField + DurationField` wraps at 24 hours, as on PostgreSQL, and has no
 fractional seconds (see "TimeField has no fractional seconds").
 
+## bulk_create() with ignore_conflicts or update_conflicts
+
+Db2 for i has no `INSERT ... ON CONFLICT`. The backend writes a `MERGE`
+instead, which differs from PostgreSQL in four ways:
+
+- **No keys back:** `update_conflicts=True` does not set the primary keys of
+  the objects. A `MERGE` returns no rows (`FINAL TABLE` takes only an
+  `INSERT`). Read the objects again if you need their keys.
+- **Duplicates in one call:** the same key twice in one call raises
+  `IntegrityError`. PostgreSQL skips the second one with `ignore_conflicts`.
+- **Only unconditional unique keys are matched:** `ignore_conflicts` matches
+  the primary key, `unique` fields, `unique_together` and `UniqueConstraint`s
+  without a `condition` or expressions. A conflict in a conditional or
+  functional unique constraint raises `IntegrityError`.
+- **Two jobs inserting the same row at the same time:** see below. This also
+  applies to `add()` and `set()` on a `ManyToManyField`.
+
+### Errors when two jobs insert the same row at the same time
+
+> **Not verified on IBM i.** This comes from
+> [IBM's MERGE documentation](https://www.ibm.com/docs/en/i/7.5?topic=statements-merge).
+> Testing it needs two connections, which the current test system does not allow.
+
+`ignore_conflicts` does not guarantee "no error" on Db2 for i. A `MERGE` first
+looks for the rows that exist and then inserts the rest, and another job can
+insert the same key between those two steps. This affects:
+
+- `bulk_create(ignore_conflicts=True)` and `bulk_create(update_conflicts=True)`;
+- `add()` and `set()` on a `ManyToManyField` without a custom `through` model,
+  because Django uses `ignore_conflicts` for them. Two requests adding the same
+  tag to the same article at the same moment can hit this.
+
+What you may see:
+
+- `django.db.IntegrityError` with SQL0803 ("Duplicate key value specified"). This
+  error, and that **the whole statement is undone**, including its rows without
+  a conflict, have been tested with one connection.
+- `django.db.OperationalError` with SQL0913 ("Row or object ... in use"), if the
+  other job has not committed yet and the wait for its row runs out. This is
+  expected from how row locks work, not documented by IBM for `MERGE`.
+
+The other job's row is there once it commits, so trying again normally succeeds.
+Keep the `atomic()` inside the retry, so a failed attempt does not break an outer
+transaction:
+
+```python
+from django.db import IntegrityError, OperationalError, transaction
+
+for attempt in range(3):
+    try:
+        with transaction.atomic():
+            article.tags.add(tag)
+        break
+    except (IntegrityError, OperationalError):
+        if attempt == 2:
+            raise
+```
+
+A real `IntegrityError` that is not a race, such as a violated foreign key or the
+same key twice in one call, fails again on every attempt and is raised at the end.
+IBM names a restrictive isolation level such as repeatable read as a way to avoid
+the race. It takes more locks and has not been tested with this backend.
+
 ## Not available on Db2 for i
 
 Db2 for i has no equivalent for these Django features, so they stay off
@@ -543,13 +607,15 @@ Db2 for i has no equivalent for these Django features, so they stay off
   `TextField` for text without a limit.
 - **Materialized views in `inspectdb`.** `inspectdb --include-views` lists
   views, but not materialized query tables.
+- **Covering indexes** (`Index(include=...)`, `UniqueConstraint(include=...)`).
+  `CREATE INDEX` takes no `INCLUDE` (SQL0104); Django leaves the clause out
+  and its system checks warn about it.
 
 Django's system checks report the first three when a model uses them.
 
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and
-enabled one at a time: bulk insert,
-returning columns, JSONField, window functions, `select_for_update`,
+enabled one at a time: JSONField, window functions, `select_for_update`,
 and creating test schemas (tests
 run in an existing library, see [Configuration](Configuration.md#test-database-test)).

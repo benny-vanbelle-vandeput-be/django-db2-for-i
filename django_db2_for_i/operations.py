@@ -37,6 +37,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 
 from django.conf import settings
+from django.core.exceptions import FieldDoesNotExist
 from django.core.management.color import no_style
 from django.db import NotSupportedError
 from django.db.backends.base.operations import BaseDatabaseOperations
@@ -46,7 +47,7 @@ from django.utils.duration import duration_microseconds
 
 from .compat import Before60OperationsMixin
 from .expressions import DAY_MICROSECONDS, NVARCHAR_MAX
-from .schema import default_literal
+from .schema import LOB_TYPES, base_type, default_literal
 
 logger = logging.getLogger("django_db2_for_i")
 
@@ -58,6 +59,17 @@ BIGINT_MIN, BIGINT_MAX = -(2**63), 2**63 - 1
 # scalar functions are used throughout. DAYOFWEEK is 1 = Sunday .. 7 = Saturday
 # and DAYOFWEEK_ISO 1 = Monday .. 7 = Sunday, Django's week_day and
 # iso_week_day; WEEK_ISO is the ISO-8601 week, Django's week.
+# bulk_batch_size(): a multi-row INSERT takes at most 32,767 parameter markers
+# (32,768 gives SQL0901) and about 32,500 rows (32,768 gives SQL0101; probe
+# qtemp_bulk). Half of each leaves room for longer placeholders and the
+# FINAL TABLE wrapper, well under the statement length limit (about 2 MB).
+# A LOB column has a much lower limit, whatever else the statement holds: 1024
+# markers of NCLOB, CLOB or BLOB work, 1056 give PWS0001 at prepare, inside
+# FINAL TABLE and without it (probe qtemp_bulk_types). Half of that here too.
+BULK_MAX_PARAMS = 16_000
+BULK_MAX_ROWS = 16_000
+BULK_MAX_LOB_PARAMS = 512
+
 _DATE_PARTS = {
     "year": "YEAR(%s)",
     "iso_year": "INTEGER(VARCHAR_FORMAT(%s, 'IYYY'))",
@@ -262,6 +274,32 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
         value = cursor.fetchone()[0]
         # IDENTITY_VAL_LOCAL() is DECIMAL(31, 0).
         return None if value is None else int(value)
+
+    def bulk_batch_size(self, fields, objs):
+        """Rows per multi-row statement: at most BULK_MAX_PARAMS markers,
+        BULK_MAX_LOB_PARAMS of them for LOB columns, and BULK_MAX_ROWS rows.
+        Django's own version differs per release (6.1 reads max_query_params,
+        5.2 and 6.0 have no limit), so it is not used."""
+        columns = [
+            column for field in fields for column in getattr(field, "fields", None) or [field]
+        ]
+        limits = [len(objs), BULK_MAX_ROWS]
+        if columns:
+            limits.append(BULK_MAX_PARAMS // len(columns))
+        lobs = sum(self._is_lob(column, objs) for column in columns)
+        if lobs:
+            limits.append(BULK_MAX_LOB_PARAMS // lobs)
+        return max(min(limits), 1)
+
+    def _is_lob(self, column, objs) -> bool:
+        """Django passes fields or their names ("pk", which is no field and no
+        LOB); a name is looked up on the objects' model."""
+        if isinstance(column, str):
+            try:
+                column = objs[0]._meta.get_field(column)
+            except (AttributeError, FieldDoesNotExist, IndexError):
+                return False
+        return base_type(column.db_type(self.connection)) in LOB_TYPES
 
     def returning_columns(self, fields):
         """No ``RETURNING`` clause: the insert compiler wraps the statement in

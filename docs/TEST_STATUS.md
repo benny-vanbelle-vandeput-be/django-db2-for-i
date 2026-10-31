@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2958 | 2 | 0 | 0 | 2026-10-29 21:02:46 UTC |
-| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 12:56:12 UTC |
-| Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-29 12:04:46 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 21:02:56 UTC |
+| Offline tests | 3112 | 2 | 0 | 0 | 2026-10-31 09:09:42 UTC |
+| IBM i tests | 373 | 0 | 1 | 0 | 2026-10-31 09:37:55 UTC |
+| Django suite on IBM i | 2117 | 189 | 53 | 0 | 2026-10-31 07:39:26 UTC |
+| Replay tests | 2516 | 0 | 0 | 0 | 2026-10-31 09:10:22 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2959 | 1 | 0 | 0 | 2026-10-29 21:00:45 UTC |
-| IBM i tests | 328 | 0 | 1 | 0 | 2026-10-29 10:35:19 UTC |
-| Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-29 09:48:04 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 21:00:58 UTC |
+| Offline tests | 3113 | 1 | 0 | 0 | 2026-10-31 09:05:48 UTC |
+| IBM i tests | 367 | 0 | 1 | 0 | 2026-10-31 05:48:23 UTC |
+| Django suite on IBM i | 2021 | 169 | 54 | 0 | 2026-10-31 07:57:28 UTC |
+| Replay tests | 2456 | 0 | 0 | 0 | 2026-10-31 09:06:39 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 2957 | 1 | 0 | 0 | 2026-10-29 20:58:19 UTC |
-| IBM i tests | 323 | 3 | 1 | 0 | 2026-10-29 08:22:24 UTC |
-| Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-29 07:35:19 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 20:58:33 UTC |
+| Offline tests | 3111 | 1 | 0 | 0 | 2026-10-31 09:02:06 UTC |
+| IBM i tests | 362 | 3 | 1 | 0 | 2026-10-31 06:20:10 UTC |
+| Django suite on IBM i | 1982 | 163 | 55 | 0 | 2026-10-31 08:16:43 UTC |
+| Replay tests | 2412 | 0 | 0 | 0 | 2026-10-31 09:02:47 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,10 +73,10 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-10-29 06:11:36 UTC to 2026-10-29 12:04:46 UTC
+- **Runs:** 2026-10-29 06:13:06 UTC to 2026-10-31 08:16:43 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
 - **Python:** 3.14.8
-- **Backend commits:** 55d0e65 2026-10-29 (per module in the table)
+- **Backend commits:** 36c1ca4 2026-10-31, 55d0e65 2026-10-29, 4919cf7 2026-10-31, 55d0e65 2026-10-29, 55d0e65 2026-10-29, d0cb7bf 2026-10-30 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
@@ -88,9 +88,9 @@ The Django suite on IBM i per module and Django version.
 | aggregation | 5.2 | 140 | 139 | 0 | 0 | 1 | 0 | 0 | OK | 2026-10-29 06:23:42 UTC | 55d0e65 2026-10-29 |
 | aggregation | 6.0 | 156 | 151 | 0 | 0 | 5 | 0 | 0 | OK | 2026-10-29 08:35:11 UTC | 55d0e65 2026-10-29 |
 | aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-10-29 10:48:52 UTC | 55d0e65 2026-10-29 |
-| basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-29 06:11:36 UTC | 55d0e65 2026-10-29 |
-| basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-29 08:23:09 UTC | 55d0e65 2026-10-29 |
-| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-29 10:36:16 UTC | 55d0e65 2026-10-29 |
+| basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-31 08:16:43 UTC | 4919cf7 2026-10-31 |
+| basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-31 07:57:28 UTC | 4919cf7 2026-10-31 |
+| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-10-31 07:39:26 UTC | 4919cf7 2026-10-31 |
 | expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-29 06:25:40 UTC | 55d0e65 2026-10-29 |
 | expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-29 08:37:05 UTC | 55d0e65 2026-10-29 |
 | expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-10-29 10:50:49 UTC | 55d0e65 2026-10-29 |
@@ -112,9 +112,9 @@ The Django suite on IBM i per module and Django version.
 | ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-29 06:17:41 UTC | 55d0e65 2026-10-29 |
 | ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-29 08:29:26 UTC | 55d0e65 2026-10-29 |
 | ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-10-29 10:42:41 UTC | 55d0e65 2026-10-29 |
-| queries | 5.2 | 493 | 469 | 0 | 0 | 20 | 4 | 0 | OK | 2026-10-29 07:35:19 UTC | 55d0e65 2026-10-29 |
-| queries | 6.0 | 495 | 470 | 0 | 0 | 21 | 4 | 0 | OK | 2026-10-29 09:48:04 UTC | 55d0e65 2026-10-29 |
-| queries | 6.1 | 506 | 482 | 0 | 0 | 21 | 3 | 0 | OK | 2026-10-29 12:04:46 UTC | 55d0e65 2026-10-29 |
+| queries | 5.2 | 493 | 469 | 0 | 0 | 20 | 4 | 0 | PARTIAL (different commits 36c1ca4 2026-10-31, 55d0e65 2026-10-29) | 2026-10-29 07:35:19 UTC | 36c1ca4 2026-10-31, 55d0e65 2026-10-29 |
+| queries | 6.0 | 495 | 470 | 0 | 0 | 21 | 4 | 0 | PARTIAL (different commits 36c1ca4 2026-10-31, 55d0e65 2026-10-29) | 2026-10-29 09:48:04 UTC | 36c1ca4 2026-10-31, 55d0e65 2026-10-29 |
+| queries | 6.1 | 506 | 482 | 0 | 0 | 21 | 3 | 0 | PARTIAL (different commits 55d0e65 2026-10-29, d0cb7bf 2026-10-30) | 2026-10-29 12:04:46 UTC | 55d0e65 2026-10-29, d0cb7bf 2026-10-30 |
 | schema | 5.2 | 220 | 110 | 0 | 0 | 87 | 23 | 0 | OK | 2026-10-29 07:20:17 UTC | 55d0e65 2026-10-29 |
 | schema | 6.0 | 222 | 111 | 0 | 0 | 89 | 22 | 0 | OK | 2026-10-29 09:32:47 UTC | 55d0e65 2026-10-29 |
 | schema | 6.1 | 227 | 113 | 0 | 0 | 92 | 22 | 0 | OK | 2026-10-29 11:49:10 UTC | 55d0e65 2026-10-29 |
@@ -125,12 +125,18 @@ The Django suite on IBM i per module and Django version.
 ## Feature flags set to True by the backend
 
 - `allow_sliced_subqueries_with_in`
+- `allows_auto_pk_0`
 - `can_introspect_check_constraints`
 - `can_introspect_default`
 - `can_introspect_foreign_keys`
 - `can_release_savepoints`
 - `can_rename_index`
+- `can_return_columns_from_insert`
+- `can_return_rows_from_bulk_insert`
 - `can_rollback_ddl`
+- `can_use_chunked_reads`
+- `delete_can_self_reference_subquery`
+- `has_bulk_insert`
 - `ignores_table_name_case`
 - `implied_column_null`
 - `indexes_foreign_keys`
@@ -142,20 +148,33 @@ The Django suite on IBM i per module and Django version.
 - `supports_any_value`
 - `supports_boolean_expr_in_select_clause`
 - `supports_column_check_constraints`
+- `supports_default_keyword_in_bulk_insert`
+- `supports_default_keyword_in_insert`
+- `supports_expression_indexes`
 - `supports_foreign_keys`
+- `supports_functions_in_partial_indexes`
+- `supports_ignore_conflicts`
 - `supports_index_column_ordering`
 - `supports_inspectdb`
+- `supports_nullable_unique_constraints`
 - `supports_parentheses_in_compound`
+- `supports_partial_indexes`
+- `supports_partially_nullable_unique_constraints`
 - `supports_regex_backreferencing`
 - `supports_select_difference`
 - `supports_select_intersection`
 - `supports_select_union`
+- `supports_sequence_reset`
 - `supports_slicing_ordering_in_compound`
 - `supports_subqueries_in_group_by`
 - `supports_table_check_constraints`
 - `supports_temporal_subtraction`
 - `supports_transactions`
 - `supports_tuple_lookups`
+- `supports_update_conflicts`
+- `supports_update_conflicts_with_target`
+- `truncates_names`
+- `update_can_self_select`
 - `uses_savepoints`
 - `has_native_boolean_field` (from the `has_boolean_type` capability)
 
@@ -170,10 +189,12 @@ The Django suite on IBM i per module and Django version.
 | Db2 for i rejects an untyped NULL as an expression (SQL0206) | 1 | 0 |
 | JSONField is not supported yet (phase 6) | 0 | 0 |
 | a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 3 | 0 |
-| identity restart deferred in TestCase (SQL0910) | 0 | 0 |
+| bulk_create(update_conflicts=True) is a MERGE, which returns no rows (FINAL TABLE takes only INSERT): the objects get no primary keys | 7 | 0 |
+| identity restart deferred in TestCase (SQL0910) | 1 | 0 |
 | null=True to null=False with a default sets the NULLs (UPDATE) and then runs SET NOT NULL in the same transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910) | 7 | 0 |
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
+| the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i | 1 | 0 |
 
 ## Golden files
 
-520 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
+559 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
