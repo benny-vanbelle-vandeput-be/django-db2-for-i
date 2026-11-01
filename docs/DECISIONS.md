@@ -1724,3 +1724,15 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Alternatives:** two connections on PUB400 (not allowed); moving the conflict
   flags to later until it can be verified (`bulk_create` would lose them, and
   `m2m.add()` would keep the same race).
+
+## 2026-11-01: Phase 6 plan: row locks wait for a dedicated IBM i, JSONField in an NCLOB with error clauses
+- **Decision:** the plan of [phase-6.md](phases/phase-6.md) is approved, four PRs by risk with `JSONField`
+  on its own. `select_for_update()` stays off as an open track for a dedicated IBM i, not intentionally
+  off. `JSONField` is an `NCLOB`, with error clauses where Django expects an error.
+  `supports_no_precision_decimalfield` is intentionally off. #82 is out of the phase. No implementation
+  until `v0.1.0b2` is tagged.
+- **Why:** the maintainer's answers on #218. Blocking can only be verified with two connections, and a lock
+  that silently does not lock would look fine in every test on PUB400. The JSON functions answer errors
+  with NULL by default (probe `qtemp_json_functions`), which would hide wrong results.
+- **Alternatives:** row locks on from IBM's documentation alone; `CLOB` CCSID 1208 (works too, but `TextField`
+  is an `NCLOB`); `DECFLOAT(34)` for an unconstrained `DecimalField`.

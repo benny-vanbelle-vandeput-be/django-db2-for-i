@@ -40,8 +40,8 @@ def test_every_flag_that_is_off_is_off_planned_or_not_applicable() -> None:
 
 
 def test_every_planned_flag_names_a_phase_or_its_open_question() -> None:
-    """No "later" (#191, topic 3): a planned flag names its phase, or says which
-    probe it needs."""
+    """No "later" (#191, topic 3): a planned flag names its phase, says which probe it
+    needs, or waits for a dedicated IBM i (needing two connections, #218)."""
     planned = {
         name: info["planned"]
         for name, info in features.load_descriptions()["flags"].items()
@@ -51,7 +51,7 @@ def test_every_planned_flag_names_a_phase_or_its_open_question() -> None:
     wrong = {
         name: value
         for name, value in planned.items()
-        if not (value.startswith("phase ") or value.startswith("needs probe ("))
+        if not value.startswith(("phase ", "needs probe (", "a dedicated IBM i ("))
     }
     assert wrong == {}
 

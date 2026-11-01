@@ -1,0 +1,626 @@
+{
+  "probe": "phase6_flags",
+  "utc": "20261031T175327Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "GROUP BY an NCLOB": {
+    "sql": "SELECT T, COUNT(*) FROM QTEMP.P6FLAG GROUP BY T",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "T",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'a'",
+        "2"
+      ],
+      [
+        "'b'",
+        "1"
+      ]
+    ]
+  },
+  "GROUP BY a BLOB": {
+    "sql": "SELECT B, COUNT(*) FROM QTEMP.P6FLAG GROUP BY B",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "B",
+        "type": "bytearray",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None",
+        "3"
+      ]
+    ]
+  },
+  "GROUP BY a cast NCLOB": {
+    "sql": "SELECT CAST(T AS NVARCHAR(100)), COUNT(*) FROM QTEMP.P6FLAG GROUP BY CAST(T AS NVARCHAR(100))",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'a'",
+        "2"
+      ],
+      [
+        "'b'",
+        "1"
+      ]
+    ]
+  },
+  "DISTINCT an NCLOB": {
+    "sql": "SELECT DISTINCT T FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "T",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'a'"
+      ],
+      [
+        "'b'"
+      ]
+    ]
+  },
+  "ORDER BY an NCLOB": {
+    "sql": "SELECT I FROM QTEMP.P6FLAG ORDER BY T",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ],
+      [
+        "3"
+      ]
+    ]
+  },
+  "ORDER BY in an IN subquery": {
+    "sql": "SELECT I FROM QTEMP.P6FLAG WHERE I IN (SELECT I FROM QTEMP.P6FLAG ORDER BY I)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ],
+      [
+        "3"
+      ]
+    ]
+  },
+  "ORDER BY in a FROM subquery": {
+    "sql": "SELECT I FROM (SELECT I FROM QTEMP.P6FLAG ORDER BY I) X",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ],
+      [
+        "3"
+      ]
+    ]
+  },
+  "ORDER BY in an EXISTS subquery": {
+    "sql": "SELECT I FROM QTEMP.P6FLAG WHERE EXISTS (SELECT 1 FROM QTEMP.P6FLAG ORDER BY I)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ],
+      [
+        "3"
+      ]
+    ]
+  },
+  "LISTAGG DISTINCT, separator": {
+    "sql": "SELECT LISTAGG(DISTINCT S, ',') FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'x,y'"
+      ]
+    ]
+  },
+  "LISTAGG DISTINCT, separator, ordered": {
+    "sql": "SELECT LISTAGG(DISTINCT S, ',') WITHIN GROUP (ORDER BY S) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'x,y'"
+      ]
+    ]
+  },
+  "LISTAGG DISTINCT, ordered by another column": {
+    "sql": "SELECT LISTAGG(DISTINCT S, ',') WITHIN GROUP (ORDER BY I) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'x,y'"
+      ]
+    ]
+  },
+  "the REAL column, as the driver sees it": {
+    "sql": "SELECT R FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "R",
+        "type": "float",
+        "size": 7,
+        "precision": 7,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1.5"
+      ],
+      [
+        "2.5"
+      ],
+      [
+        "0.10000000149011612"
+      ]
+    ]
+  },
+  "REAL in the catalog": {
+    "sql": "SELECT DATA_TYPE, LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA = 'QTEMP' AND TABLE_NAME = 'P6FLAG' AND COLUMN_NAME = 'R'",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "DATA_TYPE",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      },
+      {
+        "name": "LENGTH",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NUMERIC_PRECISION",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NUMERIC_SCALE",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "bind a Decimal": {
+    "result": "error",
+    "sqlstate": "01004",
+    "sqlcode": 30002,
+    "message": "Data truncated. (30002) (SQLExecDirectW)"
+  },
+  "read back a Decimal": {
+    "sql": "SELECT D, CAST(D AS VARCHAR(50)) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "bind a typed Decimal marker": {
+    "result": "error",
+    "sqlstate": "01004",
+    "sqlcode": 30002,
+    "message": "Data truncated. (30002) (SQLExecDirectW)"
+  },
+  "read back a typed Decimal marker": {
+    "sql": "SELECT D, CAST(D AS VARCHAR(50)) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "bind a string": {
+    "result": "ok"
+  },
+  "read back a string": {
+    "sql": "SELECT D, CAST(D AS VARCHAR(50)) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1E+300'",
+        "'1E+300'"
+      ]
+    ]
+  },
+  "bind a typed string marker": {
+    "result": "ok"
+  },
+  "read back a typed string marker": {
+    "sql": "SELECT D, CAST(D AS VARCHAR(50)) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1E+300'",
+        "'1E+300'"
+      ]
+    ]
+  },
+  "bind 34 digits as a Decimal": {
+    "result": "ok"
+  },
+  "read back 34 digits as a Decimal": {
+    "sql": "SELECT D, CAST(D AS VARCHAR(50)) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1234567890123456789012345678901234'",
+        "'1234567890123456789012345678901234'"
+      ]
+    ]
+  },
+  "bind 34 digits as a string": {
+    "result": "ok"
+  },
+  "read back 34 digits as a string": {
+    "sql": "SELECT D, CAST(D AS VARCHAR(50)) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1234567890123456789012345678901234'",
+        "'1234567890123456789012345678901234'"
+      ]
+    ]
+  },
+  "bind a small value as a Decimal": {
+    "result": "ok"
+  },
+  "read back a small value as a Decimal": {
+    "sql": "SELECT D, CAST(D AS VARCHAR(50)) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1E-300'",
+        "'1E-300'"
+      ]
+    ]
+  },
+  "bind a small value as a string": {
+    "result": "ok"
+  },
+  "read back a small value as a string": {
+    "sql": "SELECT D, CAST(D AS VARCHAR(50)) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1E-300'",
+        "'1E-300'"
+      ]
+    ]
+  },
+  "bind a float": {
+    "result": "ok"
+  },
+  "read back a float": {
+    "sql": "SELECT D, CAST(D AS VARCHAR(50)) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1.000000000000000E+300'",
+        "'1.000000000000000E+300'"
+      ]
+    ]
+  },
+  "bind 35 digits as a string": {
+    "result": "ok"
+  },
+  "read back 35 digits as a string": {
+    "sql": "SELECT D, CAST(D AS VARCHAR(50)) FROM QTEMP.P6FLAG",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1.234567890123456789012345678901234E+34'",
+        "'1.234567890123456789012345678901234E+34'"
+      ]
+    ]
+  },
+  "a DECFLOAT compared to a typed marker": {
+    "sql": "SELECT 1 FROM QTEMP.P6FLAG WHERE D = CAST(CAST(? AS VARCHAR(50)) AS DECFLOAT(34))",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  }
+}

@@ -1,0 +1,1786 @@
+{
+  "probe": "db_functions",
+  "utc": "20261031T175300Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (a table gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "CHR(65)": {
+    "sql": "SELECT CHR(65) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'A'"
+      ]
+    ]
+  },
+  "CHR(233)": {
+    "sql": "SELECT CHR(233) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'\\x1a'"
+      ]
+    ]
+  },
+  "CHR(128512)": {
+    "sql": "SELECT CHR(128512) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "ASCII(S)": {
+    "sql": "SELECT ASCII(S) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "104"
+      ]
+    ]
+  },
+  "UNICODE(S)": {
+    "sql": "SELECT UNICODE(S) FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "42S02",
+    "sqlcode": -204,
+    "message": "SQL0204 - UNICODE in *LIBL type *N not found. (-204) (SQLExecDirectW)"
+  },
+  "CONCAT(S, N)": {
+    "sql": "SELECT CONCAT(S, N) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "CONCAT(S, 'x')": {
+    "sql": "SELECT CONCAT(S, 'x') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 101,
+        "precision": 101,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀x'"
+      ]
+    ]
+  },
+  "CONCAT(S, CAST(? AS NVARCHAR(10)))": {
+    "sql": "SELECT CONCAT(S, CAST(? AS NVARCHAR(10))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 110,
+        "precision": 110,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀x'"
+      ]
+    ]
+  },
+  "CONCAT(S, 'x', 'y')": {
+    "sql": "SELECT CONCAT(S, 'x', 'y') FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -170,
+    "message": "SQL0170 - Number of arguments for function CONCAT not valid. (-170) (SQLExecDirectW)"
+  },
+  "S || COALESCE(N, '')": {
+    "sql": "SELECT S || COALESCE(N, '') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀'"
+      ]
+    ]
+  },
+  "LEFT(S, 2)": {
+    "sql": "SELECT LEFT(S, 2) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'hé'"
+      ]
+    ]
+  },
+  "LEFT(S, ?)": {
+    "sql": "SELECT LEFT(S, ?) FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -171,
+    "message": "SQL0171 - Argument 02 of function LEFT not valid. (-171) (SQLPrepare)"
+  },
+  "RIGHT(S, 2)": {
+    "sql": "SELECT RIGHT(S, 2) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "' 😀'"
+      ]
+    ]
+  },
+  "RIGHT(S, ?)": {
+    "sql": "SELECT RIGHT(S, ?) FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -171,
+    "message": "SQL0171 - Argument *N of function RIGHT not valid. (-171) (SQLPrepare)"
+  },
+  "LENGTH(S)": {
+    "sql": "SELECT LENGTH(S) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "8"
+      ]
+    ]
+  },
+  "CHARACTER_LENGTH(S)": {
+    "sql": "SELECT CHARACTER_LENGTH(S) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "7"
+      ]
+    ]
+  },
+  "CHAR_LENGTH(S)": {
+    "sql": "SELECT CHAR_LENGTH(S) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "7"
+      ]
+    ]
+  },
+  "LOWER(S)": {
+    "sql": "SELECT LOWER(S) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀'"
+      ]
+    ]
+  },
+  "UPPER(S)": {
+    "sql": "SELECT UPPER(S) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'HÉLLO 😀'"
+      ]
+    ]
+  },
+  "LPAD(S, 12, 'x')": {
+    "sql": "SELECT LPAD(S, 12, 'x') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 12,
+        "precision": 12,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'xxxxhéllo 😀'"
+      ]
+    ]
+  },
+  "LPAD(S, ?, CAST(? AS NVARCHAR(10)))": {
+    "sql": "SELECT LPAD(S, ?, CAST(? AS NVARCHAR(10))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'xxxxhéllo 😀'"
+      ]
+    ]
+  },
+  "LPAD(S, 2, 'x')": {
+    "sql": "SELECT LPAD(S, 2, 'x') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'hé'"
+      ]
+    ]
+  },
+  "RPAD(S, 12, 'x')": {
+    "sql": "SELECT RPAD(S, 12, 'x') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 12,
+        "precision": 12,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀xxxx'"
+      ]
+    ]
+  },
+  "LTRIM(' a ')": {
+    "sql": "SELECT LTRIM(' a ') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'a '"
+      ]
+    ]
+  },
+  "RTRIM(' a ')": {
+    "sql": "SELECT RTRIM(' a ') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "' a'"
+      ]
+    ]
+  },
+  "TRIM(' a ')": {
+    "sql": "SELECT TRIM(' a ') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'a'"
+      ]
+    ]
+  },
+  "REPEAT(S, 2)": {
+    "sql": "SELECT REPEAT(S, 2) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀héllo 😀'"
+      ]
+    ]
+  },
+  "REPEAT(S, ?)": {
+    "sql": "SELECT REPEAT(S, ?) FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -171,
+    "message": "SQL0171 - Argument *N of function REPEAT not valid. (-171) (SQLPrepare)"
+  },
+  "REPEAT(S, CAST(NULL AS INTEGER))": {
+    "sql": "SELECT REPEAT(S, CAST(NULL AS INTEGER)) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "REPLACE(S, 'l', 'L')": {
+    "sql": "SELECT REPLACE(S, 'l', 'L') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héLLo 😀'"
+      ]
+    ]
+  },
+  "REPLACE(S, CAST(? AS NVARCHAR(10)), CAST(? AS NVARCHAR(10)))": {
+    "sql": "SELECT REPLACE(S, CAST(? AS NVARCHAR(10)), CAST(? AS NVARCHAR(10))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1000,
+        "precision": 1000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héLLo 😀'"
+      ]
+    ]
+  },
+  "REPLACE(S, 'l', '')": {
+    "sql": "SELECT REPLACE(S, 'l', '') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héo 😀'"
+      ]
+    ]
+  },
+  "REVERSE(S)": {
+    "sql": "SELECT REVERSE(S) FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "42S02",
+    "sqlcode": -204,
+    "message": "SQL0204 - REVERSE in *LIBL type *N not found. (-204) (SQLExecDirectW)"
+  },
+  "INSTR(S, 'l')": {
+    "sql": "SELECT INSTR(S, 'l') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  "INSTR(S, CAST(? AS NVARCHAR(10)))": {
+    "sql": "SELECT INSTR(S, CAST(? AS NVARCHAR(10))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  "LOCATE('l', S)": {
+    "sql": "SELECT LOCATE('l', S) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  "POSITION('l' IN S)": {
+    "sql": "SELECT POSITION('l' IN S) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  "SUBSTRING(S, 2, 2)": {
+    "sql": "SELECT SUBSTRING(S, 2, 2) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'él'"
+      ]
+    ]
+  },
+  "SUBSTRING(S, ?, ?)": {
+    "sql": "SELECT SUBSTRING(S, ?, ?) FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -418,
+    "message": "SQL0418 - Use of parameter marker, NULL, or UNKNOWN not valid. (-418) (SQLPrepare)"
+  },
+  "SUBSTR(S, 2, 2)": {
+    "sql": "SELECT SUBSTR(S, 2, 2) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'él'"
+      ]
+    ]
+  },
+  "SUBSTRING(S, 2)": {
+    "sql": "SELECT SUBSTRING(S, 2) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'éllo 😀'"
+      ]
+    ]
+  },
+  "MD5(S)": {
+    "sql": "SELECT MD5(S) FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "42S02",
+    "sqlcode": -204,
+    "message": "SQL0204 - MD5 in *LIBL type *N not found. (-204) (SQLExecDirectW)"
+  },
+  "LOWER(HEX(HASH_MD5(CAST(S AS VARCHAR(100) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_MD5(CAST(S AS VARCHAR(100) CCSID 1208)))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 32,
+        "precision": 32,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'207dd4f0cd7a4f13b4932646cd1f8f2b'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH_SHA1(CAST(S AS VARCHAR(100) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_SHA1(CAST(S AS VARCHAR(100) CCSID 1208)))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 40,
+        "precision": 40,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'628b3695e32b5f3b3789dcd4fe8100e5dba231da'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH_SHA256(CAST(S AS VARCHAR(100) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_SHA256(CAST(S AS VARCHAR(100) CCSID 1208)))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 64,
+        "precision": 64,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'a53c56966616f0ec3ed9db7ea07a6034430149528bbaba8966c284f9373669c2'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH_SHA512(CAST(S AS VARCHAR(100) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_SHA512(CAST(S AS VARCHAR(100) CCSID 1208)))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'60f5ad0f4b9c505aff0d48c8b83c958908fb2852e16351a96bb428a273032c0ca0953b5ad0848830cd278f57b6950082fd91c125329d68a5e763bed57202117f'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH(CAST(S AS VARCHAR(100) CCSID 1208), 0)))": {
+    "sql": "SELECT LOWER(HEX(HASH(CAST(S AS VARCHAR(100) CCSID 1208), 0))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 32,
+        "precision": 32,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'207dd4f0cd7a4f13b4932646cd1f8f2b'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH(CAST(S AS VARCHAR(100) CCSID 1208), 3)))": {
+    "sql": "SELECT LOWER(HEX(HASH(CAST(S AS VARCHAR(100) CCSID 1208), 3))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'60f5ad0f4b9c505aff0d48c8b83c958908fb2852e16351a96bb428a273032c0ca0953b5ad0848830cd278f57b6950082fd91c125329d68a5e763bed57202117f'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH_SHA224(CAST(S AS VARCHAR(100) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_SHA224(CAST(S AS VARCHAR(100) CCSID 1208)))) FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "42S02",
+    "sqlcode": -204,
+    "message": "SQL0204 - HASH_SHA224 in *LIBL type *N not found. (-204) (SQLExecDirectW)"
+  },
+  "LOWER(HEX(HASH_SHA384(CAST(S AS VARCHAR(100) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_SHA384(CAST(S AS VARCHAR(100) CCSID 1208)))) FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "42S02",
+    "sqlcode": -204,
+    "message": "SQL0204 - HASH_SHA384 in *LIBL type *N not found. (-204) (SQLExecDirectW)"
+  },
+  "LOWER(HEX(HASH_MD5(S)))": {
+    "sql": "SELECT LOWER(HEX(HASH_MD5(S))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 32,
+        "precision": 32,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'dce14ae8c4f7e98dfa8e12809df8c961'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH_MD5(CAST(N AS VARCHAR(100) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_MD5(CAST(N AS VARCHAR(100) CCSID 1208)))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 32,
+        "precision": 32,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "COALESCE(N, S)": {
+    "sql": "SELECT COALESCE(N, S) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀'"
+      ]
+    ]
+  },
+  "COALESCE(N, CAST(? AS NVARCHAR(10)))": {
+    "sql": "SELECT COALESCE(N, CAST(? AS NVARCHAR(10))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'x'"
+      ]
+    ]
+  },
+  "GREATEST(I, 9)": {
+    "sql": "SELECT GREATEST(I, 9) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "9"
+      ]
+    ]
+  },
+  "LEAST(I, 9)": {
+    "sql": "SELECT LEAST(I, 9) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "7"
+      ]
+    ]
+  },
+  "MAX(I, 9)": {
+    "sql": "SELECT MAX(I, 9) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "9"
+      ]
+    ]
+  },
+  "MIN(I, 9)": {
+    "sql": "SELECT MIN(I, 9) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "7"
+      ]
+    ]
+  },
+  "MAX(I, CAST(NULL AS INTEGER))": {
+    "sql": "SELECT MAX(I, CAST(NULL AS INTEGER)) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "MAX(S, 'z')": {
+    "sql": "SELECT MAX(S, 'z') FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'z'"
+      ]
+    ]
+  },
+  "NULLIF(I, 7)": {
+    "sql": "SELECT NULLIF(I, 7) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "NULLIF(S, CAST(? AS NVARCHAR(10)))": {
+    "sql": "SELECT NULLIF(S, CAST(? AS NVARCHAR(10))) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀'"
+      ]
+    ]
+  },
+  "CAST(P AS DECIMAL(9, 1))": {
+    "sql": "SELECT CAST(P AS DECIMAL(9, 1)) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 9,
+        "precision": 9,
+        "scale": 1
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('2.5')"
+      ]
+    ]
+  },
+  "CAST(2.55 AS DECIMAL(9, 1))": {
+    "sql": "SELECT CAST(2.55 AS DECIMAL(9, 1)) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 9,
+        "precision": 9,
+        "scale": 1
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('2.5')"
+      ]
+    ]
+  },
+  "CAST(D AS DECIMAL(9, 0))": {
+    "sql": "SELECT CAST(D AS DECIMAL(9, 0)) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 9,
+        "precision": 9,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('2')"
+      ]
+    ]
+  },
+  "CAST(3.7 AS INTEGER)": {
+    "sql": "SELECT CAST(3.7 AS INTEGER) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  "CAST(S AS NVARCHAR(2))": {
+    "sql": "SELECT CAST(S AS NVARCHAR(2)) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'hé'"
+      ]
+    ]
+  },
+  "ABS(I)": {
+    "sql": "SELECT ABS(I) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "7"
+      ]
+    ]
+  },
+  "ACOS(0.5)": {
+    "sql": "SELECT ACOS(0.5) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1.0471975511965979"
+      ]
+    ]
+  },
+  "ASIN(0.5)": {
+    "sql": "SELECT ASIN(0.5) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0.5235987755982989"
+      ]
+    ]
+  },
+  "ATAN(0.5)": {
+    "sql": "SELECT ATAN(0.5) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0.4636476090008061"
+      ]
+    ]
+  },
+  "ATAN2(1, 2)": {
+    "sql": "SELECT ATAN2(1, 2) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1.1071487177940904"
+      ]
+    ]
+  },
+  "CEILING(D)": {
+    "sql": "SELECT CEILING(D) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3.0"
+      ]
+    ]
+  },
+  "COS(0.5)": {
+    "sql": "SELECT COS(0.5) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0.8775825618903728"
+      ]
+    ]
+  },
+  "COT(0.5)": {
+    "sql": "SELECT COT(0.5) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1.830487721712452"
+      ]
+    ]
+  },
+  "DEGREES(1)": {
+    "sql": "SELECT DEGREES(1) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "57.29577951308232"
+      ]
+    ]
+  },
+  "EXP(1)": {
+    "sql": "SELECT EXP(1) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2.718281828459045"
+      ]
+    ]
+  },
+  "FLOOR(D)": {
+    "sql": "SELECT FLOOR(D) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2.0"
+      ]
+    ]
+  },
+  "LN(2)": {
+    "sql": "SELECT LN(2) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0.6931471805599453"
+      ]
+    ]
+  },
+  "LOG(2, 8)": {
+    "sql": "SELECT LOG(2, 8) FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -170,
+    "message": "SQL0170 - Number of arguments for function LOG not valid. (-170) (SQLExecDirectW)"
+  },
+  "LOG10(100)": {
+    "sql": "SELECT LOG10(100) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2.0"
+      ]
+    ]
+  },
+  "MOD(I, 3)": {
+    "sql": "SELECT MOD(I, 3) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "MOD(D, 2)": {
+    "sql": "SELECT MOD(D, 2) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0.5"
+      ]
+    ]
+  },
+  "MOD(7.5, 2)": {
+    "sql": "SELECT MOD(7.5, 2) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 2,
+        "precision": 2,
+        "scale": 1
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('1.5')"
+      ]
+    ]
+  },
+  "PI()": {
+    "sql": "SELECT PI() FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3.141592653589793"
+      ]
+    ]
+  },
+  "POWER(2, 3)": {
+    "sql": "SELECT POWER(2, 3) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "8.0"
+      ]
+    ]
+  },
+  "POWER(D, 2)": {
+    "sql": "SELECT POWER(D, 2) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6.25"
+      ]
+    ]
+  },
+  "RADIANS(180)": {
+    "sql": "SELECT RADIANS(180) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3.141592653589793"
+      ]
+    ]
+  },
+  "RAND()": {
+    "sql": "SELECT RAND() FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0.19513534958952605"
+      ]
+    ]
+  },
+  "RANDOM()": {
+    "sql": "SELECT RANDOM() FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0.17868587298196356"
+      ]
+    ]
+  },
+  "SIGN(I)": {
+    "sql": "SELECT SIGN(I) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "SIN(0.5)": {
+    "sql": "SELECT SIN(0.5) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0.479425538604203"
+      ]
+    ]
+  },
+  "SQRT(4)": {
+    "sql": "SELECT SQRT(4) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2.0"
+      ]
+    ]
+  },
+  "TAN(0.5)": {
+    "sql": "SELECT TAN(0.5) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0.5463024898437905"
+      ]
+    ]
+  },
+  "ROUND(D)": {
+    "sql": "SELECT ROUND(D) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3.0"
+      ]
+    ]
+  },
+  "ROUND(D, 0)": {
+    "sql": "SELECT ROUND(D, 0) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3.0"
+      ]
+    ]
+  },
+  "ROUND(P, 0)": {
+    "sql": "SELECT ROUND(P, 0) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 10,
+        "precision": 10,
+        "scale": 2
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('3.00')"
+      ]
+    ]
+  },
+  "ROUND(3.5, 0)": {
+    "sql": "SELECT ROUND(3.5, 0) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 1
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('4.0')"
+      ]
+    ]
+  },
+  "ROUND(CAST(3.5 AS DOUBLE), 0)": {
+    "sql": "SELECT ROUND(CAST(3.5 AS DOUBLE), 0) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "4.0"
+      ]
+    ]
+  },
+  "ROUND(CAST(0.5 AS DOUBLE), 0)": {
+    "sql": "SELECT ROUND(CAST(0.5 AS DOUBLE), 0) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1.0"
+      ]
+    ]
+  },
+  "ROUND(CAST(-2.5 AS DOUBLE), 0)": {
+    "sql": "SELECT ROUND(CAST(-2.5 AS DOUBLE), 0) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "-3.0"
+      ]
+    ]
+  },
+  "ROUND(D, ?)": {
+    "sql": "SELECT ROUND(D, ?) FROM QTEMP.P6FN",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -171,
+    "message": "SQL0171 - Argument 02 of function ROUND not valid. (-171) (SQLPrepare)"
+  },
+  "ROUND(D, CAST(? AS INTEGER))": {
+    "sql": "SELECT ROUND(D, CAST(? AS INTEGER)) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3.0"
+      ]
+    ]
+  },
+  "ROUND(CAST(12.345 AS DOUBLE), -1)": {
+    "sql": "SELECT ROUND(CAST(12.345 AS DOUBLE), -1) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "10.0"
+      ]
+    ]
+  },
+  "CURRENT_TIMESTAMP": {
+    "sql": "SELECT CURRENT_TIMESTAMP FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "datetime.datetime(2026, 10, 31, 17, 53, 0, 520865)"
+      ]
+    ]
+  },
+  "CURRENT TIMESTAMP(6)": {
+    "sql": "SELECT CURRENT TIMESTAMP(6) FROM QTEMP.P6FN",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "datetime.datetime(2026, 10, 31, 17, 53, 0, 632647)"
+      ]
+    ]
+  }
+}
