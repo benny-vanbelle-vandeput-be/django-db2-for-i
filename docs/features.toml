@@ -4,7 +4,8 @@
 # Per flag:
 #   description = what the flag means for users
 #   off         = why it is intentionally off (only for flags that are off)
-#   planned     = the phase it is planned for (only for flags that are off)
+#   planned     = the phase it is planned for, or what it waits for (only for flags
+#                 that are off)
 #   not_applicable = which database or driver the flag belongs to (only for
 #                 flags that are off)
 # A flag that is off in every supported Django version has exactly one of
@@ -186,19 +187,15 @@ supports_nulls_distinct_unique_constraints.off = "Db2 for i takes no `NULLS DIST
 # --- Planned ----------------------------------------------------------------
 
 # Phase 6: window functions, JSONField, database functions, DB-level on_delete.
-# Also the row locks of select_for_update() and query flags left from phase 2.
+# Also query flags left from phase 2. The row locks of select_for_update() wait for a
+# dedicated IBM i (the maintainer's answer 1 on #218): blocking needs two connections.
 # Not verified on IBM i yet, except: LOB columns in GROUP BY (probe queries) and
 # LISTAGG(DISTINCT ...) with a separator (probe listagg) work; Django's tests
 # decide. Some may stay off (NOWAIT, EXCLUDE in window frames).
 has_real_datatype.description = "The database has a single-precision `REAL` type besides `DOUBLE`."
 has_real_datatype.planned = "phase 6"
-# Needs a probe: DECIMAL without a precision is DECIMAL(5, 0), so the type would
-# be DECFLOAT(34). It round-trips 34-digit values, but 1E+300 is refused at bind
-# (01004) and values come back as str (probe qtemp_later_flags, IBMI_NOTES).
-# Open: how the driver binds such values, and whether 34 digits fit Django's
-# meaning of an unconstrained DecimalField.
 supports_no_precision_decimalfield.description = "`DecimalField` without `max_digits` and `decimal_places` (Django 6.1+)."
-supports_no_precision_decimalfield.planned = "phase 6, after a probe (`DECFLOAT(34)` binding)"
+supports_no_precision_decimalfield.off = "`DECIMAL` needs a precision, and `DECFLOAT` has different semantics: `1E+300` as a `Decimal` is refused at bind, a 35th digit is rounded without an error (probes `later_flags`, `phase6_flags`, IBMI_NOTES)."
 allows_group_by_lob.description = "`TextField` and `BinaryField` columns can be grouped by."
 allows_group_by_lob.planned = "phase 6"
 can_introspect_json_field.description = "Introspection recognizes a `JSONField` column."
@@ -206,19 +203,19 @@ can_introspect_json_field.planned = "phase 6"
 has_json_object_function.description = "JSON objects can be built in SQL (`JSONObject`)."
 has_json_object_function.planned = "phase 6"
 has_select_for_update.description = "`select_for_update()` locks the selected rows."
-has_select_for_update.planned = "phase 6"
+has_select_for_update.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
 has_select_for_update_nowait.description = "`select_for_update(nowait=True)` fails instead of waiting for a lock."
-has_select_for_update_nowait.planned = "phase 6"
+has_select_for_update_nowait.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
 has_select_for_update_of.description = "`select_for_update(of=...)` locks rows of the named tables only."
-has_select_for_update_of.planned = "phase 6"
+has_select_for_update_of.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
 has_select_for_update_skip_locked.description = "`select_for_update(skip_locked=True)` skips locked rows."
-has_select_for_update_skip_locked.planned = "phase 6"
+has_select_for_update_skip_locked.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
 ignores_unnecessary_order_by_in_subqueries.description = "Django may leave an `ORDER BY` in a subquery; the database accepts and ignores it."
 ignores_unnecessary_order_by_in_subqueries.planned = "phase 6"
 rounds_to_even.description = "`Round()` rounds halves to even."
 rounds_to_even.planned = "phase 6"
 select_for_update_of_column.description = "`select_for_update(of=...)` is written with column names, not table names."
-select_for_update_of_column.planned = "phase 6"
+select_for_update_of_column.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
 supports_aggregate_distinct_multiple_argument.description = "`StringAgg(..., distinct=True)` with a delimiter (`distinct` with several arguments)."
 supports_aggregate_distinct_multiple_argument.planned = "phase 6"
 supports_cast_with_precision.description = "`Cast()` to a type with a length or precision, e.g. `DecimalField(max_digits=...)`."
@@ -246,7 +243,7 @@ supports_over_clause.planned = "phase 6"
 supports_primitives_in_json_field.description = "`JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays."
 supports_primitives_in_json_field.planned = "phase 6"
 supports_select_for_update_with_limit.description = "`select_for_update()` on a sliced queryset."
-supports_select_for_update_with_limit.planned = "phase 6"
+supports_select_for_update_with_limit.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
 
 # --- Not applicable ---------------------------------------------------------
 

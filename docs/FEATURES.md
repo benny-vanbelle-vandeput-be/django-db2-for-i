@@ -70,7 +70,7 @@ On in at least one supported Django version.
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (48)
+## Intentionally off (49)
 
 Off on purpose, with the reason.
 
@@ -110,6 +110,7 @@ Off on purpose, with the reason.
 | `supports_forward_references` | Rows may reference rows inserted later in the same transaction (deferred constraints). | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `supports_index_on_text_field` | Indexes on `TextField` columns. | ❌ | ❌ | ❌ | Db2 for i cannot index an `NCLOB` or `BLOB` column; `db_index` on a `TextField` or `BinaryField` creates no index (decision 2026-10-26). |
 | `supports_logical_xor` | `Q(...) ^ Q(...)` is written with a native `XOR` operator. | ❌ | ❌ | ❌ | Db2 for i has no logical `XOR` operator; Django's emulation is used (not verified on IBM i). |
+| `supports_no_precision_decimalfield` | `DecimalField` without `max_digits` and `decimal_places` (Django 6.1+). | – | – | ❌ | `DECIMAL` needs a precision, and `DECFLOAT` has different semantics: `1E+300` as a `Decimal` is refused at bind, a 35th digit is rounded without an error (probes `later_flags`, `phase6_flags`, IBMI_NOTES). |
 | `supports_non_deterministic_collations` | Non-deterministic (for example case-insensitive) collations in `db_collation`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `supports_nulls_distinct_unique_constraints` | `UniqueConstraint(nulls_distinct=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `NULLS DISTINCT` / `NULLS NOT DISTINCT` on an index or a constraint (SQL0199, probe `qtemp_unique_nulls`, IBMI_NOTES). |
 | `supports_order_by_nulls_modifier` | `NULLS FIRST` / `NULLS LAST` in `ORDER BY` (`F('x').asc(nulls_first=True)`). | ❌ | ❌ | ❌ | Db2 for i rejects `NULLS FIRST` / `NULLS LAST` (SQL0199, probe queries); Django's `ORDER BY x IS NOT NULL, x` emulation is used. |
@@ -125,7 +126,7 @@ Off on purpose, with the reason.
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (26)
+## Planned (25)
 
 Off for now; planned for the phase shown.
 
@@ -135,13 +136,13 @@ Off for now; planned for the phase shown.
 | `can_introspect_json_field` | Introspection recognizes a `JSONField` column. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `has_json_object_function` | JSON objects can be built in SQL (`JSONObject`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `has_real_datatype` | The database has a single-precision `REAL` type besides `DOUBLE`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `has_select_for_update` | `select_for_update()` locks the selected rows. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `has_select_for_update_nowait` | `select_for_update(nowait=True)` fails instead of waiting for a lock. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `has_select_for_update_of` | `select_for_update(of=...)` locks rows of the named tables only. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `has_select_for_update_skip_locked` | `select_for_update(skip_locked=True)` skips locked rows. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
+| `has_select_for_update` | `select_for_update()` locks the selected rows. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
+| `has_select_for_update_nowait` | `select_for_update(nowait=True)` fails instead of waiting for a lock. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
+| `has_select_for_update_of` | `select_for_update(of=...)` locks rows of the named tables only. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
+| `has_select_for_update_skip_locked` | `select_for_update(skip_locked=True)` skips locked rows. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
 | `ignores_unnecessary_order_by_in_subqueries` | Django may leave an `ORDER BY` in a subquery; the database accepts and ignores it. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `rounds_to_even` | `Round()` rounds halves to even. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `select_for_update_of_column` | `select_for_update(of=...)` is written with column names, not table names. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
+| `select_for_update_of_column` | `select_for_update(of=...)` is written with column names, not table names. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
 | `supports_aggregate_distinct_multiple_argument` | `StringAgg(..., distinct=True)` with a delimiter (`distinct` with several arguments). | – | 🗓️ | 🗓️ | phase 6 |
 | `supports_cast_with_precision` | `Cast()` to a type with a length or precision, e.g. `DecimalField(max_digits=...)`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_default_in_lead_lag` | `Lead()` / `Lag()` with a `default`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
@@ -150,13 +151,12 @@ Off for now; planned for the phase shown.
 | `supports_json_field` | `JSONField`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_field_contains` | `JSONField` `contains` / `contained_by` lookups. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_negative_indexing` | `JSONField` key transforms with a negative array index (Django 6.0+). | – | 🗓️ | 🗓️ | phase 6 |
-| `supports_no_precision_decimalfield` | `DecimalField` without `max_digits` and `decimal_places` (Django 6.1+). | – | – | 🗓️ | phase 6, after a probe (`DECFLOAT(34)` binding) |
 | `supports_on_delete_db_cascade` | `on_delete=DB_CASCADE`: the database deletes related rows (Django 6.1+). | – | – | 🗓️ | phase 6 |
 | `supports_on_delete_db_default` | `on_delete=DB_SET_DEFAULT` (Django 6.1+). | – | – | 🗓️ | phase 6 |
 | `supports_on_delete_db_null` | `on_delete=DB_SET_NULL` (Django 6.1+). | – | – | 🗓️ | phase 6 |
 | `supports_over_clause` | Window functions (`Window`, `OVER (...)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
+| `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
 
 ## Not applicable (17)
 
