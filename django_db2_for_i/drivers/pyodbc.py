@@ -236,6 +236,17 @@ STATEMENT_IN_USE_HINT = (
 )
 
 
+# On one connection, the first prepare of a ``SELECT ... FROM FINAL TABLE (INSERT ...)``
+# text fixes the parameter types of that text, whatever happens to the table: after a
+# column grows, a value that needs the new size is refused (HY019, 22001, 22003), and
+# nothing but another text or another connection clears it, not a commit and not DROP
+# and CREATE (probe qtemp_final_table_after_alter, docs/IBMI_NOTES.md). Other statements
+# do not have this. So once this connection has changed a table, such a statement
+# carries a comment with the number of changes, which makes it a new text.
+_SCHEMA_CHANGE = re.compile(r"\s*(?:ALTER|CREATE|DROP|RENAME)\b", re.IGNORECASE)
+_RETURNING_INSERT = "FROM FINAL TABLE ("
+
+
 class Cursor(base.Cursor):
     def __init__(self, raw: Any, secrets: Sequence[str], connection: Connection):
         self._raw = raw
@@ -258,6 +269,7 @@ class Cursor(base.Cursor):
         return self._raw.rowcount
 
     def execute(self, sql: str, params: Sequence[Any] | None = None) -> Cursor:
+        sql = self._connection.with_current_parameter_types(sql)
         if params is None:
             self._run(self._raw.execute, sql)
         else:
@@ -291,6 +303,16 @@ class Connection(base.Connection):
     def __init__(self, raw: Any, secrets: Sequence[str]):
         self._raw = raw
         self._secrets = secrets
+        self._schema_changes = 0
+
+    def with_current_parameter_types(self, sql: str) -> str:
+        """``sql``, as a new text if it would reuse parameter types from before a schema
+        change on this connection (see ``_SCHEMA_CHANGE``)."""
+        if _SCHEMA_CHANGE.match(sql):
+            self._schema_changes += 1
+        elif self._schema_changes and _RETURNING_INSERT in sql:
+            return f"{sql} -- schema change {self._schema_changes}\n"
+        return sql
 
     @property
     def autocommit(self) -> bool:

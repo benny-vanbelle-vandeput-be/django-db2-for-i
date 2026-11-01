@@ -448,6 +448,33 @@ def _ux(text: str) -> str:
     return "UX'" + text.encode("utf-16-be").hex().upper() + "'"
 
 
+def test_a_repeated_insert_after_columns_grow(live, alter_model) -> None:
+    """The same insert before and after a column grows, on one connection: the first
+    prepare of a FINAL TABLE text fixes its parameter types (HY019, 22001 without the
+    comment the driver adds; probe qtemp_final_table_after_alter)."""
+    model = alter_model
+    values = {"amount": Decimal("1.00")}
+    first = model.objects.create(text="short", number=1, **values)
+    with live.schema_editor() as editor:
+        editor.alter_field(
+            model, _rebuilt(model, "text"), _rebuilt(model, "text", max_length=40), strict=True
+        )
+        editor.alter_field(
+            model,
+            _rebuilt(model, "number"),
+            _rebuilt(model, "number", models.BigIntegerField),
+            strict=True,
+        )
+    long_text, big_number = "x" * 40, 2**33
+    second = model.objects.create(text=long_text, number=big_number, **values)
+    assert second.pk != first.pk
+    with live.cursor() as cursor:
+        cursor.execute(
+            'SELECT "TEXT", "NUMBER" FROM "TESTAPP_ALTERFIELD" WHERE "ID" = %s', [second.pk]
+        )
+        assert _stripped(cursor.fetchall()) == [(long_text, big_number)]
+
+
 def test_alter_field_and_back(live, alter_model) -> None:
     """A migration that widens columns, makes one nullable and changes a default,
     and its way back.

@@ -42,6 +42,9 @@ REASON_MERGE_RETURNS_NO_ROWS = (
     "bulk_create(update_conflicts=True) is a MERGE, which returns no rows (FINAL TABLE takes "
     "only INSERT): the objects get no primary keys"
 )
+REASON_FINAL_TABLE_NOT_RETURNING = (
+    "the test looks for RETURNING in the SQL; Db2 for i returns columns with FINAL TABLE"
+)
 REASON_LOWERCASE_NAME_IN_SQL = (
     "the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i"
 )
@@ -386,6 +389,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         },
         REASON_LOWERCASE_NAME_IN_SQL: {
             "indexes.tests.PartialIndexTests.test_multiple_conditions",
+        },
+        # assertIn("RETURNING ...", sql). The other tests of the module read the returned
+        # values, and pass.
+        REASON_FINAL_TABLE_NOT_RETURNING: {
+            "queries.test_db_returning.ReturningValuesTests.test_insert_returning",
+            "queries.test_db_returning.ReturningValuesTests.test_insert_returning_multiple",
         },
     }
     # Per Django version: the entries above that pass on the running version

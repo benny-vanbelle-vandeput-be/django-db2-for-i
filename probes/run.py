@@ -10,7 +10,8 @@ Usage (inside the "tests" container):
                     alter_column | renames | type_changes | check_constraint_unjournaled |
                     transaction_start | add_column_default | qaqqini_inquiry |
                     qaqqini_lifecycle | lob_index | later_flags | returning |
-                    bulk | bulk_types | indexes | unique_nulls | cursors | merge
+                    bulk | bulk_types | indexes | unique_nulls | cursors | merge |
+                    final_table_after_alter
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -41,6 +42,7 @@ import qtemp_durations
 import qtemp_extract
 import qtemp_features
 import qtemp_fetch_errors
+import qtemp_final_table_after_alter
 import qtemp_in_subquery
 import qtemp_indexes
 import qtemp_journal_check
@@ -120,6 +122,7 @@ PROBES = {
     "unique_nulls": qtemp_unique_nulls,
     "cursors": qtemp_cursors,
     "merge": qtemp_merge,
+    "final_table_after_alter": qtemp_final_table_after_alter,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
