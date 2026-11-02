@@ -63,6 +63,10 @@ REASON_TRUNC_KIND_REFUSED = (
     "an unknown Trunc kind raises ValueError before any SQL is sent; the test accepts only a "
     "database error or no rows"
 )
+REASON_TRUNC_NULL_ZONEINFO = (
+    "before Django 6.1, Trunc of a NULL datetime with USE_TZ raises ValueError when "
+    "has_zoneinfo_database is off; 6.1 lets the backend keep the NULL"
+)
 REASON_SINGLE_BYTE_CHR = (
     "CHR and ASCII on Db2 for i work on single-byte characters; a non-ASCII character gives a "
     "substitute character (probes db_functions, db_function_args)"
@@ -343,6 +347,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_trunc_lookup_name_sql_injection",
             "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_lookup_name_sql_injection",
         },
+        # On Django 5.2 and 6.0 only (compat.py).
+        REASON_TRUNC_NULL_ZONEINFO: set(compat.TRUNC_NULL_FAILING),
         # Chr(ord("É")) and Ord on "Élena".
         REASON_SINGLE_BYTE_CHR: {
             "db_functions.text.test_chr.ChrTests.test_non_ascii",

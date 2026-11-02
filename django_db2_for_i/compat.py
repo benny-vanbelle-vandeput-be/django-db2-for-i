@@ -47,6 +47,19 @@ FAILING_ON_THIS_VERSION_ONLY: frozenset[str] = (
     else frozenset({"schema.tests.SchemaTests.test_db_default_output_field_resolving"})
 )
 
+# Before Django 6.1, Trunc's own converter takes a NULL from a truncated
+# datetime with USE_TZ for a missing time zone database when
+# has_zoneinfo_database is off, and raises ValueError. 6.1 moved that check to
+# DatabaseOperations.convert_trunc_expression(), which the backend overrides
+# (a NULL stays None). When 6.0 is dropped: remove this and the features.py entry.
+TRUNC_NULL_FAILING: frozenset[str] = (
+    frozenset()
+    if django.VERSION >= (6, 1)
+    else frozenset(
+        {"db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_none"}
+    )
+)
+
 # Django 6.0 refuses a composite field compared with a subquery (>, >=, <, <=)
 # when supports_tuple_comparison_against_subquery is off; 5.2 writes a row-value
 # comparison, which Db2 for i rejects (SQL0115). The tuple hook refuses it there.

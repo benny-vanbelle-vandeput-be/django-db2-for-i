@@ -7,7 +7,8 @@ every ``Value`` as a typed marker, so this probe tries those. It also tries the
 hashes on an ``NCLOB`` column and on text longer than 100 characters (a
 ``TextField``), ``CONCAT`` with ``COALESCE`` (Django's ``Concat`` treats NULL as
 empty text), ``LN(b) / LN(a)`` for ``Log``, and ``ASCII`` on non-ASCII text
-(Django's ``Ord``).
+(Django's ``Ord``), and the forms of a rounded cast of a DOUBLE to
+DECIMAL (Django's ``Cast`` with a precision rounds; Db2 for i's ``CAST`` cuts off).
 
 Writes only to QTEMP (a table that disappears with the job); reads nothing
 outside it. Without commitment control (CMT=0). One connection, one statement
@@ -72,18 +73,38 @@ CASES: tuple[tuple[str, tuple[Any, ...]], ...] = (
     ("LOWER(HEX(HASH_SHA256(CAST(L AS CLOB(2G) CCSID 1208))))", ()),
     ("LOWER(HEX(HASH_MD5(L)))", ()),
     ("LOWER(HEX(HASH_MD5(CAST(N AS CLOB(2G) CCSID 1208))))", ()),
+    # Cast of a DOUBLE to DECIMAL(p, s), rounded (Django rounds; CAST cuts off).
+    # D = -1.934, E = 3.467, H = 2.5, G = 1E20.
+    ("CAST(ROUND(D, 2) AS DECIMAL(8, 2))", ()),
+    ("CAST(ROUND(CAST(D AS DECFLOAT(34)), 2) AS DECIMAL(8, 2))", ()),
+    ("CAST(ROUND(CAST(E AS DECFLOAT(34)), 1) AS DECIMAL(8, 1))", ()),
+    ("CAST(ROUND(CAST(H AS DECFLOAT(34)), 0) AS DECIMAL(8, 0))", ()),
+    ("CAST(ROUND(CAST(-H AS DECFLOAT(34)), 0) AS DECIMAL(8, 0))", ()),
+    ("CAST(ROUND(CAST(G AS DECFLOAT(34)), 2) AS DECIMAL(31, 2))", ()),
+    ("CAST(ROUND(CAST(D AS DECIMAL(63, 30)), 2) AS DECIMAL(8, 2))", ()),
+    ("CAST(ROUND(CAST(H AS DECIMAL(63, 30)), 0) AS DECIMAL(8, 0))", ()),
+    ("CAST(ROUND(CAST(G AS DECIMAL(63, 30)), 2) AS DECIMAL(31, 2))", ()),
+    ("CAST(ROUND(CAST(2.555 AS DECIMAL(9, 3)), 2) AS DECIMAL(8, 2))", ()),
+    ("CURRENT DECFLOAT ROUNDING MODE", ()),
 )
 
 
 def run(settings: Settings, conn) -> dict[str, Any]:
     results: dict[str, Any] = {"scope": "QTEMP only (a table gone with the job)"}
     _execute(conn, f"DROP TABLE {TABLE}")
-    columns = "S NVARCHAR(100), N NVARCHAR(100), I INTEGER, L NCLOB(1M)"
+    columns = (
+        "S NVARCHAR(100), N NVARCHAR(100), I INTEGER, L NCLOB(1M), "
+        "D DOUBLE, E DOUBLE, H DOUBLE, G DOUBLE"
+    )
     created = _execute(conn, f"CREATE TABLE {TABLE} ({columns})")
     results["create"] = created
     if created["result"] != "ok":
         return results
-    _execute(conn, f"INSERT INTO {TABLE} VALUES (?, NULL, 2, ?)", [TEXT, LONG])
+    _execute(
+        conn,
+        f"INSERT INTO {TABLE} VALUES (?, NULL, 2, ?, -1.934, 3.467, 2.5, 1E20)",
+        [TEXT, LONG],
+    )
     for expression, params in CASES:
         name = f"{expression} {params}" if params else expression
         case(conn, results, name, f"SELECT {expression} FROM {TABLE}", params)

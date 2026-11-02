@@ -1,6 +1,6 @@
 {
   "probe": "db_function_args",
-  "utc": "20261102T193918Z",
+  "utc": "20261102T205012Z",
   "host": "<HOST>",
   "ssl": true,
   "scope": "QTEMP only (a table gone with the job)",
@@ -472,6 +472,204 @@
     "rows": [
       [
         "None"
+      ]
+    ]
+  },
+  "CAST(ROUND(D, 2) AS DECIMAL(8, 2))": {
+    "sql": "SELECT CAST(ROUND(D, 2) AS DECIMAL(8, 2)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 8,
+        "precision": 8,
+        "scale": 2
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('-1.92')"
+      ]
+    ]
+  },
+  "CAST(ROUND(CAST(D AS DECFLOAT(34)), 2) AS DECIMAL(8, 2))": {
+    "sql": "SELECT CAST(ROUND(CAST(D AS DECFLOAT(34)), 2) AS DECIMAL(8, 2)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 8,
+        "precision": 8,
+        "scale": 2
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('-1.93')"
+      ]
+    ]
+  },
+  "CAST(ROUND(CAST(E AS DECFLOAT(34)), 1) AS DECIMAL(8, 1))": {
+    "sql": "SELECT CAST(ROUND(CAST(E AS DECFLOAT(34)), 1) AS DECIMAL(8, 1)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 8,
+        "precision": 8,
+        "scale": 1
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('3.5')"
+      ]
+    ]
+  },
+  "CAST(ROUND(CAST(H AS DECFLOAT(34)), 0) AS DECIMAL(8, 0))": {
+    "sql": "SELECT CAST(ROUND(CAST(H AS DECFLOAT(34)), 0) AS DECIMAL(8, 0)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('3')"
+      ]
+    ]
+  },
+  "CAST(ROUND(CAST(-H AS DECFLOAT(34)), 0) AS DECIMAL(8, 0))": {
+    "sql": "SELECT CAST(ROUND(CAST(-H AS DECFLOAT(34)), 0) AS DECIMAL(8, 0)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('-3')"
+      ]
+    ]
+  },
+  "CAST(ROUND(CAST(G AS DECFLOAT(34)), 2) AS DECIMAL(31, 2))": {
+    "sql": "SELECT CAST(ROUND(CAST(G AS DECFLOAT(34)), 2) AS DECIMAL(31, 2)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 31,
+        "precision": 31,
+        "scale": 2
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('100000000000000000000.00')"
+      ]
+    ]
+  },
+  "CAST(ROUND(CAST(D AS DECIMAL(63, 30)), 2) AS DECIMAL(8, 2))": {
+    "sql": "SELECT CAST(ROUND(CAST(D AS DECIMAL(63, 30)), 2) AS DECIMAL(8, 2)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 8,
+        "precision": 8,
+        "scale": 2
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('-1.93')"
+      ]
+    ]
+  },
+  "CAST(ROUND(CAST(H AS DECIMAL(63, 30)), 0) AS DECIMAL(8, 0))": {
+    "sql": "SELECT CAST(ROUND(CAST(H AS DECIMAL(63, 30)), 0) AS DECIMAL(8, 0)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('3')"
+      ]
+    ]
+  },
+  "CAST(ROUND(CAST(G AS DECIMAL(63, 30)), 2) AS DECIMAL(31, 2))": {
+    "sql": "SELECT CAST(ROUND(CAST(G AS DECIMAL(63, 30)), 2) AS DECIMAL(31, 2)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 31,
+        "precision": 31,
+        "scale": 2
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('100000000000000000000.00')"
+      ]
+    ]
+  },
+  "CAST(ROUND(CAST(2.555 AS DECIMAL(9, 3)), 2) AS DECIMAL(8, 2))": {
+    "sql": "SELECT CAST(ROUND(CAST(2.555 AS DECIMAL(9, 3)), 2) AS DECIMAL(8, 2)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 8,
+        "precision": 8,
+        "scale": 2
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('2.56')"
+      ]
+    ]
+  },
+  "CURRENT DECFLOAT ROUNDING MODE": {
+    "sql": "SELECT CURRENT DECFLOAT ROUNDING MODE FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'ROUND_HALF_EVEN'"
       ]
     ]
   }

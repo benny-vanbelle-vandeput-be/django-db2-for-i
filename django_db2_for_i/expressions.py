@@ -148,7 +148,9 @@ Where Db2 for i differs from Django's default SQL (probe ``db_functions``):
 - ``Cast`` of a number to a ``DecimalField`` with ``decimal_places``: Db2 for
   i's ``CAST`` cuts off (2.55 to 2.5, probe ``db_functions``), Django rounds,
   so the number is rounded first: ``CAST(ROUND(<x>, <places>) AS DECIMAL(p,
-  s))``. ``ROUND`` takes halves away from zero, as Django expects without
+  s))``, a DOUBLE through ``DECFLOAT(34)`` (``ROUND`` of a DOUBLE stays binary,
+  and the cast then cuts -1.92999... to -1.92; probe ``db_function_args``).
+  ``ROUND`` takes halves away from zero, as Django expects without
   ``rounds_to_even``.
 - ``Reverse``, ``SHA224``, ``SHA384``: Db2 for i has no ``REVERSE``,
   ``HASH_SHA224`` or ``HASH_SHA384`` (SQL0204), so they raise
@@ -943,6 +945,9 @@ def cast_as_db2_for_i(self, compiler, connection, **extra_context):
         and _internal_type_or_none(source) in NUMERIC_TYPES
     ):
         source_sql, source_params = compiler.compile(source)
+        if _internal_type_or_none(source) == "FloatField":
+            # ROUND of a DOUBLE stays binary: -1.93 is -1.92999..., cut to -1.92.
+            source_sql = f"CAST({source_sql} AS DECFLOAT(34))"
         cast_type = output_field.cast_db_type(connection)
         sql = f"CAST(ROUND({source_sql}, {int(output_field.decimal_places)}) AS {cast_type})"
         return sql, source_params

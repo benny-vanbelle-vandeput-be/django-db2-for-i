@@ -103,6 +103,9 @@ def test_a_number_cast_to_a_decimal_is_rounded_first() -> None:
     field = DecimalField(max_digits=8, decimal_places=1)
     queryset = Book.objects.annotate(x=Cast(Cast("pages", FloatField()), field)).values("x")
     sql, _params = select_of(queryset)
-    assert sql == 'CAST(ROUND(CAST("TESTAPP_BOOK"."PAGES" AS DOUBLE), 1) AS DECIMAL(8, 1))'
+    assert sql == (
+        'CAST(ROUND(CAST(CAST("TESTAPP_BOOK"."PAGES" AS DOUBLE) AS DECFLOAT(34)), 1) '
+        "AS DECIMAL(8, 1))"
+    )
     text = Author.objects.annotate(x=Cast("name", field)).values("x")
     assert select_of(text)[0] == 'CAST("TESTAPP_AUTHOR"."NAME" AS DECIMAL(8, 1))'

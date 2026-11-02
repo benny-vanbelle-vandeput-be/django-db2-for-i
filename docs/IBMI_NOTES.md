@@ -2270,6 +2270,10 @@ expectations, with an own IBM i test if it can be made reliable.
 | `ASCII` of `é` / of an emoji | 26 / 26: a substitute character |
 | `LOWER(HEX(HASH_MD5(CAST(<x> AS CLOB(2G) CCSID 1208))))`, also `HASH_SHA256`, on the `NCLOB` | Python's `hashlib` result; the `VARCHAR(32000)` cast too, `HASH_MD5(<NCLOB>)` hashes other bytes |
 | the same on NULL | NULL |
+| `CAST(ROUND(D, 2) AS DECIMAL(8, 2))` with D = -1.934 (DOUBLE) | -1.92: `ROUND` stays binary, the cast cuts off |
+| `CAST(ROUND(CAST(D AS DECFLOAT(34)), 2) AS DECIMAL(8, 2))`; also 3.467 to 1 place, 2.5 and -2.5 to 0, 1E20 | -1.93; 3.5; 3 and -3; exact |
+| the same through `DECIMAL(63, 30)`; `ROUND` of a `DECIMAL(9, 3)` 2.555 to 2 places | -1.93, 3, exact; 2.56 |
+| `CURRENT DECFLOAT ROUNDING MODE` | `ROUND_HALF_EVEN`, yet `ROUND` takes halves away from zero |
 
 **Row locks** (`probes/qtemp_select_for_update.py`): **syntax only**: `CMT=0` on an unjournaled table, one
 job, so it shows nothing about what is locked.
