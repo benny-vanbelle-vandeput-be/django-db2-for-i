@@ -80,10 +80,11 @@ by the status runs at the end of phase 3 (backend `4cf4e0e`, every release
 run captures since #122); the counts differ per version because each
 version's test suite differs.
 
-**Known gap:** no statement written by a `MERGE` is in the corpus (`ignore_conflicts`,
-`update_conflicts`, `m2m.add()`). The hook wraps Django's `SQLInsertCompiler.execute_sql`, and the
-backend's insert compiler runs a conflict insert without calling it. The hook fix and a recapture
-follow right after `v0.1.0b2`.
+**Known gap:** no statement written by a `MERGE` is in the corpus yet (`ignore_conflicts`,
+`update_conflicts`, `m2m.add()`). The hook wrapped only Django's `execute_sql`, and the backend's
+insert compiler runs a conflict insert without calling it. The hook now also wraps the backend
+compilers' own `execute_sql` (a statement is recorded once when one calls the other); the
+recapture of the modules with `MERGE` on all three versions follows.
 
 ## What the counts mean
 
