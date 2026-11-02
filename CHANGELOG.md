@@ -10,6 +10,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Changes since the last release are in [changelog.d/](changelog.d/), one
 fragment per pull request; they are assembled here at release time.
 
+## [0.1.0b2] - 2026-11-02
+
+### Enabled features
+- `supports_sequence_reset`: `TransactionTestCase(reset_sequences=True)` restarts the identities at their start value (new `sequence_reset_by_name_sql()`), and `sqlsequencereset` is reported as supported. (#214)
+- `truncates_names`: names over 128 characters were already shortened with a hash; Django now does the same when it looks up constraint columns, and its name length check (`models.E018`, `models.E019`) no longer reports such names. (#214)
+- `can_return_columns_from_insert`: `save()` and `create()` read the primary key and the `db_default` values from the insert itself, `SELECT ... FROM FINAL TABLE (INSERT ...)`, instead of a second query (`IDENTITY_VAL_LOCAL()`). (#215)
+- `supports_default_keyword_in_insert`: an unset `db_default` field is written as `DEFAULT`. (#215)
+- `allows_auto_pk_0`: an `AutoField` may be saved with the key 0. (#215)
+- `has_bulk_insert`: `bulk_create()` inserts many rows per statement (multi-row `VALUES`), in batches (see Changed for the limits). (#216)
+- `can_return_rows_from_bulk_insert`: `bulk_create()` sets the primary keys and `db_default` values of the created objects, read in input order from `SELECT ... FROM FINAL TABLE (INSERT ...) ORDER BY INPUT SEQUENCE`. (#216)
+- `supports_default_keyword_in_bulk_insert`: an unset `db_default` field is written as `DEFAULT` in a multi-row insert. (#216)
+- `supports_ignore_conflicts`, `supports_update_conflicts`, `supports_update_conflicts_with_target`: `bulk_create(ignore_conflicts=True)` and `bulk_create(update_conflicts=True, unique_fields=..., update_fields=...)` work, as a `MERGE` (Db2 for i has no `ON CONFLICT`); see Changed and Known limitations. (#216)
+- `supports_partial_indexes`, `supports_functions_in_partial_indexes`: `Index(condition=...)` and `UniqueConstraint(condition=...)` create an index with `WHERE` (a unique one for the constraint), also with functions in the condition. (#216)
+- `supports_expression_indexes`: indexes and `UniqueConstraint`s on expressions (`Index(Lower("title"))`, `UniqueConstraint(Upper("title"), ...)`); introspection reports an expression key without a column, as Django's other backends do. (#216)
+- `supports_nullable_unique_constraints`, `supports_partially_nullable_unique_constraints`: a nullable `unique=True` field, `unique_together` and `UniqueConstraint(fields=...)` take several NULLs, also in part of a multi-column key (a Db2 for i `UNIQUE` constraint treats NULLs as distinct; probe `lib_unique_catalog`, #213). (#216)
+- A `UniqueConstraint` with a `condition` or expressions is created as `CREATE UNIQUE WHERE NOT NULL INDEX`, so its NULLs are distinct as well; a plain unique index would treat them as equal. (#216)
+- `can_use_chunked_reads`: `QuerySet.iterator()` fetches rows in chunks from an open cursor, also while other statements run and commit on the same connection. (#216)
+- `update_can_self_select`, `delete_can_self_reference_subquery`: an `update()` or `delete()` whose filter reads the same table runs as one statement, without selecting the keys first. (#216)
+
+### Changed
+- Docs: the installation examples install `v0.1.0b1`, README and the installation guide say beta, and they no longer mention an sdist or wheel on the release page (releases are signed tags only since #94). (#211)
+- **`m2m.add()`, `m2m.set()` and `bulk_create(ignore_conflicts=True)` now use `MERGE`.** For a `ManyToManyField` without a custom `through` model, Django now sends a `MERGE`, where it sent a `SELECT` and then an `INSERT` in 0.1.0b1 (with an `m2m_changed` listener it still sends the `SELECT` first). Existing rows are skipped as before. A `MERGE` can still raise an error when two jobs insert the same row at the same moment: see Known limitations below for what to catch and retry. (#216)
+- **`bulk_create()` splits batches by LOB columns.** A statement takes at most 512 parameter markers for `TextField` and `BinaryField` columns, because Db2 for i refuses one with about 1,056 of them (PWS0001). That is 512 rows with one such column, 256 with two, 170 with three and 102 with five, and this applies with `ignore_conflicts` and `update_conflicts` too. The splitting is automatic, a larger `batch_size` is reduced to it, and the objects are not affected: a table with LOB columns only gets more, smaller statements. Without LOB columns the limit is 16,000 markers and 16,000 rows per statement. (#216)
+- Docs: phase 5 is done. `bulk_create`, `constraints`, `indexes` and `model_indexes` are supported Django test modules, part of the status run; README says what works now. (#217)
+
+### Fixed
+- An insert repeated on the same connection after a migration widened a column was refused (`HY019`, or `22001` for a longer string). The first prepare of a `SELECT ... FROM FINAL TABLE` statement fixes its parameter types on that connection (probe `qtemp_final_table_after_alter`), so the driver layer now sends it as a new statement after a schema change. This came with reading keys from the insert itself, after 0.1.0b1, and was never in a release. (#219)
+
+### Known limitations
+- Db2 for i has no covering indexes (`include`, SQL0104), no `nulls_distinct` on unique constraints (SQL0199), no deferrable unique constraints and no `FINAL TABLE (UPDATE ...)`, so `supports_covering_indexes`, `supports_nulls_distinct_unique_constraints`, `supports_deferrable_unique_constraints` and `can_return_rows_from_update` stay off (probes of phase 5, step 0; FEATURES.md gives each reason). (#212)
+- **`m2m.add()`, `m2m.set()`, `bulk_create(ignore_conflicts=True)` and `bulk_create(update_conflicts=True)` can raise an error when two jobs insert the same row at the same moment.** Unlike PostgreSQL's `ON CONFLICT`, a `MERGE` first looks for the rows that exist and then inserts the rest. You may see `IntegrityError` (SQL0803, duplicate key), which undoes the whole statement including its rows without a conflict, or possibly `OperationalError` (SQL0913, row in use) if the other job has not committed yet. To handle it, retry the call inside `with transaction.atomic():`, a few times, catching both errors; the other job's row is there once it commits. Known Limitations has the code. **Not verified on IBM i:** the race comes from IBM's `MERGE` documentation, because testing it needs two connections; the `SQL0803` error and the undone statement were tested with one connection. (#216)
+- `bulk_create(update_conflicts=True)` does not set the primary keys of the objects (a `MERGE` returns no rows). Read the objects again if you need their keys. (#216)
+- The same key twice in one `bulk_create()` call with conflict handling raises `IntegrityError`. (#216)
+- `ignore_conflicts` matches only unconditional unique keys: a conflict in a conditional or functional unique constraint raises `IntegrityError`. (#216)
+- After a migration that widens a column, restart workers that keep connections open (`CONN_MAX_AGE`): their inserts may refuse values that need the new size until the connection closes. Nothing is cut off. Not verified on IBM i: testing it needs two connections. (#219)
+
 ## [0.1.0b1] - 2026-10-29
 
 ### Added
@@ -602,7 +638,8 @@ The tag is not moved or recreated.
   escaped quotes in DEFAULT constants wrongly. Unsupported values raise
   `NotSupportedError`.
 
-[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b1...HEAD
+[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b2...HEAD
+[0.1.0b2]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b1...v0.1.0b2
 [0.1.0b1]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a4...v0.1.0b1
 [0.1.0a4]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a3...v0.1.0a4
 [0.1.0a3]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a2...v0.1.0a3
