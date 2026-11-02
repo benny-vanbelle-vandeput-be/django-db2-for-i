@@ -134,8 +134,8 @@ Where Db2 for i differs from Django's default SQL (probe ``db_functions``):
 - ``Log(a, b)``: Db2 for i's ``LOG`` takes one argument, so ``LN(b) / LN(a)``.
 - ``Concat``: ``CONCAT`` takes two arguments (Django's ``ConcatPair`` gives it
   two) and is NULL when either is; Django's ``Concat`` treats NULL as empty
-  text, so each argument that can be NULL (all but a non-NULL ``Value``) is
-  wrapped in ``COALESCE(<arg>, '')``.
+  text, so each argument that can be NULL (all but a non-NULL ``Value`` and an
+  inner ``ConcatPair``) is wrapped in ``COALESCE(<arg>, '')``.
 - ``ATan2(y, x)``: Db2 for i's ``ATAN2`` takes x first, so the arguments are
   swapped.
 - ``MD5``, ``SHA1``, ``SHA256``, ``SHA512``: ``HASH_MD5`` ... ``HASH_SHA512``
@@ -853,7 +853,8 @@ def concat_pair_as_db2_for_i(self, compiler, connection, **extra_context):
     clone.set_source_expressions(
         [
             expression
-            if isinstance(expression, Value) and expression.value is not None
+            if isinstance(expression, ConcatPair)
+            or (isinstance(expression, Value) and expression.value is not None)
             else Coalesce(expression, Value(""))
             for expression in clone.get_source_expressions()
         ]

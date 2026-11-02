@@ -13,11 +13,23 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.functions import Cast, Coalesce
+from django.db.models import DecimalField, FloatField
+from django.db.models.functions import (
+    MD5,
+    SHA256,
+    ATan2,
+    Cast,
+    Coalesce,
+    Concat,
+    Length,
+    Log,
+    LPad,
+    Repeat,
+)
 from django.db.models.lookups import LessThan
 
-from tests.golden_cases.base import AUTHOR, SCHEDULE, Case, annotate, select
-from tests.testapp.models import Schedule
+from tests.golden_cases.base import AUTHOR, MEASURE, SCHEDULE, Case, annotate, select
+from tests.testapp.models import Measure, Schedule
 
 CASES: tuple[Case, ...] = (
     Case(
@@ -63,6 +75,52 @@ CASES: tuple[Case, ...] = (
             ("bitxor", lambda f: f.bitxor(6)),
             ("left_shift", lambda f: f.bitleftshift(2)),
             ("right_shift", lambda f: f.bitrightshift(1)),
+        )
+    ),
+    # Database functions where Django's SQL does not work on Db2 for i
+    # (expressions.py, probes db_functions, db_function_args).
+    Case("expressions/function_length", "query", annotate(lambda: Length("name")), (AUTHOR,)),
+    Case(
+        "expressions/function_concat",
+        "query",
+        annotate(lambda: Concat("name", Value("!"), "name")),
+        (AUTHOR,),
+    ),
+    Case("expressions/function_md5", "query", annotate(lambda: MD5("name")), (AUTHOR,)),
+    Case("expressions/function_sha256", "query", annotate(lambda: SHA256("name")), (AUTHOR,)),
+    Case(
+        "expressions/function_lpad_null",
+        "query",
+        annotate(lambda: LPad(Value(None), 3, Value("x"))),
+        (AUTHOR,),
+    ),
+    Case(
+        "expressions/function_repeat_null",
+        "query",
+        annotate(lambda: Repeat("name", None)),
+        (AUTHOR,),
+    ),
+    *(
+        Case(
+            f"expressions/function_{name}",
+            "query",
+            select(lambda make=make: Measure.objects.annotate(x=make()).values("x")),
+            (MEASURE,),
+        )
+        for name, make in (
+            ("log", lambda: Log("small", "big")),
+            ("atan2", lambda: ATan2("small", "big")),
+            # A number cast to a DecimalField is rounded first; a DOUBLE through DECFLOAT.
+            (
+                "cast_float_to_decimal",
+                lambda: Cast(
+                    Cast("amount", FloatField()), DecimalField(max_digits=8, decimal_places=1)
+                ),
+            ),
+            (
+                "cast_decimal_to_decimal",
+                lambda: Cast("amount", DecimalField(max_digits=8, decimal_places=1)),
+            ),
         )
     ),
     # Durations: timestamp +/- labeled durations split into DAYS + MICROSECONDS
