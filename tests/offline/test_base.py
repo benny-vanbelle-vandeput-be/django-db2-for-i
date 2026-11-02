@@ -287,7 +287,10 @@ def test_skips_are_grouped_by_fixed_reasons() -> None:
     from django_db2_for_i import features
 
     cls = features.DatabaseFeatures
-    assert set(cls.django_test_skips) == {features.REASON_NO_COLUMN_RENAME}
+    assert set(cls.django_test_skips) == {
+        features.REASON_NO_COLUMN_RENAME,
+        features.REASON_NO_SUCH_FUNCTION,
+    }
     # Each entry is one test id, never a whole class.
     for test_ids in cls.django_test_skips.values():
         assert all(test_id.count(".") >= 3 and ".test_" in test_id for test_id in test_ids)
@@ -304,6 +307,14 @@ def test_skips_are_the_same_on_every_django_version() -> None:
         "schema.tests.SchemaTests.test_m2m_repoint",
         "schema.tests.SchemaTests.test_m2m_repoint_custom",
         "schema.tests.SchemaTests.test_m2m_repoint_inherited",
+        "db_functions.text.test_reverse.ReverseTests.test_basic",
+        "db_functions.text.test_reverse.ReverseTests.test_expressions",
+        "db_functions.text.test_reverse.ReverseTests.test_null",
+        "db_functions.text.test_reverse.ReverseTests.test_transform",
+        "db_functions.text.test_sha224.SHA224Tests.test_basic",
+        "db_functions.text.test_sha224.SHA224Tests.test_transform",
+        "db_functions.text.test_sha384.SHA384Tests.test_basic",
+        "db_functions.text.test_sha384.SHA384Tests.test_transform",
     }
     assert not skipped & set().union(*cls.expected_failures.values())
 
@@ -326,6 +337,10 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
         features.REASON_FINAL_TABLE_NOT_RETURNING,
         features.REASON_LOWERCASE_NAME_IN_SQL,
         features.REASON_MERGE_RETURNS_NO_ROWS,
+        features.REASON_TIME_ZONE_CONVERSION,
+        features.REASON_EXTRACT_IN_SQL,
+        features.REASON_TRUNC_KIND_REFUSED,
+        features.REASON_SINGLE_BYTE_CHR,
     }
     # Each entry is one test id, never a whole class.
     for test_ids in cls.expected_failures.values():

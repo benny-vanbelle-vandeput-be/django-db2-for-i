@@ -1,0 +1,1 @@
+- `Chr` and `Ord` work on ASCII only: Db2 for i's `CHR` and `ASCII` give a substitute character for anything else. Converting datetimes to another time zone in `Extract` and `Trunc` stays unsupported (`NotSupportedError`), as before.

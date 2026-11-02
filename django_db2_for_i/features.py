@@ -48,6 +48,25 @@ REASON_FINAL_TABLE_NOT_RETURNING = (
 REASON_LOWERCASE_NAME_IN_SQL = (
     "the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i"
 )
+REASON_NO_SUCH_FUNCTION = (
+    "Db2 for i has no such function (REVERSE, HASH_SHA224, HASH_SHA384: SQL0204); the backend "
+    "raises NotSupportedError"
+)
+REASON_TIME_ZONE_CONVERSION = (
+    "converting datetimes to another time zone in SQL is not supported yet: Db2 for i has no "
+    "time zone database; the backend raises NotSupportedError"
+)
+REASON_EXTRACT_IN_SQL = (
+    "the test counts the word EXTRACT in the SQL; Db2 for i writes YEAR(...) and the like"
+)
+REASON_TRUNC_KIND_REFUSED = (
+    "an unknown Trunc kind raises ValueError before any SQL is sent; the test accepts only a "
+    "database error or no rows"
+)
+REASON_SINGLE_BYTE_CHR = (
+    "CHR and ASCII on Db2 for i work on single-byte characters; a non-ASCII character gives a "
+    "substitute character (probes db_functions, db_function_args)"
+)
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -275,11 +294,50 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "schema.tests.SchemaTests.test_m2m_repoint_custom",
             "schema.tests.SchemaTests.test_m2m_repoint_inherited",
         },
+        REASON_NO_SUCH_FUNCTION: {
+            "db_functions.text.test_reverse.ReverseTests.test_basic",
+            "db_functions.text.test_reverse.ReverseTests.test_expressions",
+            "db_functions.text.test_reverse.ReverseTests.test_null",
+            "db_functions.text.test_reverse.ReverseTests.test_transform",
+            "db_functions.text.test_sha224.SHA224Tests.test_basic",
+            "db_functions.text.test_sha224.SHA224Tests.test_transform",
+            "db_functions.text.test_sha384.SHA384Tests.test_basic",
+            "db_functions.text.test_sha384.SHA384Tests.test_transform",
+        },
     }
     expected_failures: dict[str, set[str]] = {
         # Subtracts from a TimeField stored with microseconds (TIME has none).
         REASON_TIME_FRACTIONS: {
             "expressions.tests.FTimeDeltaTests.test_time_subtraction",
+            # Cast and Trunc to a TimeField.
+            "db_functions.comparison.test_cast.CastTests.test_cast_from_db_datetime_to_time",
+            "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_trunc_time_func",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_time_func",
+        },
+        REASON_TIME_ZONE_CONVERSION: {
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_explicit_timezone_priority",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_with_timezone",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_with_timezone_minus_no_offset",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_func_with_timezone",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_timezone_applied_before_truncation",
+        },
+        # str(qs.query).count("extract") with a year lookup against an expression.
+        REASON_EXTRACT_IN_SQL: {
+            "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_extract_year_exact_lookup",
+            "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_extract_year_greaterthan_lookup",
+            "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_extract_year_lessthan_lookup",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_exact_lookup",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_greaterthan_lookup",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_lessthan_lookup",
+        },
+        REASON_TRUNC_KIND_REFUSED: {
+            "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_trunc_lookup_name_sql_injection",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_lookup_name_sql_injection",
+        },
+        # Chr(ord("É")) and Ord on "Élena".
+        REASON_SINGLE_BYTE_CHR: {
+            "db_functions.text.test_chr.ChrTests.test_non_ascii",
+            "db_functions.text.test_ord.OrdTests.test_basic",
         },
         # sequence_reset_sql() inside TestCase's transaction: the restart waits
         # for a commit that never comes (operations.py, SQL0910).

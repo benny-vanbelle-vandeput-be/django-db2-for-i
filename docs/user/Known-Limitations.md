@@ -630,6 +630,14 @@ Db2 for i has no equivalent for these Django features, so they stay off
   `CREATE INDEX` takes no `INCLUDE` (SQL0104); Django leaves the clause out
   and its system checks warn about it.
 
+- **`Reverse`, `SHA224` and `SHA384`.** Db2 for i has no `REVERSE`,
+  `HASH_SHA224` or `HASH_SHA384`; these functions raise `NotSupportedError`.
+  `MD5`, `SHA1`, `SHA256` and `SHA512` work, over the text as UTF-8, as on
+  other databases.
+- **`Chr` and `Ord` beyond ASCII.** Db2 for i's `CHR` and `ASCII` work on
+  single-byte characters: `Chr(233)` and `Ord("é")` give a substitute
+  character (code 26), not `é` or 233. Values up to 127 work.
+
 Django's system checks report the first three when a model uses them.
 
 ## Features not available yet
