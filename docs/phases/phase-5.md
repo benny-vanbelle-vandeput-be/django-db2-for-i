@@ -143,8 +143,10 @@ supported module and test set comes from the status run on `main` after this pha
 - **The status run** after this phase, with the corpus rebuild: #216 removed 28
   replay entries per Django version that no run could stamp (24 plain many-to-many
   inserts, now `MERGE`; 3 with `datetime.now()` in their params; a 1998-row LOB
-  insert). Until then the replay tests do not cover those `MERGE` statements and LOB
-  batches; the Django tests do run them.
+  insert). **Update after that run:** the LOB batches are back, but no `MERGE` statement reached the
+  corpus, because the capture hook misses the backend's own path for a conflict insert. The
+  replay tests stay blind to `MERGE` until the hook fix and a recapture, right after `v0.1.0b2`
+  (open track); the Django tests do run it on IBM i.
 - **Limitations that stay** ([Known limitations](../user/Known-Limitations.md)):
   `update_conflicts` sets no keys on the objects, 7 expected failures per version (a
   second query could read them back; not planned); the same key twice in one call

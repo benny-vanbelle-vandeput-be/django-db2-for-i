@@ -304,3 +304,9 @@ text = "`lib_merge_concurrency`: `MERGE` under concurrency (`ignore_conflicts`, 
 
 [[tracks]]
 text = "The LOB limit of a multi-row statement is measured for 1 and 2 LOB columns only (about 1,024 markers); with 3 and 5 own IBM i tests show that the batches work and that 1,080 or 1,100 markers are refused, not where the limit lies ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#returning-bulk-inserts-indexes-unique-nulls-cursors-phase-5-step-0))."
+
+[[tracks]]
+text = "`select_for_update()` stays off: row locking matters for real multi-user use, and blocking can only be verified with two connections, so a dedicated IBM i ([phase 6, decision 1](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/phases/phase-6.md#key-decisions))."
+
+[[tracks]]
+text = "The replay tests do not cover `MERGE` (`ignore_conflicts`, `update_conflicts`, `m2m.add()`): the capture hook misses it, because the backend's insert compiler runs a conflict insert itself. The Django tests on IBM i do run it. Right after `v0.1.0b2`: the hook fix with an offline test, then a recapture of the modules with `MERGE` on all three versions."
