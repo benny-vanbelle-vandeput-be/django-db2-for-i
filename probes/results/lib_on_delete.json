@@ -1,0 +1,798 @@
+{
+  "probe": "lib_on_delete",
+  "utc": "20261102T000536Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "approved": "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/220#issuecomment-6554356422",
+  "approved_by": "benny-vanbelle-vandeput-be",
+  "cases": {
+    "1. NO ACTION": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE NO ACTION",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "CONSTRAINT_TYPE": "FOREIGN KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELP",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200002_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          }
+        ],
+        "SYSREFCST": [
+          {
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "UNIQUE_CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "UPDATE_RULE": "NO ACTION",
+            "DELETE_RULE": "NO ACTION"
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "COLUMN_NAME": "P_ID",
+            "ORDINAL_POSITION": 1
+          }
+        ]
+      },
+      "inserts": {
+        "parent 1": "ok",
+        "parent 2": "ok",
+        "child 10": "ok",
+        "child 20": "ok"
+      },
+      "deleted parent": 2,
+      "delete": "-532",
+      "delete sqlstate": "HY000",
+      "delete message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0532 - Delete prevented by referential constraint DJDB2I_P6DELC_FK in <DEFAULT_LIBRARY>. (-532) (SQLExecDirectW)",
+      "parents after": [
+        {
+          "ID": 1
+        },
+        {
+          "ID": 2
+        }
+      ],
+      "children after": [
+        {
+          "ID": 10,
+          "P_ID": 1
+        },
+        {
+          "ID": 20,
+          "P_ID": 2
+        }
+      ],
+      "rollback": "ok",
+      "dropped": true
+    },
+    "2. RESTRICT": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE RESTRICT",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "CONSTRAINT_TYPE": "FOREIGN KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELP",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200002_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          }
+        ],
+        "SYSREFCST": [
+          {
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "UNIQUE_CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "UPDATE_RULE": "NO ACTION",
+            "DELETE_RULE": "RESTRICT"
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "COLUMN_NAME": "P_ID",
+            "ORDINAL_POSITION": 1
+          }
+        ]
+      },
+      "inserts": {
+        "parent 1": "ok",
+        "parent 2": "ok",
+        "child 10": "ok",
+        "child 20": "ok"
+      },
+      "deleted parent": 2,
+      "delete": "-532",
+      "delete sqlstate": "HY000",
+      "delete message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0532 - Delete prevented by referential constraint DJDB2I_P6DELC_FK in <DEFAULT_LIBRARY>. (-532) (SQLExecDirectW)",
+      "parents after": [
+        {
+          "ID": 1
+        },
+        {
+          "ID": 2
+        }
+      ],
+      "children after": [
+        {
+          "ID": 10,
+          "P_ID": 1
+        },
+        {
+          "ID": 20,
+          "P_ID": 2
+        }
+      ],
+      "rollback": "ok",
+      "dropped": true
+    },
+    "3. CASCADE": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE CASCADE",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "CONSTRAINT_TYPE": "FOREIGN KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELP",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200002_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          }
+        ],
+        "SYSREFCST": [
+          {
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "UNIQUE_CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "UPDATE_RULE": "NO ACTION",
+            "DELETE_RULE": "CASCADE"
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "COLUMN_NAME": "P_ID",
+            "ORDINAL_POSITION": 1
+          }
+        ]
+      },
+      "inserts": {
+        "parent 1": "ok",
+        "parent 2": "ok",
+        "child 10": "ok",
+        "child 20": "ok"
+      },
+      "deleted parent": 2,
+      "delete": "ok",
+      "parents after": [
+        {
+          "ID": 1
+        }
+      ],
+      "children after": [
+        {
+          "ID": 10,
+          "P_ID": 1
+        }
+      ],
+      "rollback": "ok",
+      "dropped": true
+    },
+    "4. SET NULL": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE SET NULL",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "CONSTRAINT_TYPE": "FOREIGN KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELP",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200002_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          }
+        ],
+        "SYSREFCST": [
+          {
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "UNIQUE_CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "UPDATE_RULE": "NO ACTION",
+            "DELETE_RULE": "SET NULL"
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "COLUMN_NAME": "P_ID",
+            "ORDINAL_POSITION": 1
+          }
+        ]
+      },
+      "inserts": {
+        "parent 1": "ok",
+        "parent 2": "ok",
+        "child 10": "ok",
+        "child 20": "ok"
+      },
+      "deleted parent": 2,
+      "delete": "ok",
+      "parents after": [
+        {
+          "ID": 1
+        }
+      ],
+      "children after": [
+        {
+          "ID": 10,
+          "P_ID": 1
+        },
+        {
+          "ID": 20,
+          "P_ID": null
+        }
+      ],
+      "rollback": "ok",
+      "dropped": true
+    },
+    "5. SET DEFAULT, parent 2 (the default's parent stays)": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE SET DEFAULT",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "CONSTRAINT_TYPE": "FOREIGN KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELP",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200002_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          }
+        ],
+        "SYSREFCST": [
+          {
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "UNIQUE_CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "UPDATE_RULE": "NO ACTION",
+            "DELETE_RULE": "SET DEFAULT"
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "COLUMN_NAME": "P_ID",
+            "ORDINAL_POSITION": 1
+          }
+        ]
+      },
+      "inserts": {
+        "parent 1": "ok",
+        "parent 2": "ok",
+        "child 10": "ok",
+        "child 20": "ok"
+      },
+      "deleted parent": 2,
+      "delete": "ok",
+      "parents after": [
+        {
+          "ID": 1
+        }
+      ],
+      "children after": [
+        {
+          "ID": 10,
+          "P_ID": 1
+        },
+        {
+          "ID": 20,
+          "P_ID": 1
+        }
+      ],
+      "rollback": "ok",
+      "dropped": true
+    },
+    "6. SET DEFAULT, parent 1 (the default has no parent then)": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE SET DEFAULT",
+      "ok": true,
+      "catalog": {
+        "SYSCST": [
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "CONSTRAINT_TYPE": "FOREIGN KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELP",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          },
+          {
+            "TABLE_NAME": "DJDB2I_P6DELC",
+            "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200002_ID_00001",
+            "CONSTRAINT_TYPE": "PRIMARY KEY"
+          }
+        ],
+        "SYSREFCST": [
+          {
+            "CONSTRAINT_NAME": "DJDB2I_P6DELC_FK",
+            "UNIQUE_CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB200001_ID_00001",
+            "UPDATE_RULE": "NO ACTION",
+            "DELETE_RULE": "SET DEFAULT"
+          }
+        ],
+        "SYSKEYCST": [
+          {
+            "COLUMN_NAME": "P_ID",
+            "ORDINAL_POSITION": 1
+          }
+        ]
+      },
+      "inserts": {
+        "parent 1": "ok",
+        "parent 2": "ok",
+        "child 10": "ok",
+        "child 20": "ok"
+      },
+      "deleted parent": 1,
+      "delete": "-532",
+      "delete sqlstate": "HY000",
+      "delete message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0532 - Delete prevented by referential constraint DJDB2I_P6DELC_FK in <DEFAULT_LIBRARY>. (-532) (SQLExecDirectW)",
+      "parents after": [
+        {
+          "ID": 1
+        },
+        {
+          "ID": 2
+        }
+      ],
+      "children after": [
+        {
+          "ID": 10,
+          "P_ID": 1
+        },
+        {
+          "ID": 20,
+          "P_ID": 2
+        }
+      ],
+      "rollback": "ok",
+      "dropped": true
+    }
+  },
+  "cleanup": {
+    "DJDB2I_P6DELC": true,
+    "DJDB2I_P6DELP": true
+  },
+  "left": [],
+  "open": "Foreign keys between tables in different journals: both tables here share the library's QSQJRN, so this probe cannot answer that (the maintainer's point on #220). Open.",
+  "statements": [
+    {
+      "label": "create DJDB2I_P6DELP",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID INTEGER NOT NULL PRIMARY KEY)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "create DJDB2I_P6DELC",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID INTEGER NOT NULL PRIMARY KEY, P_ID INTEGER DEFAULT 1)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "add NO ACTION",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE NO ACTION",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "parent 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "parent 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 10 of 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        10,
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 20 of 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        20,
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "delete parent 2",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_P6DELP WHERE ID = ?",
+      "params": [
+        2
+      ],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0532 - Delete prevented by referential constraint DJDB2I_P6DELC_FK in <DEFAULT_LIBRARY>. (-532) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop NO ACTION",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC DROP CONSTRAINT DJDB2I_P6DELC_FK",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "add RESTRICT",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "parent 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "parent 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 10 of 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        10,
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 20 of 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        20,
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "delete parent 2",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_P6DELP WHERE ID = ?",
+      "params": [
+        2
+      ],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0532 - Delete prevented by referential constraint DJDB2I_P6DELC_FK in <DEFAULT_LIBRARY>. (-532) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop RESTRICT",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC DROP CONSTRAINT DJDB2I_P6DELC_FK",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "add CASCADE",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE CASCADE",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "parent 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "parent 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 10 of 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        10,
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 20 of 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        20,
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "delete parent 2",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_P6DELP WHERE ID = ?",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "drop CASCADE",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC DROP CONSTRAINT DJDB2I_P6DELC_FK",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "add SET NULL",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE SET NULL",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "parent 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "parent 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 10 of 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        10,
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 20 of 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        20,
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "delete parent 2",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_P6DELP WHERE ID = ?",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "drop SET NULL",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC DROP CONSTRAINT DJDB2I_P6DELC_FK",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "add SET DEFAULT",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE SET DEFAULT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "parent 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "parent 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 10 of 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        10,
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 20 of 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        20,
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "delete parent 2",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_P6DELP WHERE ID = ?",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "drop SET DEFAULT",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC DROP CONSTRAINT DJDB2I_P6DELC_FK",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "add SET DEFAULT",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC ADD CONSTRAINT DJDB2I_P6DELC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) ON DELETE SET DEFAULT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "parent 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "parent 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELP (ID) VALUES (?)",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 10 of 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        10,
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 20 of 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6DELC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        20,
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "delete parent 1",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_P6DELP WHERE ID = ?",
+      "params": [
+        1
+      ],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0532 - Delete prevented by referential constraint DJDB2I_P6DELC_FK in <DEFAULT_LIBRARY>. (-532) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop SET DEFAULT",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC DROP CONSTRAINT DJDB2I_P6DELC_FK",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJDB2I_P6DELC",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELC RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJDB2I_P6DELP",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJDB2I_P6DELP RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    }
+  ]
+}

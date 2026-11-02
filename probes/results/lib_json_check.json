@@ -1,0 +1,314 @@
+{
+  "probe": "lib_json_check",
+  "utc": "20261102T000601Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "approved": "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/221#issuecomment-6554376430",
+  "approved_by": "benny-vanbelle-vandeput-be",
+  "cases": {
+    "without a check (the control)": {
+      "inserts": {
+        "an object": "ok",
+        "an array": "ok",
+        "a number": "ok",
+        "a string": "ok",
+        "true": "ok",
+        "false": "ok",
+        "JSON null (the text 'null')": "ok",
+        "SQL NULL": "ok",
+        "non-ASCII text": "ok",
+        "not JSON": "ok",
+        "an empty string": "ok",
+        "duplicate keys": "ok"
+      },
+      "read back": [
+        {
+          "ID": 1,
+          "C": "{\"a\": 1}",
+          "KIND": "value"
+        },
+        {
+          "ID": 2,
+          "C": "[1, 2]",
+          "KIND": "value"
+        },
+        {
+          "ID": 3,
+          "C": "1",
+          "KIND": "value"
+        },
+        {
+          "ID": 4,
+          "C": "\"x\"",
+          "KIND": "value"
+        },
+        {
+          "ID": 5,
+          "C": "true",
+          "KIND": "value"
+        },
+        {
+          "ID": 6,
+          "C": "false",
+          "KIND": "value"
+        },
+        {
+          "ID": 7,
+          "C": "null",
+          "KIND": "value"
+        },
+        {
+          "ID": 8,
+          "C": null,
+          "KIND": "SQL NULL"
+        },
+        {
+          "ID": 9,
+          "C": "{\"a\": \"téxt 😀\"}",
+          "KIND": "value"
+        },
+        {
+          "ID": 10,
+          "C": "not json",
+          "KIND": "value"
+        },
+        {
+          "ID": 11,
+          "C": "",
+          "KIND": "value"
+        },
+        {
+          "ID": 12,
+          "C": "{\"a\": 1, \"a\": 2}",
+          "KIND": "value"
+        }
+      ],
+      "rollback": "ok"
+    },
+    "CHECK (C IS JSON), ALTER TABLE": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON ADD CONSTRAINT DJDB2I_P6JSON_CK CHECK (C IS JSON)",
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    },
+    "CHECK (C IS JSON), CREATE TABLE": {
+      "ddl": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON2 (ID INTEGER NOT NULL PRIMARY KEY, C NCLOB CHECK (C IS JSON))",
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    },
+    "scalars IS JSON refused": "none: no variants tried",
+    "CHECK (C IS JSON VALUE), ALTER TABLE": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON ADD CONSTRAINT DJDB2I_P6JSON_CK CHECK (C IS JSON VALUE)",
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    },
+    "CHECK (C IS JSON SCALAR), ALTER TABLE": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON ADD CONSTRAINT DJDB2I_P6JSON_CK CHECK (C IS JSON SCALAR)",
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    },
+    "CHECK (C IS JSON ARRAY), ALTER TABLE": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON ADD CONSTRAINT DJDB2I_P6JSON_CK CHECK (C IS JSON ARRAY)",
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    },
+    "CHECK (C IS JSON OBJECT), ALTER TABLE": {
+      "ddl": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON ADD CONSTRAINT DJDB2I_P6JSON_CK CHECK (C IS JSON OBJECT)",
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    }
+  },
+  "cleanup": {
+    "DJDB2I_P6JSON": true
+  },
+  "left": [],
+  "statements": [
+    {
+      "label": "create DJDB2I_P6JSON",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID INTEGER NOT NULL PRIMARY KEY, C NCLOB)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "an object",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        1,
+        "{\"a\": 1}"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "an array",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        2,
+        "[1, 2]"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "a number",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        3,
+        "1"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "a string",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        4,
+        "\"x\""
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "true",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        5,
+        "true"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "false",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        6,
+        "false"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "JSON null (the text 'null')",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        7,
+        "null"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "SQL NULL",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        8,
+        null
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "non-ASCII text",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        9,
+        "{\"a\": \"téxt 😀\"}"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "not JSON",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        10,
+        "not json"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "an empty string",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        11,
+        ""
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "duplicate keys",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_P6JSON (ID, C) VALUES (?, ?)",
+      "params": [
+        12,
+        "{\"a\": 1, \"a\": 2}"
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "IS JSON",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON ADD CONSTRAINT DJDB2I_P6JSON_CK CHECK (C IS JSON)",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    },
+    {
+      "label": "create with the check",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON2 (ID INTEGER NOT NULL PRIMARY KEY, C NCLOB CHECK (C IS JSON))",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    },
+    {
+      "label": "IS JSON VALUE",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON ADD CONSTRAINT DJDB2I_P6JSON_CK CHECK (C IS JSON VALUE)",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    },
+    {
+      "label": "IS JSON SCALAR",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON ADD CONSTRAINT DJDB2I_P6JSON_CK CHECK (C IS JSON SCALAR)",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    },
+    {
+      "label": "IS JSON ARRAY",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON ADD CONSTRAINT DJDB2I_P6JSON_CK CHECK (C IS JSON ARRAY)",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    },
+    {
+      "label": "IS JSON OBJECT",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON ADD CONSTRAINT DJDB2I_P6JSON_CK CHECK (C IS JSON OBJECT)",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0546 - CHECK condition of constraint *N not valid. (-546) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop DJDB2I_P6JSON",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJDB2I_P6JSON RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    }
+  ]
+}

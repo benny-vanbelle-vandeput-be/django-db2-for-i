@@ -1,0 +1,2636 @@
+{
+  "probe": "json_errors",
+  "utc": "20261102T000502Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (a table gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "JSON_VALUE, a good document, a key that exists, default": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1'"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a key that exists, NULL ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' NULL ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1'"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a key that exists, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1'"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a key that exists, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1'"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a key that exists, ERROR ON EMPTY ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ERROR ON EMPTY ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1'"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, a key that exists, default": {
+    "sql": "SELECT JSON_QUERY(C, '$.a' WITH CONDITIONAL WRAPPER ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'[1]'"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, a key that exists, ERROR ON ERROR": {
+    "sql": "SELECT JSON_QUERY(C, '$.a' WITH CONDITIONAL WRAPPER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'[1]'"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, a key that exists, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_QUERY(C, '$.a' WITH CONDITIONAL WRAPPER ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'[1]'"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a key that exists, default": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' ) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a key that exists, FALSE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' FALSE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a key that exists, UNKNOWN ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' UNKNOWN ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a key that exists, TRUE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' TRUE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a key that exists, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a missing key, default": {
+    "sql": "SELECT JSON_VALUE(C, '$.z' ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a missing key, NULL ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.z' NULL ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a missing key, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.z' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a missing key, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_VALUE(C, '$.z' ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16405,
+    "message": "SQ16405 - Result contains no SQL/JSON item. (-16405) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, a good document, a missing key, ERROR ON EMPTY ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.z' ERROR ON EMPTY ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16405,
+    "message": "SQ16405 - Result contains no SQL/JSON item. (-16405) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, a good document, a missing key, default": {
+    "sql": "SELECT JSON_QUERY(C, '$.z' WITH CONDITIONAL WRAPPER ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, a missing key, ERROR ON ERROR": {
+    "sql": "SELECT JSON_QUERY(C, '$.z' WITH CONDITIONAL WRAPPER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, a missing key, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_QUERY(C, '$.z' WITH CONDITIONAL WRAPPER ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16405,
+    "message": "SQ16405 - Result contains no SQL/JSON item. (-16405) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_EXISTS, a good document, a missing key, default": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.z' ) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a missing key, FALSE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.z' FALSE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a missing key, UNKNOWN ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.z' UNKNOWN ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a missing key, TRUE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.z' TRUE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a missing key, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.z' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, JSON null, default": {
+    "sql": "SELECT JSON_VALUE(C, '$.c' ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, JSON null, NULL ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.c' NULL ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, JSON null, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.c' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, JSON null, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_VALUE(C, '$.c' ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, JSON null, ERROR ON EMPTY ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.c' ERROR ON EMPTY ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, JSON null, default": {
+    "sql": "SELECT JSON_QUERY(C, '$.c' WITH CONDITIONAL WRAPPER ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, JSON null, ERROR ON ERROR": {
+    "sql": "SELECT JSON_QUERY(C, '$.c' WITH CONDITIONAL WRAPPER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, JSON null, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_QUERY(C, '$.c' WITH CONDITIONAL WRAPPER ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, JSON null, default": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.c' ) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, JSON null, FALSE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.c' FALSE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, JSON null, UNKNOWN ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.c' UNKNOWN ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, JSON null, TRUE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.c' TRUE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, JSON null, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.c' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, an object, default": {
+    "sql": "SELECT JSON_VALUE(C, '$.e' ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, an object, NULL ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.e' NULL ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, an object, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.e' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, an object, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_VALUE(C, '$.e' ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16405,
+    "message": "SQ16405 - Result contains no SQL/JSON item. (-16405) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, a good document, an object, ERROR ON EMPTY ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.e' ERROR ON EMPTY ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16405,
+    "message": "SQ16405 - Result contains no SQL/JSON item. (-16405) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, a good document, an object, default": {
+    "sql": "SELECT JSON_QUERY(C, '$.e' WITH CONDITIONAL WRAPPER ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"f\":true}'"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, an object, ERROR ON ERROR": {
+    "sql": "SELECT JSON_QUERY(C, '$.e' WITH CONDITIONAL WRAPPER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"f\":true}'"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, an object, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_QUERY(C, '$.e' WITH CONDITIONAL WRAPPER ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"f\":true}'"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, an object, default": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.e' ) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, an object, FALSE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.e' FALSE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, an object, UNKNOWN ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.e' UNKNOWN ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, an object, TRUE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.e' TRUE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, an object, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.e' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, an array, default": {
+    "sql": "SELECT JSON_VALUE(C, '$.d' ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, an array, NULL ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.d' NULL ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, an array, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.d' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16404,
+    "message": "SQ16404 - Result contains more than one SQL/JSON item. (-16404) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, a good document, an array, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_VALUE(C, '$.d' ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, an array, ERROR ON EMPTY ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.d' ERROR ON EMPTY ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16404,
+    "message": "SQ16404 - Result contains more than one SQL/JSON item. (-16404) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, a good document, an array, default": {
+    "sql": "SELECT JSON_QUERY(C, '$.d' WITH CONDITIONAL WRAPPER ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'[10,20]'"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, an array, ERROR ON ERROR": {
+    "sql": "SELECT JSON_QUERY(C, '$.d' WITH CONDITIONAL WRAPPER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'[10,20]'"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, an array, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_QUERY(C, '$.d' WITH CONDITIONAL WRAPPER ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'[10,20]'"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, an array, default": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d' ) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, an array, FALSE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d' FALSE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, an array, UNKNOWN ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d' UNKNOWN ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, an array, TRUE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d' TRUE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, an array, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a negative position, default": {
+    "sql": "SELECT JSON_VALUE(C, '$.d[-1]' ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a negative position, NULL ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.d[-1]' NULL ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a negative position, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.d[-1]' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16403,
+    "message": "SQ16403 - SQL/JSON subscript is not valid. (-16403) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, a good document, a negative position, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_VALUE(C, '$.d[-1]' ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a negative position, ERROR ON EMPTY ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.d[-1]' ERROR ON EMPTY ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16403,
+    "message": "SQ16403 - SQL/JSON subscript is not valid. (-16403) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, a good document, a negative position, default": {
+    "sql": "SELECT JSON_QUERY(C, '$.d[-1]' WITH CONDITIONAL WRAPPER ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, a negative position, ERROR ON ERROR": {
+    "sql": "SELECT JSON_QUERY(C, '$.d[-1]' WITH CONDITIONAL WRAPPER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16403,
+    "message": "SQ16403 - SQL/JSON subscript is not valid. (-16403) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, a good document, a negative position, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_QUERY(C, '$.d[-1]' WITH CONDITIONAL WRAPPER ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a negative position, default": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d[-1]' ) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a negative position, FALSE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d[-1]' FALSE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a negative position, UNKNOWN ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d[-1]' UNKNOWN ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a negative position, TRUE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d[-1]' TRUE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a negative position, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d[-1]' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16403,
+    "message": "SQ16403 - SQL/JSON subscript is not valid. (-16403) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, a good document, a bad path, default": {
+    "sql": "SELECT JSON_VALUE(C, '$.a[' ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a bad path, NULL ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a[' NULL ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a bad path, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a[' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a good document, a bad path, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_VALUE(C, '$.a[' ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16405,
+    "message": "SQ16405 - Result contains no SQL/JSON item. (-16405) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, a good document, a bad path, ERROR ON EMPTY ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a[' ERROR ON EMPTY ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16405,
+    "message": "SQ16405 - Result contains no SQL/JSON item. (-16405) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, a good document, a bad path, default": {
+    "sql": "SELECT JSON_QUERY(C, '$.a[' WITH CONDITIONAL WRAPPER ) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, a bad path, ERROR ON ERROR": {
+    "sql": "SELECT JSON_QUERY(C, '$.a[' WITH CONDITIONAL WRAPPER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, a good document, a bad path, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_QUERY(C, '$.a[' WITH CONDITIONAL WRAPPER ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16405,
+    "message": "SQ16405 - Result contains no SQL/JSON item. (-16405) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_EXISTS, a good document, a bad path, default": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a[' ) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a bad path, FALSE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a[' FALSE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a bad path, UNKNOWN ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a[' UNKNOWN ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a bad path, TRUE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a[' TRUE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a good document, a bad path, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a[' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_VALUE, not JSON, default": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ) FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, not JSON, NULL ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' NULL ON ERROR) FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, not JSON, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, not JSON, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, not JSON, ERROR ON EMPTY ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ERROR ON EMPTY ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, not JSON, default": {
+    "sql": "SELECT JSON_QUERY(C, '$.a' WITH CONDITIONAL WRAPPER ) FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, not JSON, ERROR ON ERROR": {
+    "sql": "SELECT JSON_QUERY(C, '$.a' WITH CONDITIONAL WRAPPER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, not JSON, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_QUERY(C, '$.a' WITH CONDITIONAL WRAPPER ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_EXISTS, not JSON, default": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' ) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, not JSON, FALSE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' FALSE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, not JSON, UNKNOWN ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' UNKNOWN ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, not JSON, TRUE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' TRUE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, not JSON, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, a root number, $, default": {
+    "sql": "SELECT JSON_VALUE(C, '$' ) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a root number, $, NULL ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$' NULL ON ERROR) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a root number, $, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, a root number, $, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_VALUE(C, '$' ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a root number, $, ERROR ON EMPTY ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$' ERROR ON EMPTY ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, a root number, $, default": {
+    "sql": "SELECT JSON_QUERY(C, '$' WITH CONDITIONAL WRAPPER ) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, a root number, $, ERROR ON ERROR": {
+    "sql": "SELECT JSON_QUERY(C, '$' WITH CONDITIONAL WRAPPER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, a root number, $, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_QUERY(C, '$' WITH CONDITIONAL WRAPPER ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a root number, $, default": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$' ) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a root number, $, FALSE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$' FALSE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a root number, $, UNKNOWN ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$' UNKNOWN ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a root number, $, TRUE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$' TRUE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a root number, $, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, a root null, $, default": {
+    "sql": "SELECT JSON_VALUE(C, '$' ) FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a root null, $, NULL ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$' NULL ON ERROR) FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a root null, $, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a root null, $, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_VALUE(C, '$' ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16405,
+    "message": "SQ16405 - Result contains no SQL/JSON item. (-16405) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, a root null, $, ERROR ON EMPTY ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$' ERROR ON EMPTY ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16405,
+    "message": "SQ16405 - Result contains no SQL/JSON item. (-16405) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, a root null, $, default": {
+    "sql": "SELECT JSON_QUERY(C, '$' WITH CONDITIONAL WRAPPER ) FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{}'"
+      ]
+    ]
+  },
+  "JSON_QUERY, a root null, $, ERROR ON ERROR": {
+    "sql": "SELECT JSON_QUERY(C, '$' WITH CONDITIONAL WRAPPER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{}'"
+      ]
+    ]
+  },
+  "JSON_QUERY, a root null, $, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_QUERY(C, '$' WITH CONDITIONAL WRAPPER ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{}'"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a root null, $, default": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$' ) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a root null, $, FALSE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$' FALSE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a root null, $, UNKNOWN ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$' UNKNOWN ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a root null, $, TRUE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$' TRUE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a root null, $, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 4",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_VALUE, a SQL NULL, default": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ) FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a SQL NULL, NULL ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' NULL ON ERROR) FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a SQL NULL, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a SQL NULL, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, a SQL NULL, ERROR ON EMPTY ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.a' ERROR ON EMPTY ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, a SQL NULL, default": {
+    "sql": "SELECT JSON_QUERY(C, '$.a' WITH CONDITIONAL WRAPPER ) FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, a SQL NULL, ERROR ON ERROR": {
+    "sql": "SELECT JSON_QUERY(C, '$.a' WITH CONDITIONAL WRAPPER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, a SQL NULL, ERROR ON EMPTY": {
+    "sql": "SELECT JSON_QUERY(C, '$.a' WITH CONDITIONAL WRAPPER ERROR ON EMPTY) FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a SQL NULL, default": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' ) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a SQL NULL, FALSE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' FALSE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a SQL NULL, UNKNOWN ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' UNKNOWN ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a SQL NULL, TRUE ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' TRUE ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a SQL NULL, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.a' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 5",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_VALUE, strict, a missing key": {
+    "sql": "SELECT JSON_VALUE(C, 'strict $.z' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16410,
+    "message": "SQ16410 - SQL/JSON member not found. (-16410) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, strict, a missing key": {
+    "sql": "SELECT JSON_QUERY(C, 'strict $.z' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16410,
+    "message": "SQ16410 - SQL/JSON member not found. (-16410) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, lax, a missing key": {
+    "sql": "SELECT JSON_VALUE(C, 'lax $.z' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, lax, a missing key": {
+    "sql": "SELECT JSON_QUERY(C, 'lax $.z' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE, strict, a root number": {
+    "sql": "SELECT JSON_VALUE(C, 'strict $' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, strict, a root number": {
+    "sql": "SELECT JSON_QUERY(C, 'strict $' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, lax, a root number": {
+    "sql": "SELECT JSON_VALUE(C, 'lax $' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, lax, a root number": {
+    "sql": "SELECT JSON_QUERY(C, 'lax $' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 3",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, strict, a key of an array": {
+    "sql": "SELECT JSON_VALUE(C, 'strict $.d.x' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16410,
+    "message": "SQ16410 - SQL/JSON member not found. (-16410) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_QUERY, strict, a key of an array": {
+    "sql": "SELECT JSON_QUERY(C, 'strict $.d.x' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16410,
+    "message": "SQ16410 - SQL/JSON member not found. (-16410) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_VALUE, lax, a key of an array": {
+    "sql": "SELECT JSON_VALUE(C, 'lax $.d.x' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY, lax, a key of an array": {
+    "sql": "SELECT JSON_QUERY(C, 'lax $.d.x' ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a filter on an array, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d[*]?(@ == 20)' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a filter on a key, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$?(@.a == 1)' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "JSON_EXISTS, a filter, strict, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, 'strict $.d[*]?(@ == 20)' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16410,
+    "message": "SQ16410 - SQL/JSON member not found. (-16410) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_EXISTS, a filter, no match, ERROR ON ERROR": {
+    "sql": "SELECT CASE WHEN JSON_EXISTS(C, '$.d[*]?(@ == 99)' ERROR ON ERROR) THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "the wrong type, default": {
+    "sql": "SELECT JSON_VALUE(C, '$.b' RETURNING INTEGER) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "the wrong type, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, '$.b' RETURNING INTEGER ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "error",
+    "sqlstate": "22018",
+    "sqlcode": -406,
+    "message": "SQL0406 - Conversion error on assignment to column *N. (-406) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "a bad path as a marker, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, ? ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "a good path as a marker, ERROR ON ERROR": {
+    "sql": "SELECT JSON_VALUE(C, ? ERROR ON ERROR) FROM QTEMP.P6JERR WHERE I = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1'"
+      ]
+    ]
+  },
+  "several rows, one not JSON, ERROR ON ERROR": {
+    "sql": "SELECT I, JSON_VALUE(C, '$.a' ERROR ON ERROR) FROM QTEMP.P6JERR ORDER BY I",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "in WHERE, several rows, one not JSON, ERROR ON ERROR": {
+    "sql": "SELECT I FROM QTEMP.P6JERR WHERE JSON_VALUE(C, '$.a' RETURNING INTEGER ERROR ON ERROR) = 1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "JSON_TABLE, ERROR ON ERROR": {
+    "sql": "SELECT J.A FROM QTEMP.P6JERR, JSON_TABLE(C, '$' COLUMNS(A INTEGER PATH '$.a') ERROR ON ERROR) AS J WHERE I = 2",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -16402,
+    "message": "SQ16402 - JSON data is not valid. (-16402) (SQLFetch)",
+    "connection_usable_after": true
+  },
+  "IS JSON, not JSON": {
+    "sql": "SELECT CASE WHEN C IS JSON THEN 1 ELSE 0 END FROM QTEMP.P6JERR WHERE I = 2",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  }
+}
