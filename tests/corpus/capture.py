@@ -6,22 +6,24 @@ use ``CaptureRunner`` (tests/django_settings/settings_django_suite.py).
 Never part of the backend package.
 
 Before Django executes a statement (``SQLCompiler.execute_sql`` and
-``SQLInsertCompiler.execute_sql``), the hook pickles the compiler's query and
-compiles a fresh copy of it (``pickle.loads`` + ``get_compiler`` + ``as_sql``),
-exactly as the offline replay does; the live compiler is never touched. While
-it compiles that copy, executing anything is blocked: some compilers run SQL
-while compiling (an update with related updates selects the pks first), which
-would add a statement to the test; such a statement is counted as
-``needs_database`` and not recorded, so the hook never executes SQL itself. It
-records the test id, the compiler class, that SQL with its tagged params, the
-pickle, and the USE_TZ / TIME_ZONE in effect. Statements of a test are kept
-only if the test passed; those run by ``TestCase.setUpClass`` (setUpTestData)
-are kept if a test of that class passed. At the end of the run every kept
-record is compiled once more from its pickle, with its settings; a record
-whose SQL or params changed depends on state at capture time (an ``auto_now``
-timestamp, a model option the test changed and restored), cannot be replayed,
-and is dropped and counted as ``volatile``. Every error of the hook itself is
-caught and counted, so it never changes a test's outcome.
+``SQLInsertCompiler.execute_sql``, and the backend compilers' own
+``execute_sql``, such as the ``MERGE`` of a conflict insert), the hook pickles
+the compiler's query and compiles a fresh copy of it (``pickle.loads`` +
+``get_compiler`` + ``as_sql``), exactly as the offline replay does; the live
+compiler is never touched. While it compiles that copy, executing anything is
+blocked: some compilers run SQL while compiling (an update with related updates
+selects the pks first), which would add a statement to the test; such a
+statement is counted as ``needs_database`` and not recorded, so the hook never
+executes SQL itself. It records the test id, the compiler class, that SQL with
+its tagged params, the pickle, and the USE_TZ / TIME_ZONE in effect. Statements
+of a test are kept only if the test passed; those run by
+``TestCase.setUpClass`` (setUpTestData) are kept if a test of that class
+passed. At the end of the run every kept record is compiled once more from its
+pickle, with its settings; a record whose SQL or params changed depends on
+state at capture time (an ``auto_now`` timestamp, a model option the test
+changed and restored), cannot be replayed, and is dropped and counted as
+``volatile``. Every error of the hook itself is caught and counted, so it never
+changes a test's outcome.
 
 The raw capture is one JSON object per line: a header (``{"header": {...}}``:
 Django version and commit, label, verification level, date, counts), then the
@@ -78,6 +80,7 @@ class Recorder:
         # Why statements were not recorded: "<count kind>: <exception>" -> count.
         self.reasons: dict[str, int] = defaultdict(int)
         self.compiling = False
+        self.executing: set[int] = set()  # ids of the compilers inside a wrapped execute_sql
         self.level = "unknown"
 
     # -- recording ------------------------------------------------------------------------
@@ -221,13 +224,23 @@ class NeedsDatabase(Exception):
 
 
 def wrapped_execute_sql(original, recorder: Recorder):
-    """``execute_sql`` that records first, and never executes during the hook's own compile."""
+    """``execute_sql`` that records first, and never executes during the hook's own compile.
+
+    Both Django's and the backend's ``execute_sql`` are wrapped; when one calls
+    the other (``super().execute_sql()``) for the same compiler, only the outer
+    call records."""
 
     def execute_sql(self, *args, **kwargs):
         if recorder.compiling:  # the hook's own compile of a copy: never execute
             raise NeedsDatabase("compiling the query executes SQL")
-        recorder.record(self)
-        return original(self, *args, **kwargs)
+        if id(self) in recorder.executing:
+            return original(self, *args, **kwargs)
+        recorder.executing.add(id(self))
+        try:
+            recorder.record(self)
+            return original(self, *args, **kwargs)
+        finally:
+            recorder.executing.discard(id(self))
 
     execute_sql.__wrapped__ = original
     return execute_sql
@@ -237,6 +250,23 @@ RECORDER: Recorder | None = None
 
 
 _ORIGINALS: dict[tuple[type, str], Any] = {}
+
+
+def backend_executors() -> list[type]:
+    """The backend's compilers with their own ``execute_sql``: a statement they
+    send without Django's (bulk_create() with conflicts, a MERGE) is recorded too."""
+    from django.db.models.sql import compiler
+
+    from django_db2_for_i import compiler as backend
+
+    return [
+        cls
+        for cls in vars(backend).values()
+        if isinstance(cls, type)
+        and issubclass(cls, compiler.SQLCompiler)
+        and cls.__module__ == backend.__name__
+        and "execute_sql" in cls.__dict__
+    ]
 
 
 def install(path: Path) -> Recorder:
@@ -249,7 +279,7 @@ def install(path: Path) -> Recorder:
 
     RECORDER = recorder = Recorder(path)
 
-    for cls in (compiler.SQLCompiler, compiler.SQLInsertCompiler):
+    for cls in (compiler.SQLCompiler, compiler.SQLInsertCompiler, *backend_executors()):
         _ORIGINALS[(cls, "execute_sql")] = cls.__dict__["execute_sql"]
         cls.execute_sql = wrapped_execute_sql(cls.__dict__["execute_sql"], recorder)
 

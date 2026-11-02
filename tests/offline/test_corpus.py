@@ -269,6 +269,43 @@ def test_the_hook_is_invisible_to_the_statements_a_test_executes(
     assert recorder.counts["unpicklable"] == recorder.counts["not_compiled"] == 0
 
 
+def test_conflict_inserts_are_captured_once(tmp_path) -> None:
+    """bulk_create() with ignore_conflicts / update_conflicts sends its MERGE from
+    the backend's own SQLInsertCompiler.execute_sql, without Django's; the hook
+    records it. A plain insert, where the backend calls Django's execute_sql
+    through super(), is recorded once, not twice. The cursor is a mock: no
+    connection is opened."""
+    from django.db import connection
+    from django.db.models.constants import OnConflict
+    from django.db.models.sql import InsertQuery
+
+    from django_db2_for_i.compiler import SQLInsertCompiler
+
+    def insert(on_conflict=None, **kwargs):
+        query = InsertQuery(Author, on_conflict=on_conflict, **kwargs)
+        query.insert_values(Author._meta.local_concrete_fields, [Author(id=1, name="a")])
+        return query.get_compiler("default")
+
+    name = Author._meta.get_field("name")
+    with capture.installed(tmp_path / "raw.jsonl") as recorder:
+        assert SQLInsertCompiler in capture.backend_executors()
+        recorder.start("m.t.T.test_a")
+        with mock.patch.object(connection, "cursor") as cursor:
+            insert(OnConflict.IGNORE).execute_sql()
+            insert(
+                OnConflict.UPDATE, update_fields=[name], unique_fields=[Author._meta.pk]
+            ).execute_sql()
+            insert().execute_sql()
+    execute = cursor.return_value.__enter__.return_value.execute
+    executed = [call.args[0] for call in execute.mock_calls]
+    recorded = [record["sql"][0][0] for record in recorder.pending["m.t.T.test_a"]]
+    assert [sql.split(" ", 1)[0] for sql in executed] == ["MERGE", "MERGE", "INSERT"]
+    assert recorded == executed
+    assert "WHEN MATCHED THEN UPDATE" in recorded[1]
+    assert recorder.executing == set()
+    assert not hasattr(SQLInsertCompiler.execute_sql, "__wrapped__")  # uninstalled
+
+
 def test_hook_errors_never_escape(tmp_path) -> None:
     recorder = capture.Recorder(tmp_path / "raw.jsonl")
     recorder.start("m.t.T.test_a")
