@@ -312,6 +312,3 @@ text = "The LOB limit of a multi-row statement is measured for 1 and 2 LOB colum
 
 [[tracks]]
 text = "`select_for_update()` stays off: row locking matters for real multi-user use, and blocking can only be verified with two connections, so a dedicated IBM i ([phase 6, decision 1](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/phases/phase-6.md#key-decisions))."
-
-[[tracks]]
-text = "The replay tests do not cover `MERGE` (`ignore_conflicts`, `update_conflicts`, `m2m.add()`): the capture hook misses it, because the backend's insert compiler runs a conflict insert itself. The Django tests on IBM i do run it. Right after `v0.1.0b2`: the hook fix with an offline test, then a recapture of the modules with `MERGE` on all three versions."

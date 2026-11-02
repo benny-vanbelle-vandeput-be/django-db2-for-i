@@ -80,11 +80,13 @@ by the status runs at the end of phase 3 (backend `4cf4e0e`, every release
 run captures since #122); the counts differ per version because each
 version's test suite differs.
 
-**Known gap:** no statement written by a `MERGE` is in the corpus yet (`ignore_conflicts`,
-`update_conflicts`, `m2m.add()`). The hook wrapped only Django's `execute_sql`, and the backend's
-insert compiler runs a conflict insert without calling it. The hook now also wraps the backend
-compilers' own `execute_sql` (a statement is recorded once when one calls the other); the
-recapture of the modules with `MERGE` on all three versions follows.
+**`MERGE`** (`ignore_conflicts`, `update_conflicts`, `m2m.add()`): the hook wrapped only
+Django's `execute_sql` until #225, and the backend's insert compiler runs a conflict insert
+without calling it, so no `MERGE` was recorded. Since #225 it also wraps the backend compilers'
+own `execute_sql` (a statement is recorded once when one calls the other). The modules with
+`MERGE` (aggregation, bulk_create, lookup, queries; expressions too, which has none) were
+recaptured on 2026-11-02 on all three versions: 63 `MERGE` entries per version, no other entry
+changed. The current counts per module are in each version's `manifest.toml`.
 
 ## What the counts mean
 
