@@ -2284,6 +2284,87 @@ job, so it shows nothing about what is locked.
 | `Decimal` with 34 digits, `Decimal('1E-300')` | ok, exact |
 | a string with 35 digits | ok, rounded without an error (`1.234...234E+34`) |
 
+### JSON functions with an error clause (`probes/qtemp_json_errors.py`)
+
+2026-11-02, PUB400 (IBM i 7.5). QTEMP only, `CMT=0`, one connection, the maintainer's answer 2 on #218.
+Result: `probes/results/json_errors.json`. Every error below came at **fetch** (`SQLFetch`), not at prepare,
+and the connection answered after each of the 38. All have SQLSTATE `HY000` except SQL0406.
+
+| Situation | Default | `ERROR ON ERROR` | `ERROR ON EMPTY` |
+|---|---|---|---|
+| not JSON | NULL | **SQ16402 "JSON data is not valid"** | NULL |
+| a root number or string, `$` (`IS JSON` is true) | NULL | **SQ16402** | NULL |
+| a missing key | NULL | NULL | **SQ16405 "Result contains no SQL/JSON item"** |
+| `JSON_VALUE` of an object | NULL | NULL | SQ16405 |
+| `JSON_VALUE` of an array | NULL | **SQ16404 "more than one SQL/JSON item"** | NULL |
+| a negative position, `$.d[-1]` | NULL | **SQ16403 "subscript is not valid"** | NULL |
+| **a malformed path, `$.a[`** | NULL | **NULL: no error**, also as a marker | SQ16405 |
+| `RETURNING INTEGER` of a string | NULL | **SQL0406, `22018`** | not tried |
+| JSON null | NULL | NULL | NULL |
+| a SQL NULL: `JSON_VALUE` | NULL | NULL | NULL |
+| a SQL NULL: `JSON_QUERY` | NULL | **SQ16402** | NULL |
+| a root `null`: `JSON_QUERY(C, '$')` | `{}` | `{}` | `{}` |
+
+- **`JSON_EXISTS`:** `ERROR ON ERROR` raises SQ16402 on not JSON and SQ16403 on a negative position. `TRUE ON
+  ERROR` gives true there, `FALSE` and `UNKNOWN ON ERROR` false. A SQL NULL gives false under all of them. A
+  malformed path gives false under all of them, also `ERROR ON ERROR`.
+- **`strict` paths:** a missing key or a key of an array gives **SQ16410 "member not found"** with `ERROR ON
+  ERROR`; `lax` gives NULL. A root number gives SQ16402 under both.
+- **Path filters:** `$.d[*]?(@ == 20)` and `$?(@.a == 1)` stay false with `ERROR ON ERROR`, and `strict` gives
+  SQ16410. So they match nothing and do not raise: not usable for `contains`.
+- **Several rows:** one row of not JSON raises for the whole query, in the select list and in `WHERE`.
+  `JSON_TABLE ... ERROR ON ERROR` gives SQ16402 too.
+- **Not settled by this:** the mapping. SQ164xx arrive as `HY000`, so today they would be a plain
+  `DatabaseError`; the `JSONField` PR needs entries by SQLCODE, as for SQL0532.
+
+### Delete rules of a foreign key (`probes/lib_on_delete.py`)
+
+2026-11-02, PUB400 (IBM i 7.5), in the journaled default library, approved on
+[#220](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/220#issuecomment-6554356422). Tables
+`DJDB2I_P6DELP` and `DJDB2I_P6DELC`, on the cleanup list, dropped child first with `RESTRICT`; nothing left.
+Result: `probes/results/lib_on_delete.json`. Two parents (1, 2), a child of each (10 of 1, 20 of 2), `P_ID`
+`DEFAULT 1`, each case in its own transaction ended with `ROLLBACK` (CMT=1).
+
+| `ON DELETE` | Parent deleted | Result | Children after | `SYSREFCST.DELETE_RULE` |
+|---|---|---|---|---|
+| `NO ACTION` | 2 | SQL0532 (`HY000`), nothing deleted | as before | `NO ACTION` |
+| `RESTRICT` | 2 | SQL0532, nothing deleted | as before | `RESTRICT` |
+| `CASCADE` | 2 | ok | child 20 gone | `CASCADE` |
+| `SET NULL` | 2 | ok | child 20: NULL | `SET NULL` |
+| `SET DEFAULT` | 2 | ok | child 20: 1 | `SET DEFAULT` |
+| `SET DEFAULT` | **1, the default's parent** | **SQL0532, nothing deleted** | as before | `SET DEFAULT` |
+
+- `UPDATE_RULE` is `NO ACTION` in every case.
+- All of it works inside a transaction, read back before the `ROLLBACK`.
+- **Open:** foreign keys between tables in **different journals**. Both tables here share the library's
+  `QSQJRN`, so this probe cannot answer that.
+- **Not tested:** DDL after these deletes in one transaction (SQL0910 would be expected, as for other pending
+  row changes; each case rolled back first).
+
+### CHECK ... IS JSON on an NCLOB (`probes/lib_json_check.py`)
+
+2026-11-02, PUB400 (IBM i 7.5), in the journaled default library, approved on
+[#221](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/221#issuecomment-6554376430). Table
+`DJDB2I_P6JSON` on the cleanup list, dropped with `RESTRICT`; nothing left. The second table's `CREATE TABLE` was
+refused, so it never existed. Result: `probes/results/lib_json_check.json`.
+
+| Statement | Result |
+|---|---|
+| `ALTER TABLE ... ADD CONSTRAINT ... CHECK (C IS JSON)` | **SQL0546 "CHECK condition of constraint *N not valid"** |
+| `CREATE TABLE ... (C NCLOB CHECK (C IS JSON))` | **SQL0546** |
+| `CHECK (C IS JSON VALUE)`, `SCALAR`, `ARRAY`, `OBJECT` | **SQL0546 each** |
+
+- **So a `JSONField` column cannot have a `CHECK ... IS JSON` on an `NCLOB`.** Nothing in the database stops text
+  that is not JSON, and `can_introspect_json_field` has no check to recognize.
+- SQL0546 is the same message for every form, and no form got a syntax error, so this does not show which forms
+  exist as predicates. `IS JSON` works as a predicate in a `SELECT` (probe `qtemp_json_functions`).
+- **Not tried:** a `CHECK` on a type other than `NCLOB`, or with another condition: outside this approval.
+- **Without any check** (the control), every value is stored, and **JSON null and SQL NULL stay distinct:**
+  the text `null` reads back as the string `null`, a SQL NULL as NULL (`C IS NULL`).
+- **A slip in the first run's result:** `probes/results/lib_json_check.json` says "scalars IS JSON refused: none: no
+  variants tried", although the variants did run, because the check itself was refused. The script is corrected;
+  the cases above are right. Not run again for a label.
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

@@ -82,14 +82,14 @@ that rests on IBM's documentation only; Django's tests still decide every flag.
 | 2 | `supports_frame_range_fixed_distance` | all | **on for numbers:** `RANGE` over a date key is refused (SQL0182, SQL0104), so such tests get a reason (probe) |
 | 2 | `supports_frame_exclusion` | all | **off:** `EXCLUDE` is refused (SQL0104; also `GROUPS`) (probe) |
 | 3 | `supports_json_field` | all | **on, in an `NCLOB`** (probe); depends on the risks in section 5 |
-| 3 | `can_introspect_json_field` | all | off unless a `CHECK ... IS JSON` can be recognized (`lib_json_check`): `inspectdb` would see a plain LOB |
-| 3 | `supports_primitives_in_json_field` | all | **open:** scalars are valid JSON and can be stored, but `JSON_VALUE` and `JSON_QUERY` on `$` give NULL, and on a root `null` `JSON_QUERY` gives `{}` (probe) |
+| 3 | `can_introspect_json_field` | all | **off:** `CHECK (C IS JSON)` is refused on an `NCLOB` (SQL0546, `lib_json_check`), so there is nothing to recognize; `inspectdb` sees a plain LOB |
+| 3 | `supports_primitives_in_json_field` | all | **open question 7:** scalars can be stored and read back, and JSON null stays apart from SQL NULL (`lib_json_check`), but the functions refuse a root scalar: NULL, or SQ16402 with `ERROR ON ERROR`, and on a root `null` `JSON_QUERY` gives `{}` |
 | 3 | `supports_json_field_contains` | all | **off:** path filters returned false where they should match (probe); no containment function is documented (not verified on IBM i) |
 | 3 | `supports_json_negative_indexing` | 6.0+ | **off or emulated:** `$.d[-1]` gives NULL without an error; `$.d[last-1]` works (probe) |
 | 3 | `has_json_object_function` | all | **on:** `JSON_OBJECT` with typed markers, keys, nesting and NULL (probe) |
-| 4 | `supports_on_delete_db_cascade` | 6.1 | on: documented (not verified on IBM i); `lib_on_delete` |
-| 4 | `supports_on_delete_db_null` | 6.1 | on: documented (not verified on IBM i); `lib_on_delete` |
-| 4 | `supports_on_delete_db_default` | 6.1 | on: documented (not verified on IBM i); `lib_on_delete` |
+| 4 | `supports_on_delete_db_cascade` | 6.1 | **on:** works (`lib_on_delete`) |
+| 4 | `supports_on_delete_db_null` | 6.1 | **on:** works (`lib_on_delete`) |
+| 4 | `supports_on_delete_db_default` | 6.1 | **on:** works; deleting the parent the default points to is refused (SQL0532) (`lib_on_delete`) |
 | Dedicated IBM i | `has_select_for_update`, `has_select_for_update_of`, `select_for_update_of_column`, `has_select_for_update_skip_locked`, `has_select_for_update_nowait`, `supports_select_for_update_with_limit` | all | **off, as an open track, not intentionally off** (answer 1): row locking matters for real multi-user use, and blocking can only be verified with two connections. Syntax found so far: section 4 |
 
 ## 4. IBM i questions and probes
@@ -104,7 +104,7 @@ with `bin/probe --publish`):
 | `qtemp_db_functions` | Django's default SQL for each function against what Db2 for i takes; NULL arguments; non-ASCII text; hash encoding; how `ROUND` and `CAST` treat halves |
 | `qtemp_select_for_update` | which locking statements are accepted (**syntax only**: it cannot show what they lock) |
 | `qtemp_phase6_flags` | LOB in `GROUP BY`; `ORDER BY` in subqueries; `LISTAGG(DISTINCT)`; `DECFLOAT(34)` binding; `REAL` as the driver and the catalog see it |
-| `qtemp_json_errors` (answer 2) | `ERROR ON ERROR` and `ERROR ON EMPTY` on `JSON_VALUE`, `JSON_QUERY`, `JSON_EXISTS`, `JSON_TABLE`: invalid JSON, wrong paths and wrong types, with the exact SQLSTATE and SQLCODE. **Written; runs when PUB400 is free, after the status run** |
+| `qtemp_json_errors` (answer 2) | `ERROR ON ERROR` and `ERROR ON EMPTY` on `JSON_VALUE`, `JSON_QUERY`, `JSON_EXISTS`, `JSON_TABLE`: invalid JSON, wrong paths and wrong types, with the exact SQLSTATE and SQLCODE |
 
 **Results** (2026-10-31, PUB400, QTEMP only, `CMT=0`, one connection; tables and `probes/results/` in
 [IBMI_NOTES](../IBMI_NOTES.md#phase-6-probes-window-functions-json-db-functions-row-locks)):
@@ -127,12 +127,19 @@ with `bin/probe --publish`):
   `DISTINCT`, `GROUP BY` and `UNION`** (SQL0511); `SELECT ... WITH RS USE AND KEEP EXCLUSIVE LOCKS` is accepted
   there. `NOWAIT` does not exist.
 
-**`lib_` probes** (requested separately; each runs only after the maintainer's approval comment):
+**Error clauses** (`qtemp_json_errors`, 2026-11-02, table in
+[IBMI_NOTES](../IBMI_NOTES.md#json-functions-with-an-error-clause-probesqtemp_json_errorspy)): `ERROR ON ERROR` raises on not JSON (SQ16402),
+a negative position (SQ16403), `JSON_VALUE` of an array (SQ16404) and a wrong type (SQL0406). **It does not raise
+on a malformed path (`$.a[` gives NULL), or on a missing key** (`ERROR ON EMPTY` gives SQ16405, a `strict` path
+SQ16410). On a SQL NULL, `JSON_QUERY ... ERROR ON ERROR` raises SQ16402, while `JSON_VALUE` gives NULL. One bad row
+raises for the whole query. All come at fetch, and the connection stays usable.
+
+**`lib_` probes** (requested separately; both ran after the maintainer's approval comments, 2026-11-02):
 
 | Probe | Request | Why not QTEMP | What it does |
 |---|---|---|---|
-| `lib_on_delete` | [#220](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/220) | constraints are refused in QTEMP (SQL7008) | two tables in the journaled library; a foreign key with each rule: what a parent delete does, what the catalog reports, whether both tables need the same journal |
-| `lib_json_check` | [#221](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/221) | the same | a `CHECK (C IS JSON)` on an `NCLOB`: accepted, what it refuses, how it reads in the catalog |
+| `lib_on_delete` | [#220](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/220) | constraints are refused in QTEMP (SQL7008) | **Each rule works as IBM documents**, also inside a transaction, and the catalog names it. `SET DEFAULT` refuses to delete the parent the default points to (SQL0532). **Open:** different journals |
+| `lib_json_check` | [#221](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/221) | the same | **`CHECK (C IS JSON)` is refused** on an `NCLOB` (SQL0546), also in `CREATE TABLE` and as `IS JSON VALUE`, `SCALAR`, `ARRAY`, `OBJECT`. Without a check, JSON null and SQL NULL stay distinct |
 
 **Not possible on PUB400:** anything with two connections. A second job waiting or skipping
 locked rows joins `lib_merge_concurrency` on a dedicated IBM i. `lib_select_for_update` is not
@@ -148,11 +155,16 @@ requested: with row locks off (answer 1), a one-job look at the lock list decide
   constants (an integer inlined is safe), `NTH_VALUE`'s position as a plain marker, and
   a `DECFLOAT` converter for `PercentRank` and `CumeDist`.
 - **JSONField:**
-  - **Column:** `NCLOB`, with a `CHECK ... IS JSON` if `lib_json_check` allows. **Never `BLOB`:**
-    the functions fail silently there.
+  - **Column:** `NCLOB`, **without a check:** `CHECK ... IS JSON` is refused (`lib_json_check`), so only
+    Django's own serializing keeps a column valid, as on a backend without such a check. **Never `BLOB`:** the
+    functions fail silently there.
   - **The main risk:** `JSON_VALUE` and `JSON_QUERY` answer an error with NULL. Where Django
-    expects an error, the lookup uses an error clause, with the exact SQLSTATE and SQLCODE from
-    probe `qtemp_json_errors`, not from IBM's documentation alone (answer 2).
+    expects an error, the lookup uses an error clause, with the exact SQLCODEs from
+    probe `qtemp_json_errors` (answer 2). **Limits it found:** a malformed path still gives NULL, so paths must be
+    right by construction, as `compile_json_path` writes them; `JSON_QUERY ... ERROR ON ERROR` raises on a SQL
+    NULL; one bad row fails the whole query, and with no `CHECK` nothing keeps such a row out. So error clauses go only
+    where Django expects an error (open question 7).
+  - **Errors:** SQ164xx arrive as `HY000`, so they need entries by SQLCODE in the driver layer.
   - **Lookups:** `as_db2_for_i` on `KeyTransform`, `HasKeyLookup` and the key lookups,
     like Django's Oracle code. A path can be a marker (probe), so nothing has to be inlined.
   - **Values:** `Value` gets its JSON rule, and `from_db_value` reads the LOB.
@@ -224,6 +236,16 @@ The maintainer's answers at approval, 2026-11-01, on #218:
 6. **`lib_` probes:** each requested separately.
 - **PR grouping:** 3 to 4 PRs by risk as proposed, a clear commit per step; `JSONField` stays its own.
 - **Timing:** no implementation until beta 2 is tagged.
+
+## Open questions
+Raised by the probes after the plan's approval:
+
+7. **Scalars and error clauses in the `JSONField` PR.** The functions cannot read a root scalar, so `Value(1)`
+   can be stored and read as a column, but key lookups on it give NULL or raise. **Recommendation:**
+   `supports_primitives_in_json_field` off if Django's tests need more than a round trip, and the default `NULL ON ERROR`
+   for ordinary lookups, like Django's Oracle code, with error clauses only where a test or Django's
+   documentation expects an error. With no `CHECK`, `ERROR ON ERROR` everywhere would let one bad row, written by raw
+   SQL, fail every query on the table. Decided in the `JSONField` PR with Django's tests.
 
 ## Links
 - [features.toml](../features.toml): the flags `planned = "phase 6"`
