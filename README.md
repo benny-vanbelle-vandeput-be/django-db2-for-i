@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3112 | 2 | 0 | 0 | 2026-10-31 10:33:23 UTC |
-| IBM i tests | 373 | 0 | 1 | 0 | 2026-10-31 10:58:13 UTC |
-| Django suite on IBM i | 2286 | 235 | 61 | 0 | 2026-10-31 07:55:55 UTC |
-| Replay tests | 2516 | 0 | 0 | 0 | 2026-10-31 10:34:29 UTC |
+| Offline tests | 3119 | 2 | 0 | 0 | 2026-11-01 23:46:14 UTC |
+| IBM i tests | 374 | 0 | 1 | 0 | 2026-11-01 13:02:45 UTC |
+| Django suite on IBM i | 2314 | 205 | 63 | 0 | 2026-11-01 12:18:18 UTC |
+| Replay tests | 2585 | 0 | 0 | 0 | 2026-11-01 23:46:57 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3113 | 1 | 0 | 0 | 2026-10-31 10:25:55 UTC |
-| IBM i tests | 367 | 0 | 1 | 0 | 2026-10-31 05:48:23 UTC |
-| Django suite on IBM i | 2190 | 213 | 62 | 0 | 2026-10-31 08:15:17 UTC |
-| Replay tests | 2456 | 0 | 0 | 0 | 2026-10-31 10:27:04 UTC |
+| Offline tests | 3120 | 1 | 0 | 0 | 2026-11-01 23:42:40 UTC |
+| IBM i tests | 374 | 0 | 1 | 0 | 2026-11-01 10:32:42 UTC |
+| Django suite on IBM i | 2218 | 183 | 64 | 0 | 2026-11-01 09:48:21 UTC |
+| Replay tests | 2525 | 0 | 0 | 0 | 2026-11-01 23:43:18 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3111 | 1 | 0 | 0 | 2026-10-31 10:21:52 UTC |
-| IBM i tests | 362 | 3 | 1 | 0 | 2026-10-31 06:20:10 UTC |
-| Django suite on IBM i | 2148 | 205 | 63 | 0 | 2026-10-31 08:32:01 UTC |
-| Replay tests | 2412 | 0 | 0 | 0 | 2026-10-31 10:22:36 UTC |
+| Offline tests | 3118 | 1 | 0 | 0 | 2026-11-01 23:38:34 UTC |
+| IBM i tests | 369 | 3 | 1 | 0 | 2026-11-01 08:06:56 UTC |
+| Django suite on IBM i | 2175 | 176 | 65 | 0 | 2026-11-01 07:23:31 UTC |
+| Replay tests | 2477 | 0 | 0 | 0 | 2026-11-01 23:39:32 UTC |
 
 ### About the tests
 
@@ -102,7 +102,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (53 enabled on Django 6.1) �
 | [3](docs/phases/phase-3.md) | Django 6.0 and 5.2 support | done |
 | [4](docs/phases/phase-4.md) | Schema editor completeness | done |
 | [5](docs/phases/phase-5.md) | Returning & bulk | done |
-| 6 | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
+| [6](docs/phases/phase-6.md) | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
 | 7 | PUB400 tier & release prep | planned |
 
 Latest release: **`v0.1.0b1`** (2026-10-29): First beta: the pre-beta review (#190, #191) done; status runs on 5.2, 6.0 and 6.1, 22 runs each, 0 failed. ([CHANGELOG](CHANGELOG.md))
@@ -113,6 +113,8 @@ Open tracks:
 - Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier.
 - `lib_merge_concurrency`: `MERGE` under concurrency (`ignore_conflicts`, `update_conflicts`, `m2m.add()`) is documented from IBM's documentation, not verified on IBM i. The probe needs two connections, so a dedicated IBM i ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#merge-under-concurrency-not-verified-on-ibm-i)).
 - The LOB limit of a multi-row statement is measured for 1 and 2 LOB columns only (about 1,024 markers); with 3 and 5 own IBM i tests show that the batches work and that 1,080 or 1,100 markers are refused, not where the limit lies ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#returning-bulk-inserts-indexes-unique-nulls-cursors-phase-5-step-0)).
+- `select_for_update()` stays off: row locking matters for real multi-user use, and blocking can only be verified with two connections, so a dedicated IBM i ([phase 6, decision 1](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/phases/phase-6.md#key-decisions)).
+- The replay tests do not cover `MERGE` (`ignore_conflicts`, `update_conflicts`, `m2m.add()`): the capture hook misses it, because the backend's insert compiler runs a conflict insert itself. The Django tests on IBM i do run it. Right after `v0.1.0b2`: the hook fix with an offline test, then a recapture of the modules with `MERGE` on all three versions.
 <!-- status:end -->
 
 > [!WARNING]
