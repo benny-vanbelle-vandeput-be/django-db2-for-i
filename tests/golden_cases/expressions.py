@@ -7,13 +7,14 @@ import datetime as dt
 from django.db.models import Case as CaseExpr
 from django.db.models import (
     CharField,
+    DecimalField,
     DurationField,
     ExpressionWrapper,
     F,
+    FloatField,
     Value,
     When,
 )
-from django.db.models import DecimalField, FloatField
 from django.db.models.functions import (
     MD5,
     SHA256,
