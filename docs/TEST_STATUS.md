@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3119 | 2 | 0 | 0 | 2026-11-02 05:50:43 UTC |
+| Offline tests | 3120 | 2 | 0 | 0 | 2026-11-02 19:50:41 UTC |
 | IBM i tests | 374 | 0 | 1 | 0 | 2026-11-01 13:02:45 UTC |
-| Django suite on IBM i | 2314 | 205 | 63 | 0 | 2026-11-01 12:18:18 UTC |
-| Replay tests | 2585 | 0 | 0 | 0 | 2026-11-02 05:50:55 UTC |
+| Django suite on IBM i | 2314 | 205 | 63 | 0 | 2026-11-02 14:31:45 UTC |
+| Replay tests | 2648 | 0 | 0 | 0 | 2026-11-02 19:51:31 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3120 | 1 | 0 | 0 | 2026-11-02 05:48:31 UTC |
+| Offline tests | 3121 | 1 | 0 | 0 | 2026-11-02 19:46:45 UTC |
 | IBM i tests | 374 | 0 | 1 | 0 | 2026-11-01 10:32:42 UTC |
-| Django suite on IBM i | 2218 | 183 | 64 | 0 | 2026-11-01 09:48:21 UTC |
-| Replay tests | 2525 | 0 | 0 | 0 | 2026-11-02 05:48:43 UTC |
+| Django suite on IBM i | 2218 | 183 | 64 | 0 | 2026-11-02 16:30:27 UTC |
+| Replay tests | 2588 | 0 | 0 | 0 | 2026-11-02 19:47:29 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3118 | 1 | 0 | 0 | 2026-11-02 05:46:15 UTC |
+| Offline tests | 3119 | 1 | 0 | 0 | 2026-11-02 19:42:39 UTC |
 | IBM i tests | 369 | 3 | 1 | 0 | 2026-11-01 08:06:56 UTC |
-| Django suite on IBM i | 2175 | 176 | 65 | 0 | 2026-11-01 07:23:31 UTC |
-| Replay tests | 2477 | 0 | 0 | 0 | 2026-11-02 05:46:27 UTC |
+| Django suite on IBM i | 2175 | 176 | 65 | 0 | 2026-11-02 18:13:48 UTC |
+| Replay tests | 2540 | 0 | 0 | 0 | 2026-11-02 19:43:24 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,10 +73,10 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-11-01 05:59:34 UTC to 2026-11-01 12:18:18 UTC
+- **Runs:** 2026-11-01 05:59:34 UTC to 2026-11-02 18:13:48 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
 - **Python:** 3.14.8
-- **Backend commits:** 42f2123 2026-11-01 (per module in the table)
+- **Backend commits:** 42f2123 2026-11-01, 5d73708 2026-11-02 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
@@ -85,21 +85,21 @@ The Django suite on IBM i per module and Django version.
 
 | Module | Django | Tests | Passed | Failures | Errors | Skipped | Expected failures | Unexpected successes | Result | Run | Backend commit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| aggregation | 5.2 | 140 | 139 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-01 06:07:49 UTC | 42f2123 2026-11-01 |
-| aggregation | 6.0 | 156 | 151 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-01 08:17:10 UTC | 42f2123 2026-11-01 |
-| aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-11-01 10:44:36 UTC | 42f2123 2026-11-01 |
+| aggregation | 5.2 | 140 | 139 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-02 17:50:17 UTC | 5d73708 2026-11-02 |
+| aggregation | 6.0 | 156 | 151 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-02 15:51:17 UTC | 5d73708 2026-11-02 |
+| aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-11-02 13:58:55 UTC | 5d73708 2026-11-02 |
 | basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-01 05:59:34 UTC | 42f2123 2026-11-01 |
 | basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-01 08:08:05 UTC | 42f2123 2026-11-01 |
 | basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-01 10:34:09 UTC | 42f2123 2026-11-01 |
-| bulk_create | 5.2 | 52 | 38 | 0 | 0 | 7 | 7 | 0 | OK | 2026-11-01 07:19:30 UTC | 42f2123 2026-11-01 |
-| bulk_create | 6.0 | 59 | 43 | 0 | 0 | 9 | 7 | 0 | OK | 2026-11-01 09:43:06 UTC | 42f2123 2026-11-01 |
-| bulk_create | 6.1 | 60 | 43 | 0 | 0 | 10 | 7 | 0 | OK | 2026-11-01 12:13:06 UTC | 42f2123 2026-11-01 |
+| bulk_create | 5.2 | 52 | 38 | 0 | 0 | 7 | 7 | 0 | OK | 2026-11-02 18:07:06 UTC | 5d73708 2026-11-02 |
+| bulk_create | 6.0 | 59 | 43 | 0 | 0 | 9 | 7 | 0 | OK | 2026-11-02 16:15:21 UTC | 5d73708 2026-11-02 |
+| bulk_create | 6.1 | 60 | 43 | 0 | 0 | 10 | 7 | 0 | OK | 2026-11-02 14:18:37 UTC | 5d73708 2026-11-02 |
 | constraints | 5.2 | 103 | 89 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-01 07:21:15 UTC | 42f2123 2026-11-01 |
 | constraints | 6.0 | 101 | 87 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-01 09:46:03 UTC | 42f2123 2026-11-01 |
 | constraints | 6.1 | 102 | 87 | 0 | 0 | 15 | 0 | 0 | OK | 2026-11-01 12:15:52 UTC | 42f2123 2026-11-01 |
-| expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-01 06:09:24 UTC | 42f2123 2026-11-01 |
-| expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-01 08:18:57 UTC | 42f2123 2026-11-01 |
-| expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-01 10:46:44 UTC | 42f2123 2026-11-01 |
+| expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 17:55:23 UTC | 5d73708 2026-11-02 |
+| expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 15:58:32 UTC | 5d73708 2026-11-02 |
+| expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 14:06:29 UTC | 5d73708 2026-11-02 |
 | indexes | 5.2 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-01 07:22:08 UTC | 42f2123 2026-11-01 |
 | indexes | 6.0 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-01 09:46:57 UTC | 42f2123 2026-11-01 |
 | indexes | 6.1 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-01 12:16:46 UTC | 42f2123 2026-11-01 |
@@ -109,9 +109,9 @@ The Django suite on IBM i per module and Django version.
 | introspection | 5.2 | 21 | 19 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 07:14:44 UTC | 42f2123 2026-11-01 |
 | introspection | 6.0 | 21 | 19 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 09:38:13 UTC | 42f2123 2026-11-01 |
 | introspection | 6.1 | 24 | 19 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-01 12:07:48 UTC | 42f2123 2026-11-01 |
-| lookup | 5.2 | 100 | 91 | 0 | 0 | 7 | 2 | 0 | OK | 2026-11-01 06:06:21 UTC | 42f2123 2026-11-01 |
-| lookup | 6.0 | 100 | 93 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-01 08:15:46 UTC | 42f2123 2026-11-01 |
-| lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-01 10:42:30 UTC | 42f2123 2026-11-01 |
+| lookup | 5.2 | 100 | 91 | 0 | 0 | 7 | 2 | 0 | OK | 2026-11-02 18:01:41 UTC | 5d73708 2026-11-02 |
+| lookup | 6.0 | 100 | 93 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 16:08:58 UTC | 5d73708 2026-11-02 |
+| lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 14:12:56 UTC | 5d73708 2026-11-02 |
 | migrate_signals | 5.2 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 07:18:59 UTC | 42f2123 2026-11-01 |
 | migrate_signals | 6.0 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 09:42:38 UTC | 42f2123 2026-11-01 |
 | migrate_signals | 6.1 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 12:12:36 UTC | 42f2123 2026-11-01 |
@@ -124,9 +124,9 @@ The Django suite on IBM i per module and Django version.
 | ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 06:05:29 UTC | 42f2123 2026-11-01 |
 | ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 08:14:44 UTC | 42f2123 2026-11-01 |
 | ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 10:41:25 UTC | 42f2123 2026-11-01 |
-| queries | 5.2 | 493 | 471 | 0 | 0 | 16 | 6 | 0 | OK | 2026-11-01 07:23:31 UTC | 42f2123 2026-11-01 |
-| queries | 6.0 | 495 | 473 | 0 | 0 | 16 | 6 | 0 | OK | 2026-11-01 09:48:21 UTC | 42f2123 2026-11-01 |
-| queries | 6.1 | 506 | 485 | 0 | 0 | 16 | 5 | 0 | OK | 2026-11-01 12:18:18 UTC | 42f2123 2026-11-01 |
+| queries | 5.2 | 493 | 471 | 0 | 0 | 16 | 6 | 0 | OK | 2026-11-02 18:13:48 UTC | 5d73708 2026-11-02 |
+| queries | 6.0 | 495 | 473 | 0 | 0 | 16 | 6 | 0 | OK | 2026-11-02 16:30:27 UTC | 5d73708 2026-11-02 |
+| queries | 6.1 | 506 | 485 | 0 | 0 | 16 | 5 | 0 | OK | 2026-11-02 14:31:45 UTC | 5d73708 2026-11-02 |
 | schema | 5.2 | 220 | 130 | 0 | 0 | 67 | 23 | 0 | OK | 2026-11-01 07:02:58 UTC | 42f2123 2026-11-01 |
 | schema | 6.0 | 222 | 131 | 0 | 0 | 69 | 22 | 0 | OK | 2026-11-01 09:24:52 UTC | 42f2123 2026-11-01 |
 | schema | 6.1 | 227 | 133 | 0 | 0 | 72 | 22 | 0 | OK | 2026-11-01 11:54:58 UTC | 42f2123 2026-11-01 |
