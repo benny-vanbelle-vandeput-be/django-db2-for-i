@@ -11,6 +11,7 @@ from django.db.models.functions import (
     SHA384,
     SHA512,
     ATan2,
+    Cast,
     Concat,
     Length,
     Log,
@@ -94,3 +95,14 @@ def test_repeat_casts_null_text_and_null_number() -> None:
     assert sql.startswith("REPEAT(CAST(NULL AS NVARCHAR(32)), ")
     sql, _params = select_of(Author.objects.annotate(x=Repeat("name", None)).values("x"))
     assert sql == 'REPEAT("TESTAPP_AUTHOR"."NAME", CAST(NULL AS INTEGER))'
+
+
+def test_a_number_cast_to_a_decimal_is_rounded_first() -> None:
+    from django.db.models import DecimalField, FloatField
+
+    field = DecimalField(max_digits=8, decimal_places=1)
+    queryset = Book.objects.annotate(x=Cast(Cast("pages", FloatField()), field)).values("x")
+    sql, _params = select_of(queryset)
+    assert sql == 'CAST(ROUND(CAST("TESTAPP_BOOK"."PAGES" AS DOUBLE), 1) AS DECIMAL(8, 1))'
+    text = Author.objects.annotate(x=Cast("name", field)).values("x")
+    assert select_of(text)[0] == 'CAST("TESTAPP_AUTHOR"."NAME" AS DECIMAL(8, 1))'

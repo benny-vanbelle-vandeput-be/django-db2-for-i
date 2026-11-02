@@ -116,7 +116,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     can_release_savepoints = True
 
     # Queries
-    allows_group_by_lob = False
+    # GROUP BY, DISTINCT and ORDER BY an NCLOB or a BLOB (probe phase6_flags).
+    allows_group_by_lob = True
     allows_group_by_select_index = False
     # An UPDATE / DELETE whose subquery reads the same table runs as one
     # statement, without materializing the subquery first (probe qtemp_cursors).
@@ -130,7 +131,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_any_value = True
     # StringAgg(order_by=...) as LISTAGG(...) WITHIN GROUP (ORDER BY ...) (probe listagg).
     supports_aggregate_order_by_clause = True
-    ignores_unnecessary_order_by_in_subqueries = False
+    # ORDER BY in an IN, FROM or EXISTS subquery is accepted (probe phase6_flags).
+    ignores_unnecessary_order_by_in_subqueries = True
     # REGEXP_LIKE (ICU) supports backreferences (probe queries).
     supports_regex_backreferencing = True
     supports_date_lookup_using_string = False
@@ -155,10 +157,17 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_parentheses_in_compound = True
     supports_slicing_ordering_in_compound = True
     supports_select_for_update_with_limit = False
-    supports_aggregate_distinct_multiple_argument = False
+    # LISTAGG(DISTINCT x, ',') (probes listagg, phase6_flags).
+    supports_aggregate_distinct_multiple_argument = True
     supports_bit_aggregations = False
     supports_default_in_bit_aggregations = False
-    supports_cast_with_precision = False
+    # Cast to a length or precision; a number cast to a DecimalField is rounded
+    # first, as Db2 for i's CAST cuts off (expressions.py, probe db_functions).
+    supports_cast_with_precision = True
+    # ROUND takes halves away from zero: 2.5 to 3, -2.5 to -3 (probe db_functions).
+    rounds_to_even = False
+    # REAL is a single-precision float (probe phase6_flags).
+    has_real_datatype = True
     supports_default_in_lead_lag = False
     # Predicates are valid in the select list and GROUP BY on 7.5 (BOOLEAN);
     # Exists() is rendered as a first-row subquery there (compiler.py).

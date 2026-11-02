@@ -145,6 +145,11 @@ Where Db2 for i differs from Django's default SQL (probe ``db_functions``):
 - ``LPad``, ``RPad``, ``Repeat``: a ``Value(None)`` argument is an untyped
   NULL, which they refuse (SQL0171); it is cast to NVARCHAR (the text) or
   INTEGER (``Repeat``'s number).
+- ``Cast`` of a number to a ``DecimalField`` with ``decimal_places``: Db2 for
+  i's ``CAST`` cuts off (2.55 to 2.5, probe ``db_functions``), Django rounds,
+  so the number is rounded first: ``CAST(ROUND(<x>, <places>) AS DECIMAL(p,
+  s))``. ``ROUND`` takes halves away from zero, as Django expects without
+  ``rounds_to_even``.
 - ``Reverse``, ``SHA224``, ``SHA384``: Db2 for i has no ``REVERSE``,
   ``HASH_SHA224`` or ``HASH_SHA384`` (SQL0204), so they raise
   NotSupportedError rather than a workaround that could give other results.
@@ -924,3 +929,24 @@ def _typed_nulls(*fields):
 LPad.as_db2_for_i = _typed_nulls(CharField())
 RPad.as_db2_for_i = _typed_nulls(CharField())
 Repeat.as_db2_for_i = _typed_nulls(CharField(), IntegerField())
+
+
+NUMERIC_TYPES = frozenset({"FloatField", "DecimalField"})
+
+
+def cast_as_db2_for_i(self, compiler, connection, **extra_context):
+    output_field = self.output_field
+    (source,) = self.get_source_expressions()
+    if (
+        isinstance(output_field, DecimalField)
+        and output_field.decimal_places is not None
+        and _internal_type_or_none(source) in NUMERIC_TYPES
+    ):
+        source_sql, source_params = compiler.compile(source)
+        cast_type = output_field.cast_db_type(connection)
+        sql = f"CAST(ROUND({source_sql}, {int(output_field.decimal_places)}) AS {cast_type})"
+        return sql, source_params
+    return self.as_sql(compiler, connection, **extra_context)
+
+
+Cast.as_db2_for_i = cast_as_db2_for_i
