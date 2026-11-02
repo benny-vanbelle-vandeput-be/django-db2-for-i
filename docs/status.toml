@@ -204,6 +204,31 @@ prs = [217]
 [[phases]]
 phase = "6"
 content = "Advanced (window functions, JSONField, db functions, DB-level on_delete)"
+status = "in progress"
+
+[[phases.steps]]
+step = "0: plan, probes, lib_ probes (#220, #221)"
+status = "done"
+prs = [218, 223]
+
+[[phases.steps]]
+step = "PR 1: db functions and the group 1 flags (db_functions)"
+status = "in progress"
+
+[[phases.steps]]
+step = "PR 2: window functions (expressions_window)"
+status = "planned"
+
+[[phases.steps]]
+step = "PR 3: JSONField (model_fields.test_jsonfield)"
+status = "planned"
+
+[[phases.steps]]
+step = "PR 4: DB-level on_delete (6.1)"
+status = "planned"
+
+[[phases.steps]]
+step = "Close-out: supported modules, phase record"
 status = "planned"
 
 [[phases]]
@@ -279,6 +304,10 @@ status = "done"
 [[modules]]
 module = "model_indexes"
 status = "done"
+
+[[modules]]
+module = "db_functions"
+status = "in progress"
 
 [[modules]]
 module = "queries"

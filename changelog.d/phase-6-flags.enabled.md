@@ -1,0 +1,5 @@
+- `allows_group_by_lob`: `values()`, `GROUP BY` and `DISTINCT` over a `TextField` or `BinaryField`.
+- `supports_aggregate_distinct_multiple_argument` (Django 6.0+): `StringAgg(..., distinct=True)` with a separator.
+- `supports_cast_with_precision`: `Cast()` to a `CharField(max_length=...)` or a `DecimalField(max_digits=..., decimal_places=...)`; a number cast to a decimal is rounded, halves away from zero, as Django expects (Db2 for i's `CAST` alone cuts off).
+- `ignores_unnecessary_order_by_in_subqueries`: Django no longer removes an `ORDER BY` from a subquery; Db2 for i accepts it.
+- `has_real_datatype`: Db2 for i has a single-precision `REAL`.
