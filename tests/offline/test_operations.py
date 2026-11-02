@@ -814,3 +814,11 @@ def test_fetch_returned_insert_rows_reads_every_row() -> None:
             return [(1,), (2,)]
 
     assert ops.fetch_returned_insert_rows(Rows()) == [(1,), (2,)]
+
+
+@override_settings(USE_TZ=True)
+def test_a_truncated_null_datetime_stays_none() -> None:
+    from django.db.models.functions import Trunc
+
+    trunc = Trunc("x", "year", output_field=DateTimeField())
+    assert ops.convert_trunc_expression(None, trunc) is None

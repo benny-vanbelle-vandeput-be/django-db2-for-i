@@ -124,6 +124,30 @@ comparisons use Django's expanded form (``a = x AND b = y OR ...``, ``a > x OR
 result is the same, NULLs included. Against a subquery they go through
 Django's own SQL (native IN; comparisons raise NotSupportedError, as
 ``supports_tuple_comparison_against_subquery`` is off).
+
+Database functions
+------------------
+Where Db2 for i differs from Django's default SQL (probe ``db_functions``):
+
+- ``Length``: ``LENGTH`` counts UTF-16 code units (an emoji is 2);
+  ``CHARACTER_LENGTH`` counts characters.
+- ``Log(a, b)``: Db2 for i's ``LOG`` takes one argument, so ``LN(b) / LN(a)``.
+- ``Concat``: ``CONCAT`` takes two arguments (Django's ``ConcatPair`` gives it
+  two) and is NULL when either is; Django's ``Concat`` treats NULL as empty
+  text, so each argument that can be NULL (all but a non-NULL ``Value``) is
+  wrapped in ``COALESCE(<arg>, '')``.
+- ``ATan2(y, x)``: Db2 for i's ``ATAN2`` takes x first, so the arguments are
+  swapped.
+- ``MD5``, ``SHA1``, ``SHA256``, ``SHA512``: ``HASH_MD5`` ... ``HASH_SHA512``
+  over the text as UTF-8, ``LOWER(HEX(HASH_<x>(CAST(<expr> AS CLOB(2G) CCSID
+  1208))))``, which gives Python's ``hashlib`` result, also for an ``NCLOB``
+  (probe ``db_function_args``).
+- ``LPad``, ``RPad``, ``Repeat``: a ``Value(None)`` argument is an untyped
+  NULL, which they refuse (SQL0171); it is cast to NVARCHAR (the text) or
+  INTEGER (``Repeat``'s number).
+- ``Reverse``, ``SHA224``, ``SHA384``: Db2 for i has no ``REVERSE``,
+  ``HASH_SHA224`` or ``HASH_SHA384`` (SQL0204), so they raise
+  NotSupportedError rather than a workaround that could give other results.
 """
 
 from __future__ import annotations
@@ -165,7 +189,24 @@ from django.db.models.fields.tuple_lookups import (
     TupleLessThan,
     TupleLessThanOrEqual,
 )
-from django.db.models.functions import Cast
+from django.db.models.functions import (
+    MD5,
+    SHA1,
+    SHA224,
+    SHA256,
+    SHA384,
+    SHA512,
+    ATan2,
+    Cast,
+    Coalesce,
+    ConcatPair,
+    Length,
+    Log,
+    LPad,
+    Repeat,
+    Reverse,
+    RPad,
+)
 from django.db.models.lookups import (
     Exact,
     GreaterThan,
@@ -778,3 +819,108 @@ def duration_expression_as_db2_for_i(self, compiler, connection):
 
 
 DurationExpression.as_db2_for_i = duration_expression_as_db2_for_i
+
+
+# --- Database functions -------------------------------------------------------------------
+
+
+def length_as_db2_for_i(self, compiler, connection, **extra_context):
+    return self.as_sql(compiler, connection, function="CHARACTER_LENGTH", **extra_context)
+
+
+Length.as_db2_for_i = length_as_db2_for_i
+
+
+def log_as_db2_for_i(self, compiler, connection, **extra_context):
+    base, number = self.get_source_expressions()
+    base_sql, base_params = compiler.compile(base)
+    number_sql, number_params = compiler.compile(number)
+    return f"(LN({number_sql}) / LN({base_sql}))", (*number_params, *base_params)
+
+
+Log.as_db2_for_i = log_as_db2_for_i
+
+
+def concat_pair_as_db2_for_i(self, compiler, connection, **extra_context):
+    clone = self.copy()
+    clone.set_source_expressions(
+        [
+            expression
+            if isinstance(expression, Value) and expression.value is not None
+            else Coalesce(expression, Value(""))
+            for expression in clone.get_source_expressions()
+        ]
+    )
+    return clone.as_sql(compiler, connection, **extra_context)
+
+
+ConcatPair.as_db2_for_i = concat_pair_as_db2_for_i
+
+
+def _not_supported(function: str):
+    def as_db2_for_i(self, compiler, connection, **extra_context):
+        raise NotSupportedError(
+            f"Db2 for i backend: {function} is not supported (Db2 for i has no such function)."
+        )
+
+    return as_db2_for_i
+
+
+Reverse.as_db2_for_i = _not_supported("Reverse")
+SHA224.as_db2_for_i = _not_supported("SHA224")
+SHA384.as_db2_for_i = _not_supported("SHA384")
+
+
+def atan2_as_db2_for_i(self, compiler, connection, **extra_context):
+    clone = self.copy()
+    clone.set_source_expressions(self.get_source_expressions()[::-1])
+    return clone.as_sql(compiler, connection, **extra_context)
+
+
+ATan2.as_db2_for_i = atan2_as_db2_for_i
+
+
+def _hash(function: str):
+    template = f"LOWER(HEX({function}(CAST(%(expressions)s AS CLOB(2G) CCSID 1208))))"
+
+    def as_db2_for_i(self, compiler, connection, **extra_context):
+        return self.as_sql(compiler, connection, template=template, **extra_context)
+
+    return as_db2_for_i
+
+
+MD5.as_db2_for_i = _hash("HASH_MD5")
+SHA1.as_db2_for_i = _hash("HASH_SHA1")
+SHA256.as_db2_for_i = _hash("HASH_SHA256")
+SHA512.as_db2_for_i = _hash("HASH_SHA512")
+
+
+def _typed_nulls(*fields):
+    """``as_db2_for_i`` that casts an untyped ``Value(None)`` argument to the
+    field of its position, which the function refuses otherwise (SQL0171)."""
+
+    def as_db2_for_i(self, compiler, connection, **extra_context):
+        expressions = self.get_source_expressions()
+        typed = [
+            Value(None, output_field=field)
+            if field is not None
+            and isinstance(expression, Value)
+            and expression.value is None
+            and expression._output_field_or_none is None
+            else expression
+            for expression, field in zip(
+                expressions, (*fields, *[None] * len(expressions))[: len(expressions)], strict=True
+            )
+        ]
+        if typed == expressions:
+            return self.as_sql(compiler, connection, **extra_context)
+        clone = self.copy()
+        clone.set_source_expressions(typed)
+        return clone.as_sql(compiler, connection, **extra_context)
+
+    return as_db2_for_i
+
+
+LPad.as_db2_for_i = _typed_nulls(CharField())
+RPad.as_db2_for_i = _typed_nulls(CharField())
+Repeat.as_db2_for_i = _typed_nulls(CharField(), IntegerField())

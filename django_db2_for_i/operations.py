@@ -374,6 +374,14 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
         self._check_tzname(tzname)
         return f"TIME({sql})", params
 
+    def convert_trunc_expression(self, value, expression):
+        """A NULL stays None. Django takes a NULL from a truncated datetime with
+        USE_TZ for a failed time zone conversion when ``has_zoneinfo_database``
+        is off; here no conversion happens in the database, so it is a NULL value."""
+        if value is None:
+            return None
+        return super().convert_trunc_expression(value, expression)
+
     @staticmethod
     def _trunc_format(formats, lookup_type) -> str:
         try:
