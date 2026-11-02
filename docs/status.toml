@@ -52,6 +52,11 @@ version = "6.2"
 state = "planned"
 
 [[releases]]
+tag = "v0.1.0b2"
+date = "2026-11-02"
+summary = "Phase 5: returning columns, bulk_create, conflicts through MERGE, partial and expression indexes, unique variants (status runs on 5.2, 6.0 and 6.1, 26 runs each, 0 failed)."
+
+[[releases]]
 tag = "v0.1.0b1"
 date = "2026-10-29"
 summary = "First beta: the pre-beta review (#190, #191) done; status runs on 5.2, 6.0 and 6.1, 22 runs each, 0 failed."
