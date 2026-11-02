@@ -13,7 +13,7 @@ Usage (inside the "tests" container):
                     bulk | bulk_types | indexes | unique_nulls | cursors | merge |
                     final_table_after_alter |
                     window | json_functions | json_errors | db_functions |
-                    select_for_update | phase6_flags
+                    db_function_args | select_for_update | phase6_flags
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -39,6 +39,7 @@ import qtemp_compound_parts
 import qtemp_connect
 import qtemp_constraint_errors
 import qtemp_cursors
+import qtemp_db_function_args
 import qtemp_db_functions
 import qtemp_drop_column
 import qtemp_durations
@@ -135,6 +136,7 @@ PROBES = {
     "json_functions": qtemp_json_functions,
     "json_errors": qtemp_json_errors,
     "db_functions": qtemp_db_functions,
+    "db_function_args": qtemp_db_function_args,
     "select_for_update": qtemp_select_for_update,
     "phase6_flags": qtemp_phase6_flags,
 }

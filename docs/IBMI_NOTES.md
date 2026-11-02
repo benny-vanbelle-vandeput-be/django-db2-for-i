@@ -2259,6 +2259,18 @@ expectations, with an own IBM i test if it can be made reliable.
 | `ROUND` of 2.5, 3.5, 0.5, -2.5 | 3, 4, 1, -3: away from zero; also with no second argument |
 | `CAST(2.55 AS DECIMAL(9, 1))`, `CAST(D AS DECIMAL(9, 0))`, `CAST(3.7 AS INTEGER)` | 2.5, 2, 3: cut off, not rounded |
 
+**Db function arguments** (`probes/qtemp_db_function_args.py`, 2026-11-02, PUB400, QTEMP only), on
+`héllo 😀`, NULL, 2 and an `NCLOB` of 3,000 `é` and an emoji:
+
+| Form | Result |
+|---|---|
+| `LEFT`, `RIGHT`, `REPEAT`, `SUBSTRING`, `SUBSTR`, `LPAD` with typed markers (`CAST(? AS INTEGER)`) or a column as the number | ok, also on the `NCLOB` |
+| `CONCAT(COALESCE(S, ''), COALESCE(N, ''))`, also with typed markers and an `NCLOB` | ok: NULL as empty text |
+| `LN(8) / LN(2)`, also with typed markers | 3.0 |
+| `ASCII` of `é` / of an emoji | 26 / 26: a substitute character |
+| `LOWER(HEX(HASH_MD5(CAST(<x> AS CLOB(2G) CCSID 1208))))`, also `HASH_SHA256`, on the `NCLOB` | Python's `hashlib` result; the `VARCHAR(32000)` cast too, `HASH_MD5(<NCLOB>)` hashes other bytes |
+| the same on NULL | NULL |
+
 **Row locks** (`probes/qtemp_select_for_update.py`): **syntax only**: `CMT=0` on an unjournaled table, one
 job, so it shows nothing about what is locked.
 

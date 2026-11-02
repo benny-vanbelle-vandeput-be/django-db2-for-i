@@ -1,0 +1,478 @@
+{
+  "probe": "db_function_args",
+  "utc": "20261102T193918Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (a table gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "LEFT(S, CAST(? AS INTEGER)) (2,)": {
+    "sql": "SELECT LEFT(S, CAST(? AS INTEGER)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'hé'"
+      ]
+    ]
+  },
+  "LEFT(S, I)": {
+    "sql": "SELECT LEFT(S, I) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'hé'"
+      ]
+    ]
+  },
+  "RIGHT(S, CAST(? AS INTEGER)) (2,)": {
+    "sql": "SELECT RIGHT(S, CAST(? AS INTEGER)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "' 😀'"
+      ]
+    ]
+  },
+  "RIGHT(S, I)": {
+    "sql": "SELECT RIGHT(S, I) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "' 😀'"
+      ]
+    ]
+  },
+  "REPEAT(S, CAST(? AS INTEGER)) (2,)": {
+    "sql": "SELECT REPEAT(S, CAST(? AS INTEGER)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀héllo 😀'"
+      ]
+    ]
+  },
+  "REPEAT(S, I)": {
+    "sql": "SELECT REPEAT(S, I) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀héllo 😀'"
+      ]
+    ]
+  },
+  "SUBSTRING(S, CAST(? AS INTEGER), CAST(? AS INTEGER)) (2, 2)": {
+    "sql": "SELECT SUBSTRING(S, CAST(? AS INTEGER), CAST(? AS INTEGER)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'él'"
+      ]
+    ]
+  },
+  "SUBSTRING(S, CAST(? AS INTEGER)) (2,)": {
+    "sql": "SELECT SUBSTRING(S, CAST(? AS INTEGER)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'éllo 😀'"
+      ]
+    ]
+  },
+  "SUBSTRING(S, I, I)": {
+    "sql": "SELECT SUBSTRING(S, I, I) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'él'"
+      ]
+    ]
+  },
+  "SUBSTR(S, CAST(? AS INTEGER), CAST(? AS INTEGER)) (2, 2)": {
+    "sql": "SELECT SUBSTR(S, CAST(? AS INTEGER), CAST(? AS INTEGER)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'él'"
+      ]
+    ]
+  },
+  "LPAD(S, CAST(? AS INTEGER), CAST(? AS NVARCHAR(10))) (12, 'x')": {
+    "sql": "SELECT LPAD(S, CAST(? AS INTEGER), CAST(? AS NVARCHAR(10))) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'xxxxhéllo 😀'"
+      ]
+    ]
+  },
+  "LEFT(L, CAST(? AS INTEGER)) (2,)": {
+    "sql": "SELECT LEFT(L, CAST(? AS INTEGER)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'éé'"
+      ]
+    ]
+  },
+  "SUBSTRING(L, CAST(? AS INTEGER), CAST(? AS INTEGER)) (2, 2)": {
+    "sql": "SELECT SUBSTRING(L, CAST(? AS INTEGER), CAST(? AS INTEGER)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'éé'"
+      ]
+    ]
+  },
+  "CONCAT(COALESCE(S, ''), COALESCE(N, ''))": {
+    "sql": "SELECT CONCAT(COALESCE(S, ''), COALESCE(N, '')) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀'"
+      ]
+    ]
+  },
+  "CONCAT(COALESCE(S, CAST(? AS NVARCHAR(10))), COALESCE(N, CAST(? AS NVARCHAR(10)))) ('', '')": {
+    "sql": "SELECT CONCAT(COALESCE(S, CAST(? AS NVARCHAR(10))), COALESCE(N, CAST(? AS NVARCHAR(10)))) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'héllo 😀'"
+      ]
+    ]
+  },
+  "CONCAT(COALESCE(L, ''), COALESCE(S, ''))": {
+    "sql": "SELECT CONCAT(COALESCE(L, ''), COALESCE(S, '')) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1048676,
+        "precision": 1048676,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé😀héllo 😀'"
+      ]
+    ]
+  },
+  "LN(8) / LN(2)": {
+    "sql": "SELECT LN(8) / LN(2) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3.0"
+      ]
+    ]
+  },
+  "LN(CAST(? AS DOUBLE)) / LN(CAST(? AS DOUBLE)) (8.0, 2.0)": {
+    "sql": "SELECT LN(CAST(? AS DOUBLE)) / LN(CAST(? AS DOUBLE)) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "float",
+        "size": 15,
+        "precision": 15,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3.0"
+      ]
+    ]
+  },
+  "ASCII(CAST(? AS NVARCHAR(10))) ('é',)": {
+    "sql": "SELECT ASCII(CAST(? AS NVARCHAR(10))) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "26"
+      ]
+    ]
+  },
+  "ASCII(CAST(? AS NVARCHAR(10))) ('😀',)": {
+    "sql": "SELECT ASCII(CAST(? AS NVARCHAR(10))) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "26"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH_MD5(CAST(S AS VARCHAR(32000) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_MD5(CAST(S AS VARCHAR(32000) CCSID 1208)))) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 32,
+        "precision": 32,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'207dd4f0cd7a4f13b4932646cd1f8f2b'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH_MD5(CAST(L AS VARCHAR(32000) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_MD5(CAST(L AS VARCHAR(32000) CCSID 1208)))) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 32,
+        "precision": 32,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'8a7a8d1de01ac13eeb4a42d226e5a226'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH_MD5(CAST(L AS CLOB(2G) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_MD5(CAST(L AS CLOB(2G) CCSID 1208)))) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 32,
+        "precision": 32,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'8a7a8d1de01ac13eeb4a42d226e5a226'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH_SHA256(CAST(L AS CLOB(2G) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_SHA256(CAST(L AS CLOB(2G) CCSID 1208)))) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 64,
+        "precision": 64,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'308990d9354a882a13a08f44dbbe0f081073415caf61ce6457a6cdbdc2c1f63d'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH_MD5(L)))": {
+    "sql": "SELECT LOWER(HEX(HASH_MD5(L))) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 32,
+        "precision": 32,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'7bb10fb0fb268cc14aa13a7f85411867'"
+      ]
+    ]
+  },
+  "LOWER(HEX(HASH_MD5(CAST(N AS CLOB(2G) CCSID 1208))))": {
+    "sql": "SELECT LOWER(HEX(HASH_MD5(CAST(N AS CLOB(2G) CCSID 1208)))) FROM QTEMP.P6FA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 32,
+        "precision": 32,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  }
+}
