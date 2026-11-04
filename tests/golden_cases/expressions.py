@@ -12,8 +12,11 @@ from django.db.models import (
     ExpressionWrapper,
     F,
     FloatField,
+    Sum,
     Value,
+    ValueRange,
     When,
+    Window,
 )
 from django.db.models.functions import (
     MD5,
@@ -22,9 +25,12 @@ from django.db.models.functions import (
     Cast,
     Coalesce,
     Concat,
+    CumeDist,
+    Lag,
     Length,
     Log,
     LPad,
+    NthValue,
     Repeat,
 )
 from django.db.models.lookups import LessThan
@@ -124,6 +130,23 @@ CASES: tuple[Case, ...] = (
             ),
             # A DOUBLE as text: through DECFLOAT(16) + 0, so 3 and 300, not 3E0 and 3E+2.
             ("cast_float_to_text", lambda: Cast(Cast("amount", FloatField()), CharField())),
+            # Window functions: LAG's offset and NTH_VALUE's position as constants,
+            # CUME_DIST as a DOUBLE, a RANGE frame over a number.
+            (
+                "window_lag_default",
+                lambda: Window(Lag("amount", 2, default=Value(0)), order_by=F("big").asc()),
+            ),
+            (
+                "window_nth_value",
+                lambda: Window(NthValue("amount", 2), partition_by=F("small"), order_by="big"),
+            ),
+            ("window_cume_dist", lambda: Window(CumeDist(), order_by=F("amount").desc())),
+            (
+                "window_range_frame",
+                lambda: Window(
+                    Sum("amount"), order_by=F("big").asc(), frame=ValueRange(start=-5, end=5)
+                ),
+            ),
         )
     ),
     # Durations: timestamp +/- labeled durations split into DAYS + MICROSECONDS

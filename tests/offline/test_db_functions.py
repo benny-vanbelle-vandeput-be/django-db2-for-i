@@ -122,3 +122,39 @@ def test_a_float_cast_to_text_goes_through_decfloat() -> None:
         )
     number = Author.objects.annotate(x=Cast("id", CharField())).values("x")
     assert "DECFLOAT" not in select_of(number)[0]
+
+
+def test_window_offsets_are_constants() -> None:
+    """A LAG / LEAD offset and NTH_VALUE's position as literals (Db2 for i refuses
+    a marker there); the default stays a typed marker."""
+    from django.db.models import Window
+    from django.db.models.functions import Lag, Lead, NthValue
+
+    order = F("pages").asc()
+    lag = Window(Lag("pages", 2, default=Value(0)), order_by=order)
+    sql, params = select_of(Book.objects.annotate(x=lag).values("x"))
+    assert sql.startswith('LAG("TESTAPP_BOOK"."PAGES", 2, CAST(%s AS ')
+    assert params == (0,)
+    lead = Window(Lead("pages"), order_by=order)
+    assert select_of(Book.objects.annotate(x=lead).values("x")) == (
+        'LEAD("TESTAPP_BOOK"."PAGES", 1) OVER (ORDER BY "TESTAPP_BOOK"."PAGES" ASC)',
+        (),
+    )
+    nth = Window(NthValue("pages", 3), order_by=order)
+    assert select_of(Book.objects.annotate(x=nth).values("x"))[0].startswith(
+        'NTH_VALUE("TESTAPP_BOOK"."PAGES", 3) OVER'
+    )
+
+
+def test_percent_rank_and_cume_dist_are_doubles() -> None:
+    from django.db.models import Window
+    from django.db.models.functions import CumeDist, PercentRank, Rank
+
+    order = F("pages").asc()
+    for function in (PercentRank, CumeDist):
+        window = Window(function(), order_by=order)
+        assert select_of(Book.objects.annotate(x=window).values("x"))[0] == (
+            f'CAST({function.function}() OVER (ORDER BY "TESTAPP_BOOK"."PAGES" ASC) AS DOUBLE)'
+        )
+    rank = select_of(Book.objects.annotate(x=Window(Rank(), order_by=order)).values("x"))[0]
+    assert rank == 'RANK() OVER (ORDER BY "TESTAPP_BOOK"."PAGES" ASC)'

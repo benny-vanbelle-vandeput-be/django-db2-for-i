@@ -638,6 +638,10 @@ Db2 for i has no equivalent for these Django features, so they stay off
   gives `3`, `4.5` and `300`, as on Django's other backends, but goes through a 16-digit
   decimal: `0.1 + 0.2` gives `0.3`, not `0.30000000000000004`, and from 1E16 on the
   text has an exponent (`1.000000000000000E+16`).
+- **Window frames with `exclusion`, or a fixed `RANGE` over dates.** Db2 for i
+  has no `EXCLUDE` in a window frame (Django's `exclusion=`), and a `RANGE`
+  frame with a fixed distance works on numbers only: over a date or timestamp
+  it is refused (SQL0182). Window functions work otherwise.
 - **`Chr` and `Ord` beyond ASCII.** Db2 for i's `CHR` and `ASCII` work on
   single-byte characters: `Chr(233)` and `Ord("é")` give a substitute
   character (code 26), not `é` or 233. Values up to 127 work.

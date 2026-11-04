@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**58 flags enabled on Django 6.1.**
+**61 flags enabled on Django 6.1.**
 
-## Enabled (58)
+## Enabled (61)
 
 On in at least one supported Django version.
 
@@ -46,15 +46,18 @@ On in at least one supported Django version.
 | `supports_boolean_expr_in_select_clause` | Conditions such as `Exists()` or `Q()` can be selected and grouped by. | ✅ | ✅ | ✅ |
 | `supports_cast_with_precision` | `Cast()` to a type with a length or precision, e.g. `DecimalField(max_digits=...)`. | ✅ | ✅ | ✅ |
 | `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | ✅ | ✅ | ✅ |
+| `supports_default_in_lead_lag` | `Lead()` / `Lag()` with a `default`. | ✅ | ✅ | ✅ |
 | `supports_default_keyword_in_bulk_insert` | `bulk_create()` writes `DEFAULT` for fields with a `db_default`. | ✅ | ✅ | ✅ |
 | `supports_default_keyword_in_insert` | An insert writes `DEFAULT` for fields with a `db_default`. | ✅ | ✅ | ✅ |
 | `supports_expression_indexes` | Indexes on expressions (`Index(Lower('name'))`). | ✅ | ✅ | ✅ |
 | `supports_foreign_keys` | Foreign keys are enforced by the database. | ✅ | ✅ | ✅ |
+| `supports_frame_range_fixed_distance` | Window `RANGE` frames with a fixed distance (`ValueRange(start=-5)`). | ✅ | ✅ | ✅ |
 | `supports_functions_in_partial_indexes` | Functions in the `condition` of a partial index. | ✅ | ✅ | ✅ |
 | `supports_ignore_conflicts` | `bulk_create(ignore_conflicts=True)`. | ✅ | ✅ | ✅ |
 | `supports_index_column_ordering` | Index columns can be ordered `DESC` (`Index(fields=["-field"])`). | ✅ | ✅ | ✅ |
 | `supports_inspectdb` | `manage.py inspectdb` generates models from existing tables. | – | – | ✅ |
 | `supports_nullable_unique_constraints` | Unique constraints on nullable columns allow several NULLs. | ✅ | ✅ | ✅ |
+| `supports_over_clause` | Window functions (`Window`, `OVER (...)`). | ✅ | ✅ | ✅ |
 | `supports_parentheses_in_compound` | Parts of a compound query may have their own `ORDER BY` / slice. | ✅ | ✅ | ✅ |
 | `supports_partial_indexes` | Indexes and unique constraints with a `condition`. | ✅ | ✅ | ✅ |
 | `supports_partially_nullable_unique_constraints` | Multi-column unique constraints where some columns are NULL. | ✅ | ✅ | ✅ |
@@ -75,7 +78,7 @@ On in at least one supported Django version.
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (50)
+## Intentionally off (51)
 
 Off on purpose, with the reason.
 
@@ -114,6 +117,7 @@ Off on purpose, with the reason.
 | `supports_explaining_query_execution` | `QuerySet.explain()`. | ❌ | ❌ | ❌ | Db2 for i has no `EXPLAIN` statement that returns a plan; plans come from Visual Explain and the database monitor (not verified on IBM i). |
 | `supports_expression_defaults` | `db_default` can be an expression, not only a constant. | ❌ | ❌ | ❌ | A column `DEFAULT` on Db2 for i takes only a constant or a special register. |
 | `supports_forward_references` | Rows may reference rows inserted later in the same transaction (deferred constraints). | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
+| `supports_frame_exclusion` | Window frames with `exclusion` (`EXCLUDE ...`). | ❌ | ❌ | ❌ | Db2 for i refuses `EXCLUDE` in a window frame (SQL0104, probe `window`). |
 | `supports_index_on_text_field` | Indexes on `TextField` columns. | ❌ | ❌ | ❌ | Db2 for i cannot index an `NCLOB` or `BLOB` column; `db_index` on a `TextField` or `BinaryField` creates no index (decision 2026-10-26). |
 | `supports_logical_xor` | `Q(...) ^ Q(...)` is written with a native `XOR` operator. | ❌ | ❌ | ❌ | Db2 for i has no logical `XOR` operator; Django's emulation is used (not verified on IBM i). |
 | `supports_no_precision_decimalfield` | `DecimalField` without `max_digits` and `decimal_places` (Django 6.1+). | – | – | ❌ | `DECIMAL` needs a precision, and `DECFLOAT` has different semantics: `1E+300` as a `Decimal` is refused at bind, a 35th digit is rounded without an error (probes `later_flags`, `phase6_flags`, IBMI_NOTES). |
@@ -132,7 +136,7 @@ Off on purpose, with the reason.
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (19)
+## Planned (15)
 
 Off for now; planned for the phase shown.
 
@@ -145,16 +149,12 @@ Off for now; planned for the phase shown.
 | `has_select_for_update_of` | `select_for_update(of=...)` locks rows of the named tables only. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
 | `has_select_for_update_skip_locked` | `select_for_update(skip_locked=True)` skips locked rows. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
 | `select_for_update_of_column` | `select_for_update(of=...)` is written with column names, not table names. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
-| `supports_default_in_lead_lag` | `Lead()` / `Lag()` with a `default`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_frame_exclusion` | Window frames with `exclusion` (`EXCLUDE ...`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_frame_range_fixed_distance` | Window `RANGE` frames with a fixed distance (`ValueRange(start=-5)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_field` | `JSONField`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_field_contains` | `JSONField` `contains` / `contained_by` lookups. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_json_negative_indexing` | `JSONField` key transforms with a negative array index (Django 6.0+). | – | 🗓️ | 🗓️ | phase 6 |
 | `supports_on_delete_db_cascade` | `on_delete=DB_CASCADE`: the database deletes related rows (Django 6.1+). | – | – | 🗓️ | phase 6 |
 | `supports_on_delete_db_default` | `on_delete=DB_SET_DEFAULT` (Django 6.1+). | – | – | 🗓️ | phase 6 |
 | `supports_on_delete_db_null` | `on_delete=DB_SET_NULL` (Django 6.1+). | – | – | 🗓️ | phase 6 |
-| `supports_over_clause` | Window functions (`Window`, `OVER (...)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
 

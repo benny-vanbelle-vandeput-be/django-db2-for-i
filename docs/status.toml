@@ -212,19 +212,21 @@ status = "done"
 prs = [218, 223]
 
 [[phases.steps]]
-step = "PR 1: db functions and the group 1 flags (db_functions)"
+step = "1: db functions and the group 1 flags (db_functions; one PR for the phase, 2026-11-04)"
 status = "in progress"
+prs = [227]
 
 [[phases.steps]]
-step = "PR 2: window functions (expressions_window)"
+step = "2: window functions (expressions_window)"
+status = "in progress"
+prs = [227]
+
+[[phases.steps]]
+step = "3: DB-level on_delete (6.1)"
 status = "planned"
 
 [[phases.steps]]
-step = "PR 3: JSONField (model_fields.test_jsonfield)"
-status = "planned"
-
-[[phases.steps]]
-step = "PR 4: DB-level on_delete (6.1)"
+step = "4: JSONField (model_fields.test_jsonfield)"
 status = "planned"
 
 [[phases.steps]]
@@ -307,6 +309,10 @@ status = "done"
 
 [[modules]]
 module = "db_functions"
+status = "in progress"
+
+[[modules]]
+module = "expressions_window"
 status = "in progress"
 
 [[modules]]

@@ -172,7 +172,16 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     rounds_to_even = False
     # REAL is a single-precision float (probe phase6_flags).
     has_real_datatype = True
-    supports_default_in_lead_lag = False
+    # Window functions: every one, partitions, ROWS and RANGE frames; a LAG / LEAD
+    # offset and NTH_VALUE's position are written as constants, PERCENT_RANK and
+    # CUME_DIST cast to DOUBLE (expressions.py, probe window).
+    supports_over_clause = True
+    # A typed default: LAG(V, 1, CAST(? AS DOUBLE)) (probe window).
+    supports_default_in_lead_lag = True
+    # RANGE 5 PRECEDING on a number; on a date it is refused (SQL0182, probe window).
+    supports_frame_range_fixed_distance = True
+    # EXCLUDE ... is refused (SQL0104, probe window).
+    supports_frame_exclusion = False
     # Predicates are valid in the select list and GROUP BY on 7.5 (BOOLEAN);
     # Exists() is rendered as a first-row subquery there (compiler.py).
     supports_boolean_expr_in_select_clause = True

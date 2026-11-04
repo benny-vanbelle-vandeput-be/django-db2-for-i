@@ -159,6 +159,17 @@ Where Db2 for i differs from Django's default SQL (probe ``db_functions``):
 - ``Reverse``,``SHA224``, ``SHA384``: Db2 for i has no ``REVERSE``,
   ``HASH_SHA224`` or ``HASH_SHA384`` (SQL0204), so they raise
   NotSupportedError rather than a workaround that could give other results.
+
+Window functions
+----------------
+Probe ``window``: every window function, partitions and frames work, but
+
+- ``Lag`` / ``Lead``: the offset must be a constant (a marker is SQL0104, a
+  typed one SQL0199), so a whole-number ``Value`` is written as a literal;
+- ``NthValue``: the position takes a plain marker but not a typed one
+  (SQL0171), and ``Value`` writes typed markers, so it is a literal too;
+- ``PercentRank``, ``CumeDist``: Db2 for i gives a DECFLOAT, which the driver
+  fetches as text, so the window is cast to DOUBLE (Django's ``FloatField``).
 """
 
 from __future__ import annotations
@@ -192,6 +203,7 @@ from django.db.models.expressions import (
     OrderBy,
     RawSQL,
     Value,
+    Window,
 )
 from django.db.models.fields.tuple_lookups import (
     TupleGreaterThan,
@@ -211,9 +223,14 @@ from django.db.models.functions import (
     Cast,
     Coalesce,
     ConcatPair,
+    CumeDist,
+    Lag,
+    Lead,
     Length,
     Log,
     LPad,
+    NthValue,
+    PercentRank,
     Repeat,
     Reverse,
     RPad,
@@ -968,3 +985,52 @@ def cast_as_db2_for_i(self, compiler, connection, **extra_context):
 
 
 Cast.as_db2_for_i = cast_as_db2_for_i
+
+
+# --- Window functions ---------------------------------------------------------------------
+
+
+class IntegerLiteral(Expression):
+    """A whole number written into the SQL, where Db2 for i takes only a constant."""
+
+    def __init__(self, value: int):
+        super().__init__(output_field=IntegerField())
+        self.value = int(value)
+
+    def as_sql(self, compiler, connection):
+        return str(self.value), ()
+
+
+def _literal_argument(position: int):
+    """``as_db2_for_i`` writing the whole-number ``Value`` at ``position`` as a literal."""
+
+    def as_db2_for_i(self, compiler, connection, **extra_context):
+        sources = self.get_source_expressions()
+        argument = sources[position]
+        if (
+            isinstance(argument, Value)
+            and isinstance(argument.value, int)
+            and not isinstance(argument.value, bool)
+        ):
+            clone = self.copy()
+            sources[position] = IntegerLiteral(argument.value)
+            clone.set_source_expressions(sources)
+            return clone.as_sql(compiler, connection, **extra_context)
+        return self.as_sql(compiler, connection, **extra_context)
+
+    return as_db2_for_i
+
+
+Lag.as_db2_for_i = _literal_argument(1)
+Lead.as_db2_for_i = _literal_argument(1)
+NthValue.as_db2_for_i = _literal_argument(1)
+
+
+def window_as_db2_for_i(self, compiler, connection, template=None):
+    sql, params = self.as_sql(compiler, connection, template=template)
+    if isinstance(self.source_expression, (PercentRank, CumeDist)):
+        sql = f"CAST({sql} AS DOUBLE)"
+    return sql, params
+
+
+Window.as_db2_for_i = window_as_db2_for_i

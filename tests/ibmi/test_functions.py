@@ -160,3 +160,33 @@ def test_string_agg_distinct(live, empty) -> None:
         Book.objects.create(author=author, title=title, pages=1)
     row = Author.objects.annotate(titles=StringAgg("book__title", Value(","), distinct=True)).get()
     assert sorted(row.titles.split(",")) == ["two", "één"]
+
+
+def test_window_functions_over_model_instances(live, empty) -> None:
+    """supports_over_clause: a ranking per author, LAG with an offset and a
+    default, NTH_VALUE, PERCENT_RANK as a float, and a RANGE frame, on full
+    querysets with model instances."""
+    from django.db.models import Sum, ValueRange, Window
+    from django.db.models.functions import Lag, NthValue, PercentRank, Rank
+
+    first = Author.objects.create(name="Élena")
+    second = Author.objects.create(name="zoë")
+    for author, pages in ((first, 10), (first, 30), (first, 20), (second, 5), (second, 7)):
+        Book.objects.create(author=author, title=f"t{pages}", pages=pages)
+    per_author = {"partition_by": F("author"), "order_by": F("pages").asc()}
+    books = Book.objects.annotate(
+        rank=Window(Rank(), **per_author),
+        previous=Window(Lag("pages", 1, default=Value(0)), **per_author),
+        second=Window(NthValue("pages", 2), **per_author),
+        share=Window(PercentRank(), **per_author),
+        near=Window(Sum("pages"), order_by=F("pages").asc(), frame=ValueRange(start=-5, end=5)),
+    ).order_by("author_id", "pages")
+    rows = [(b.author, b.pages, b.rank, b.previous, b.second, b.share, b.near) for b in books]
+    assert rows == [
+        (first, 10, 1, 0, None, 0.0, 22),
+        (first, 20, 2, 10, 20, 0.5, 20),
+        (first, 30, 3, 20, 20, 1.0, 30),
+        (second, 5, 1, 0, None, 0.0, 22),
+        (second, 7, 2, 5, 7, 1.0, 22),
+    ]
+    assert all(isinstance(b.share, float) for b in books)
