@@ -333,7 +333,6 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
         features.REASON_NO_COLUMN_RENAME,
         features.REASON_TYPE_NOT_IN_PLACE,
         features.REASON_CHECK_LIKE_COLUMN_PATTERN,
-        features.REASON_JSON_FIELD,
         features.REASON_FINAL_TABLE_NOT_RETURNING,
         features.REASON_LOWERCASE_NAME_IN_SQL,
         features.REASON_MERGE_RETURNS_NO_ROWS,
@@ -358,17 +357,6 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
     assert cls.django_test_expected_failures == everything - compat.PASSING_ON_THIS_VERSION
     # The per-version exceptions are expected failures of the other versions.
     assert compat.PASSING_ON_THIS_VERSION.issubset(everything)
-
-
-def test_failures_of_one_version_only_are_expected_on_that_version() -> None:
-    from django_db2_for_i import compat, features
-
-    cls = features.DatabaseFeatures
-    only_here = compat.FAILING_ON_THIS_VERSION_ONLY
-    assert cls.expected_failures[features.REASON_JSON_FIELD] == only_here
-    assert only_here <= cls.django_test_expected_failures
-    expected = {"schema.tests.SchemaTests.test_db_default_output_field_resolving"}
-    assert only_here == (expected if compat.DJANGO_SERIES == "5.2" else set())
 
 
 def test_table_list_leaves_out_system_catalog_views() -> None:

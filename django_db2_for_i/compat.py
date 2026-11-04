@@ -44,16 +44,6 @@ else:
 # BigAutoField to INTEGER only from 6.0 on now pass everywhere.
 PASSING_ON_THIS_VERSION: frozenset[str] = frozenset()
 
-# Expected failures of features.py on this Django version only. Django 6.0
-# added skipUnlessDBFeature("supports_json_field") to this test; 5.2 runs it,
-# and it fails on its JSONField db_default (phase 6). When 5.2 is dropped:
-# remove this and the features.py entry.
-FAILING_ON_THIS_VERSION_ONLY: frozenset[str] = (
-    frozenset()
-    if django.VERSION >= (6, 0)
-    else frozenset({"schema.tests.SchemaTests.test_db_default_output_field_resolving"})
-)
-
 # Before Django 6.1, Trunc's own converter takes a NULL from a truncated
 # datetime with USE_TZ for a missing time zone database when
 # has_zoneinfo_database is off, and raises ValueError. 6.1 moved that check to

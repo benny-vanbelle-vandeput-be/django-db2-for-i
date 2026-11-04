@@ -37,7 +37,6 @@ REASON_TYPE_NOT_IN_PLACE = "Db2 for i cannot change this column type in place (S
 REASON_CHECK_LIKE_COLUMN_PATTERN = (
     "Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546)"
 )
-REASON_JSON_FIELD = "JSONField is not supported yet (phase 6)"
 REASON_MERGE_RETURNS_NO_ROWS = (
     "bulk_create(update_conflicts=True) is a MERGE, which returns no rows (FINAL TABLE takes "
     "only INSERT): the objects get no primary keys"
@@ -484,9 +483,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "migrations.test_operations.OperationTests.test_add_constraint_percent_escaping",
             "migrations.test_operations.OperationTests.test_create_model_constraint_percent_escaping",
         },
-        # A JSONField db_default (a dict). On Django 5.2 only: 6.0 and later
-        # skip the test without supports_json_field (compat.py).
-        REASON_JSON_FIELD: set(compat.FAILING_ON_THIS_VERSION_ONLY),
         # sql.rfind("headline") on the CREATE INDEX of a partial index, which
         # quotes "HEADLINE"; the index itself is covered by the golden
         # ddl/add_index_partial and tests/ibmi/test_schema.py.
