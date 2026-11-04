@@ -122,6 +122,8 @@ CASES: tuple[Case, ...] = (
                 "cast_decimal_to_decimal",
                 lambda: Cast("amount", DecimalField(max_digits=8, decimal_places=1)),
             ),
+            # A DOUBLE as text: through DECFLOAT(16) + 0, so 3 and 300, not 3E0 and 3E+2.
+            ("cast_float_to_text", lambda: Cast(Cast("amount", FloatField()), CharField())),
         )
     ),
     # Durations: timestamp +/- labeled durations split into DAYS + MICROSECONDS

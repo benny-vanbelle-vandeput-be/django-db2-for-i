@@ -130,6 +130,18 @@ def test_cast_to_a_decimal_rounds(live, empty) -> None:
     ]
 
 
+def test_cast_of_a_float_to_text(live, empty) -> None:
+    """A float cast to text reads as on Django's other backends (3, 4.5, 300),
+    not in Db2 for i's exponent notation (3E0), and can be filtered by."""
+    author = Author.objects.create(name="a")
+    for pages in (6, 9, 600):
+        Book.objects.create(author=author, title="t", pages=pages)
+    half = Cast(Cast("pages", models.FloatField()) / Value(2.0), models.CharField())
+    rows = Book.objects.annotate(half=half).order_by("pages")
+    assert [b.half for b in rows] == ["3", "4.5", "300"]
+    assert Book.objects.annotate(half=half).filter(half="4.5").get().pages == 9
+
+
 def test_group_by_a_text_field(live, empty) -> None:
     """allows_group_by_lob: values() over a TextField (NCLOB) with an aggregate."""
     long = "x" * 5_000

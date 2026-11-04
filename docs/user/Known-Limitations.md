@@ -634,6 +634,10 @@ Db2 for i has no equivalent for these Django features, so they stay off
   `HASH_SHA224` or `HASH_SHA384`; these functions raise `NotSupportedError`.
   `MD5`, `SHA1`, `SHA256` and `SHA512` work, over the text as UTF-8, as on
   other databases.
+- **A float cast to text has 16 significant digits.** `Cast(<FloatField>, CharField())`
+  gives `3`, `4.5` and `300`, as on Django's other backends, but goes through a 16-digit
+  decimal: `0.1 + 0.2` gives `0.3`, not `0.30000000000000004`, and from 1E16 on the
+  text has an exponent (`1.000000000000000E+16`).
 - **`Chr` and `Ord` beyond ASCII.** Db2 for i's `CHR` and `ASCII` work on
   single-byte characters: `Chr(233)` and `Ord("é")` give a substitute
   character (code 26), not `é` or 233. Values up to 127 work.

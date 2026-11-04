@@ -109,3 +109,16 @@ def test_a_number_cast_to_a_decimal_is_rounded_first() -> None:
     )
     text = Author.objects.annotate(x=Cast("name", field)).values("x")
     assert select_of(text)[0] == 'CAST("TESTAPP_AUTHOR"."NAME" AS DECIMAL(8, 1))'
+
+
+def test_a_float_cast_to_text_goes_through_decfloat() -> None:
+    from django.db.models import CharField, FloatField, TextField
+
+    double = Cast("pages", FloatField())
+    for field in (CharField(), TextField()):
+        sql, _params = select_of(Book.objects.annotate(x=Cast(double, field)).values("x"))
+        assert sql.startswith(
+            'CAST(CAST(CAST("TESTAPP_BOOK"."PAGES" AS DOUBLE) AS DECFLOAT(16)) + 0 AS '
+        )
+    number = Author.objects.annotate(x=Cast("id", CharField())).values("x")
+    assert "DECFLOAT" not in select_of(number)[0]

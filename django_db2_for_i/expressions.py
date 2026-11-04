@@ -152,7 +152,11 @@ Where Db2 for i differs from Django's default SQL (probe ``db_functions``):
   and the cast then cuts -1.92999... to -1.92; probe ``db_function_args``).
   ``ROUND`` takes halves away from zero, as Django expects without
   ``rounds_to_even``.
-- ``Reverse``, ``SHA224``, ``SHA384``: Db2 for i has no ``REVERSE``,
+- ``Cast`` of a float to text: Db2 for i writes a DOUBLE as ``3E0``; through
+  ``DECFLOAT(16)`` plus 0 (the exponent becomes 0) it is ``3``, ``4.5`` and
+  ``300``, as on Django's other backends, with 16 significant digits (probe
+  ``float_text``).
+- ``Reverse``,``SHA224``, ``SHA384``: Db2 for i has no ``REVERSE``,
   ``HASH_SHA224`` or ``HASH_SHA384`` (SQL0204), so they raise
   NotSupportedError rather than a workaround that could give other results.
 """
@@ -952,6 +956,14 @@ def cast_as_db2_for_i(self, compiler, connection, **extra_context):
         cast_type = output_field.cast_db_type(connection)
         sql = f"CAST(ROUND({source_sql}, {int(output_field.decimal_places)}) AS {cast_type})"
         return sql, source_params
+    if isinstance(output_field, (CharField, TextField)) and _internal_type_or_none(source) == (
+        "FloatField"
+    ):
+        # A DOUBLE as text is 3E0; through DECFLOAT(16) it is 3, 4.5, 0.1, and
+        # adding 0 sets the exponent to 0, so 300 is not 3E+2 (probe float_text).
+        source_sql, source_params = compiler.compile(source)
+        cast_type = output_field.cast_db_type(connection)
+        return f"CAST(CAST({source_sql} AS DECFLOAT(16)) + 0 AS {cast_type})", source_params
     return self.as_sql(compiler, connection, **extra_context)
 
 
