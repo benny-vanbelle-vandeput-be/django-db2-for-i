@@ -1736,3 +1736,19 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   with NULL by default (probe `qtemp_json_functions`), which would hide wrong results.
 - **Alternatives:** row locks on from IBM's documentation alone; `CLOB` CCSID 1208 (works too, but `TextField`
   is an `NCLOB`); `DECFLOAT(34)` for an unconstrained `DecimalField`.
+
+## 2026-11-04: Phase 6 in one PR, targeted runs on 6.1 while building, one final cycle
+- **Decision:** all of phase 6 goes on the branch of #227, one PR, in the step order db
+  functions and small flags, window functions, DB-level `on_delete`, `JSONField` last, with a
+  commit (or a small set) per step. While building, each step or fix gets only the affected
+  Django modules and own IBM i tests on 6.1, without stamps; a commit touching `compat.py` or
+  behaviour known to differ per Django version also gets its affected modules on 6.0 and 5.2.
+  At the end one cycle: the full own IBM i tests on 6.1, `bin/verify` with stamps on all three
+  versions (on 6.0 and 5.2 without repeating the full own tier), all phase 6 modules on all
+  three. The PR stays a draft, without result markers, until that cycle. If `JSONField` gets
+  stuck, its commits move to their own PR, after telling the maintainer.
+- **Why:** the maintainer's decision. PUB400 was very slow on 2026-11-02/03 (a full own tier
+  took 5.5 to 6 hours instead of about 25 minutes), so a full cycle per PR, repeated after
+  every later core change, would cost days. One cycle for the phase pays that price once.
+- **Alternatives:** the four PRs of the approved plan, each with its own cycle (2026-11-01);
+  PRs 1 and 2 combined and the rest separate.
