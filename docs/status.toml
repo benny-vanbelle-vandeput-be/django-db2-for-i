@@ -223,7 +223,8 @@ prs = [227]
 
 [[phases.steps]]
 step = "3: DB-level on_delete (6.1)"
-status = "planned"
+status = "in progress"
+prs = [227]
 
 [[phases.steps]]
 step = "4: JSONField (model_fields.test_jsonfield)"

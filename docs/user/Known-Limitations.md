@@ -313,7 +313,9 @@ Migrations create a foreign key constraint for each `ForeignKey` and
 `OneToOneField`, as a separate `ALTER TABLE ... ADD CONSTRAINT` statement,
 with no `ON DELETE` clause (Db2 for i: `NO ACTION`); Django's `on_delete`
 runs in Python, as on the other databases. Violations raise `IntegrityError`
-(SQL0530, SQL0531, SQL0532).
+(SQL0530, SQL0531, SQL0532). Django 6.1's database-level `on_delete`
+(`DB_CASCADE`, `DB_SET_NULL`, `DB_SET_DEFAULT`) writes `ON DELETE CASCADE`,
+`SET NULL` or `SET DEFAULT`, and Db2 for i does the rest.
 
 - **The column types must match exactly.** Db2 for i refuses a foreign key
   whose column type differs from the parent key's (**SQL0538**). Migrations
@@ -351,8 +353,11 @@ runs in Python, as on the other databases. Violations raise `IntegrityError`
   refers to itself (a tree) needs the rows in parent-before-child order.
 - **Foreign keys get no index of their own on Db2 for i**; Django's index on
   the column is created as usual.
-- **Database-level `on_delete`** (`db_on_delete`, Django 6.1) is not
-  available yet (phase 6).
+- **`DB_SET_DEFAULT` cannot delete the default's own parent.** Deleting the
+  row the default points to would set the children to a key that no longer
+  exists, so Db2 for i refuses the delete (SQL0532, an `IntegrityError`).
+- **Database-level `on_delete` between libraries with different journals**
+  has not been tested (both tables were in one library).
 
 ## Check constraints with a LIKE pattern from a column
 
@@ -403,7 +408,8 @@ The backend behaves the same on Django 5.2, 6.0 and 6.1, except:
 - `StringAgg` requires Django 6.0 or later (see "StringAgg results are limited
   to 1M characters"). `AnyValue` and ordered aggregates
   (`Aggregate(order_by=...)`) are Django 6.0 features as well.
-- Database-level `on_delete` (Django 6.1) is not supported yet on any version.
+- Database-level `on_delete` (`DB_CASCADE`, `DB_SET_NULL`, `DB_SET_DEFAULT`)
+  is a Django 6.1 feature.
 - Generated SQL differs in small ways between versions (Django 5.2 and 6.0
   leave subquery aliases unquoted, which Db2 for i reads the same way).
 

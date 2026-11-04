@@ -258,9 +258,14 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_collation_on_textfield = False
     supports_non_deterministic_collations = False
     supports_alter_generated_column_data_type = False
-    supports_on_delete_db_cascade = False
-    supports_on_delete_db_default = False
-    supports_on_delete_db_null = False
+    # DB-level on_delete (Django 6.1: DB_CASCADE, DB_SET_NULL, DB_SET_DEFAULT):
+    # Django writes ON DELETE CASCADE / SET NULL / SET DEFAULT into the foreign
+    # key; each works as IBM documents, also in a transaction, and SYSREFCST
+    # names the rule (probe lib_on_delete, #220). SET DEFAULT refuses to delete
+    # the parent the default points to (SQL0532, an IntegrityError).
+    supports_on_delete_db_cascade = True
+    supports_on_delete_db_default = True
+    supports_on_delete_db_null = True
     # RENAME INDEX (probe 24). Combined alters stay off: Db2 for i accepts
     # several clauses in one ALTER TABLE only without commas, and Django joins
     # them with ", ".

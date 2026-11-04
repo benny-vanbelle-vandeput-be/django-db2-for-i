@@ -5,6 +5,9 @@ Implemented in phase 1 (CREATE/DROP TABLE); completed in phase 4.
 - Foreign keys are created without an ON DELETE clause: Db2's default
   NO ACTION (checked at the end of the statement), never RESTRICT, so a
   self-referencing table can be emptied with one DELETE (docs/DECISIONS.md).
+  Only Django 6.1's DB-level ``on_delete`` (``DB_CASCADE``, ``DB_SET_NULL``,
+  ``DB_SET_DEFAULT``) writes one, through Django's own template (probe
+  ``lib_on_delete``).
 - Defaults are written as literals (``requires_literal_defaults``): DDL is
   not parameterized. A column DEFAULT on Db2 for i accepts only a bare
   constant or a special register: no CAST, no parentheses, no expression

@@ -1269,3 +1269,86 @@ def test_unique_index_constraints_take_several_nulls(live, unique_model) -> None
     with pytest.raises(IntegrityError), transaction.atomic():
         model.objects.create(name="ABC", a=-1)
     assert model.objects.count() == 3
+
+
+# --- DB-level on_delete (Django 6.1) ----------------------------------------------
+
+needs_db_on_delete = pytest.mark.skipif(
+    not hasattr(models, "DB_CASCADE"), reason="DB-level on_delete requires Django 6.1+"
+)
+
+
+@pytest.fixture
+def db_on_delete_models(live):
+    """A parent and a child of their own (testapp_dbparent, testapp_dbchild),
+    the child with a DB_CASCADE, a DB_SET_NULL and a DB_SET_DEFAULT foreign
+    key; created for the test and dropped after it, child first."""
+    from django.apps import apps
+
+    class DbParent(models.Model):
+        id = models.IntegerField(primary_key=True)
+        name = models.CharField(max_length=20)
+
+        class Meta:
+            app_label = "testapp"
+
+    class DbChild(models.Model):
+        name = models.CharField(max_length=20)
+        owner = models.ForeignKey(DbParent, models.DB_CASCADE, related_name="owned")
+        keeper = models.ForeignKey(DbParent, models.DB_SET_NULL, null=True, related_name="kept")
+        home = models.ForeignKey(
+            DbParent, models.DB_SET_DEFAULT, db_default=1, related_name="homed"
+        )
+
+        class Meta:
+            app_label = "testapp"
+
+    created = []
+    try:
+        with live.schema_editor() as editor:
+            for model in (DbParent, DbChild):
+                editor.create_model(model)
+                created.append(model._meta.db_table)
+        yield DbParent, DbChild
+    finally:
+        replace_if_unusable(live)
+        with live.cursor() as cursor:
+            for table in reversed(created):
+                cursor.execute(f'DROP TABLE "{table.upper()}"')
+        for name in ("dbchild", "dbparent"):
+            apps.all_models["testapp"].pop(name, None)
+        apps.clear_cache()
+
+
+@needs_db_on_delete
+def test_db_level_on_delete_deletes_and_sets_real_rows(live, db_on_delete_models) -> None:
+    """DB_CASCADE, DB_SET_NULL and DB_SET_DEFAULT act in the database: deleting
+    parents through the ORM removes or changes the child rows, introspection
+    reads the rules back, and SET DEFAULT refuses to delete the default's
+    parent (SQL0532) inside a transaction that stays usable."""
+    from django.db import IntegrityError, transaction
+
+    parent, child = db_on_delete_models
+    home, alice, bob, carol = (
+        parent.objects.create(id=i, name=n)
+        for i, n in ((1, "home"), (2, "Élena"), (3, "zoë"), (4, "carol"))
+    )
+    child.objects.create(name="a", owner=alice, keeper=bob, home=bob)
+    child.objects.create(name="b", owner=bob, keeper=alice, home=alice)
+    with live.cursor() as cursor:
+        relations = live.introspection.get_relations(cursor, child._meta.db_table)
+    assert relations == {
+        "owner_id": ("id", "testapp_dbparent", models.DB_CASCADE),
+        "keeper_id": ("id", "testapp_dbparent", models.DB_SET_NULL),
+        "home_id": ("id", "testapp_dbparent", models.DB_SET_DEFAULT),
+    }
+    with transaction.atomic():
+        alice.delete()
+    rows = list(child.objects.order_by("name").values_list("name", "owner", "keeper", "home"))
+    assert rows == [("b", 3, None, 1)]
+    parent.objects.filter(name="zoë").delete()
+    assert list(child.objects.all()) == []
+    child.objects.create(name="c", owner=carol, home=home)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        home.delete()
+    assert child.objects.get().home_id == 1
