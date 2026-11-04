@@ -1,0 +1,1635 @@
+{
+  "probe": "json_lookups",
+  "utc": "20261104T111511Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (a table gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "JSON_QUERY string": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.b') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'\"téxt 😀\"'"
+      ],
+      [
+        "2",
+        "'\"x\"'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY number": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.a') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'1'"
+      ],
+      [
+        "2",
+        "'2.5'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY null": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.c') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY missing": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.z') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY object": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.e') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"g\":[1,2],\"f\":true}'"
+      ],
+      [
+        "2",
+        "'{\"f\":false}'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY array": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.d') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'[10,20,{\"x\":1}]'"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY boolean": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.t') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'true'"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY nested": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.d[2].x') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'1'"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY root element": {
+    "sql": "SELECT K, JSON_QUERY(C, '$[1]') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "'2'"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY root": {
+    "sql": "SELECT K, JSON_QUERY(C, '$') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":1,\"b\":\"téxt 😀\",\"c\":null,\"d\":[10,20,{\"x\":1}],\"e\":{\"g\":[1,2],\"f\":true},\"n\":\"1\",\"s\":\"a\\'b%\",\"k\\'%\":3,\"t\":true}'"
+      ],
+      [
+        "2",
+        "'{\"a\":2.5,\"b\":\"x\",\"e\":{\"f\":false}}'"
+      ],
+      [
+        "3",
+        "'[1,2]'"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY KEEP QUOTES": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.b' KEEP QUOTES) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'\"téxt 😀\"'"
+      ],
+      [
+        "2",
+        "'\"x\"'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY OMIT QUOTES": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.b' OMIT QUOTES) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'téxt 😀'"
+      ],
+      [
+        "2",
+        "'x'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY RETURNING NVARCHAR": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.e' RETURNING NVARCHAR(4000)) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4000,
+        "precision": 4000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"g\":[1,2],\"f\":true}'"
+      ],
+      [
+        "2",
+        "'{\"f\":false}'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY RETURNING NCLOB": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.e' RETURNING NCLOB(1M)) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"g\":[1,2],\"f\":true}'"
+      ],
+      [
+        "2",
+        "'{\"f\":false}'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY path marker": {
+    "sql": "SELECT K, JSON_QUERY(C, ?) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"g\":[1,2],\"f\":true}'"
+      ],
+      [
+        "2",
+        "'{\"f\":false}'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY quoted key marker": {
+    "sql": "SELECT K, JSON_QUERY(C, ?) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'3'"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_QUERY non-ASCII key marker": {
+    "sql": "SELECT K, JSON_QUERY(C, ?) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'\"téxt 😀\"'"
+      ],
+      [
+        "2",
+        "'\"x\"'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE string": {
+    "sql": "SELECT K, JSON_VALUE(C, '$.b' RETURNING NVARCHAR(4000)) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4000,
+        "precision": 4000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'téxt 😀'"
+      ],
+      [
+        "2",
+        "'x'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE number as text": {
+    "sql": "SELECT K, JSON_VALUE(C, '$.a' RETURNING NVARCHAR(4000)) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4000,
+        "precision": 4000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'1'"
+      ],
+      [
+        "2",
+        "'2.5'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE boolean as text": {
+    "sql": "SELECT K, JSON_VALUE(C, '$.t' RETURNING NVARCHAR(4000)) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4000,
+        "precision": 4000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'true'"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE object": {
+    "sql": "SELECT K, JSON_VALUE(C, '$.e' RETURNING NVARCHAR(4000)) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4000,
+        "precision": 4000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE DECFLOAT": {
+    "sql": "SELECT K, JSON_VALUE(C, '$.a' RETURNING DECFLOAT(34)) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'1'"
+      ],
+      [
+        "2",
+        "'2.5'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "JSON_VALUE DECFLOAT of text": {
+    "sql": "SELECT K, JSON_VALUE(C, '$.n' RETURNING DECFLOAT(34)) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'1'"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "query or value": {
+    "sql": "SELECT K, COALESCE(JSON_QUERY(C, '$.e' RETURNING NVARCHAR(4000)), JSON_VALUE(C, '$.e' RETURNING NVARCHAR(4000))) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4000,
+        "precision": 4000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"g\":[1,2],\"f\":true}'"
+      ],
+      [
+        "2",
+        "'{\"f\":false}'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ]
+    ]
+  },
+  "normalized right-hand side, object": {
+    "sql": "SELECT K, JSON_QUERY(JSON_OBJECT('value' VALUE CAST(? AS NVARCHAR(4000)) FORMAT JSON), '$.value') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"g\":[1,2],\"f\":true}'"
+      ],
+      [
+        "2",
+        "'{\"g\":[1,2],\"f\":true}'"
+      ],
+      [
+        "3",
+        "'{\"g\":[1,2],\"f\":true}'"
+      ],
+      [
+        "4",
+        "'{\"g\":[1,2],\"f\":true}'"
+      ],
+      [
+        "5",
+        "'{\"g\":[1,2],\"f\":true}'"
+      ]
+    ]
+  },
+  "normalized right-hand side, string": {
+    "sql": "SELECT K, JSON_QUERY(JSON_OBJECT('value' VALUE CAST(? AS NVARCHAR(4000)) FORMAT JSON), '$.value') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'\"téxt\"'"
+      ],
+      [
+        "2",
+        "'\"téxt\"'"
+      ],
+      [
+        "3",
+        "'\"téxt\"'"
+      ],
+      [
+        "4",
+        "'\"téxt\"'"
+      ],
+      [
+        "5",
+        "'\"téxt\"'"
+      ]
+    ]
+  },
+  "normalized right-hand side, NCLOB": {
+    "sql": "SELECT K, JSON_QUERY(JSON_OBJECT('value' VALUE CAST(? AS NCLOB(1M)) FORMAT JSON), '$.value') FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'[1,2.5, null ]'"
+      ],
+      [
+        "2",
+        "'[1,2.5, null ]'"
+      ],
+      [
+        "3",
+        "'[1,2.5, null ]'"
+      ],
+      [
+        "4",
+        "'[1,2.5, null ]'"
+      ],
+      [
+        "5",
+        "'[1,2.5, null ]'"
+      ]
+    ]
+  },
+  "JSON_QUERY = marker (LOB)": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_QUERY(C, '$.b') = ? ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "JSON_QUERY NVARCHAR = marker": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_QUERY(C, '$.b' RETURNING NVARCHAR(4000)) = CAST(? AS NVARCHAR(4000)) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "object = normalized right-hand side, other key order": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_QUERY(C, '$.e' RETURNING NVARCHAR(4000)) = JSON_QUERY(JSON_OBJECT('value' VALUE CAST(? AS NVARCHAR(4000)) FORMAT JSON), '$.value' RETURNING NVARCHAR(4000)) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "object = normalized right-hand side, same key order": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_QUERY(C, '$.e' RETURNING NVARCHAR(4000)) = JSON_QUERY(JSON_OBJECT('value' VALUE CAST(? AS NVARCHAR(4000)) FORMAT JSON), '$.value' RETURNING NVARCHAR(4000)) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "number = normalized 1.0": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_QUERY(C, '$.a' RETURNING NVARCHAR(4000)) = JSON_QUERY(JSON_OBJECT('value' VALUE CAST(? AS NVARCHAR(4000)) FORMAT JSON), '$.value' RETURNING NVARCHAR(4000)) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_VALUE DECFLOAT < marker": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_VALUE(C, '$.a' RETURNING DECFLOAT(34)) < ? ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_VALUE text < number (implicit cast)": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_VALUE(C, '$.a' RETURNING NVARCHAR(4000)) < ? ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "JSON_VALUE text LIKE": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE LOWER(JSON_VALUE(C, '$.b' RETURNING NVARCHAR(4000))) LIKE ? ESCAPE '\\' ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_VALUE text with % LIKE": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_VALUE(C, '$.s' RETURNING NVARCHAR(4000)) LIKE ? ESCAPE '\\' ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_VALUE boolean = 'true'": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_VALUE(C, '$.e.f' RETURNING NVARCHAR(10)) = 'true' ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON_EXISTS marker": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_EXISTS(C, ?) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "NOT JSON_EXISTS marker": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE NOT JSON_EXISTS(C, ?) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ],
+      [
+        "3"
+      ],
+      [
+        "4"
+      ]
+    ]
+  },
+  "JSON_EXISTS array index": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_EXISTS(C, ?) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  "JSON_EXISTS nested": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_EXISTS(C, ?) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "JSON null: exists and JSON_QUERY 'null'": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_EXISTS(C, '$.c') AND JSON_QUERY(C, '$.c' RETURNING NVARCHAR(10)) = 'null' ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "column = marker": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE C = ? ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "4"
+      ]
+    ]
+  },
+  "column = JSON null text": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE C = 'null' ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "JSON_QUERY IN normalized list": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE JSON_QUERY(C, '$.a' RETURNING NVARCHAR(4000)) IN (JSON_QUERY(JSON_OBJECT('value' VALUE CAST(? AS NVARCHAR(4000)) FORMAT JSON), '$.value' RETURNING NVARCHAR(4000)), JSON_QUERY(JSON_OBJECT('value' VALUE CAST(? AS NVARCHAR(4000)) FORMAT JSON), '$.value' RETURNING NVARCHAR(4000))) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "ORDER BY JSON_QUERY (LOB)": {
+    "sql": "SELECT K FROM QTEMP.P6JL ORDER BY JSON_QUERY(C, '$.a'), K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ],
+      [
+        "3"
+      ],
+      [
+        "4"
+      ],
+      [
+        "5"
+      ]
+    ]
+  },
+  "ORDER BY JSON_VALUE DECFLOAT": {
+    "sql": "SELECT K FROM QTEMP.P6JL ORDER BY JSON_VALUE(C, '$.a' RETURNING DECFLOAT(34)), K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ],
+      [
+        "3"
+      ],
+      [
+        "4"
+      ],
+      [
+        "5"
+      ]
+    ]
+  },
+  "GROUP BY JSON_QUERY NVARCHAR": {
+    "sql": "SELECT JSON_QUERY(C, '$.b' RETURNING NVARCHAR(4000)), COUNT(*) FROM QTEMP.P6JL GROUP BY JSON_QUERY(C, '$.b' RETURNING NVARCHAR(4000))",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 4000,
+        "precision": 4000,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None",
+        "3"
+      ],
+      [
+        "'\"téxt 😀\"'",
+        "1"
+      ],
+      [
+        "'\"x\"'",
+        "1"
+      ]
+    ]
+  },
+  "DISTINCT JSON_QUERY (LOB)": {
+    "sql": "SELECT DISTINCT JSON_QUERY(C, '$.b') FROM QTEMP.P6JL",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ],
+      [
+        "'\"x\"'"
+      ],
+      [
+        "'\"téxt 😀\"'"
+      ]
+    ]
+  },
+  "JSON_OBJECT of columns": {
+    "sql": "SELECT JSON_OBJECT('k' VALUE K, 'c' VALUE C FORMAT JSON) FROM QTEMP.P6JL ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"k\":1,\"c\":{\"a\": 1, \"b\": \"téxt 😀\", \"c\": null, \"d\": [10, 20, {\"x\": 1}], \"e\": {\"g\": [1, 2], \"f\": true}, \"n\": \"1\", \"s\": \"a\\'b%\", \"k\\'%\": 3, \"t\": true}}'"
+      ],
+      [
+        "'{\"k\":2,\"c\":{\"a\": 2.5, \"b\": \"x\", \"e\": {\"f\": false}}}'"
+      ],
+      [
+        "'{\"k\":3,\"c\":[1, 2]}'"
+      ],
+      [
+        "'{\"k\":4,\"c\":\"scalar\"}'"
+      ],
+      [
+        "'{\"k\":5,\"c\":null}'"
+      ]
+    ]
+  },
+  "describe JSON_QUERY": {
+    "sql": "SELECT JSON_QUERY(C, '$.e'), JSON_VALUE(C, '$.b') FROM QTEMP.P6JL WHERE K = 1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'{\"g\":[1,2],\"f\":true}'",
+        "'téxt 😀'"
+      ]
+    ]
+  }
+}

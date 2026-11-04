@@ -12,7 +12,7 @@ Usage (inside the "tests" container):
                     qaqqini_lifecycle | lob_index | later_flags | returning |
                     bulk | bulk_types | indexes | unique_nulls | cursors | merge |
                     final_table_after_alter |
-                    window | json_functions | json_errors | db_functions |
+                    window | json_functions | json_errors | json_lookups | db_functions |
                     db_function_args | float_text | select_for_update |
                     phase6_flags
                                        (own connection attributes, run alone)
@@ -54,6 +54,7 @@ import qtemp_indexes
 import qtemp_journal_check
 import qtemp_json_errors
 import qtemp_json_functions
+import qtemp_json_lookups
 import qtemp_later_flags
 import qtemp_leftovers
 import qtemp_libraries
@@ -137,6 +138,7 @@ PROBES = {
     "window": qtemp_window,
     "json_functions": qtemp_json_functions,
     "json_errors": qtemp_json_errors,
+    "json_lookups": qtemp_json_lookups,
     "db_functions": qtemp_db_functions,
     "db_function_args": qtemp_db_function_args,
     "float_text": qtemp_float_text,

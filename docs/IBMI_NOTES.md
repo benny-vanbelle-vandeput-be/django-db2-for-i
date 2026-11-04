@@ -2243,6 +2243,28 @@ expectations, with an own IBM i test if it can be made reliable.
 | not JSON: `IS JSON` / `JSON_VALUE` | false / NULL |
 | `JSON_OBJECT` with constants, typed markers, a key marker, NULL, nesting, `FORMAT JSON`, `RETURNING NCLOB`; `JSON_ARRAY` | ok |
 
+**JSON lookups** (`probes/qtemp_json_lookups.py`, 2026-11-04, PUB400, QTEMP only): the forms Django's
+`JSONField` lookups need, on an `NCLOB` holding an object (with a string, numbers, JSON null, an array, a
+nested object, `true`, keys with `'` and `%`), a second object, a root array, a root string and SQL NULL:
+
+| Form | Result |
+|---|---|
+| `JSON_QUERY(C, <path>)` of a string, number, `true`, object, array, nested key, root array element | JSON text: `"téxt 😀"` (quotes kept), `1`, `2.5`, `true`, `{"g":[1,2],"f":true}` (compact, key order kept) |
+| the same of JSON null, a missing key, a root scalar (`$` of `"scalar"`) | NULL for all three |
+| `JSON_QUERY ... OMIT QUOTES` | `téxt 😀`: a string without quotes |
+| `JSON_QUERY` result type | a `CLOB` of 2G by default; `RETURNING NVARCHAR(4000)` and `NCLOB(1M)` work |
+| a path as a marker, also `$."k'%"` and a non-ASCII value | ok |
+| `JSON_VALUE ... RETURNING NVARCHAR(4000)` of a string, number, `true` / an object | the text, `1`, `2.5`, `true` / NULL |
+| `JSON_VALUE ... RETURNING DECFLOAT(34)` of a number / of the string `"1"` | the number / 1 |
+| `JSON_QUERY(JSON_OBJECT('value' VALUE CAST(? AS NVARCHAR(4000)) FORMAT JSON), '$.value')` | the marker's JSON compacted: `{"g":[1,2],"f":true}`, `"téxt"`; through `NCLOB(1M)`: `[1,2.5, null ]` |
+| `JSON_QUERY(...) = ?` (a `CLOB` against a marker), `ORDER BY` and `DISTINCT` on the `CLOB` | ok |
+| an object against the normalized right-hand side, same key order / other key order | equal / not equal |
+| the number `1` against the normalized `1.0` | equal |
+| `JSON_VALUE ... RETURNING DECFLOAT(34) < ?` | ok; `JSON_VALUE ... RETURNING NVARCHAR < 2` matches nothing |
+| `LOWER(JSON_VALUE(...)) LIKE ? ESCAPE '\'`, also on `a'b%` | ok |
+| `JSON_EXISTS(C, ?)`, `NOT JSON_EXISTS(C, ?)`, `$[1]`, `$."d"[2]."x"` | ok; JSON null exists, SQL NULL is neither |
+| `JSON_QUERY ... IN (<normalized>, <normalized>)` | ok |
+
 **Db functions** (`probes/qtemp_db_functions.py`), on `héllo 😀`, NULL, 7, 2.5 and 2.50:
 
 | Function | Result |
