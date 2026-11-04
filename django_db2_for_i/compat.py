@@ -31,6 +31,13 @@ if django.VERSION >= (6, 0):
 else:
     StringAgg = None
 
+# JSONField__in on the whole document is its own lookup from Django 6.1
+# (django.db.models.fields.json.JSONIn); before, Django's In serves it.
+if django.VERSION >= (6, 1):
+    from django.db.models.fields.json import JSONIn
+else:
+    JSONIn = None
+
 # Expected failures of features.py that pass on this Django version only
 # (docs/DECISIONS.md, "The first per-version expected-failure list"). None
 # since CPA32B2 is suppressed in migrations: the two schema tests that narrowed

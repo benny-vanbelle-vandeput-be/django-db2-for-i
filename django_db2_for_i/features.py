@@ -72,6 +72,19 @@ REASON_SINGLE_BYTE_CHR = (
     "substitute character (probes db_functions, db_function_args)"
 )
 
+REASON_NO_JSON_CHECK = (
+    "Db2 for i refuses CHECK (C IS JSON) on an NCLOB (SQL0546, probe lib_json_check), so "
+    "invalid JSON written past Django's encoder is stored"
+)
+REASON_JSON_KEY_ORDER_AS_TEXT = (
+    "ordering by a JSON key compares its JSON text, as on Oracle and MariaDB (JSON_QUERY; "
+    "probe json_lookups)"
+)
+REASON_JSON_KEY_DOUBLE_QUOTE = (
+    "a Db2 for i JSON path cannot hold a key with a double quote in any form (probe "
+    "json_lookups); the backend raises NotSupportedError"
+)
+
 
 class DatabaseFeatures(BaseDatabaseFeatures):
     minimum_database_version = (7, 5)
@@ -297,12 +310,26 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "PositiveSmallIntegerField": "SmallIntegerField",
         }
 
-    # JSON
-    supports_json_field = False
+    # JSON: an NCLOB with Db2 for i's JSON functions (expressions.py, probes
+    # json_functions, json_lookups), where the server has them.
+    @cached_property
+    def supports_json_field(self) -> bool:
+        return self.connection.capabilities.has_json_functions
+
+    # JSON_OBJECT with typed markers, keys and nesting (probe json_functions).
+    @cached_property
+    def has_json_object_function(self) -> bool:
+        return self.connection.capabilities.has_json_functions
+
+    # CHECK (C IS JSON) is refused on an NCLOB (SQL0546, probe lib_json_check),
+    # so introspection sees a plain LOB.
     can_introspect_json_field = False
+    # A root scalar is stored and read back, but JSON_QUERY and JSON_VALUE
+    # cannot reach it (NULL; probe json_functions).
     supports_primitives_in_json_field = False
+    # No containment function; path filters returned false (probe json_functions).
     supports_json_field_contains = False
-    has_json_object_function = False
+    # $.d[-1] gives NULL without an error (probe json_functions).
     supports_json_negative_indexing = False
 
     # Known failures of Django's own test suite, grouped by one fixed reason
@@ -476,6 +503,16 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         },
         REASON_LOWERCASE_NAME_IN_SQL: {
             "indexes.tests.PartialIndexTests.test_multiple_conditions",
+        },
+        REASON_NO_JSON_CHECK: {
+            "model_fields.test_jsonfield.JSONFieldTests.test_db_check_constraints",
+        },
+        REASON_JSON_KEY_ORDER_AS_TEXT: {
+            "model_fields.test_jsonfield.TestQuerying.test_ordering_by_transform",
+        },
+        REASON_JSON_KEY_DOUBLE_QUOTE: {
+            "model_fields.test_jsonfield.TestQuerying.test_key_sql_injection_escape",
+            "model_fields.test_jsonfield.TestQuerying.test_lookups_special_chars_double_quotes",
         },
         # assertIn("RETURNING ...", sql). The other tests of the module read the returned
         # values, and pass.

@@ -30,6 +30,7 @@ from tests.golden_cases.base import (
     CODE,
     CONTACT,
     DEFAULTS,
+    JSONDOC,
     LINK,
     MEASURE,
     NODE,
@@ -49,6 +50,7 @@ from tests.testapp.models import (
     Contact,
     Defaults,
     Document,
+    JSONDoc,
     Link,
     Measure,
     Node,
@@ -260,6 +262,8 @@ CASES: tuple[Case, ...] = (
     Case(RATING, "create", _ddl(Rating)),
     # Fields from an abstract mixin and an abstract base: column order (#23).
     Case("ddl/create_article", "create", _ddl(Article)),
+    # A JSONField: an NCLOB without a CHECK (IS JSON is refused, lib_json_check).
+    Case(JSONDOC, "create", _ddl(JSONDoc)),
     # Foreign keys: each foreign key of Link (create_link added them), to an
     # INTEGER, NVARCHAR, CHAR(32) (UUID) and key-to-a-key primary key, dropped
     # and added again; AddField of a nullable ForeignKey, of one to a

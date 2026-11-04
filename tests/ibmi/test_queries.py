@@ -25,7 +25,7 @@ from django.db.models import (
 )
 from django.db.models.lookups import GreaterThan, LessThan
 
-from tests.testapp.models import Author, Book
+from tests.testapp.models import Author, Book, JSONDoc
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")
 
@@ -673,3 +673,51 @@ def test_update_through_a_join(live, empty) -> None:
     )
     assert Book.objects.filter(author__name="IBM i").update(pages=1) == 1
     assert dict(Book.objects.values_list("title", "pages")) == {"x": 1, "y": 5}
+
+
+# --- JSONField ----------------------------------------------------------------------
+
+
+def test_json_field_saved_read_and_filtered(live, empty) -> None:
+    """supports_json_field: documents with non-ASCII text saved and read back as
+    model instances, filtered by key (text, number, nested, JSON null, a key
+    with a quote and an emoji), has_key, isnull, key__in, a numeric
+    comparison, and ordered and grouped by a key."""
+    from django.db.models.fields.json import KT
+
+    docs = {
+        "élan": {"city": "Gent", "n": 3, "tags": ["a", "é"], "meta": {"ok": True}, "x": None},
+        "zoë": {"city": "Brügge 😀", "n": 12.5, "it's 😀": 1, "meta": {"ok": False}},
+        "none": None,
+    }
+    for name, data in docs.items():
+        JSONDoc.objects.create(name=name, data=data)
+    objects = JSONDoc.objects
+
+    def names(queryset):
+        return sorted(queryset.values_list("name", flat=True))
+
+    assert {d.name: d.data for d in objects.all()} == docs
+    assert names(objects.filter(data__city="Brügge 😀")) == ["zoë"]
+    assert names(objects.filter(data__meta__ok=True)) == ["élan"]
+    assert names(objects.filter(data__tags__1="é")) == ["élan"]
+    assert names(objects.filter(data__x=None)) == ["élan"]
+    assert names(objects.filter(**{"data__it's 😀": 1})) == ["zoë"]
+    assert names(objects.filter(data__has_key="tags")) == ["élan"]
+    assert names(objects.filter(data__has_any_keys=["tags", "it's 😀"])) == ["zoë", "élan"]
+    assert names(objects.filter(data__tags__isnull=True)) == ["none", "zoë"]
+    assert names(objects.filter(data__n__in=[3, 99])) == ["élan"]
+    assert names(objects.filter(data__n__gt=10)) == ["zoë"]
+    assert names(objects.filter(data__city__icontains="BRÜ")) == ["zoë"]
+    assert list(
+        objects.filter(data__n__isnull=False).order_by("data__city").values_list("name", flat=True)
+    ) == ["zoë", "élan"]
+    row = objects.annotate(city=KT("data__city"), meta=F("data__meta")).get(name="élan")
+    assert (row.city, row.meta) == ("Gent", {"ok": True})
+    grouped = (
+        objects.exclude(data__isnull=True)
+        .values("data__meta__ok")
+        .annotate(count=Count("id"))
+        .order_by("data__meta__ok")
+    )
+    assert [(g["data__meta__ok"], g["count"]) for g in grouped] == [(False, 1), (True, 1)]

@@ -228,7 +228,8 @@ prs = [227]
 
 [[phases.steps]]
 step = "4: JSONField (model_fields.test_jsonfield)"
-status = "planned"
+status = "in progress"
+prs = [227]
 
 [[phases.steps]]
 step = "Close-out: supported modules, phase record"

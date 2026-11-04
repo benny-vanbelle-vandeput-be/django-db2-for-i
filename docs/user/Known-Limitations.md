@@ -410,6 +410,9 @@ The backend behaves the same on Django 5.2, 6.0 and 6.1, except:
   (`Aggregate(order_by=...)`) are Django 6.0 features as well.
 - Database-level `on_delete` (`DB_CASCADE`, `DB_SET_NULL`, `DB_SET_DEFAULT`)
   is a Django 6.1 feature.
+- `JSONField__in` on the whole document compares compact JSON text on Django
+  6.1, so whitespace in a stored document does not matter; on 5.2 and 6.0 it
+  compares the stored text.
 - Generated SQL differs in small ways between versions (Django 5.2 and 6.0
   leave subquery aliases unquoted, which Db2 for i reads the same way).
 
@@ -597,6 +600,31 @@ same key twice in one call, fails again on every attempt and is raised at the en
 IBM names a restrictive isolation level such as repeatable read as a way to avoid
 the race. It takes more locks and has not been tested with this backend.
 
+## JSONField
+
+A `JSONField` is an `NCLOB` holding the JSON text. Key lookups, `has_key`,
+`has_keys`, `has_any_keys`, `isnull`, `in`, comparisons and the text lookups
+work, through Db2 for i's `JSON_QUERY`, `JSON_VALUE` and `JSON_EXISTS`. Differences:
+
+- **No check that the column holds JSON.** Db2 for i refuses `CHECK (... IS
+  JSON)` on an `NCLOB` (SQL0546), so only Django's own serializing keeps the
+  column valid; text written by raw SQL is not checked.
+- **`contains` and `contained_by` are not available** (`NotSupportedError`):
+  Db2 for i has no containment function.
+- **Negative array indexes** (`data__items__-1`) are not available
+  (`NotSupportedError`): Db2 for i returns nothing for them.
+- **A document that is a single value** (a number, a string, `true`, `null`
+  at the top level) is stored and read back, but key lookups cannot reach it.
+- **A key with a double quote** (`data__has_key='a"b'`) cannot be written in
+  a Db2 for i JSON path; such a lookup raises `NotSupportedError`. Other
+  characters work, also `'`, `%`, `\` and emoji.
+- **Ordering by a key compares its JSON text**, as on Oracle and MariaDB:
+  `-1` sorts before `-100` and `10` before `9`. Use `Cast()` to order
+  numerically.
+- **JSON null and a missing key** read back the same (`None`) from a key
+  transform; `data__key=None` matches JSON null only, and `data__key__isnull=True`
+  a missing key.
+
 ## A column that grew while a connection stays open
 
 > **Not verified on IBM i.** This needs two connections, which the current test
@@ -657,6 +685,6 @@ Django's system checks report the first three when a model uses them.
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and
-enabled one at a time: JSONField, window functions, `select_for_update`,
+enabled one at a time: `select_for_update`,
 and creating test schemas (tests
 run in an existing library, see [Configuration](Configuration.md#test-database-test)).

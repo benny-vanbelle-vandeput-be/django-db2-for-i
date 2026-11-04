@@ -35,6 +35,7 @@ from tests.testapp.models import (
     Code,
     Contact,
     Defaults,
+    JSONDoc,
     Link,
     Measure,
     Node,
@@ -144,6 +145,8 @@ UNQUOTED_QUALIFIED = re.compile(r"\b([A-Za-z_#@$][\w#@$]*)\s*\.\s*[A-Za-z_\"]")
 # Aliases Django generates: tables in subqueries and joins (U0, T2, ...), and the
 # columns of a compound query (COL1, ...).
 DJANGO_ALIAS = re.compile(r"^(?:[TU]\d+|COL\d+)$")
+# SQL string literals, such as a JSON path ('$."key"'): data, not names.
+STRING_LITERAL = re.compile(r"'(?:[^']|'')*'")
 
 
 def allowed_identifiers() -> set[str]:
@@ -169,6 +172,8 @@ def allowed_identifiers() -> set[str]:
         "G1",
         # The derived table of a rewritten IN (subquery) (compiler.py).
         "DJDB2I_IN",
+        # values("data__tags__1") on a JSONField (tests/golden_cases/queries.py).
+        "DATA__TAGS__1",
         # Columns the AddField goldens add (tests/golden_cases/ddl.py).
         "POSITION",
         "SLUG",
@@ -182,6 +187,7 @@ def allowed_identifiers() -> set[str]:
         Code,
         Contact,
         Defaults,
+        JSONDoc,
         Link,
         Measure,
         Node,
@@ -203,6 +209,7 @@ def test_golden_contains_no_library_or_profile_names(path) -> None:
     golden = read(path)
     allowed = allowed_identifiers()
     for sql, _params in golden.statements:
+        sql = STRING_LITERAL.sub("''", sql)
         for name in QUOTED.findall(sql):
             assert name in allowed or name.startswith("TESTAPP_") or DJANGO_ALIAS.match(name), (
                 f"unexpected name {name!r}"

@@ -10,6 +10,7 @@ from tests.testapp.models import (
     Contact,
     Defaults,
     Document,
+    JSONDoc,
     Link,
     Measure,
     Node,
@@ -37,5 +38,6 @@ MODELS = (
     Measure,
     Rating,
     Article,
+    JSONDoc,
 )
 TABLES = {model._meta.db_table for model in MODELS}

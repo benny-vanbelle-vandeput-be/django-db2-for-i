@@ -92,17 +92,14 @@ def test_buckets_end_at_the_maximum() -> None:
 # --- Types without a rule ----------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    ("expression", "type_name"),
-    [
-        (Value(b"\x00\x01"), "bytes"),
-        (Value({"a": 1}, output_field=JSONField()), "dict"),
-    ],
-    ids=["bytes", "json"],
-)
-def test_types_without_a_rule_are_refused(expression, type_name: str) -> None:
-    with pytest.raises(NotSupportedError, match=f"Value of type {type_name}"):
-        cast_of(expression)
+def test_types_without_a_rule_are_refused() -> None:
+    with pytest.raises(NotSupportedError, match="Value of type bytes"):
+        cast_of(Value(b"\x00\x01"))
+
+
+def test_json_values_are_text() -> None:
+    """A JSONField Value is its JSON text, typed like a TextField's."""
+    assert cast_of(Value({"a": 1}, output_field=JSONField())) == "CAST(%s AS NVARCHAR(32))"
 
 
 def test_uuid_values_are_char_32() -> None:

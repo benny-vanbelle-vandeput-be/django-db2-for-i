@@ -1,6 +1,6 @@
 {
   "probe": "json_lookups",
-  "utc": "20261104T111511Z",
+  "utc": "20261104T114844Z",
   "host": "<HOST>",
   "ssl": true,
   "scope": "QTEMP only (a table gone with the job)",
@@ -1629,6 +1629,422 @@
       [
         "'{\"g\":[1,2],\"f\":true}'",
         "'téxt 😀'"
+      ]
+    ]
+  },
+  "key path: backslash, json.dumps": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.\"back\\\\slash\"') FROM QTEMP.P6JL WHERE K = 6",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6",
+        "None"
+      ]
+    ]
+  },
+  "key path marker: backslash, json.dumps": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE K = 6 AND JSON_EXISTS(C, ?)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "key path: backslash, raw": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.\"back\\slash\"') FROM QTEMP.P6JL WHERE K = 6",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6",
+        "'1'"
+      ]
+    ]
+  },
+  "key path marker: backslash, raw": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE K = 6 AND JSON_EXISTS(C, ?)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6"
+      ]
+    ]
+  },
+  "key path: emoji, json.dumps": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.\"emo\\ud83e\\udd21''ji\"') FROM QTEMP.P6JL WHERE K = 6",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6",
+        "None"
+      ]
+    ]
+  },
+  "key path marker: emoji, json.dumps": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE K = 6 AND JSON_EXISTS(C, ?)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "key path: emoji, raw": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.\"emo🤡''ji\"') FROM QTEMP.P6JL WHERE K = 6",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6",
+        "None"
+      ]
+    ]
+  },
+  "key path marker: emoji, raw": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE K = 6 AND JSON_EXISTS(C, ?)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6"
+      ]
+    ]
+  },
+  "key path: U+FFFF, json.dumps": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.\"esc\\uffffape\"') FROM QTEMP.P6JL WHERE K = 6",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6",
+        "None"
+      ]
+    ]
+  },
+  "key path marker: U+FFFF, json.dumps": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE K = 6 AND JSON_EXISTS(C, ?)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "key path: U+FFFF, raw": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.\"esc￿ape\"') FROM QTEMP.P6JL WHERE K = 6",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6",
+        "None"
+      ]
+    ]
+  },
+  "key path marker: U+FFFF, raw": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE K = 6 AND JSON_EXISTS(C, ?)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6"
+      ]
+    ]
+  },
+  "key path: double quote, json.dumps": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.\"double\\\"\"') FROM QTEMP.P6JL WHERE K = 6",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6",
+        "None"
+      ]
+    ]
+  },
+  "key path marker: double quote, json.dumps": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE K = 6 AND JSON_EXISTS(C, ?)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "key path: double quote, doubled": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.\"double\"\"\"') FROM QTEMP.P6JL WHERE K = 6",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6",
+        "None"
+      ]
+    ]
+  },
+  "key path marker: double quote, doubled": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE K = 6 AND JSON_EXISTS(C, ?)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "key path: e acute, json.dumps": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.\"\\u00e9t\\u00e9\"') FROM QTEMP.P6JL WHERE K = 6",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6",
+        "None"
+      ]
+    ]
+  },
+  "key path marker: e acute, json.dumps": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE K = 6 AND JSON_EXISTS(C, ?)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "key path: e acute, raw": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.\"été\"') FROM QTEMP.P6JL WHERE K = 6",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6",
+        "'5'"
+      ]
+    ]
+  },
+  "key path marker: e acute, raw": {
+    "sql": "SELECT K FROM QTEMP.P6JL WHERE K = 6 AND JSON_EXISTS(C, ?)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6"
       ]
     ]
   }

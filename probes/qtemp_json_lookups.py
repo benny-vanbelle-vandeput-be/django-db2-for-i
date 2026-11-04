@@ -156,6 +156,26 @@ WHERES: tuple[tuple[str, str, tuple[Any, ...]], ...] = (
     ),
 )
 
+# Keys with characters a path must escape: a document of its own (row 6), each
+# path spelled as Django's json.dumps writes it, without ASCII escapes, and raw.
+KEYS_ROW = (
+    6,
+    '{"back\\\\slash": 1, "emo\U0001f921\'ji": 2, "esc\uffffape": 3, "double\\"": 4, '
+    '"\u00e9t\u00e9": 5}',
+)
+PATHS: tuple[tuple[str, str], ...] = (
+    ("backslash, json.dumps", '$."back\\\\slash"'),
+    ("backslash, raw", '$."back\\slash"'),
+    ("emoji, json.dumps", '$."emo\\ud83e\\udd21\'ji"'),
+    ("emoji, raw", '$."emo\U0001f921\'ji"'),
+    ("U+FFFF, json.dumps", '$."esc\\uffffape"'),
+    ("U+FFFF, raw", '$."esc\uffffape"'),
+    ("double quote, json.dumps", '$."double\\""'),
+    ("double quote, doubled", '$."double"""'),
+    ("e acute, json.dumps", '$."\\u00e9t\\u00e9"'),
+    ("e acute, raw", '$."\u00e9t\u00e9"'),
+)
+
 OTHERS: tuple[tuple[str, str, tuple[Any, ...]], ...] = (
     (
         "ORDER BY JSON_QUERY (LOB)",
@@ -206,5 +226,21 @@ def run(settings: Settings, conn) -> dict[str, Any]:
         case(conn, results, name, f"SELECT K FROM {TABLE} WHERE {predicate} ORDER BY K", params)
     for name, sql, params in OTHERS:
         case(conn, results, name, sql.format(t=TABLE), params)
+    _execute(conn, f"INSERT INTO {TABLE} VALUES (?, ?)", list(KEYS_ROW))
+    for name, path in PATHS:
+        literal = "'" + path.replace("'", "''") + "'"
+        case(
+            conn,
+            results,
+            f"key path: {name}",
+            f"SELECT K, JSON_QUERY(C, {literal}) FROM {TABLE} WHERE K = 6",
+        )
+        case(
+            conn,
+            results,
+            f"key path marker: {name}",
+            f"SELECT K FROM {TABLE} WHERE K = 6 AND JSON_EXISTS(C, ?)",
+            (path,),
+        )
     _execute(conn, f"DROP TABLE {TABLE}")
     return results

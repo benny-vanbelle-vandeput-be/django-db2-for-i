@@ -568,6 +568,38 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
         else:
             func()
 
+    # --- JSON -----------------------------------------------------------------------
+
+    def compile_json_path_key(self, key: str) -> str:
+        """``."<key>"`` as Db2 for i reads it: the key as it is, since a path takes
+        no JSON escapes (``\\\\``, ``\\uXXXX``; probe json_lookups). A key with a
+        double quote cannot be written in any form there."""
+        if '"' in key:
+            raise NotSupportedError(
+                f"Db2 for i backend: the JSON key {key!r} has a double quote, which a "
+                "Db2 for i JSON path cannot express."
+            )
+        return f'."{key}"'
+
+    def compile_json_path(self, key_transforms, include_root=True):
+        """Django's path (a hook from 6.0; 5.2 has it as a function in
+        fields/json.py, which this backend's JSON code does not use) with
+        ``compile_json_path_key`` for the keys."""
+        path = ["$"] if include_root else []
+        for key_transform in key_transforms:
+            try:
+                num = int(key_transform)
+            except ValueError:
+                path.append(self.compile_json_path_key(str(key_transform)))
+            else:
+                if num < 0:
+                    raise NotSupportedError(
+                        "Using negative JSON array indices is not supported on this "
+                        "database backend."
+                    )
+                path.append(f"[{num}]")
+        return "".join(path)
+
     # --- Flush ----------------------------------------------------------------------
 
     def execute_sql_flush(self, sql_list):

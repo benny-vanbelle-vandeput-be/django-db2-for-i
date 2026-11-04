@@ -170,6 +170,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         "IntegerField": "INTEGER",
         "BigIntegerField": "BIGINT",
         "IPAddressField": "VARCHAR(15)",
+        # JSON text; no CHECK (C IS JSON) is refused on an NCLOB (probe lib_json_check).
+        "JSONField": "NCLOB",
         "GenericIPAddressField": "VARCHAR(39)",
         "PositiveBigIntegerField": "BIGINT",
         "PositiveIntegerField": "INTEGER",

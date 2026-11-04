@@ -2264,6 +2264,10 @@ nested object, `true`, keys with `'` and `%`), a second object, a root array, a 
 | `LOWER(JSON_VALUE(...)) LIKE ? ESCAPE '\'`, also on `a'b%` | ok |
 | `JSON_EXISTS(C, ?)`, `NOT JSON_EXISTS(C, ?)`, `$[1]`, `$."d"[2]."x"` | ok; JSON null exists, SQL NULL is neither |
 | `JSON_QUERY ... IN (<normalized>, <normalized>)` | ok |
+| keys in a path, as Django's `json.dumps` writes them (`\\`, `\uXXXX` escapes) | **never found**: a path takes no JSON escapes |
+| the same keys raw: a backslash, `é` | found, as a literal and as a marker |
+| raw: an emoji, U+FFFF | found as a marker only; as a literal in the statement, not found |
+| a key with a double quote: `\"`, `""` | not found in any form |
 
 **Db functions** (`probes/qtemp_db_functions.py`), on `héllo 😀`, NULL, 7, 2.5 and 2.50:
 
