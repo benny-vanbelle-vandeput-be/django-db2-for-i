@@ -2275,6 +2275,19 @@ expectations, with an own IBM i test if it can be made reliable.
 | the same through `DECIMAL(63, 30)`; `ROUND` of a `DECIMAL(9, 3)` 2.555 to 2 places | -1.93, 3, exact; 2.56 |
 | `CURRENT DECFLOAT ROUNDING MODE` | `ROUND_HALF_EVEN`, yet `ROUND` takes halves away from zero |
 
+**A DOUBLE as text** (`probes/qtemp_float_text.py`, 2026-11-04, PUB400, QTEMP only), on 3, 4.5,
+0.1, 1/3, 300, 10, 1E15, 1E16, 1E20, 0.1 + 0.2, -2.5, 1.23E-7, 1E-5, 0, -0, 2.5E-300 and the largest DOUBLE:
+
+| Form | Result |
+|---|---|
+| `CAST(D AS NVARCHAR(100))`, `VARCHAR(D)`, `CHAR(D)` | exponent notation: `3E0`, `4.5E0`, `1.0000000000000001E-1`, `3E2` |
+| `CAST(CAST(D AS DECFLOAT(16)) AS NVARCHAR(100))`, also with `NORMALIZE_DECFLOAT` or `VARCHAR_FORMAT` | `3`, `4.5`, `0.1`, `0.3333333333333333`, `0.3` (for 0.1 + 0.2), but `3E+2`, `1E+1`, `1E+15` |
+| the same through `DECFLOAT(34)`, `VARCHAR_FORMAT(D)` | the binary value in full: `0.1000000000000000055511151231257827` |
+| `CAST(CAST(D AS DECFLOAT(16)) + 0 AS NVARCHAR(100))`, also `+ CAST(0 AS DECFLOAT(16))` | `3`, `4.5`, `0.1`, `300`, `10`, `1000000000000000`, `0.3`, `-2.5`, `1.23E-7`, `0.00001`, `0` (also for -0); from 1E16 `1.000000000000000E+16`, `1.797693134862316E+308` |
+| `CASE` with `QUANTIZE(..., DECFLOAT(0))` for whole numbers below 1E15 | the same, but `1E+15` and `-0`; the column three times |
+
+`DECFLOAT(16)` keeps 16 significant digits, so a value that needs 17 (0.1 + 0.2) loses its last digit.
+
 **Row locks** (`probes/qtemp_select_for_update.py`): **syntax only**: `CMT=0` on an unjournaled table, one
 job, so it shows nothing about what is locked.
 
