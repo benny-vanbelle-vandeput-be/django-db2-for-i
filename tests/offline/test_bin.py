@@ -510,6 +510,11 @@ def test_verify_runs_offline_first_then_selects_runs_and_finishes(tmp_path) -> N
         tmp_path=tmp_path,
     )  # fmt: skip
     assert "select 6.1 --base x --max-labels 9 --max-runs 3" in limited.stdout
+    once = run_bin(
+        str(BIN / "verify"), "--dry-run", "--django", "5.2", "--full-own-done-on", "6.1",
+        tmp_path=tmp_path,
+    )  # fmt: skip
+    assert "select 5.2 --base origin/main --full-own-done-on 6.1" in once.stdout
     for args, message in [
         (("--django", "9.9"), "Django 9.9 is not supported"),
         (("--fast",), "unknown argument: --fast"),

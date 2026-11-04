@@ -337,6 +337,18 @@ def test_select_runs_the_full_own_tier_for_shared_code(selecting, results_dir, c
     assert "the full tier (tests/ibmi/conftest.py: shared own-test code)" in capsys.readouterr().out
 
 
+def test_select_does_not_repeat_a_full_own_tier_done_on_another_version(
+    selecting, results_dir, capsys
+) -> None:
+    selecting.goldens = ["queries/new"]
+    selecting.paths = ["django_db2_for_i/expressions.py"]
+    assert verify.select("6.0", "origin/main", full_own_done_on="6.1") == 0
+    assert runs(results_dir) == [["goldens", "verify/goldens.txt"]]
+    assert "not repeated: it ran on Django 6.1" in capsys.readouterr().out
+    selection = json.loads((results_dir / "selection.json").read_text())
+    assert selection["own_full"] and selection["own_full_done_on"] == "6.1"
+
+
 def test_select_with_nothing_to_run(selecting, results_dir, capsys) -> None:
     assert verify.select("6.1", "origin/main") == 0
     assert (results_dir / "runs.txt").read_text() == ""
