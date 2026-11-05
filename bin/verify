@@ -6,6 +6,9 @@
 #   bin/verify --base <ref>         compare against another branch (default origin/main)
 #   bin/verify --max-labels 60      refuse more Django test labels than this (default 60)
 #   bin/verify --max-runs 20        refuse more scripts/django_suite.sh runs than this (default 20)
+#   bin/verify --full-own-done-on 6.1
+#                                   the full own IBM i tier ran on Django 6.1 for this commit:
+#                                   do not repeat it (a final cycle over several versions)
 #   bin/verify --wait               queue behind a running PUB400 job
 #   bin/verify --dry-run            print the commands, run nothing
 #   bin/verify --help
@@ -40,8 +43,8 @@ while [ $# -gt 0 ]; do
     case $1 in
         --django) django=${2:?--django needs a version}; shift 2 ;;
         --base) base=${2:?--base needs a git ref}; shift 2 ;;
-        --max-labels | --max-runs)
-            limits+=("$1" "${2:?$1 needs a number}")
+        --max-labels | --max-runs | --full-own-done-on)
+            limits+=("$1" "${2:?$1 needs a value}")
             shift 2
             ;;
         *) die "unknown argument: $1 (see --help)" ;;

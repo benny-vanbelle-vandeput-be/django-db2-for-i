@@ -93,7 +93,10 @@ pushed to a public registry (IBM's license).
    and writes the stamps of what passed. Read
    `test-results/verify/<django>/report.txt`, review `git diff`, commit the
    stamps yourself. `bin/ibmi-test --affected` runs the same selection without
-   writing anything; `bin/ibmi-test --full-tier` the full own tier.
+   writing anything; `bin/ibmi-test --full-tier` the full own tier. In a cycle
+   over several Django versions on one commit, the full own tier runs once:
+   `bin/verify --django 6.1`, then `bin/verify --django 6.0 --full-own-done-on
+   6.1` (and 5.2 the same) verifies the goldens and corpus without repeating it.
 4. `bin/check` exits 3 when only the gate failed (SQL without a stamp): the
    branch may be pushed, and stays red in CI until the stamps are committed.
 

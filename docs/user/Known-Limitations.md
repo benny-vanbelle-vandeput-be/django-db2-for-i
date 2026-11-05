@@ -313,7 +313,9 @@ Migrations create a foreign key constraint for each `ForeignKey` and
 `OneToOneField`, as a separate `ALTER TABLE ... ADD CONSTRAINT` statement,
 with no `ON DELETE` clause (Db2 for i: `NO ACTION`); Django's `on_delete`
 runs in Python, as on the other databases. Violations raise `IntegrityError`
-(SQL0530, SQL0531, SQL0532).
+(SQL0530, SQL0531, SQL0532). Django 6.1's database-level `on_delete`
+(`DB_CASCADE`, `DB_SET_NULL`, `DB_SET_DEFAULT`) writes `ON DELETE CASCADE`,
+`SET NULL` or `SET DEFAULT`, and Db2 for i does the rest.
 
 - **The column types must match exactly.** Db2 for i refuses a foreign key
   whose column type differs from the parent key's (**SQL0538**). Migrations
@@ -351,8 +353,11 @@ runs in Python, as on the other databases. Violations raise `IntegrityError`
   refers to itself (a tree) needs the rows in parent-before-child order.
 - **Foreign keys get no index of their own on Db2 for i**; Django's index on
   the column is created as usual.
-- **Database-level `on_delete`** (`db_on_delete`, Django 6.1) is not
-  available yet (phase 6).
+- **`DB_SET_DEFAULT` cannot delete the default's own parent.** Deleting the
+  row the default points to would set the children to a key that no longer
+  exists, so Db2 for i refuses the delete (SQL0532, an `IntegrityError`).
+- **Database-level `on_delete` between libraries with different journals**
+  has not been tested (both tables were in one library).
 
 ## Check constraints with a LIKE pattern from a column
 
@@ -403,7 +408,11 @@ The backend behaves the same on Django 5.2, 6.0 and 6.1, except:
 - `StringAgg` requires Django 6.0 or later (see "StringAgg results are limited
   to 1M characters"). `AnyValue` and ordered aggregates
   (`Aggregate(order_by=...)`) are Django 6.0 features as well.
-- Database-level `on_delete` (Django 6.1) is not supported yet on any version.
+- Database-level `on_delete` (`DB_CASCADE`, `DB_SET_NULL`, `DB_SET_DEFAULT`)
+  is a Django 6.1 feature.
+- `JSONField__in` on the whole document compares compact JSON text on Django
+  6.1, so whitespace in a stored document does not matter; on 5.2 and 6.0 it
+  compares the stored text.
 - Generated SQL differs in small ways between versions (Django 5.2 and 6.0
   leave subquery aliases unquoted, which Db2 for i reads the same way).
 
@@ -591,6 +600,34 @@ same key twice in one call, fails again on every attempt and is raised at the en
 IBM names a restrictive isolation level such as repeatable read as a way to avoid
 the race. It takes more locks and has not been tested with this backend.
 
+## JSONField
+
+A `JSONField` is an `NCLOB` holding the JSON text. Key lookups, `has_key`,
+`has_keys`, `has_any_keys`, `isnull`, `in`, comparisons and the text lookups
+work, through Db2 for i's `JSON_QUERY`, `JSON_VALUE` and `JSON_EXISTS`. Differences:
+
+- **No check that the column holds JSON.** Db2 for i refuses `CHECK (... IS
+  JSON)` on an `NCLOB` (SQL0546), so only Django's own serializing keeps the
+  column valid; text written by raw SQL is not checked.
+- **`contains` and `contained_by` are not available** (`NotSupportedError`):
+  Db2 for i has no containment function.
+- **Negative array indexes** (`data__items__-1`) are not available
+  (`NotSupportedError`): Db2 for i returns nothing for them.
+- **A document that is a single value** (a number, a string, `true`, `null`
+  at the top level) is stored and read back, but key lookups cannot reach it.
+- **A key with a double quote** (`data__has_key='a"b'`) cannot be written in
+  a Db2 for i JSON path; such a lookup raises `NotSupportedError`. Other
+  characters work, also `'`, `%`, `\` and emoji.
+- **No index or check constraint on a key.** Db2 for i refuses a JSON
+  function in an index expression (`Index("data__key", ...)`, SQL0356) and in
+  a `CheckConstraint` condition (`Q(data__key=...)`, SQL0546).
+- **Ordering by a key compares its JSON text**, as on Oracle and MariaDB:
+  `-1` sorts before `-100` and `10` before `9`. Use `Cast()` to order
+  numerically.
+- **JSON null and a missing key** read back the same (`None`) from a key
+  transform; `data__key=None` matches JSON null only, and `data__key__isnull=True`
+  a missing key.
+
 ## A column that grew while a connection stays open
 
 > **Not verified on IBM i.** This needs two connections, which the current test
@@ -630,11 +667,27 @@ Db2 for i has no equivalent for these Django features, so they stay off
   `CREATE INDEX` takes no `INCLUDE` (SQL0104); Django leaves the clause out
   and its system checks warn about it.
 
+- **`Reverse`, `SHA224` and `SHA384`.** Db2 for i has no `REVERSE`,
+  `HASH_SHA224` or `HASH_SHA384`; these functions raise `NotSupportedError`.
+  `MD5`, `SHA1`, `SHA256` and `SHA512` work, over the text as UTF-8, as on
+  other databases.
+- **A float cast to text has 16 significant digits.** `Cast(<FloatField>, CharField())`
+  gives `3`, `4.5` and `300`, as on Django's other backends, but goes through a 16-digit
+  decimal: `0.1 + 0.2` gives `0.3`, not `0.30000000000000004`, and from 1E16 on the
+  text has an exponent (`1.000000000000000E+16`).
+- **Window frames with `exclusion`, or a fixed `RANGE` over dates.** Db2 for i
+  has no `EXCLUDE` in a window frame (Django's `exclusion=`), and a `RANGE`
+  frame with a fixed distance works on numbers only: over a date or timestamp
+  it is refused (SQL0182). Window functions work otherwise.
+- **`Chr` and `Ord` beyond ASCII.** Db2 for i's `CHR` and `ASCII` work on
+  single-byte characters: `Chr(233)` and `Ord("é")` give a substitute
+  character (code 26), not `é` or 233. Values up to 127 work.
+
 Django's system checks report the first three when a model uses them.
 
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and
-enabled one at a time: JSONField, window functions, `select_for_update`,
+enabled one at a time: `select_for_update`,
 and creating test schemas (tests
 run in an existing library, see [Configuration](Configuration.md#test-database-test)).

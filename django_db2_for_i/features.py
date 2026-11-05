@@ -37,7 +37,6 @@ REASON_TYPE_NOT_IN_PLACE = "Db2 for i cannot change this column type in place (S
 REASON_CHECK_LIKE_COLUMN_PATTERN = (
     "Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546)"
 )
-REASON_JSON_FIELD = "JSONField is not supported yet (phase 6)"
 REASON_MERGE_RETURNS_NO_ROWS = (
     "bulk_create(update_conflicts=True) is a MERGE, which returns no rows (FINAL TABLE takes "
     "only INSERT): the objects get no primary keys"
@@ -47,6 +46,46 @@ REASON_FINAL_TABLE_NOT_RETURNING = (
 )
 REASON_LOWERCASE_NAME_IN_SQL = (
     "the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i"
+)
+REASON_NO_SUCH_FUNCTION = (
+    "Db2 for i has no such function (REVERSE, HASH_SHA224, HASH_SHA384: SQL0204); the backend "
+    "raises NotSupportedError"
+)
+REASON_TIME_ZONE_CONVERSION = (
+    "converting datetimes to another time zone in SQL is not supported yet: Db2 for i has no "
+    "time zone database; the backend raises NotSupportedError"
+)
+REASON_EXTRACT_IN_SQL = (
+    "the test counts the word EXTRACT in the SQL; Db2 for i writes YEAR(...) and the like"
+)
+REASON_TRUNC_KIND_REFUSED = (
+    "an unknown Trunc kind raises ValueError before any SQL is sent; the test accepts only a "
+    "database error or no rows"
+)
+REASON_TRUNC_NULL_ZONEINFO = (
+    "before Django 6.1, Trunc of a NULL datetime with USE_TZ raises ValueError when "
+    "has_zoneinfo_database is off; 6.1 lets the backend keep the NULL"
+)
+REASON_SINGLE_BYTE_CHR = (
+    "CHR and ASCII on Db2 for i work on single-byte characters; a non-ASCII character gives a "
+    "substitute character (probes db_functions, db_function_args)"
+)
+
+REASON_NO_JSON_CHECK = (
+    "Db2 for i refuses CHECK (C IS JSON) on an NCLOB (SQL0546, probe lib_json_check), so "
+    "invalid JSON written past Django's encoder is stored"
+)
+REASON_JSON_KEY_ORDER_AS_TEXT = (
+    "ordering by a JSON key compares its JSON text, as on Oracle and MariaDB (JSON_QUERY; "
+    "probe json_lookups)"
+)
+REASON_JSON_IN_CHECK_OR_INDEX = (
+    "Db2 for i refuses a JSON function in a CHECK condition (SQL0546) and in an index "
+    "expression (SQL0356)"
+)
+REASON_JSON_KEY_DOUBLE_QUOTE = (
+    "a Db2 for i JSON path cannot hold a key with a double quote in any form (probe "
+    "json_lookups); the backend raises NotSupportedError"
 )
 
 
@@ -97,7 +136,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     can_release_savepoints = True
 
     # Queries
-    allows_group_by_lob = False
+    # GROUP BY, DISTINCT and ORDER BY an NCLOB or a BLOB (probe phase6_flags).
+    allows_group_by_lob = True
     allows_group_by_select_index = False
     # An UPDATE / DELETE whose subquery reads the same table runs as one
     # statement, without materializing the subquery first (probe qtemp_cursors).
@@ -111,7 +151,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_any_value = True
     # StringAgg(order_by=...) as LISTAGG(...) WITHIN GROUP (ORDER BY ...) (probe listagg).
     supports_aggregate_order_by_clause = True
-    ignores_unnecessary_order_by_in_subqueries = False
+    # ORDER BY in an IN, FROM or EXISTS subquery is accepted (probe phase6_flags).
+    ignores_unnecessary_order_by_in_subqueries = True
     # REGEXP_LIKE (ICU) supports backreferences (probe queries).
     supports_regex_backreferencing = True
     supports_date_lookup_using_string = False
@@ -136,11 +177,27 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_parentheses_in_compound = True
     supports_slicing_ordering_in_compound = True
     supports_select_for_update_with_limit = False
-    supports_aggregate_distinct_multiple_argument = False
+    # LISTAGG(DISTINCT x, ',') (probes listagg, phase6_flags).
+    supports_aggregate_distinct_multiple_argument = True
     supports_bit_aggregations = False
     supports_default_in_bit_aggregations = False
-    supports_cast_with_precision = False
-    supports_default_in_lead_lag = False
+    # Cast to a length or precision; a number cast to a DecimalField is rounded
+    # first, as Db2 for i's CAST cuts off (expressions.py, probe db_functions).
+    supports_cast_with_precision = True
+    # ROUND takes halves away from zero: 2.5 to 3, -2.5 to -3 (probe db_functions).
+    rounds_to_even = False
+    # REAL is a single-precision float (probe phase6_flags).
+    has_real_datatype = True
+    # Window functions: every one, partitions, ROWS and RANGE frames; a LAG / LEAD
+    # offset and NTH_VALUE's position are written as constants, PERCENT_RANK and
+    # CUME_DIST cast to DOUBLE (expressions.py, probe window).
+    supports_over_clause = True
+    # A typed default: LAG(V, 1, CAST(? AS DOUBLE)) (probe window).
+    supports_default_in_lead_lag = True
+    # RANGE 5 PRECEDING on a number; on a date it is refused (SQL0182, probe window).
+    supports_frame_range_fixed_distance = True
+    # EXCLUDE ... is refused (SQL0104, probe window).
+    supports_frame_exclusion = False
     # Predicates are valid in the select list and GROUP BY on 7.5 (BOOLEAN);
     # Exists() is rendered as a first-row subquery there (compiler.py).
     supports_boolean_expr_in_select_clause = True
@@ -217,9 +274,14 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_collation_on_textfield = False
     supports_non_deterministic_collations = False
     supports_alter_generated_column_data_type = False
-    supports_on_delete_db_cascade = False
-    supports_on_delete_db_default = False
-    supports_on_delete_db_null = False
+    # DB-level on_delete (Django 6.1: DB_CASCADE, DB_SET_NULL, DB_SET_DEFAULT):
+    # Django writes ON DELETE CASCADE / SET NULL / SET DEFAULT into the foreign
+    # key; each works as IBM documents, also in a transaction, and SYSREFCST
+    # names the rule (probe lib_on_delete, #220). SET DEFAULT refuses to delete
+    # the parent the default points to (SQL0532, an IntegrityError).
+    supports_on_delete_db_cascade = True
+    supports_on_delete_db_default = True
+    supports_on_delete_db_null = True
     # RENAME INDEX (probe 24). Combined alters stay off: Db2 for i accepts
     # several clauses in one ALTER TABLE only without commas, and Django joins
     # them with ", ".
@@ -251,12 +313,26 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "PositiveSmallIntegerField": "SmallIntegerField",
         }
 
-    # JSON
-    supports_json_field = False
+    # JSON: an NCLOB with Db2 for i's JSON functions (expressions.py, probes
+    # json_functions, json_lookups), where the server has them.
+    @cached_property
+    def supports_json_field(self) -> bool:
+        return self.connection.capabilities.has_json_functions
+
+    # JSON_OBJECT with typed markers, keys and nesting (probe json_functions).
+    @cached_property
+    def has_json_object_function(self) -> bool:
+        return self.connection.capabilities.has_json_functions
+
+    # CHECK (C IS JSON) is refused on an NCLOB (SQL0546, probe lib_json_check),
+    # so introspection sees a plain LOB.
     can_introspect_json_field = False
+    # A root scalar is stored and read back, but JSON_QUERY and JSON_VALUE
+    # cannot reach it (NULL; probe json_functions).
     supports_primitives_in_json_field = False
+    # No containment function; path filters returned false (probe json_functions).
     supports_json_field_contains = False
-    has_json_object_function = False
+    # $.d[-1] gives NULL without an error (probe json_functions).
     supports_json_negative_indexing = False
 
     # Known failures of Django's own test suite, grouped by one fixed reason
@@ -275,11 +351,56 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "schema.tests.SchemaTests.test_m2m_repoint_custom",
             "schema.tests.SchemaTests.test_m2m_repoint_inherited",
         },
+        REASON_NO_SUCH_FUNCTION: {
+            "db_functions.text.test_reverse.ReverseTests.test_basic",
+            "db_functions.text.test_reverse.ReverseTests.test_expressions",
+            "db_functions.text.test_reverse.ReverseTests.test_null",
+            "db_functions.text.test_reverse.ReverseTests.test_transform",
+            "db_functions.text.test_sha224.SHA224Tests.test_basic",
+            "db_functions.text.test_sha224.SHA224Tests.test_transform",
+            "db_functions.text.test_sha384.SHA384Tests.test_basic",
+            "db_functions.text.test_sha384.SHA384Tests.test_transform",
+        },
+        # On Django 5.2 and 6.0 only (compat.py): the one skip that differs per
+        # version. As an expected failure it marked the inherited test function
+        # itself (unittest's expectedFailure sets a flag on it), so the parent
+        # DateFunctionTests.test_trunc_none, which passes, became an unexpected
+        # success; a skip wraps the function instead.
+        REASON_TRUNC_NULL_ZONEINFO: set(compat.TRUNC_NULL_FAILING),
     }
     expected_failures: dict[str, set[str]] = {
         # Subtracts from a TimeField stored with microseconds (TIME has none).
         REASON_TIME_FRACTIONS: {
             "expressions.tests.FTimeDeltaTests.test_time_subtraction",
+            # Cast and Trunc to a TimeField.
+            "db_functions.comparison.test_cast.CastTests.test_cast_from_db_datetime_to_time",
+            "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_trunc_time_func",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_time_func",
+        },
+        REASON_TIME_ZONE_CONVERSION: {
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_explicit_timezone_priority",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_with_timezone",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_with_timezone_minus_no_offset",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_func_with_timezone",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_timezone_applied_before_truncation",
+        },
+        # str(qs.query).count("extract") with a year lookup against an expression.
+        REASON_EXTRACT_IN_SQL: {
+            "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_extract_year_exact_lookup",
+            "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_extract_year_greaterthan_lookup",
+            "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_extract_year_lessthan_lookup",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_exact_lookup",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_greaterthan_lookup",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_lessthan_lookup",
+        },
+        REASON_TRUNC_KIND_REFUSED: {
+            "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_trunc_lookup_name_sql_injection",
+            "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_lookup_name_sql_injection",
+        },
+        # Chr(ord("É")) and Ord on "Élena".
+        REASON_SINGLE_BYTE_CHR: {
+            "db_functions.text.test_chr.ChrTests.test_non_ascii",
+            "db_functions.text.test_ord.OrdTests.test_basic",
         },
         # sequence_reset_sql() inside TestCase's transaction: the restart waits
         # for a commit that never comes (operations.py, SQL0910).
@@ -370,9 +491,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "migrations.test_operations.OperationTests.test_add_constraint_percent_escaping",
             "migrations.test_operations.OperationTests.test_create_model_constraint_percent_escaping",
         },
-        # A JSONField db_default (a dict). On Django 5.2 only: 6.0 and later
-        # skip the test without supports_json_field (compat.py).
-        REASON_JSON_FIELD: set(compat.FAILING_ON_THIS_VERSION_ONLY),
         # sql.rfind("headline") on the CREATE INDEX of a partial index, which
         # quotes "HEADLINE"; the index itself is covered by the golden
         # ddl/add_index_partial and tests/ibmi/test_schema.py.
@@ -389,6 +507,21 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         },
         REASON_LOWERCASE_NAME_IN_SQL: {
             "indexes.tests.PartialIndexTests.test_multiple_conditions",
+        },
+        REASON_NO_JSON_CHECK: {
+            "model_fields.test_jsonfield.JSONFieldTests.test_db_check_constraints",
+        },
+        REASON_JSON_KEY_ORDER_AS_TEXT: {
+            "model_fields.test_jsonfield.TestQuerying.test_ordering_by_transform",
+        },
+        REASON_JSON_IN_CHECK_OR_INDEX: {
+            "schema.tests.SchemaTests.test_check_constraint_exact_jsonfield",
+            "schema.tests.SchemaTests.test_func_index_json_key_transform",
+            "schema.tests.SchemaTests.test_func_index_json_key_transform_cast",
+        },
+        REASON_JSON_KEY_DOUBLE_QUOTE: {
+            "model_fields.test_jsonfield.TestQuerying.test_key_sql_injection_escape",
+            "model_fields.test_jsonfield.TestQuerying.test_lookups_special_chars_double_quotes",
         },
         # assertIn("RETURNING ...", sql). The other tests of the module read the returned
         # values, and pass.

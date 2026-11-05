@@ -20,6 +20,7 @@ from django.db.models import (
     Value,
     When,
 )
+from django.db.models.functions import JSONArray, JSONObject
 from django.db.models.lookups import LessThan
 
 from tests.golden_cases.base import (
@@ -28,6 +29,7 @@ from tests.golden_cases.base import (
     AWARE,
     BOOK,
     CONTACT,
+    JSONDOC,
     MEASURE,
     SWITCH,
     Case,
@@ -35,7 +37,7 @@ from tests.golden_cases.base import (
     exists,
     select,
 )
-from tests.testapp.models import Account, Author, Book, Contact, Measure, Switch
+from tests.testapp.models import Account, Author, Book, Contact, JSONDoc, Measure, Switch
 
 
 def _last_insert_id(connection):
@@ -543,5 +545,35 @@ CASES: tuple[Case, ...] = (
         "query",
         select(lambda: Measure.objects.filter(amount=Decimal("1.005"))),
         (MEASURE,),
+    ),
+    # JSONField (an NCLOB): JSON_QUERY with the path as a literal, a marker for a
+    # key above U+FFFE; the right-hand side normalized through JSON_OBJECT; JSON
+    # null; has_key as JSON_EXISTS; a number through JSON_VALUE ... DECFLOAT(34).
+    *(
+        Case(f"queries/json_{name}", "query", select(make), (JSONDOC,))
+        for name, make in (
+            ("key_exact", lambda: JSONDoc.objects.filter(data__city__name="Gent")),
+            ("key_exact_object", lambda: JSONDoc.objects.filter(data__meta={"ok": True})),
+            ("key_json_null", lambda: JSONDoc.objects.filter(data__x=None)),
+            ("key_in", lambda: JSONDoc.objects.filter(data__n__in=[3, "a'b"])),
+            ("key_gt_number", lambda: JSONDoc.objects.filter(data__n__gt=10)),
+            ("key_isnull", lambda: JSONDoc.objects.filter(data__tags__isnull=True)),
+            ("has_keys", lambda: JSONDoc.objects.filter(data__has_keys=["a", "it's 100%"])),
+            ("has_key_emoji", lambda: JSONDoc.objects.filter(data__has_key="\U0001f600")),
+            ("key_text_icontains", lambda: JSONDoc.objects.filter(data__city__icontains="é")),
+            ("values_key", lambda: JSONDoc.objects.values("data__tags__1").order_by("data__n")),
+            (
+                "json_object",
+                lambda: JSONDoc.objects.annotate(
+                    x=JSONObject(name="name", data="data", empty=JSONObject())
+                ).values("x"),
+            ),
+            (
+                "json_array",
+                lambda: JSONDoc.objects.annotate(
+                    x=JSONArray("name", Value(None, CharField()), JSONObject(n="name"))
+                ).values("x"),
+            ),
+        )
     ),
 )

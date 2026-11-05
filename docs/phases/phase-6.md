@@ -2,6 +2,8 @@
 
 > Status: Approved, 2026-11-01 ([the maintainer's answers](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/218)).
 > Implementation starts after the tag `v0.1.0b2`; see "Before the tag".
+> Changed 2026-11-04: one branch and one PR (#227) for the whole phase, targeted runs on
+> 6.1 while building, one final cycle on all three versions (sections 6 and 7).
 
 ## Goal
 From CLAUDE.md section 9: **advanced**: window functions, `JSONField`, db
@@ -181,12 +183,32 @@ requested: with row locks off (answer 1), a one-job look at the lock list decide
 - **IBM i tests:** per flag, the real-world pattern: `Window` over a queryset with model
   instances; ranking with a partition; `Lag` with a default; a `JSONField` saved, read and
   filtered by key with non-ASCII text; `CASCADE` and `SET NULL` deleting real rows.
-- **Django modules:** targeted runs while building, one IBM i cycle per PR.
-- **Each core PR's cycle:** the full IBM i tests on 6.1 (about 23 minutes), `bin/verify` per
-  Django version (about 35 minutes each) and the affected modules on all three. About
-  2.5 hours, plus a repeat after any later core change, as #216 showed.
+- **While building (changed 2026-11-04):** after each step or fix, on 6.1 only, the
+  affected Django modules and the affected own IBM i tests; no stamps, no other versions,
+  no full own tier unless the change is broad. A commit that touches `compat.py`, or
+  behaviour known to differ per Django version, also gets its affected modules on 6.0 and
+  5.2 right away.
+- **One final cycle for the phase:** the full own IBM i tests on 6.1, `bin/verify` with
+  stamps on all three versions (on 6.0 and 5.2 without repeating the full own tier), and
+  all phase 6 modules on all three. Planned at about 2.5 hours on a normal PUB400; at
+  PUB400's speed of 2026-11-02/03 a full own tier alone took 5.5 to 6 hours.
 
 ## 7. Plan with PR boundaries
+**Changed 2026-11-04: one branch and one PR for the whole phase** (#227), because of
+PUB400's speed (see [DECISIONS.md](../DECISIONS.md), 2026-11-04). The steps stay as below,
+each one commit or a small set with a clear message, listed in the PR description:
+
+1. db functions and the small flags of group 1 (the former PR 1);
+2. window functions, group 2 (the former PR 2);
+3. DB-level `on_delete`, group 4 (`lib_on_delete` ran, #220; the former PR 4);
+4. `JSONField`, group 3, last (the former PR 3).
+
+The PR stays a draft until the final cycle, with no result markers for the IBM i gate
+before then. If `JSONField` gets stuck, its commits move to a separate PR so the rest can
+go ahead; the maintainer is told before that happens.
+
+The original plan, approved 2026-11-01, for the record:
+
 **Four PRs, approved** (the maintainer asked for few, because every core PR needs the full IBM i
 run). Each keeps a commit per step, for review. Lowest risk first:
 
@@ -211,6 +233,8 @@ reasons, goldens, own IBM i test, then docs and changelog. Probes come before co
 
 Close-out: the modules into `docs/status.toml`, the whole `model_fields` once as a measurement, a
 status run on all three versions, this file rewritten as the record, as in phases 4 and 5.
+After the merge of the single PR, the close-out and the status run are combined where that
+avoids running the same thing twice.
 
 ## Before the tag
 Until `v0.1.0b2` is tagged (the maintainer sets it):

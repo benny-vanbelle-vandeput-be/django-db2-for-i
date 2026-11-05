@@ -287,23 +287,36 @@ def test_skips_are_grouped_by_fixed_reasons() -> None:
     from django_db2_for_i import features
 
     cls = features.DatabaseFeatures
-    assert set(cls.django_test_skips) == {features.REASON_NO_COLUMN_RENAME}
+    assert set(cls.django_test_skips) == {
+        features.REASON_NO_COLUMN_RENAME,
+        features.REASON_NO_SUCH_FUNCTION,
+        features.REASON_TRUNC_NULL_ZONEINFO,
+    }
     # Each entry is one test id, never a whole class.
     for test_ids in cls.django_test_skips.values():
         assert all(test_id.count(".") >= 3 and ".test_" in test_id for test_id in test_ids)
 
 
 def test_skips_are_the_same_on_every_django_version() -> None:
-    """Skips are not filtered per version (compat), and a test is never both
+    """Skips are not filtered per version (compat), except the Trunc NULL test
+    of 5.2 and 6.0 (an inherited test, features.py), and a test is never both
     skipped and an expected failure."""
-    from django_db2_for_i import features
+    from django_db2_for_i import compat, features
 
     cls = features.DatabaseFeatures
-    skipped = set().union(*cls.django_test_skips.values())
+    skipped = set().union(*cls.django_test_skips.values()) - set(compat.TRUNC_NULL_FAILING)
     assert skipped == {
         "schema.tests.SchemaTests.test_m2m_repoint",
         "schema.tests.SchemaTests.test_m2m_repoint_custom",
         "schema.tests.SchemaTests.test_m2m_repoint_inherited",
+        "db_functions.text.test_reverse.ReverseTests.test_basic",
+        "db_functions.text.test_reverse.ReverseTests.test_expressions",
+        "db_functions.text.test_reverse.ReverseTests.test_null",
+        "db_functions.text.test_reverse.ReverseTests.test_transform",
+        "db_functions.text.test_sha224.SHA224Tests.test_basic",
+        "db_functions.text.test_sha224.SHA224Tests.test_transform",
+        "db_functions.text.test_sha384.SHA384Tests.test_basic",
+        "db_functions.text.test_sha384.SHA384Tests.test_transform",
     }
     assert not skipped & set().union(*cls.expected_failures.values())
 
@@ -322,10 +335,17 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
         features.REASON_NO_COLUMN_RENAME,
         features.REASON_TYPE_NOT_IN_PLACE,
         features.REASON_CHECK_LIKE_COLUMN_PATTERN,
-        features.REASON_JSON_FIELD,
         features.REASON_FINAL_TABLE_NOT_RETURNING,
         features.REASON_LOWERCASE_NAME_IN_SQL,
         features.REASON_MERGE_RETURNS_NO_ROWS,
+        features.REASON_TIME_ZONE_CONVERSION,
+        features.REASON_EXTRACT_IN_SQL,
+        features.REASON_TRUNC_KIND_REFUSED,
+        features.REASON_SINGLE_BYTE_CHR,
+        features.REASON_NO_JSON_CHECK,
+        features.REASON_JSON_KEY_ORDER_AS_TEXT,
+        features.REASON_JSON_KEY_DOUBLE_QUOTE,
+        features.REASON_JSON_IN_CHECK_OR_INDEX,
     }
     # Each entry is one test id, never a whole class.
     for test_ids in cls.expected_failures.values():
@@ -339,17 +359,6 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
     assert cls.django_test_expected_failures == everything - compat.PASSING_ON_THIS_VERSION
     # The per-version exceptions are expected failures of the other versions.
     assert compat.PASSING_ON_THIS_VERSION.issubset(everything)
-
-
-def test_failures_of_one_version_only_are_expected_on_that_version() -> None:
-    from django_db2_for_i import compat, features
-
-    cls = features.DatabaseFeatures
-    only_here = compat.FAILING_ON_THIS_VERSION_ONLY
-    assert cls.expected_failures[features.REASON_JSON_FIELD] == only_here
-    assert only_here <= cls.django_test_expected_failures
-    expected = {"schema.tests.SchemaTests.test_db_default_output_field_resolving"}
-    assert only_here == (expected if compat.DJANGO_SERIES == "5.2" else set())
 
 
 def test_table_list_leaves_out_system_catalog_views() -> None:

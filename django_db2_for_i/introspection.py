@@ -229,10 +229,9 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         """{column: (referenced column, referenced table[, db_on_delete])}; the
         tuple's shape follows the Django version (compat.relation). The delete
         rule (SYSREFCST.DELETE_RULE) maps with Django 6.1's on_delete_types,
-        whose keys are Db2's values. Only NO ACTION occurs on PUB400 (probe
-        lib_constraints; the backend writes no ON DELETE); the other rules are
-        IBM's documented values, checked when phase 6 switches on
-        supports_on_delete_db_*."""
+        whose keys are Db2's values: CASCADE, SET NULL and SET DEFAULT as
+        SYSREFCST shows them (probe lib_on_delete), NO ACTION for the foreign
+        keys the backend writes without a DB-level on_delete."""
         cursor.execute(RELATIONS_SQL, [table_name.upper()])
         return {
             self.identifier_converter(column.rstrip()): compat.relation(

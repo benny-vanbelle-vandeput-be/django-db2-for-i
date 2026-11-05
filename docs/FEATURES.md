@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**53 flags enabled on Django 6.1.**
+**66 flags enabled on Django 6.1.**
 
-## Enabled (53)
+## Enabled (66)
 
 On in at least one supported Django version.
 
@@ -18,6 +18,7 @@ On in at least one supported Django version.
 |---|---|---|---|---|
 | `allow_sliced_subqueries_with_in` | A sliced queryset (`qs[:n]`, also with an offset) can be used in `__in`. | ✅ | ✅ | ✅ |
 | `allows_auto_pk_0` | An `AutoField` primary key may be 0. | ✅ | ✅ | ✅ |
+| `allows_group_by_lob` | `TextField` and `BinaryField` columns can be grouped by. | ✅ | ✅ | ✅ |
 | `can_introspect_check_constraints` | `inspectdb` and introspection find CHECK constraints. | ✅ | ✅ | ✅ |
 | `can_introspect_default` | Introspection reads column defaults. | ✅ | ✅ | ✅ |
 | `can_introspect_foreign_keys` | Introspection finds foreign keys. | ✅ | ✅ | ✅ |
@@ -29,27 +30,39 @@ On in at least one supported Django version.
 | `can_use_chunked_reads` | `QuerySet.iterator()` fetches rows in chunks from an open cursor while other queries run. | ✅ | ✅ | ✅ |
 | `delete_can_self_reference_subquery` | A delete whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `has_bulk_insert` | `bulk_create()` inserts many rows in one statement. | ✅ | ✅ | ✅ |
+| `has_json_object_function` | JSON objects can be built in SQL (`JSONObject`). | ✅ | ✅ | ✅ |
 | `has_native_boolean_field` | `BooleanField` is a native `BOOLEAN` column (IBM i 7.5). | – | – | ✅ |
+| `has_real_datatype` | The database has a single-precision `REAL` type besides `DOUBLE`. | ✅ | ✅ | ✅ |
 | `ignores_table_name_case` | Table names that differ only in case are the same table (names are uppercase). | ✅ | ✅ | ✅ |
+| `ignores_unnecessary_order_by_in_subqueries` | Django may leave an `ORDER BY` in a subquery; the database accepts and ignores it. | ✅ | ✅ | ✅ |
 | `implied_column_null` | Columns are nullable unless `NOT NULL` is written; no bare `NULL` keyword in DDL. | ✅ | ✅ | ✅ |
 | `indexes_foreign_keys` | Foreign key columns get an index (on Db2 for i Django's own: the constraint creates none). | ✅ | ✅ | ✅ |
 | `nulls_order_largest` | NULL sorts as the largest value: last in ascending order, first in descending. | ✅ | ✅ | ✅ |
 | `pattern_lookup_needs_param_pattern` | `contains`, `startswith` and friends are written with `LIKE` patterns. | – | – | ✅ |
 | `requires_compound_order_by_subquery` | An ordered `union()` / `intersection()` / `difference()` is wrapped in a subquery to order it. | ✅ | ✅ | ✅ |
 | `requires_literal_defaults` | Column defaults in DDL are written as literals, not parameters. | ✅ | ✅ | ✅ |
+| `supports_aggregate_distinct_multiple_argument` | `StringAgg(..., distinct=True)` with a delimiter (`distinct` with several arguments). | – | ✅ | ✅ |
 | `supports_aggregate_order_by_clause` | `StringAgg(..., order_by=...)` and other ordered aggregates. | – | ✅ | ✅ |
 | `supports_any_value` | The `AnyValue` aggregate (one value of a column per group). | – | ✅ | ✅ |
 | `supports_boolean_expr_in_select_clause` | Conditions such as `Exists()` or `Q()` can be selected and grouped by. | ✅ | ✅ | ✅ |
+| `supports_cast_with_precision` | `Cast()` to a type with a length or precision, e.g. `DecimalField(max_digits=...)`. | ✅ | ✅ | ✅ |
 | `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | ✅ | ✅ | ✅ |
+| `supports_default_in_lead_lag` | `Lead()` / `Lag()` with a `default`. | ✅ | ✅ | ✅ |
 | `supports_default_keyword_in_bulk_insert` | `bulk_create()` writes `DEFAULT` for fields with a `db_default`. | ✅ | ✅ | ✅ |
 | `supports_default_keyword_in_insert` | An insert writes `DEFAULT` for fields with a `db_default`. | ✅ | ✅ | ✅ |
 | `supports_expression_indexes` | Indexes on expressions (`Index(Lower('name'))`). | ✅ | ✅ | ✅ |
 | `supports_foreign_keys` | Foreign keys are enforced by the database. | ✅ | ✅ | ✅ |
+| `supports_frame_range_fixed_distance` | Window `RANGE` frames with a fixed distance (`ValueRange(start=-5)`). | ✅ | ✅ | ✅ |
 | `supports_functions_in_partial_indexes` | Functions in the `condition` of a partial index. | ✅ | ✅ | ✅ |
 | `supports_ignore_conflicts` | `bulk_create(ignore_conflicts=True)`. | ✅ | ✅ | ✅ |
 | `supports_index_column_ordering` | Index columns can be ordered `DESC` (`Index(fields=["-field"])`). | ✅ | ✅ | ✅ |
 | `supports_inspectdb` | `manage.py inspectdb` generates models from existing tables. | – | – | ✅ |
+| `supports_json_field` | `JSONField`. | ✅ | ✅ | ✅ |
 | `supports_nullable_unique_constraints` | Unique constraints on nullable columns allow several NULLs. | ✅ | ✅ | ✅ |
+| `supports_on_delete_db_cascade` | `on_delete=DB_CASCADE`: the database deletes related rows (Django 6.1+). | – | – | ✅ |
+| `supports_on_delete_db_default` | `on_delete=DB_SET_DEFAULT` (Django 6.1+). | – | – | ✅ |
+| `supports_on_delete_db_null` | `on_delete=DB_SET_NULL` (Django 6.1+). | – | – | ✅ |
+| `supports_over_clause` | Window functions (`Window`, `OVER (...)`). | ✅ | ✅ | ✅ |
 | `supports_parentheses_in_compound` | Parts of a compound query may have their own `ORDER BY` / slice. | ✅ | ✅ | ✅ |
 | `supports_partial_indexes` | Indexes and unique constraints with a `condition`. | ✅ | ✅ | ✅ |
 | `supports_partially_nullable_unique_constraints` | Multi-column unique constraints where some columns are NULL. | ✅ | ✅ | ✅ |
@@ -70,7 +83,7 @@ On in at least one supported Django version.
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (49)
+## Intentionally off (55)
 
 Off on purpose, with the reason.
 
@@ -83,6 +96,7 @@ Off on purpose, with the reason.
 | `can_clone_databases` | The test database can be cloned for parallel test runs (`--parallel`). | ❌ | ❌ | ❌ | Tests run with `--parallel=1` in pre-existing libraries; a clone would need a library per process. |
 | `can_create_inline_fk` | Foreign keys are created inline in `CREATE TABLE`. | ❌ | ❌ | ❌ | Foreign keys are separate `ALTER TABLE ... ADD CONSTRAINT` statements, which also work for tables that reference each other. |
 | `can_defer_constraint_checks` | Constraint checks can be deferred to the end of the transaction. | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
+| `can_introspect_json_field` | Introspection recognizes a `JSONField` column. | ❌ | ❌ | ❌ | Db2 for i refuses `CHECK (C IS JSON)` on an `NCLOB` (SQL0546, probe `lib_json_check`), so a JSON column cannot be recognized. |
 | `can_introspect_materialized_views` | `inspectdb --include-views` also finds materialized views. | ❌ | ❌ | ❌ | The flag only enables Django's test, which writes `CREATE MATERIALIZED VIEW`: Db2 for i rejects it (SQL0104; its materialized query tables are `CREATE TABLE ... AS (...) MAINTAINED BY USER`, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `can_return_rows_from_update` | Saving an existing object reads back database-computed fields from the same `UPDATE` (Django 6.0+). | – | ❌ | ❌ | `FINAL TABLE` takes only an `INSERT` (SQL0199 for `UPDATE`, probe `qtemp_returning`, IBMI_NOTES); fields are read back with a second query. |
 | `greatest_least_ignores_nulls` | `Greatest()` / `Least()` skip NULL arguments instead of returning NULL. | ❌ | ❌ | ❌ | On Db2 for i `GREATEST` / `LEAST` return NULL when an argument is NULL (not verified on IBM i). |
@@ -92,6 +106,7 @@ Off on purpose, with the reason.
 | `has_native_uuid_field` | `UUIDField` is a native UUID column. | ❌ | ❌ | ❌ | A `UUIDField` is stored as `CHAR(32)` (probe column types); Db2 for i has no UUID type (not verified on IBM i). |
 | `has_zoneinfo_database` | The database has its own time zone database. | ❌ | ❌ | ❌ | Db2 for i has no time zone names; conversions happen in Python. |
 | `order_by_nulls_first` | NULL sorts first in ascending order. | ❌ | ❌ | ❌ | Db2 for i sorts NULL as the largest value: last in ascending order (probe queries). |
+| `rounds_to_even` | `Round()` rounds halves to even. | ❌ | ❌ | ❌ | Db2 for i's `ROUND` takes halves away from zero: 2.5 to 3, -2.5 to -3 (probe `db_functions`). |
 | `supports_aggregate_filter_clause` | Aggregates with a `filter` are written with SQL `FILTER (WHERE ...)`. | ❌ | ❌ | ❌ | Db2 for i rejects `FILTER (WHERE ...)` (SQL0104, probe queries); Django writes the filter as a `CASE`. |
 | `supports_alter_generated_column_data_type` | The type of a `GeneratedField` column can be changed in place (Django 6.1+). | – | – | ❌ | Db2 for i has no generated columns over other columns (`supports_stored_generated_columns`). |
 | `supports_bit_aggregations` | The `BitAnd`, `BitOr` and `BitXor` aggregates (Django 6.1+). | – | – | ❌ | Db2 for i has no `BIT_AND` aggregate (SQL0204, probe queries). |
@@ -108,13 +123,17 @@ Off on purpose, with the reason.
 | `supports_explaining_query_execution` | `QuerySet.explain()`. | ❌ | ❌ | ❌ | Db2 for i has no `EXPLAIN` statement that returns a plan; plans come from Visual Explain and the database monitor (not verified on IBM i). |
 | `supports_expression_defaults` | `db_default` can be an expression, not only a constant. | ❌ | ❌ | ❌ | A column `DEFAULT` on Db2 for i takes only a constant or a special register. |
 | `supports_forward_references` | Rows may reference rows inserted later in the same transaction (deferred constraints). | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
+| `supports_frame_exclusion` | Window frames with `exclusion` (`EXCLUDE ...`). | ❌ | ❌ | ❌ | Db2 for i refuses `EXCLUDE` in a window frame (SQL0104, probe `window`). |
 | `supports_index_on_text_field` | Indexes on `TextField` columns. | ❌ | ❌ | ❌ | Db2 for i cannot index an `NCLOB` or `BLOB` column; `db_index` on a `TextField` or `BinaryField` creates no index (decision 2026-10-26). |
+| `supports_json_field_contains` | `JSONField` `contains` / `contained_by` lookups. | ❌ | ❌ | ❌ | Db2 for i has no JSON containment function, and path filters returned false where they should match (probe `json_functions`). |
+| `supports_json_negative_indexing` | `JSONField` key transforms with a negative array index (Django 6.0+). | – | ❌ | ❌ | Db2 for i gives NULL for `$.d[-1]`, without an error (probe `json_functions`). |
 | `supports_logical_xor` | `Q(...) ^ Q(...)` is written with a native `XOR` operator. | ❌ | ❌ | ❌ | Db2 for i has no logical `XOR` operator; Django's emulation is used (not verified on IBM i). |
 | `supports_no_precision_decimalfield` | `DecimalField` without `max_digits` and `decimal_places` (Django 6.1+). | – | – | ❌ | `DECIMAL` needs a precision, and `DECFLOAT` has different semantics: `1E+300` as a `Decimal` is refused at bind, a 35th digit is rounded without an error (probes `later_flags`, `phase6_flags`, IBMI_NOTES). |
 | `supports_non_deterministic_collations` | Non-deterministic (for example case-insensitive) collations in `db_collation`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `supports_nulls_distinct_unique_constraints` | `UniqueConstraint(nulls_distinct=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `NULLS DISTINCT` / `NULLS NOT DISTINCT` on an index or a constraint (SQL0199, probe `qtemp_unique_nulls`, IBMI_NOTES). |
 | `supports_order_by_nulls_modifier` | `NULLS FIRST` / `NULLS LAST` in `ORDER BY` (`F('x').asc(nulls_first=True)`). | ❌ | ❌ | ❌ | Db2 for i rejects `NULLS FIRST` / `NULLS LAST` (SQL0199, probe queries); Django's `ORDER BY x IS NOT NULL, x` emulation is used. |
 | `supports_paramstyle_pyformat` | Raw SQL may use `%(name)s` parameters with a dict. | ❌ | ❌ | ❌ | The driver takes positional `?` markers only. |
+| `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | ❌ | ❌ | ❌ | Db2 for i's JSON functions cannot read a root scalar (NULL; probe `json_functions`); it is stored and read back, but key lookups on it give nothing. |
 | `supports_stored_generated_columns` | `GeneratedField(db_persist=True)`, stored generated columns. | ❌ | ❌ | ❌ | `GENERATED ALWAYS AS` takes only special registers (`USER`, ...), `DATA CHANGE OPERATION`, row change timestamps and identities, no expression over other columns (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `supports_tablespaces` | `db_tablespace` on models, fields and indexes. | ❌ | ❌ | ❌ | IBM i has no tablespaces: storage is single-level (not verified on IBM i). |
 | `supports_timezones` | Datetimes are stored with their time zone. | ❌ | ❌ | ❌ | Db2 for i has no `TIMESTAMP WITH TIME ZONE`; datetimes are stored in UTC without zone. |
@@ -126,36 +145,17 @@ Off on purpose, with the reason.
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
-## Planned (25)
+## Planned (6)
 
 Off for now; planned for the phase shown.
 
 | Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Phase |
 |---|---|---|---|---|---|
-| `allows_group_by_lob` | `TextField` and `BinaryField` columns can be grouped by. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `can_introspect_json_field` | Introspection recognizes a `JSONField` column. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `has_json_object_function` | JSON objects can be built in SQL (`JSONObject`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `has_real_datatype` | The database has a single-precision `REAL` type besides `DOUBLE`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `has_select_for_update` | `select_for_update()` locks the selected rows. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
 | `has_select_for_update_nowait` | `select_for_update(nowait=True)` fails instead of waiting for a lock. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
 | `has_select_for_update_of` | `select_for_update(of=...)` locks rows of the named tables only. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
 | `has_select_for_update_skip_locked` | `select_for_update(skip_locked=True)` skips locked rows. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
-| `ignores_unnecessary_order_by_in_subqueries` | Django may leave an `ORDER BY` in a subquery; the database accepts and ignores it. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `rounds_to_even` | `Round()` rounds halves to even. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `select_for_update_of_column` | `select_for_update(of=...)` is written with column names, not table names. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
-| `supports_aggregate_distinct_multiple_argument` | `StringAgg(..., distinct=True)` with a delimiter (`distinct` with several arguments). | – | 🗓️ | 🗓️ | phase 6 |
-| `supports_cast_with_precision` | `Cast()` to a type with a length or precision, e.g. `DecimalField(max_digits=...)`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_default_in_lead_lag` | `Lead()` / `Lag()` with a `default`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_frame_exclusion` | Window frames with `exclusion` (`EXCLUDE ...`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_frame_range_fixed_distance` | Window `RANGE` frames with a fixed distance (`ValueRange(start=-5)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_json_field` | `JSONField`. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_json_field_contains` | `JSONField` `contains` / `contained_by` lookups. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_json_negative_indexing` | `JSONField` key transforms with a negative array index (Django 6.0+). | – | 🗓️ | 🗓️ | phase 6 |
-| `supports_on_delete_db_cascade` | `on_delete=DB_CASCADE`: the database deletes related rows (Django 6.1+). | – | – | 🗓️ | phase 6 |
-| `supports_on_delete_db_default` | `on_delete=DB_SET_DEFAULT` (Django 6.1+). | – | – | 🗓️ | phase 6 |
-| `supports_on_delete_db_null` | `on_delete=DB_SET_NULL` (Django 6.1+). | – | – | 🗓️ | phase 6 |
-| `supports_over_clause` | Window functions (`Window`, `OVER (...)`). | 🗓️ | 🗓️ | 🗓️ | phase 6 |
-| `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | 🗓️ | 🗓️ | 🗓️ | phase 6 |
 | `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
 
 ## Not applicable (17)

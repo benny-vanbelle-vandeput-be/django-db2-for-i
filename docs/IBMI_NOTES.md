@@ -2243,6 +2243,40 @@ expectations, with an own IBM i test if it can be made reliable.
 | not JSON: `IS JSON` / `JSON_VALUE` | false / NULL |
 | `JSON_OBJECT` with constants, typed markers, a key marker, NULL, nesting, `FORMAT JSON`, `RETURNING NCLOB`; `JSON_ARRAY` | ok |
 
+**JSON lookups** (`probes/qtemp_json_lookups.py`, 2026-11-04, PUB400, QTEMP only): the forms Django's
+`JSONField` lookups need, on an `NCLOB` holding an object (with a string, numbers, JSON null, an array, a
+nested object, `true`, keys with `'` and `%`), a second object, a root array, a root string and SQL NULL:
+
+| Form | Result |
+|---|---|
+| `JSON_QUERY(C, <path>)` of a string, number, `true`, object, array, nested key, root array element | JSON text: `"téxt 😀"` (quotes kept), `1`, `2.5`, `true`, `{"g":[1,2],"f":true}` (compact, key order kept) |
+| the same of JSON null, a missing key, a root scalar (`$` of `"scalar"`) | NULL for all three |
+| `JSON_QUERY ... OMIT QUOTES` | `téxt 😀`: a string without quotes |
+| `JSON_QUERY` result type | a `CLOB` of 2G by default; `RETURNING NVARCHAR(4000)` and `NCLOB(1M)` work |
+| a path as a marker, also `$."k'%"` and a non-ASCII value | ok |
+| `JSON_VALUE ... RETURNING NVARCHAR(4000)` of a string, number, `true` / an object | the text, `1`, `2.5`, `true` / NULL |
+| `JSON_VALUE ... RETURNING DECFLOAT(34)` of a number / of the string `"1"` | the number / 1 |
+| `JSON_QUERY(JSON_OBJECT('value' VALUE CAST(? AS NVARCHAR(4000)) FORMAT JSON), '$.value')` | the marker's JSON compacted: `{"g":[1,2],"f":true}`, `"téxt"`; through `NCLOB(1M)`: `[1,2.5, null ]` |
+| `JSON_QUERY(...) = ?` (a `CLOB` against a marker), `ORDER BY` and `DISTINCT` on the `CLOB` | ok |
+| an object against the normalized right-hand side, same key order / other key order | equal / not equal |
+| the number `1` against the normalized `1.0` | equal |
+| `JSON_VALUE ... RETURNING DECFLOAT(34) < ?` | ok; `JSON_VALUE ... RETURNING NVARCHAR < 2` matches nothing |
+| `LOWER(JSON_VALUE(...)) LIKE ? ESCAPE '\'`, also on `a'b%` | ok |
+| `JSON_EXISTS(C, ?)`, `NOT JSON_EXISTS(C, ?)`, `$[1]`, `$."d"[2]."x"` | ok; JSON null exists, SQL NULL is neither |
+| `JSON_QUERY ... IN (<normalized>, <normalized>)` | ok |
+| keys in a path, as Django's `json.dumps` writes them (`\\`, `\uXXXX` escapes) | **never found**: a path takes no JSON escapes |
+| the same keys raw: a backslash, `é` | found, as a literal and as a marker |
+| raw: an emoji, U+FFFF | found as a marker only; as a literal in the statement, not found |
+| a key with a double quote: `\"`, `""` | not found in any form |
+| `JSON_OBJECT((CAST(? AS NVARCHAR(32))) VALUE K RETURNING NCLOB(1M))`, also without the parentheses or with `KEY` | ok |
+| `JSON_OBJECT()`, `JSON_OBJECT(RETURNING NCLOB(1M))`, `JSON_ARRAY(RETURNING NCLOB(1M))` | `{}`, `{}`, `[]` |
+| `JSON_OBJECT` with a NULL value, with or without `NULL ON NULL` | `{"k":null}`: JSON null by default |
+| `JSON_ARRAY(K, CAST(NULL AS INTEGER), ? NULL ON NULL ...)` | `[1,null,"x"]` (without `NULL ON NULL` the NULL is left out: `db_functions` on 6.1) |
+| a nested `JSON_OBJECT`, a JSON column, `JSON_OBJECT`s in `JSON_ARRAY`, each with `FORMAT JSON` | JSON, not a string |
+| `JSON_OBJECT('d' VALUE CAST(? AS DOUBLE))` of 30000.15 | `3.0000150000000001E4`, which Python reads as 30000.15 |
+| `LISTAGG(JSON_QUERY(C, ... OMIT QUOTES), CAST(? AS NVARCHAR(32)))` | **SQL0171**: `JSON_QUERY` returns a `CLOB` |
+| the same with `RETURNING NCLOB(1M) OMIT QUOTES`, also in `WITHIN GROUP (ORDER BY ...)` | ok |
+
 **Db functions** (`probes/qtemp_db_functions.py`), on `héllo 😀`, NULL, 7, 2.5 and 2.50:
 
 | Function | Result |
@@ -2258,6 +2292,35 @@ expectations, with an own IBM i test if it can be made reliable.
 | all math functions Django writes, `RAND()`, `RANDOM()` | ok; `LOG(2, 8)` SQL0170 (it takes one argument) |
 | `ROUND` of 2.5, 3.5, 0.5, -2.5 | 3, 4, 1, -3: away from zero; also with no second argument |
 | `CAST(2.55 AS DECIMAL(9, 1))`, `CAST(D AS DECIMAL(9, 0))`, `CAST(3.7 AS INTEGER)` | 2.5, 2, 3: cut off, not rounded |
+
+**Db function arguments** (`probes/qtemp_db_function_args.py`, 2026-11-02, PUB400, QTEMP only), on
+`héllo 😀`, NULL, 2 and an `NCLOB` of 3,000 `é` and an emoji:
+
+| Form | Result |
+|---|---|
+| `LEFT`, `RIGHT`, `REPEAT`, `SUBSTRING`, `SUBSTR`, `LPAD` with typed markers (`CAST(? AS INTEGER)`) or a column as the number | ok, also on the `NCLOB` |
+| `CONCAT(COALESCE(S, ''), COALESCE(N, ''))`, also with typed markers and an `NCLOB` | ok: NULL as empty text |
+| `LN(8) / LN(2)`, also with typed markers | 3.0 |
+| `ASCII` of `é` / of an emoji | 26 / 26: a substitute character |
+| `LOWER(HEX(HASH_MD5(CAST(<x> AS CLOB(2G) CCSID 1208))))`, also `HASH_SHA256`, on the `NCLOB` | Python's `hashlib` result; the `VARCHAR(32000)` cast too, `HASH_MD5(<NCLOB>)` hashes other bytes |
+| the same on NULL | NULL |
+| `CAST(ROUND(D, 2) AS DECIMAL(8, 2))` with D = -1.934 (DOUBLE) | -1.92: `ROUND` stays binary, the cast cuts off |
+| `CAST(ROUND(CAST(D AS DECFLOAT(34)), 2) AS DECIMAL(8, 2))`; also 3.467 to 1 place, 2.5 and -2.5 to 0, 1E20 | -1.93; 3.5; 3 and -3; exact |
+| the same through `DECIMAL(63, 30)`; `ROUND` of a `DECIMAL(9, 3)` 2.555 to 2 places | -1.93, 3, exact; 2.56 |
+| `CURRENT DECFLOAT ROUNDING MODE` | `ROUND_HALF_EVEN`, yet `ROUND` takes halves away from zero |
+
+**A DOUBLE as text** (`probes/qtemp_float_text.py`, 2026-11-04, PUB400, QTEMP only), on 3, 4.5,
+0.1, 1/3, 300, 10, 1E15, 1E16, 1E20, 0.1 + 0.2, -2.5, 1.23E-7, 1E-5, 0, -0, 2.5E-300 and the largest DOUBLE:
+
+| Form | Result |
+|---|---|
+| `CAST(D AS NVARCHAR(100))`, `VARCHAR(D)`, `CHAR(D)` | exponent notation: `3E0`, `4.5E0`, `1.0000000000000001E-1`, `3E2` |
+| `CAST(CAST(D AS DECFLOAT(16)) AS NVARCHAR(100))`, also with `NORMALIZE_DECFLOAT` or `VARCHAR_FORMAT` | `3`, `4.5`, `0.1`, `0.3333333333333333`, `0.3` (for 0.1 + 0.2), but `3E+2`, `1E+1`, `1E+15` |
+| the same through `DECFLOAT(34)`, `VARCHAR_FORMAT(D)` | the binary value in full: `0.1000000000000000055511151231257827` |
+| `CAST(CAST(D AS DECFLOAT(16)) + 0 AS NVARCHAR(100))`, also `+ CAST(0 AS DECFLOAT(16))` | `3`, `4.5`, `0.1`, `300`, `10`, `1000000000000000`, `0.3`, `-2.5`, `1.23E-7`, `0.00001`, `0` (also for -0); from 1E16 `1.000000000000000E+16`, `1.797693134862316E+308` |
+| `CASE` with `QUANTIZE(..., DECFLOAT(0))` for whole numbers below 1E15 | the same, but `1E+15` and `-0`; the column three times |
+
+`DECFLOAT(16)` keeps 16 significant digits, so a value that needs 17 (0.1 + 0.2) loses its last digit.
 
 **Row locks** (`probes/qtemp_select_for_update.py`): **syntax only**: `CMT=0` on an unjournaled table, one
 job, so it shows nothing about what is locked.

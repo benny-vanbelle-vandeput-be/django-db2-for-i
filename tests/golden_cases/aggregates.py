@@ -115,6 +115,17 @@ STRING_AGG_CASES: tuple[Case, ...] = (
         ),
         (AUTHOR, BOOK),
     ),
+    # distinct with a separator (supports_aggregate_distinct_multiple_argument).
+    Case(
+        "aggregates/string_agg_distinct",
+        "query",
+        select(
+            lambda: Author.objects.annotate(
+                x=StringAgg("book__title", Value(", "), distinct=True)
+            ).values("x")
+        ),
+        (AUTHOR, BOOK),
+    ),
 )
 if StringAgg is not None:
     CASES += STRING_AGG_CASES

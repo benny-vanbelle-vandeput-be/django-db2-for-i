@@ -124,6 +124,72 @@ comparisons use Django's expanded form (``a = x AND b = y OR ...``, ``a > x OR
 result is the same, NULLs included. Against a subquery they go through
 Django's own SQL (native IN; comparisons raise NotSupportedError, as
 ``supports_tuple_comparison_against_subquery`` is off).
+
+Database functions
+------------------
+Where Db2 for i differs from Django's default SQL (probe ``db_functions``):
+
+- ``Length``: ``LENGTH`` counts UTF-16 code units (an emoji is 2);
+  ``CHARACTER_LENGTH`` counts characters.
+- ``Log(a, b)``: Db2 for i's ``LOG`` takes one argument, so ``LN(b) / LN(a)``.
+- ``Concat``: ``CONCAT`` takes two arguments (Django's ``ConcatPair`` gives it
+  two) and is NULL when either is; Django's ``Concat`` treats NULL as empty
+  text, so each argument that can be NULL (all but a non-NULL ``Value`` and an
+  inner ``ConcatPair``) is wrapped in ``COALESCE(<arg>, '')``.
+- ``ATan2(y, x)``: Db2 for i's ``ATAN2`` takes x first, so the arguments are
+  swapped.
+- ``MD5``, ``SHA1``, ``SHA256``, ``SHA512``: ``HASH_MD5`` ... ``HASH_SHA512``
+  over the text as UTF-8, ``LOWER(HEX(HASH_<x>(CAST(<expr> AS CLOB(2G) CCSID
+  1208))))``, which gives Python's ``hashlib`` result, also for an ``NCLOB``
+  (probe ``db_function_args``).
+- ``LPad``, ``RPad``, ``Repeat``: a ``Value(None)`` argument is an untyped
+  NULL, which they refuse (SQL0171); it is cast to NVARCHAR (the text) or
+  INTEGER (``Repeat``'s number).
+- ``Cast`` of a number to a ``DecimalField`` with ``decimal_places``: Db2 for
+  i's ``CAST`` cuts off (2.55 to 2.5, probe ``db_functions``), Django rounds,
+  so the number is rounded first: ``CAST(ROUND(<x>, <places>) AS DECIMAL(p,
+  s))``, a DOUBLE through ``DECFLOAT(34)`` (``ROUND`` of a DOUBLE stays binary,
+  and the cast then cuts -1.92999... to -1.92; probe ``db_function_args``).
+  ``ROUND`` takes halves away from zero, as Django expects without
+  ``rounds_to_even``.
+- ``Cast`` of a float to text: Db2 for i writes a DOUBLE as ``3E0``; through
+  ``DECFLOAT(16)`` plus 0 (the exponent becomes 0) it is ``3``, ``4.5`` and
+  ``300``, as on Django's other backends, with 16 significant digits (probe
+  ``float_text``).
+- ``Reverse``,``SHA224``, ``SHA384``: Db2 for i has no ``REVERSE``,
+  ``HASH_SHA224`` or ``HASH_SHA384`` (SQL0204), so they raise
+  NotSupportedError rather than a workaround that could give other results.
+
+Window functions
+----------------
+Probe ``window``: every window function, partitions and frames work, but
+
+- ``Lag`` / ``Lead``: the offset must be a constant (a marker is SQL0104, a
+  typed one SQL0199), so a whole-number ``Value`` is written as a literal;
+- ``NthValue``: the position takes a plain marker but not a typed one
+  (SQL0171), and ``Value`` writes typed markers, so it is a literal too;
+- ``PercentRank``, ``CumeDist``: Db2 for i gives a DECFLOAT, which the driver
+  fetches as text, so the window is cast to DOUBLE (Django's ``FloatField``).
+
+JSONField
+---------
+An NCLOB holding the JSON text (no CHECK: ``IS JSON`` is refused there, probe
+``lib_json_check``). The lookups follow Django's Oracle code with Db2 for i's
+functions (probe ``json_lookups``):
+
+- ``data__key``: ``JSON_QUERY(<col>, '<path>')``, the key's JSON text, strings
+  with their quotes, which ``JSONField.from_db_value`` decodes; NULL for JSON
+  null and a missing key. ``KT()``: ``JSON_QUERY ... OMIT QUOTES``. The path is
+  an SQL literal, not a marker, so the select list and GROUP BY match.
+- ``has_key``, ``has_keys``, ``has_any_keys``, ``key__isnull``: ``JSON_EXISTS``.
+- ``key__exact``, ``key__in``: the right-hand side's JSON through
+  ``JSON_QUERY(JSON_OBJECT('value' VALUE ? FORMAT JSON), '$.value')``, so both
+  sides are compact JSON text; JSON null as "the key exists and JSON_QUERY is
+  NULL".
+- ``key__lt`` and the other comparisons with a number: ``JSON_VALUE(...
+  RETURNING DECFLOAT(34))`` (JSON text compares as text).
+- ``JSONObject``, ``JSONArray``: ``JSON_OBJECT`` / ``JSON_ARRAY`` returning an
+  NCLOB, JSON values with ``FORMAT JSON``, NULL elements kept as JSON null.
 """
 
 from __future__ import annotations
@@ -142,6 +208,7 @@ from django.db.models import (
     DecimalField,
     FloatField,
     IntegerField,
+    JSONField,
     TextField,
     When,
 )
@@ -157,6 +224,20 @@ from django.db.models.expressions import (
     OrderBy,
     RawSQL,
     Value,
+    Window,
+)
+from django.db.models.fields.json import (
+    HasKeyLookup,
+    HasKeyOrArrayIndex,
+    KeyTextTransform,
+    KeyTransform,
+    KeyTransformExact,
+    KeyTransformGt,
+    KeyTransformGte,
+    KeyTransformIn,
+    KeyTransformIsNull,
+    KeyTransformLt,
+    KeyTransformLte,
 )
 from django.db.models.fields.tuple_lookups import (
     TupleGreaterThan,
@@ -165,7 +246,31 @@ from django.db.models.fields.tuple_lookups import (
     TupleLessThan,
     TupleLessThanOrEqual,
 )
-from django.db.models.functions import Cast
+from django.db.models.functions import (
+    MD5,
+    SHA1,
+    SHA224,
+    SHA256,
+    SHA384,
+    SHA512,
+    ATan2,
+    Cast,
+    Coalesce,
+    ConcatPair,
+    CumeDist,
+    JSONArray,
+    JSONObject,
+    Lag,
+    Lead,
+    Length,
+    Log,
+    LPad,
+    NthValue,
+    PercentRank,
+    Repeat,
+    Reverse,
+    RPad,
+)
 from django.db.models.lookups import (
     Exact,
     GreaterThan,
@@ -180,7 +285,7 @@ from django.db.models.lookups import (
 from django.db.models.sql.query import Query
 from django.db.models.sql.where import WhereNode
 
-from .compat import DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON, StringAgg
+from .compat import DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON, JSONIn, StringAgg
 
 SMALLINT_RANGE = (-(2**15), 2**15 - 1)
 INTEGER_RANGE = (-(2**31), 2**31 - 1)
@@ -214,6 +319,7 @@ SUPPORTED_TYPES = frozenset(
         "UUIDField",
         "DurationField",
         "GenericIPAddressField",
+        "JSONField",
     }
 )
 
@@ -329,6 +435,9 @@ def value_cast_type(
             # with CWB0111; probe long_string_params), so its own bucket.
             return string_type(utf16_length(value))
         return f"NVARCHAR({max_length})"
+    if internal == "JSONField":
+        # The JSON text (JSONField.get_db_prep_value), as for a TextField.
+        return string_type(utf16_length(value) if value is not None else 0)
     if isinstance(output_field, DecimalField) and output_field.max_digits is None:
         return decimal_type(Decimal(value)) if value is not None else "DECIMAL(31, 0)"
     if not explicit and type(output_field) is IntegerField and isinstance(value, int):
@@ -778,3 +887,399 @@ def duration_expression_as_db2_for_i(self, compiler, connection):
 
 
 DurationExpression.as_db2_for_i = duration_expression_as_db2_for_i
+
+
+# --- Database functions -------------------------------------------------------------------
+
+
+def length_as_db2_for_i(self, compiler, connection, **extra_context):
+    return self.as_sql(compiler, connection, function="CHARACTER_LENGTH", **extra_context)
+
+
+Length.as_db2_for_i = length_as_db2_for_i
+
+
+def log_as_db2_for_i(self, compiler, connection, **extra_context):
+    base, number = self.get_source_expressions()
+    base_sql, base_params = compiler.compile(base)
+    number_sql, number_params = compiler.compile(number)
+    return f"(LN({number_sql}) / LN({base_sql}))", (*number_params, *base_params)
+
+
+Log.as_db2_for_i = log_as_db2_for_i
+
+
+def concat_pair_as_db2_for_i(self, compiler, connection, **extra_context):
+    clone = self.copy()
+    clone.set_source_expressions(
+        [
+            expression
+            if isinstance(expression, ConcatPair)
+            or (isinstance(expression, Value) and expression.value is not None)
+            else Coalesce(expression, Value(""))
+            for expression in clone.get_source_expressions()
+        ]
+    )
+    return clone.as_sql(compiler, connection, **extra_context)
+
+
+ConcatPair.as_db2_for_i = concat_pair_as_db2_for_i
+
+
+def _not_supported(function: str):
+    def as_db2_for_i(self, compiler, connection, **extra_context):
+        raise NotSupportedError(
+            f"Db2 for i backend: {function} is not supported (Db2 for i has no such function)."
+        )
+
+    return as_db2_for_i
+
+
+Reverse.as_db2_for_i = _not_supported("Reverse")
+SHA224.as_db2_for_i = _not_supported("SHA224")
+SHA384.as_db2_for_i = _not_supported("SHA384")
+
+
+def atan2_as_db2_for_i(self, compiler, connection, **extra_context):
+    clone = self.copy()
+    clone.set_source_expressions(self.get_source_expressions()[::-1])
+    return clone.as_sql(compiler, connection, **extra_context)
+
+
+ATan2.as_db2_for_i = atan2_as_db2_for_i
+
+
+def _hash(function: str):
+    template = f"LOWER(HEX({function}(CAST(%(expressions)s AS CLOB(2G) CCSID 1208))))"
+
+    def as_db2_for_i(self, compiler, connection, **extra_context):
+        return self.as_sql(compiler, connection, template=template, **extra_context)
+
+    return as_db2_for_i
+
+
+MD5.as_db2_for_i = _hash("HASH_MD5")
+SHA1.as_db2_for_i = _hash("HASH_SHA1")
+SHA256.as_db2_for_i = _hash("HASH_SHA256")
+SHA512.as_db2_for_i = _hash("HASH_SHA512")
+
+
+def _typed_nulls(*fields):
+    """``as_db2_for_i`` that casts an untyped ``Value(None)`` argument to the
+    field of its position, which the function refuses otherwise (SQL0171)."""
+
+    def as_db2_for_i(self, compiler, connection, **extra_context):
+        expressions = self.get_source_expressions()
+        typed = [
+            Value(None, output_field=field)
+            if field is not None
+            and isinstance(expression, Value)
+            and expression.value is None
+            and expression._output_field_or_none is None
+            else expression
+            for expression, field in zip(
+                expressions, (*fields, *[None] * len(expressions))[: len(expressions)], strict=True
+            )
+        ]
+        if typed == expressions:
+            return self.as_sql(compiler, connection, **extra_context)
+        clone = self.copy()
+        clone.set_source_expressions(typed)
+        return clone.as_sql(compiler, connection, **extra_context)
+
+    return as_db2_for_i
+
+
+LPad.as_db2_for_i = _typed_nulls(CharField())
+RPad.as_db2_for_i = _typed_nulls(CharField())
+Repeat.as_db2_for_i = _typed_nulls(CharField(), IntegerField())
+
+
+NUMERIC_TYPES = frozenset({"FloatField", "DecimalField"})
+
+
+def cast_as_db2_for_i(self, compiler, connection, **extra_context):
+    output_field = self.output_field
+    (source,) = self.get_source_expressions()
+    if (
+        isinstance(output_field, DecimalField)
+        and output_field.decimal_places is not None
+        and _internal_type_or_none(source) in NUMERIC_TYPES
+    ):
+        source_sql, source_params = compiler.compile(source)
+        if _internal_type_or_none(source) == "FloatField":
+            # ROUND of a DOUBLE stays binary: -1.93 is -1.92999..., cut to -1.92.
+            source_sql = f"CAST({source_sql} AS DECFLOAT(34))"
+        cast_type = output_field.cast_db_type(connection)
+        sql = f"CAST(ROUND({source_sql}, {int(output_field.decimal_places)}) AS {cast_type})"
+        return sql, source_params
+    if isinstance(output_field, (CharField, TextField)) and _internal_type_or_none(source) == (
+        "FloatField"
+    ):
+        # A DOUBLE as text is 3E0; through DECFLOAT(16) it is 3, 4.5, 0.1, and
+        # adding 0 sets the exponent to 0, so 300 is not 3E+2 (probe float_text).
+        source_sql, source_params = compiler.compile(source)
+        cast_type = output_field.cast_db_type(connection)
+        return f"CAST(CAST({source_sql} AS DECFLOAT(16)) + 0 AS {cast_type})", source_params
+    return self.as_sql(compiler, connection, **extra_context)
+
+
+Cast.as_db2_for_i = cast_as_db2_for_i
+
+
+# --- Window functions ---------------------------------------------------------------------
+
+
+class IntegerLiteral(Expression):
+    """A whole number written into the SQL, where Db2 for i takes only a constant."""
+
+    def __init__(self, value: int):
+        super().__init__(output_field=IntegerField())
+        self.value = int(value)
+
+    def as_sql(self, compiler, connection):
+        return str(self.value), ()
+
+
+def _literal_argument(position: int):
+    """``as_db2_for_i`` writing the whole-number ``Value`` at ``position`` as a literal."""
+
+    def as_db2_for_i(self, compiler, connection, **extra_context):
+        sources = self.get_source_expressions()
+        argument = sources[position]
+        if (
+            isinstance(argument, Value)
+            and isinstance(argument.value, int)
+            and not isinstance(argument.value, bool)
+        ):
+            clone = self.copy()
+            sources[position] = IntegerLiteral(argument.value)
+            clone.set_source_expressions(sources)
+            return clone.as_sql(compiler, connection, **extra_context)
+        return self.as_sql(compiler, connection, **extra_context)
+
+    return as_db2_for_i
+
+
+Lag.as_db2_for_i = _literal_argument(1)
+Lead.as_db2_for_i = _literal_argument(1)
+NthValue.as_db2_for_i = _literal_argument(1)
+
+
+def window_as_db2_for_i(self, compiler, connection, template=None):
+    sql, params = self.as_sql(compiler, connection, template=template)
+    if isinstance(self.source_expression, (PercentRank, CumeDist)):
+        sql = f"CAST({sql} AS DOUBLE)"
+    return sql, params
+
+
+Window.as_db2_for_i = window_as_db2_for_i
+
+
+# --- JSONField ---------------------------------------------------------------------------
+
+
+def _json_path_sql(path: str) -> tuple[str, tuple]:
+    """A JSON path as SQL: a string literal where it can be one (the select list
+    and GROUP BY then match), a marker for characters above U+FFFE and U+FFFF,
+    which a literal in the statement loses (probe json_lookups). ``%`` doubled
+    for the placeholder conversion."""
+    if any(ord(char) >= 0xFFFF for char in path):
+        return "%s", (path,)
+    return "'" + path.replace("'", "''").replace("%", "%%") + "'", ()
+
+
+def _key_transform_parts(transform, compiler, connection):
+    lhs, params, key_transforms = transform.preprocess_lhs(compiler, connection)
+    path_sql, path_params = _json_path_sql(connection.ops.compile_json_path(key_transforms))
+    return lhs, (*params, *path_params), path_sql
+
+
+def key_transform_as_db2_for_i(self, compiler, connection):
+    """``data__key``: the key's JSON text (strings keep their quotes), which
+    JSONField.from_db_value decodes; NULL for JSON null and a missing key
+    (probe json_lookups)."""
+    lhs, params, path = _key_transform_parts(self, compiler, connection)
+    return f"JSON_QUERY({lhs}, {path})", params
+
+
+def key_text_transform_as_db2_for_i(self, compiler, connection):
+    """``KT("data__key")``: a string without its quotes, other values as JSON text."""
+    lhs, params, path = _key_transform_parts(self, compiler, connection)
+    # An NCLOB, not JSON_QUERY's CLOB: LISTAGG refuses a CLOB with an NVARCHAR
+    # separator (SQL0171; probe json_lookups).
+    return f"JSON_QUERY({lhs}, {path} RETURNING NCLOB(1M) OMIT QUOTES)", params
+
+
+KeyTransform.as_db2_for_i = key_transform_as_db2_for_i
+KeyTextTransform.as_db2_for_i = key_text_transform_as_db2_for_i
+
+
+def _has_key_paths(lookup, compiler, connection):
+    """Django's HasKeyLookup._as_sql_parts with this backend's path keys (Django
+    json.dumps the final key, which a Db2 for i path does not read)."""
+    if isinstance(lookup.lhs, KeyTransform):
+        lhs_sql, lhs_params, lhs_keys = lookup.lhs.preprocess_lhs(compiler, connection)
+    else:
+        (lhs_sql, lhs_params), lhs_keys = lookup.process_lhs(compiler, connection), []
+    keys = lookup.rhs if isinstance(lookup.rhs, (list, tuple)) else [lookup.rhs]
+    for key in keys:
+        if isinstance(key, KeyTransform):
+            *_, rhs_keys = key.preprocess_lhs(compiler, connection)
+        else:
+            rhs_keys = [key]
+        *rhs_keys, final_key = rhs_keys
+        path = connection.ops.compile_json_path([*lhs_keys, *rhs_keys])
+        if isinstance(lookup, HasKeyOrArrayIndex):
+            path += connection.ops.compile_json_path([final_key], include_root=False)
+        else:
+            path += connection.ops.compile_json_path_key(str(final_key))
+        yield lhs_sql, tuple(lhs_params), path
+
+
+def has_key_lookup_as_db2_for_i(self, compiler, connection, template=None):
+    parts, params = [], []
+    for lhs_sql, lhs_params, path in _has_key_paths(self, compiler, connection):
+        path_sql, path_params = _json_path_sql(path)
+        parts.append(f"JSON_EXISTS({lhs_sql}, {path_sql})")
+        params.extend((*lhs_params, *path_params))
+    return self._combine_sql_parts(parts), tuple(params)
+
+
+HasKeyLookup.as_db2_for_i = has_key_lookup_as_db2_for_i
+
+
+def key_transform_isnull_as_db2_for_i(self, compiler, connection):
+    """``data__key__isnull=False`` is has_key; ``=True`` is "no such key, or no
+    document" (as Django's Oracle code)."""
+    sql, params = HasKeyOrArrayIndex(self.lhs.lhs, self.lhs.key_name).as_db2_for_i(
+        compiler, connection
+    )
+    if not self.rhs:
+        return sql, params
+    lhs, lhs_params, _ = self.lhs.preprocess_lhs(compiler, connection)
+    return f"(NOT {sql} OR {lhs} IS NULL)", (*params, *lhs_params)
+
+
+KeyTransformIsNull.as_db2_for_i = key_transform_isnull_as_db2_for_i
+
+
+def _normalized_json(param: str) -> str:
+    """The JSON text of a marker as JSON_QUERY writes it (compact), so it
+    compares equal to a key's JSON_QUERY (probe json_lookups)."""
+    cast = string_type(utf16_length(param))
+    return f"JSON_QUERY(JSON_OBJECT('value' VALUE CAST(%s AS {cast}) FORMAT JSON), '$.value')"
+
+
+def _normalized_rhs(rhs: str, rhs_params) -> str:
+    if rhs.count("%s") != len(rhs_params) or not all(isinstance(p, str) for p in rhs_params):
+        return rhs
+    return rhs % tuple(_normalized_json(param) for param in rhs_params)
+
+
+def key_transform_exact_as_db2_for_i(self, compiler, connection):
+    if isinstance(self.rhs, KeyTransform):
+        return self.as_sql(compiler, connection)
+    lhs, lhs_params = self.process_lhs(compiler, connection)
+    rhs, rhs_params = self.process_rhs(compiler, connection)
+    if tuple(rhs_params) == ("null",):
+        # JSON null: the key exists and JSON_QUERY gives NULL for it.
+        has_key = HasKeyOrArrayIndex(self.lhs.lhs, self.lhs.key_name)
+        has_key_sql, has_key_params = has_key.as_db2_for_i(compiler, connection)
+        # Unknown, not false, without the key (as on PostgreSQL), so that
+        # exclude(data__key=None) leaves out documents without it too.
+        return (
+            f"CASE WHEN {has_key_sql} THEN 1 END = 1 AND {lhs} IS NULL",
+            (*has_key_params, *lhs_params),
+        )
+    return f"{lhs} = {_normalized_rhs(rhs, rhs_params)}", (*lhs_params, *rhs_params)
+
+
+KeyTransformExact.as_db2_for_i = key_transform_exact_as_db2_for_i
+
+
+def key_transform_in_as_db2_for_i(self, compiler, connection):
+    lhs, lhs_params = self.process_lhs(compiler, connection)
+    rhs, rhs_params = self.process_rhs(compiler, connection)
+    return f"{lhs} IN {_normalized_rhs(rhs, rhs_params)}", (*lhs_params, *rhs_params)
+
+
+KeyTransformIn.as_db2_for_i = key_transform_in_as_db2_for_i
+
+
+def json_in_as_db2_for_i(self, compiler, connection):
+    """``data__in=[...]`` on the whole document (Django 6.1): both sides as
+    compact JSON text, so whitespace in a stored document does not matter."""
+    if isinstance(self.lhs, KeyTransform):
+        return key_transform_in_as_db2_for_i(self, compiler, connection)
+    lhs, lhs_params = self.process_lhs(compiler, connection)
+    rhs, rhs_params = self.process_rhs(compiler, connection)
+    lhs = f"JSON_QUERY({lhs}, '$')"
+    return f"{lhs} IN {_normalized_rhs(rhs, rhs_params)}", (*lhs_params, *rhs_params)
+
+
+if JSONIn is not None:
+    JSONIn.as_db2_for_i = json_in_as_db2_for_i
+
+
+def _is_number(value) -> bool:
+    return isinstance(value, (int, float, Decimal)) and not isinstance(value, bool)
+
+
+def key_transform_numeric_as_db2_for_i(self, compiler, connection):
+    """``data__key__lt=2``: the key as a number (DECFLOAT(34); NULL for any other
+    value), as JSON text would compare as text (probe json_lookups)."""
+    rhs, rhs_params = self.process_rhs(compiler, connection)
+    if not (rhs_params and all(_is_number(param) for param in rhs_params)):
+        return self.as_sql(compiler, connection)
+    lhs, lhs_params, path = _key_transform_parts(self.lhs, compiler, connection)
+    lhs = f"JSON_VALUE({lhs}, {path} RETURNING DECFLOAT(34))"
+    operator = connection.operators[self.lookup_name] % rhs
+    return f"{lhs} {operator}", (*lhs_params, *rhs_params)
+
+
+for _lookup in (KeyTransformLt, KeyTransformLte, KeyTransformGt, KeyTransformGte):
+    _lookup.as_db2_for_i = key_transform_numeric_as_db2_for_i
+
+
+def _json_value_sql(expression, compiler) -> tuple[str, tuple]:
+    """A JSONObject value or JSONArray element; JSON (a JSONField, a nested
+    JSONObject or JSONArray) with FORMAT JSON, else it would be a string."""
+    sql, params = compiler.compile(expression)
+    if isinstance(expression._output_field_or_none, JSONField):
+        sql += " FORMAT JSON"
+    return sql, tuple(params)
+
+
+def json_object_as_db2_for_i(self, compiler, connection, **extra_context):
+    """``JSON_OBJECT((<key>) VALUE <value>, ... RETURNING NCLOB(1M))``; SQL NULL
+    values are JSON null, Db2 for i's default (probe json_lookups)."""
+    if not connection.features.has_json_object_function:
+        return self.as_sql(compiler, connection, **extra_context)  # raises
+    sources = self.get_source_expressions()
+    parts, params = [], []
+    for key, value in zip(sources[::2], sources[1::2], strict=True):
+        key_sql, key_params = compiler.compile(key)
+        value_sql, value_params = _json_value_sql(value, compiler)
+        parts.append(f"({key_sql}) VALUE {value_sql}")
+        params += [*key_params, *value_params]
+    body = f"{', '.join(parts)} " if parts else ""
+    return f"JSON_OBJECT({body}RETURNING NCLOB(1M))", tuple(params)
+
+
+def json_array_as_db2_for_i(self, compiler, connection, **extra_context):
+    """``JSON_ARRAY(<element>, ... NULL ON NULL RETURNING NCLOB(1M))``: Db2 for
+    i leaves out NULL elements by default, Django keeps them as JSON null."""
+    if not connection.features.supports_json_field:
+        return self.as_sql(compiler, connection, **extra_context)  # raises
+    parts, params = [], []
+    for element in self.get_source_expressions():
+        sql, element_params = _json_value_sql(element, compiler)
+        parts.append(sql)
+        params += element_params
+    body = f"{', '.join(parts)} NULL ON NULL " if parts else ""
+    return f"JSON_ARRAY({body}RETURNING NCLOB(1M))", tuple(params)
+
+
+JSONObject.as_db2_for_i = json_object_as_db2_for_i
+JSONArray.as_db2_for_i = json_array_as_db2_for_i

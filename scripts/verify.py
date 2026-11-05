@@ -2,6 +2,7 @@
 
     python scripts/verify.py triage <django>
     python scripts/verify.py select <django> [--base origin/main] [--max-labels 60] [--max-runs 20]
+                                    [--full-own-done-on <django>]
     python scripts/verify.py finish <django> [--updated] [--no-stamp]
 
 ``triage`` reads the JUnit reports of the offline run and the corpus replay
@@ -402,7 +403,16 @@ def unverifiable_names(django: str) -> list[str]:
     return list(reasons(django))
 
 
-def select(django: str, base: str, max_labels: int = MAX_LABELS, max_runs: int = MAX_RUNS) -> int:
+def select(
+    django: str,
+    base: str,
+    max_labels: int = MAX_LABELS,
+    max_runs: int = MAX_RUNS,
+    full_own_done_on: str | None = None,
+) -> int:
+    """``full_own_done_on``: the Django version on which the full own tier ran
+    for the same commit; it is then not repeated here (a final cycle on several
+    versions: the full own tier once, the goldens and corpus on each)."""
     directory = verify_dir(django)
     directory.mkdir(parents=True, exist_ok=True)
     base_commit = merge_base(base)
@@ -425,7 +435,8 @@ def select(django: str, base: str, max_labels: int = MAX_LABELS, max_runs: int =
         names = directory / "goldens.txt"
         names.write_text("".join(f"{name}\n" for name in goldens))
         lines.append(["goldens", str(names.relative_to(ROOT))])
-    if own.full:
+    skip_full = bool(own.full and full_own_done_on)
+    if own.full and not skip_full:
         lines.append(["own", "full"])
     elif own.tests:
         lines.append(["own", *own.tests])
@@ -440,6 +451,7 @@ def select(django: str, base: str, max_labels: int = MAX_LABELS, max_runs: int =
                 "goldens": goldens,
                 "unverified_goldens": unverified,
                 "own_full": own.full,
+                "own_full_done_on": full_own_done_on if skip_full else None,
                 "own_tests": own.tests,
                 "corpus_test_ids": corpus_ids,
                 "unlisted_test_ids": unlisted,
@@ -452,7 +464,12 @@ def select(django: str, base: str, max_labels: int = MAX_LABELS, max_runs: int =
 
     print(f"verify: against {base} ({base_commit[:10]}), Django {django}")
     print(f"  goldens: {len(goldens)} (unverified, with their create goldens)")
-    if own.full:
+    if skip_full:
+        print(
+            f"  own IBM i tests: the full tier ({own.full}) not repeated: it ran on Django "
+            f"{full_own_done_on} (--full-own-done-on)"
+        )
+    elif own.full:
         print(f"  own IBM i tests: the full tier ({own.full})")
     else:
         print(f"  own IBM i tests: {len(own.tests)} new or changed")
@@ -574,6 +591,11 @@ def finish(django: str, updated: bool, stamp: bool = True) -> int:
             "",
         ]
     lines.append(f"IBM i runs: {len(results)} of {len(planned)}, {len(failed)} failed")
+    if selection.get("own_full_done_on"):
+        lines.append(
+            "  own IBM i tests: the full tier not repeated, it ran on Django "
+            f"{selection['own_full_done_on']} (--full-own-done-on)"
+        )
     for kind, args in failed:
         lines.append(f"  FAILED: {kind} {args}")
     if not_run:
@@ -613,6 +635,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     selecting.add_argument("--base", default="origin/main")
     selecting.add_argument("--max-labels", type=int, default=MAX_LABELS)
     selecting.add_argument("--max-runs", type=int, default=MAX_RUNS)
+    selecting.add_argument(
+        "--full-own-done-on",
+        metavar="DJANGO",
+        help="the full own IBM i tier ran on this Django version: do not repeat it",
+    )
     finishing = commands.add_parser("finish")
     finishing.add_argument("django")
     finishing.add_argument("--updated", action="store_true", help="the offline step wrote new SQL")
@@ -621,7 +648,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "triage":
         return triage(args.django)
     if args.command == "select":
-        return select(args.django, args.base, args.max_labels, args.max_runs)
+        return select(args.django, args.base, args.max_labels, args.max_runs, args.full_own_done_on)
     return finish(args.django, args.updated, stamp=not args.no_stamp)
 
 

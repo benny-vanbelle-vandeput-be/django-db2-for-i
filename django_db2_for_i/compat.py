@@ -31,20 +31,30 @@ if django.VERSION >= (6, 0):
 else:
     StringAgg = None
 
+# JSONField__in on the whole document is its own lookup from Django 6.1
+# (django.db.models.fields.json.JSONIn); before, Django's In serves it.
+if django.VERSION >= (6, 1):
+    from django.db.models.fields.json import JSONIn
+else:
+    JSONIn = None
+
 # Expected failures of features.py that pass on this Django version only
 # (docs/DECISIONS.md, "The first per-version expected-failure list"). None
 # since CPA32B2 is suppressed in migrations: the two schema tests that narrowed
 # BigAutoField to INTEGER only from 6.0 on now pass everywhere.
 PASSING_ON_THIS_VERSION: frozenset[str] = frozenset()
 
-# Expected failures of features.py on this Django version only. Django 6.0
-# added skipUnlessDBFeature("supports_json_field") to this test; 5.2 runs it,
-# and it fails on its JSONField db_default (phase 6). When 5.2 is dropped:
-# remove this and the features.py entry.
-FAILING_ON_THIS_VERSION_ONLY: frozenset[str] = (
+# Before Django 6.1, Trunc's own converter takes a NULL from a truncated
+# datetime with USE_TZ for a missing time zone database when
+# has_zoneinfo_database is off, and raises ValueError. 6.1 moved that check to
+# DatabaseOperations.convert_trunc_expression(), which the backend overrides
+# (a NULL stays None). When 6.0 is dropped: remove this and the features.py entry.
+TRUNC_NULL_FAILING: frozenset[str] = (
     frozenset()
-    if django.VERSION >= (6, 0)
-    else frozenset({"schema.tests.SchemaTests.test_db_default_output_field_resolving"})
+    if django.VERSION >= (6, 1)
+    else frozenset(
+        {"db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_none"}
+    )
 )
 
 # Django 6.0 refuses a composite field compared with a subquery (>, >=, <, <=)

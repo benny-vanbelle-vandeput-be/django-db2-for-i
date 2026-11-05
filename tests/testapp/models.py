@@ -196,3 +196,10 @@ class TitledBase(models.Model):
 class Article(TimestampedMixin, TitledBase):
     body = models.CharField(max_length=100)
     rank = models.IntegerField(default=0)
+
+
+class JSONDoc(models.Model):
+    """A JSONField (an NCLOB): key lookups, has_key, JSON null (phase 6)."""
+
+    name = models.CharField(max_length=20)
+    data = models.JSONField(null=True)
