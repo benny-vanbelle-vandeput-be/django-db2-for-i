@@ -233,7 +233,7 @@ prs = [227]
 
 [[phases.steps]]
 step = "Close-out: supported modules, phase record"
-status = "planned"
+status = "in progress"
 
 [[phases]]
 phase = "7"
@@ -311,11 +311,19 @@ status = "done"
 
 [[modules]]
 module = "db_functions"
-status = "in progress"
+status = "done"
 
 [[modules]]
 module = "expressions_window"
-status = "in progress"
+status = "done"
+
+[[modules]]
+module = "model_fields"
+status = "done"
+# The JSONField label only (phase 6, answer 5); the whole module is measured
+# once, for information, in docs/phases/phase-6.md.
+labels = ["model_fields.test_jsonfield"]
+note = "the JSONField label only"
 
 [[modules]]
 module = "queries"
