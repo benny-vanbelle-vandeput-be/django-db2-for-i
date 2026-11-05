@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3120 | 2 | 0 | 0 | 2026-11-02 19:50:41 UTC |
-| IBM i tests | 374 | 0 | 1 | 0 | 2026-11-01 13:02:45 UTC |
-| Django suite on IBM i | 2314 | 205 | 63 | 0 | 2026-11-02 14:31:45 UTC |
-| Replay tests | 2648 | 0 | 0 | 0 | 2026-11-02 19:51:31 UTC |
+| Offline tests | 3428 | 2 | 0 | 0 | 2026-11-05 06:34:13 UTC |
+| IBM i tests | 416 | 0 | 1 | 0 | 2026-11-05 11:08:54 UTC |
+| Django suite on IBM i | 2715 | 229 | 84 | 0 | 2026-11-05 06:21:35 UTC |
+| Replay tests | 2648 | 0 | 0 | 0 | 2026-11-05 06:35:14 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3121 | 1 | 0 | 0 | 2026-11-02 19:46:45 UTC |
-| IBM i tests | 374 | 0 | 1 | 0 | 2026-11-01 10:32:42 UTC |
-| Django suite on IBM i | 2218 | 183 | 64 | 0 | 2026-11-02 16:30:27 UTC |
-| Replay tests | 2588 | 0 | 0 | 0 | 2026-11-02 19:47:29 UTC |
+| Offline tests | 3429 | 1 | 0 | 0 | 2026-11-05 11:43:58 UTC |
+| IBM i tests | 19 | 0 | 0 | 0 | 2026-11-05 11:50:53 UTC |
+| Django suite on IBM i | 2608 | 213 | 82 | 0 | 2026-11-05 03:48:27 UTC |
+| Replay tests | 2588 | 0 | 0 | 0 | 2026-11-05 11:49:44 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3119 | 1 | 0 | 0 | 2026-11-02 19:42:39 UTC |
-| IBM i tests | 369 | 3 | 1 | 0 | 2026-11-01 08:06:56 UTC |
-| Django suite on IBM i | 2175 | 176 | 65 | 0 | 2026-11-02 18:13:48 UTC |
-| Replay tests | 2540 | 0 | 0 | 0 | 2026-11-02 19:43:24 UTC |
+| Offline tests | 3426 | 1 | 0 | 0 | 2026-11-05 11:53:52 UTC |
+| IBM i tests | 19 | 0 | 0 | 0 | 2026-11-05 11:55:34 UTC |
+| Django suite on IBM i | 2564 | 207 | 83 | 0 | 2026-11-05 04:44:38 UTC |
+| Replay tests | 2540 | 0 | 0 | 0 | 2026-11-05 11:54:45 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,10 +73,10 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-11-01 05:59:34 UTC to 2026-11-02 18:13:48 UTC
+- **Runs:** 2026-11-01 05:59:34 UTC to 2026-11-05 06:21:35 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
 - **Python:** 3.14.8
-- **Backend commits:** 42f2123 2026-11-01, 5d73708 2026-11-02 (per module in the table)
+- **Backend commits:** 05c7198 2026-11-02, fa334b3 2026-11-04, 1e75b78 2026-11-05, 42f2123 2026-11-01, 5d73708 2026-11-02 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
@@ -85,9 +85,9 @@ The Django suite on IBM i per module and Django version.
 
 | Module | Django | Tests | Passed | Failures | Errors | Skipped | Expected failures | Unexpected successes | Result | Run | Backend commit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| aggregation | 5.2 | 140 | 139 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-02 17:50:17 UTC | 5d73708 2026-11-02 |
-| aggregation | 6.0 | 156 | 151 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-02 15:51:17 UTC | 5d73708 2026-11-02 |
-| aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-11-02 13:58:55 UTC | 5d73708 2026-11-02 |
+| aggregation | 5.2 | 140 | 140 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-05 04:37:39 UTC | 1e75b78 2026-11-05 |
+| aggregation | 6.0 | 156 | 153 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-05 03:41:52 UTC | 1e75b78 2026-11-05 |
+| aggregation | 6.1 | 168 | 154 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-05 02:41:51 UTC | 1e75b78 2026-11-05 |
 | basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-01 05:59:34 UTC | 42f2123 2026-11-01 |
 | basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-01 08:08:05 UTC | 42f2123 2026-11-01 |
 | basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-01 10:34:09 UTC | 42f2123 2026-11-01 |
@@ -97,18 +97,24 @@ The Django suite on IBM i per module and Django version.
 | constraints | 5.2 | 103 | 89 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-01 07:21:15 UTC | 42f2123 2026-11-01 |
 | constraints | 6.0 | 101 | 87 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-01 09:46:03 UTC | 42f2123 2026-11-01 |
 | constraints | 6.1 | 102 | 87 | 0 | 0 | 15 | 0 | 0 | OK | 2026-11-01 12:15:52 UTC | 42f2123 2026-11-01 |
-| expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 17:55:23 UTC | 5d73708 2026-11-02 |
-| expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 15:58:32 UTC | 5d73708 2026-11-02 |
-| expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 14:06:29 UTC | 5d73708 2026-11-02 |
+| db_functions | 5.2 | 363 | 319 | 0 | 0 | 26 | 18 | 0 | OK | 2026-11-05 04:18:14 UTC | 1e75b78 2026-11-05 |
+| db_functions | 6.0 | 363 | 319 | 0 | 0 | 26 | 18 | 0 | OK | 2026-11-05 03:23:04 UTC | 1e75b78 2026-11-05 |
+| db_functions | 6.1 | 371 | 322 | 0 | 0 | 31 | 18 | 0 | OK | 2026-11-05 02:11:16 UTC | 1e75b78 2026-11-05 |
+| expressions | 5.2 | 208 | 204 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-05 04:44:38 UTC | 1e75b78 2026-11-05 |
+| expressions | 6.0 | 212 | 208 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-05 03:48:27 UTC | 1e75b78 2026-11-05 |
+| expressions | 6.1 | 213 | 209 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-05 02:50:06 UTC | 1e75b78 2026-11-05 |
+| expressions_window | 5.2 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-05 04:27:19 UTC | 1e75b78 2026-11-05 |
+| expressions_window | 6.0 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-05 03:32:00 UTC | 1e75b78 2026-11-05 |
+| expressions_window | 6.1 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-05 02:24:10 UTC | 1e75b78 2026-11-05 |
 | indexes | 5.2 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-01 07:22:08 UTC | 42f2123 2026-11-01 |
 | indexes | 6.0 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-01 09:46:57 UTC | 42f2123 2026-11-01 |
 | indexes | 6.1 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-01 12:16:46 UTC | 42f2123 2026-11-01 |
 | inspectdb | 5.2 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-01 07:17:13 UTC | 42f2123 2026-11-01 |
 | inspectdb | 6.0 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-01 09:40:47 UTC | 42f2123 2026-11-01 |
-| inspectdb | 6.1 | 31 | 18 | 0 | 0 | 13 | 0 | 0 | OK | 2026-11-01 12:10:43 UTC | 42f2123 2026-11-01 |
+| inspectdb | 6.1 | 31 | 19 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-05 06:21:35 UTC | 1e75b78 2026-11-05 |
 | introspection | 5.2 | 21 | 19 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 07:14:44 UTC | 42f2123 2026-11-01 |
 | introspection | 6.0 | 21 | 19 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 09:38:13 UTC | 42f2123 2026-11-01 |
-| introspection | 6.1 | 24 | 19 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-01 12:07:48 UTC | 42f2123 2026-11-01 |
+| introspection | 6.1 | 24 | 23 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-05 05:37:57 UTC | 1e75b78 2026-11-05 |
 | lookup | 5.2 | 100 | 91 | 0 | 0 | 7 | 2 | 0 | OK | 2026-11-02 18:01:41 UTC | 5d73708 2026-11-02 |
 | lookup | 6.0 | 100 | 93 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 16:08:58 UTC | 5d73708 2026-11-02 |
 | lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 14:12:56 UTC | 5d73708 2026-11-02 |
@@ -126,10 +132,10 @@ The Django suite on IBM i per module and Django version.
 | ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 10:41:25 UTC | 42f2123 2026-11-01 |
 | queries | 5.2 | 493 | 471 | 0 | 0 | 16 | 6 | 0 | OK | 2026-11-02 18:13:48 UTC | 5d73708 2026-11-02 |
 | queries | 6.0 | 495 | 473 | 0 | 0 | 16 | 6 | 0 | OK | 2026-11-02 16:30:27 UTC | 5d73708 2026-11-02 |
-| queries | 6.1 | 506 | 485 | 0 | 0 | 16 | 5 | 0 | OK | 2026-11-02 14:31:45 UTC | 5d73708 2026-11-02 |
+| queries | 6.1 | 506 | 485 | 0 | 0 | 16 | 5 | 0 | PARTIAL (different commits 05c7198 2026-11-02, fa334b3 2026-11-04) | 2026-11-03 23:59:14 UTC | 05c7198 2026-11-02, fa334b3 2026-11-04 |
 | schema | 5.2 | 220 | 130 | 0 | 0 | 67 | 23 | 0 | OK | 2026-11-01 07:02:58 UTC | 42f2123 2026-11-01 |
 | schema | 6.0 | 222 | 131 | 0 | 0 | 69 | 22 | 0 | OK | 2026-11-01 09:24:52 UTC | 42f2123 2026-11-01 |
-| schema | 6.1 | 227 | 133 | 0 | 0 | 72 | 22 | 0 | OK | 2026-11-01 11:54:58 UTC | 42f2123 2026-11-01 |
+| schema | 6.1 | 227 | 136 | 0 | 0 | 66 | 25 | 0 | OK | 2026-11-05 05:10:47 UTC | 1e75b78 2026-11-05 |
 | transactions | 5.2 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 06:00:48 UTC | 42f2123 2026-11-01 |
 | transactions | 6.0 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 08:09:25 UTC | 42f2123 2026-11-01 |
 | transactions | 6.1 | 88 | 86 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 10:35:35 UTC | 42f2123 2026-11-01 |
@@ -138,6 +144,7 @@ The Django suite on IBM i per module and Django version.
 
 - `allow_sliced_subqueries_with_in`
 - `allows_auto_pk_0`
+- `allows_group_by_lob`
 - `can_introspect_check_constraints`
 - `can_introspect_default`
 - `can_introspect_foreign_keys`
@@ -149,26 +156,36 @@ The Django suite on IBM i per module and Django version.
 - `can_use_chunked_reads`
 - `delete_can_self_reference_subquery`
 - `has_bulk_insert`
+- `has_real_datatype`
 - `ignores_table_name_case`
+- `ignores_unnecessary_order_by_in_subqueries`
 - `implied_column_null`
 - `indexes_foreign_keys`
 - `nulls_order_largest`
 - `pattern_lookup_needs_param_pattern`
 - `requires_compound_order_by_subquery`
 - `requires_literal_defaults`
+- `supports_aggregate_distinct_multiple_argument`
 - `supports_aggregate_order_by_clause`
 - `supports_any_value`
 - `supports_boolean_expr_in_select_clause`
+- `supports_cast_with_precision`
 - `supports_column_check_constraints`
+- `supports_default_in_lead_lag`
 - `supports_default_keyword_in_bulk_insert`
 - `supports_default_keyword_in_insert`
 - `supports_expression_indexes`
 - `supports_foreign_keys`
+- `supports_frame_range_fixed_distance`
 - `supports_functions_in_partial_indexes`
 - `supports_ignore_conflicts`
 - `supports_index_column_ordering`
 - `supports_inspectdb`
 - `supports_nullable_unique_constraints`
+- `supports_on_delete_db_cascade`
+- `supports_on_delete_db_default`
+- `supports_on_delete_db_null`
+- `supports_over_clause`
 - `supports_parentheses_in_compound`
 - `supports_partial_indexes`
 - `supports_partially_nullable_unique_constraints`
@@ -194,20 +211,29 @@ The Django suite on IBM i per module and Django version.
 
 | Reason | Expected failures | Skips |
 |---|---|---|
-| Db2 for i TIME has no fractional seconds | 1 | 0 |
+| CHR and ASCII on Db2 for i work on single-byte characters; a non-ASCII character gives a substitute character (probes db_functions, db_function_args) | 2 | 0 |
+| Db2 for i TIME has no fractional seconds | 4 | 0 |
 | Db2 for i cannot change this column type in place (SQL0190) | 10 | 0 |
 | Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6) | 27 | 3 |
+| Db2 for i has no such function (REVERSE, HASH_SHA224, HASH_SHA384: SQL0204); the backend raises NotSupportedError | 0 | 8 |
+| Db2 for i refuses CHECK (C IS JSON) on an NCLOB (SQL0546, probe lib_json_check), so invalid JSON written past Django's encoder is stored | 1 | 0 |
+| Db2 for i refuses a JSON function in a CHECK condition (SQL0546) and in an index expression (SQL0356) | 3 | 0 |
 | Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546) | 2 | 0 |
 | Db2 for i rejects an untyped NULL as an expression (SQL0206) | 1 | 0 |
-| JSONField is not supported yet (phase 6) | 0 | 0 |
+| a Db2 for i JSON path cannot hold a key with a double quote in any form (probe json_lookups); the backend raises NotSupportedError | 2 | 0 |
 | a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 3 | 0 |
+| an unknown Trunc kind raises ValueError before any SQL is sent; the test accepts only a database error or no rows | 2 | 0 |
+| before Django 6.1, Trunc of a NULL datetime with USE_TZ raises ValueError when has_zoneinfo_database is off; 6.1 lets the backend keep the NULL | 0 | 0 |
 | bulk_create(update_conflicts=True) is a MERGE, which returns no rows (FINAL TABLE takes only INSERT): the objects get no primary keys | 7 | 0 |
+| converting datetimes to another time zone in SQL is not supported yet: Db2 for i has no time zone database; the backend raises NotSupportedError | 5 | 0 |
 | identity restart deferred in TestCase (SQL0910) | 1 | 0 |
 | null=True to null=False with a default sets the NULLs (UPDATE) and then runs SET NOT NULL in the same transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910) | 7 | 0 |
+| ordering by a JSON key compares its JSON text, as on Oracle and MariaDB (JSON_QUERY; probe json_lookups) | 1 | 0 |
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
+| the test counts the word EXTRACT in the SQL; Db2 for i writes YEAR(...) and the like | 6 | 0 |
 | the test looks for RETURNING in the SQL; Db2 for i returns columns with FINAL TABLE | 2 | 0 |
 | the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i | 1 | 0 |
 
 ## Golden files
 
-559 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
+645 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).

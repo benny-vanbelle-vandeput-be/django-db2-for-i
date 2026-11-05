@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3120 | 2 | 0 | 0 | 2026-11-02 19:50:41 UTC |
-| IBM i tests | 374 | 0 | 1 | 0 | 2026-11-01 13:02:45 UTC |
-| Django suite on IBM i | 2314 | 205 | 63 | 0 | 2026-11-02 14:31:45 UTC |
-| Replay tests | 2648 | 0 | 0 | 0 | 2026-11-02 19:51:31 UTC |
+| Offline tests | 3428 | 2 | 0 | 0 | 2026-11-05 06:34:13 UTC |
+| IBM i tests | 416 | 0 | 1 | 0 | 2026-11-05 11:08:54 UTC |
+| Django suite on IBM i | 2715 | 229 | 84 | 0 | 2026-11-05 06:21:35 UTC |
+| Replay tests | 2648 | 0 | 0 | 0 | 2026-11-05 06:35:14 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3121 | 1 | 0 | 0 | 2026-11-02 19:46:45 UTC |
-| IBM i tests | 374 | 0 | 1 | 0 | 2026-11-01 10:32:42 UTC |
-| Django suite on IBM i | 2218 | 183 | 64 | 0 | 2026-11-02 16:30:27 UTC |
-| Replay tests | 2588 | 0 | 0 | 0 | 2026-11-02 19:47:29 UTC |
+| Offline tests | 3429 | 1 | 0 | 0 | 2026-11-05 11:43:58 UTC |
+| IBM i tests | 19 | 0 | 0 | 0 | 2026-11-05 11:50:53 UTC |
+| Django suite on IBM i | 2608 | 213 | 82 | 0 | 2026-11-05 03:48:27 UTC |
+| Replay tests | 2588 | 0 | 0 | 0 | 2026-11-05 11:49:44 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3119 | 1 | 0 | 0 | 2026-11-02 19:42:39 UTC |
-| IBM i tests | 369 | 3 | 1 | 0 | 2026-11-01 08:06:56 UTC |
-| Django suite on IBM i | 2175 | 176 | 65 | 0 | 2026-11-02 18:13:48 UTC |
-| Replay tests | 2540 | 0 | 0 | 0 | 2026-11-02 19:43:24 UTC |
+| Offline tests | 3426 | 1 | 0 | 0 | 2026-11-05 11:53:52 UTC |
+| IBM i tests | 19 | 0 | 0 | 0 | 2026-11-05 11:55:34 UTC |
+| Django suite on IBM i | 2564 | 207 | 83 | 0 | 2026-11-05 04:44:38 UTC |
+| Replay tests | 2540 | 0 | 0 | 0 | 2026-11-05 11:54:45 UTC |
 
 ### About the tests
 
@@ -75,7 +75,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
   (PUB400, IBM i 7.5): queries with model instances, schema changes, transactions,
   and every golden file executed on the server. They run for every backend change.
 - **Django suite on IBM i:** Django's official test suite, limited to the modules that use
-  the database and that this backend supports so far: `aggregation`, `basic`, `bulk_create`, `constraints`, `expressions`, `indexes`, `inspectdb`, `introspection`, `lookup`, `migrate_signals`, `migrations`, `model_indexes`, `ordering`, `queries`, `schema`, `transactions`. They run on
+  the database and that this backend supports so far: `aggregation`, `basic`, `bulk_create`, `constraints`, `db_functions`, `expressions`, `expressions_window`, `indexes`, `inspectdb`, `introspection`, `lookup`, `migrate_signals`, `migrations`, `model_indexes`, `ordering`, `queries`, `schema`, `transactions`. They run on
   PUB400 before every release (the status run) and for the modules a change
   touches.
 - **Replay tests:** the SQL of every passing test of that Django test suite is
@@ -88,11 +88,22 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 database; **expected failures** are known Db2 for i limitations, each with a reason
 ([Known limitations](docs/user/Known-Limitations.md)).
 
-Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (53 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
+Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (66 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
 <!-- tests:end -->
 
 <!-- status:start -->
 ## Project status
+
+**Phase 6: Advanced (window functions, JSONField, db functions, DB-level on_delete)** (in progress)
+
+| Step | State | Pull requests |
+|---|---|---|
+| 0: plan, probes, lib_ probes (#220, #221) | done | [#218](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/218), [#223](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/223) |
+| 1: db functions and the group 1 flags (db_functions; one PR for the phase, 2026-11-04) | done | [#227](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/227) |
+| 2: window functions (expressions_window) | done | [#227](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/227) |
+| 3: DB-level on_delete (6.1) | done | [#227](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/227) |
+| 4: JSONField (model_fields.test_jsonfield) | done | [#227](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/227) |
+| Close-out: supported modules, phase record | planned |  |
 
 | Phase | Content | Status |
 |---|---|---|
@@ -102,7 +113,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (53 enabled on Django 6.1) �
 | [3](docs/phases/phase-3.md) | Django 6.0 and 5.2 support | done |
 | [4](docs/phases/phase-4.md) | Schema editor completeness | done |
 | [5](docs/phases/phase-5.md) | Returning & bulk | done |
-| [6](docs/phases/phase-6.md) | Advanced (window functions, JSONField, db functions, DB-level on_delete) | planned |
+| [6](docs/phases/phase-6.md) | Advanced (window functions, JSONField, db functions, DB-level on_delete) | in progress |
 | 7 | PUB400 tier & release prep | planned |
 
 Latest release: **`v0.1.0b2`** (2026-11-02): Phase 5: returning columns, bulk_create, conflicts through MERGE, partial and expression indexes, unique variants (status runs on 5.2, 6.0 and 6.1, 26 runs each, 0 failed). ([CHANGELOG](CHANGELOG.md))
