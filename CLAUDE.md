@@ -393,6 +393,10 @@ django-db2-for-i/
 5. **Returning & bulk** (done, [record](docs/phases/phase-5.md)). `FINAL TABLE` returning columns, `bulk_create`, unique constraint variants,
    partial / expression / covering indexes; the `constraints`, `indexes` and `model_indexes` modules.
 6. **Advanced.** Window functions, `JSONField`, db functions, DB-level `on_delete` (6.1+).
-7. **PUB400 tier & release prep.** Curated smoke set, golden verification job, README, packaging.
+7. **Polish and release 1.0.0** ([proposal](docs/phases/phase-7.md)). Review every expected failure,
+   skip and flag that is off; the open issues; IBM i system names from Django; more supported modules; a smoke set, the golden
+   verification job, README, packaging; then release 1.0.0.
+8. **On a dedicated IBM i** ([proposal](docs/phases/phase-8.md)). Two connections (`select_for_update`,
+   `MERGE` concurrency), test schemas, the full Django suite, TR / PTF levels and more IBM i releases.
 
 Later: Django 6.2 LTS, additional drivers (Mapepire, `ibm_db`).
