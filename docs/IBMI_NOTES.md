@@ -2268,6 +2268,14 @@ nested object, `true`, keys with `'` and `%`), a second object, a root array, a 
 | the same keys raw: a backslash, `é` | found, as a literal and as a marker |
 | raw: an emoji, U+FFFF | found as a marker only; as a literal in the statement, not found |
 | a key with a double quote: `\"`, `""` | not found in any form |
+| `JSON_OBJECT((CAST(? AS NVARCHAR(32))) VALUE K RETURNING NCLOB(1M))`, also without the parentheses or with `KEY` | ok |
+| `JSON_OBJECT()`, `JSON_OBJECT(RETURNING NCLOB(1M))`, `JSON_ARRAY(RETURNING NCLOB(1M))` | `{}`, `{}`, `[]` |
+| `JSON_OBJECT` with a NULL value, with or without `NULL ON NULL` | `{"k":null}`: JSON null by default |
+| `JSON_ARRAY(K, CAST(NULL AS INTEGER), ? NULL ON NULL ...)` | `[1,null,"x"]` (without `NULL ON NULL` the NULL is left out: `db_functions` on 6.1) |
+| a nested `JSON_OBJECT`, a JSON column, `JSON_OBJECT`s in `JSON_ARRAY`, each with `FORMAT JSON` | JSON, not a string |
+| `JSON_OBJECT('d' VALUE CAST(? AS DOUBLE))` of 30000.15 | `3.0000150000000001E4`, which Python reads as 30000.15 |
+| `LISTAGG(JSON_QUERY(C, ... OMIT QUOTES), CAST(? AS NVARCHAR(32)))` | **SQL0171**: `JSON_QUERY` returns a `CLOB` |
+| the same with `RETURNING NCLOB(1M) OMIT QUOTES`, also in `WITHIN GROUP (ORDER BY ...)` | ok |
 
 **Db functions** (`probes/qtemp_db_functions.py`), on `héllo 😀`, NULL, 7, 2.5 and 2.50:
 

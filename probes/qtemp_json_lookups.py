@@ -176,6 +176,94 @@ PATHS: tuple[tuple[str, str], ...] = (
     ("e acute, raw", '$."\u00e9t\u00e9"'),
 )
 
+# JSONObject, JSONArray and StringAgg over a key (phase 6, after the first
+# db_functions run with the JSON flags on). Each: a name, an expression over K
+# (INTEGER) and C (NCLOB), its markers; SELECT K, <expr> WHERE K IN (1, 2).
+BUILDING: tuple[tuple[str, str, tuple[Any, ...]], ...] = (
+    (
+        "JSON_OBJECT, key in parentheses",
+        "JSON_OBJECT((CAST(? AS NVARCHAR(32))) VALUE K RETURNING NCLOB(1M))",
+        ("k",),
+    ),
+    ("JSON_OBJECT, key marker", "JSON_OBJECT(CAST(? AS NVARCHAR(32)) VALUE K)", ("k",)),
+    ("JSON_OBJECT, KEY keyword", "JSON_OBJECT(KEY CAST(? AS NVARCHAR(32)) VALUE K)", ("k",)),
+    ("JSON_OBJECT, no pairs", "JSON_OBJECT()", ()),
+    ("JSON_OBJECT, no pairs, RETURNING", "JSON_OBJECT(RETURNING NCLOB(1M))", ()),
+    (
+        "JSON_OBJECT, NULL value",
+        "JSON_OBJECT('k' VALUE CAST(NULL AS INTEGER) RETURNING NCLOB(1M))",
+        (),
+    ),
+    (
+        "JSON_OBJECT, NULL ON NULL",
+        "JSON_OBJECT('k' VALUE CAST(NULL AS INTEGER) NULL ON NULL RETURNING NCLOB(1M))",
+        (),
+    ),
+    (
+        "JSON_OBJECT, nested, RETURNING NCLOB",
+        "JSON_OBJECT('a' VALUE JSON_OBJECT('b' VALUE K RETURNING NCLOB(1M)) RETURNING NCLOB(1M))",
+        (),
+    ),
+    (
+        "JSON_OBJECT, nested, FORMAT JSON",
+        "JSON_OBJECT('a' VALUE JSON_OBJECT('b' VALUE K RETURNING NCLOB(1M)) FORMAT JSON "
+        "RETURNING NCLOB(1M))",
+        (),
+    ),
+    (
+        "JSON_OBJECT, a JSON column, FORMAT JSON",
+        "JSON_OBJECT('c' VALUE C FORMAT JSON RETURNING NCLOB(1M))",
+        (),
+    ),
+    (
+        "JSON_OBJECT, a double marker",
+        "JSON_OBJECT('d' VALUE CAST(? AS DOUBLE) RETURNING NCLOB(1M))",
+        (30000.15,),
+    ),
+    (
+        "JSON_OBJECT, a long NCLOB value",
+        "JSON_OBJECT('t' VALUE CAST(? AS NCLOB(1M)) RETURNING NCLOB(1M))",
+        ("x" * 4000,),
+    ),
+    (
+        "JSON_ARRAY, NULL ON NULL",
+        "JSON_ARRAY(K, CAST(NULL AS INTEGER), CAST(? AS NVARCHAR(32)) NULL ON NULL "
+        "RETURNING NCLOB(1M))",
+        ("x",),
+    ),
+    ("JSON_ARRAY, no elements", "JSON_ARRAY(RETURNING NCLOB(1M))", ()),
+    (
+        "JSON_ARRAY of JSON_OBJECTs",
+        "JSON_ARRAY(JSON_OBJECT('a' VALUE K RETURNING NCLOB(1M)) FORMAT JSON NULL ON NULL "
+        "RETURNING NCLOB(1M))",
+        (),
+    ),
+    (
+        "JSON_QUERY RETURNING NCLOB, OMIT QUOTES",
+        "JSON_QUERY(C, '$.b' RETURNING NCLOB(1M) OMIT QUOTES)",
+        (),
+    ),
+    (
+        "a key of a JSON_OBJECT",
+        "JSON_QUERY(JSON_OBJECT('a' VALUE K RETURNING NCLOB(1M)), '$.\"a\"')",
+        (),
+    ),
+)
+AGGREGATES: tuple[tuple[str, str, tuple[Any, ...]], ...] = (
+    (
+        "LISTAGG of JSON_QUERY OMIT QUOTES (CLOB)",
+        "SELECT LISTAGG(JSON_QUERY(C, '$.b' OMIT QUOTES), CAST(? AS NVARCHAR(32))) FROM {t}",
+        (",",),
+    ),
+    (
+        "LISTAGG of JSON_QUERY RETURNING NCLOB OMIT QUOTES",
+        "SELECT LISTAGG(JSON_QUERY(C, '$.b' RETURNING NCLOB(1M) OMIT QUOTES), "
+        "CAST(? AS NVARCHAR(32))) WITHIN GROUP (ORDER BY JSON_QUERY(C, '$.b' RETURNING NCLOB(1M) "
+        "OMIT QUOTES)) FROM {t}",
+        (",",),
+    ),
+)
+
 OTHERS: tuple[tuple[str, str, tuple[Any, ...]], ...] = (
     (
         "ORDER BY JSON_QUERY (LOB)",
@@ -225,6 +313,16 @@ def run(settings: Settings, conn) -> dict[str, Any]:
     for name, predicate, params in WHERES:
         case(conn, results, name, f"SELECT K FROM {TABLE} WHERE {predicate} ORDER BY K", params)
     for name, sql, params in OTHERS:
+        case(conn, results, name, sql.format(t=TABLE), params)
+    for name, expression, params in BUILDING:
+        case(
+            conn,
+            results,
+            name,
+            f"SELECT K, {expression} FROM {TABLE} WHERE K IN (1, 2) ORDER BY K",
+            params,
+        )
+    for name, sql, params in AGGREGATES:
         case(conn, results, name, sql.format(t=TABLE), params)
     _execute(conn, f"INSERT INTO {TABLE} VALUES (?, ?)", list(KEYS_ROW))
     for name, path in PATHS:

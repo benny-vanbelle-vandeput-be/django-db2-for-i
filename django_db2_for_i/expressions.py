@@ -188,6 +188,8 @@ functions (probe ``json_lookups``):
   NULL".
 - ``key__lt`` and the other comparisons with a number: ``JSON_VALUE(...
   RETURNING DECFLOAT(34))`` (JSON text compares as text).
+- ``JSONObject``, ``JSONArray``: ``JSON_OBJECT`` / ``JSON_ARRAY`` returning an
+  NCLOB, JSON values with ``FORMAT JSON``, NULL elements kept as JSON null.
 """
 
 from __future__ import annotations
@@ -206,6 +208,7 @@ from django.db.models import (
     DecimalField,
     FloatField,
     IntegerField,
+    JSONField,
     TextField,
     When,
 )
@@ -255,6 +258,8 @@ from django.db.models.functions import (
     Coalesce,
     ConcatPair,
     CumeDist,
+    JSONArray,
+    JSONObject,
     Lag,
     Lead,
     Length,
@@ -1101,7 +1106,9 @@ def key_transform_as_db2_for_i(self, compiler, connection):
 def key_text_transform_as_db2_for_i(self, compiler, connection):
     """``KT("data__key")``: a string without its quotes, other values as JSON text."""
     lhs, params, path = _key_transform_parts(self, compiler, connection)
-    return f"JSON_QUERY({lhs}, {path} OMIT QUOTES)", params
+    # An NCLOB, not JSON_QUERY's CLOB: LISTAGG refuses a CLOB with an NVARCHAR
+    # separator (SQL0171; probe json_lookups).
+    return f"JSON_QUERY({lhs}, {path} RETURNING NCLOB(1M) OMIT QUOTES)", params
 
 
 KeyTransform.as_db2_for_i = key_transform_as_db2_for_i
@@ -1233,3 +1240,46 @@ def key_transform_numeric_as_db2_for_i(self, compiler, connection):
 
 for _lookup in (KeyTransformLt, KeyTransformLte, KeyTransformGt, KeyTransformGte):
     _lookup.as_db2_for_i = key_transform_numeric_as_db2_for_i
+
+
+def _json_value_sql(expression, compiler) -> tuple[str, tuple]:
+    """A JSONObject value or JSONArray element; JSON (a JSONField, a nested
+    JSONObject or JSONArray) with FORMAT JSON, else it would be a string."""
+    sql, params = compiler.compile(expression)
+    if isinstance(expression._output_field_or_none, JSONField):
+        sql += " FORMAT JSON"
+    return sql, tuple(params)
+
+
+def json_object_as_db2_for_i(self, compiler, connection, **extra_context):
+    """``JSON_OBJECT((<key>) VALUE <value>, ... RETURNING NCLOB(1M))``; SQL NULL
+    values are JSON null, Db2 for i's default (probe json_lookups)."""
+    if not connection.features.has_json_object_function:
+        return self.as_sql(compiler, connection, **extra_context)  # raises
+    sources = self.get_source_expressions()
+    parts, params = [], []
+    for key, value in zip(sources[::2], sources[1::2], strict=True):
+        key_sql, key_params = compiler.compile(key)
+        value_sql, value_params = _json_value_sql(value, compiler)
+        parts.append(f"({key_sql}) VALUE {value_sql}")
+        params += [*key_params, *value_params]
+    body = f"{', '.join(parts)} " if parts else ""
+    return f"JSON_OBJECT({body}RETURNING NCLOB(1M))", tuple(params)
+
+
+def json_array_as_db2_for_i(self, compiler, connection, **extra_context):
+    """``JSON_ARRAY(<element>, ... NULL ON NULL RETURNING NCLOB(1M))``: Db2 for
+    i leaves out NULL elements by default, Django keeps them as JSON null."""
+    if not connection.features.supports_json_field:
+        return self.as_sql(compiler, connection, **extra_context)  # raises
+    parts, params = [], []
+    for element in self.get_source_expressions():
+        sql, element_params = _json_value_sql(element, compiler)
+        parts.append(sql)
+        params += element_params
+    body = f"{', '.join(parts)} NULL ON NULL " if parts else ""
+    return f"JSON_ARRAY({body}RETURNING NCLOB(1M))", tuple(params)
+
+
+JSONObject.as_db2_for_i = json_object_as_db2_for_i
+JSONArray.as_db2_for_i = json_array_as_db2_for_i

@@ -1,6 +1,6 @@
 {
   "probe": "json_lookups",
-  "utc": "20261104T114844Z",
+  "utc": "20261105T012925Z",
   "host": "<HOST>",
   "ssl": true,
   "scope": "QTEMP only (a table gone with the job)",
@@ -1629,6 +1629,541 @@
       [
         "'{\"g\":[1,2],\"f\":true}'",
         "'téxt 😀'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, key in parentheses": {
+    "sql": "SELECT K, JSON_OBJECT((CAST(? AS NVARCHAR(32))) VALUE K RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"k\":1}'"
+      ],
+      [
+        "2",
+        "'{\"k\":2}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, key marker": {
+    "sql": "SELECT K, JSON_OBJECT(CAST(? AS NVARCHAR(32)) VALUE K) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"k\":1}'"
+      ],
+      [
+        "2",
+        "'{\"k\":2}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, KEY keyword": {
+    "sql": "SELECT K, JSON_OBJECT(KEY CAST(? AS NVARCHAR(32)) VALUE K) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"k\":1}'"
+      ],
+      [
+        "2",
+        "'{\"k\":2}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, no pairs": {
+    "sql": "SELECT K, JSON_OBJECT() FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{}'"
+      ],
+      [
+        "2",
+        "'{}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, no pairs, RETURNING": {
+    "sql": "SELECT K, JSON_OBJECT(RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{}'"
+      ],
+      [
+        "2",
+        "'{}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, NULL value": {
+    "sql": "SELECT K, JSON_OBJECT('k' VALUE CAST(NULL AS INTEGER) RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"k\":null}'"
+      ],
+      [
+        "2",
+        "'{\"k\":null}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, NULL ON NULL": {
+    "sql": "SELECT K, JSON_OBJECT('k' VALUE CAST(NULL AS INTEGER) NULL ON NULL RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"k\":null}'"
+      ],
+      [
+        "2",
+        "'{\"k\":null}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, nested, RETURNING NCLOB": {
+    "sql": "SELECT K, JSON_OBJECT('a' VALUE JSON_OBJECT('b' VALUE K RETURNING NCLOB(1M)) RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":{\"b\":1}}'"
+      ],
+      [
+        "2",
+        "'{\"a\":{\"b\":2}}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, nested, FORMAT JSON": {
+    "sql": "SELECT K, JSON_OBJECT('a' VALUE JSON_OBJECT('b' VALUE K RETURNING NCLOB(1M)) FORMAT JSON RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":{\"b\":1}}'"
+      ],
+      [
+        "2",
+        "'{\"a\":{\"b\":2}}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, a JSON column, FORMAT JSON": {
+    "sql": "SELECT K, JSON_OBJECT('c' VALUE C FORMAT JSON RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"c\":{\"a\": 1, \"b\": \"téxt 😀\", \"c\": null, \"d\": [10, 20, {\"x\": 1}], \"e\": {\"g\": [1, 2], \"f\": true}, \"n\": \"1\", \"s\": \"a\\'b%\", \"k\\'%\": 3, \"t\": true}}'"
+      ],
+      [
+        "2",
+        "'{\"c\":{\"a\": 2.5, \"b\": \"x\", \"e\": {\"f\": false}}}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, a double marker": {
+    "sql": "SELECT K, JSON_OBJECT('d' VALUE CAST(? AS DOUBLE) RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"d\":3.0000150000000001E4}'"
+      ],
+      [
+        "2",
+        "'{\"d\":3.0000150000000001E4}'"
+      ]
+    ]
+  },
+  "JSON_OBJECT, a long NCLOB value": {
+    "sql": "SELECT K, JSON_OBJECT('t' VALUE CAST(? AS NCLOB(1M)) RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"t\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}'"
+      ],
+      [
+        "2",
+        "'{\"t\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}'"
+      ]
+    ]
+  },
+  "JSON_ARRAY, NULL ON NULL": {
+    "sql": "SELECT K, JSON_ARRAY(K, CAST(NULL AS INTEGER), CAST(? AS NVARCHAR(32)) NULL ON NULL RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'[1,null,\"x\"]'"
+      ],
+      [
+        "2",
+        "'[2,null,\"x\"]'"
+      ]
+    ]
+  },
+  "JSON_ARRAY, no elements": {
+    "sql": "SELECT K, JSON_ARRAY(RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'[]'"
+      ],
+      [
+        "2",
+        "'[]'"
+      ]
+    ]
+  },
+  "JSON_ARRAY of JSON_OBJECTs": {
+    "sql": "SELECT K, JSON_ARRAY(JSON_OBJECT('a' VALUE K RETURNING NCLOB(1M)) FORMAT JSON NULL ON NULL RETURNING NCLOB(1M)) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'[{\"a\":1}]'"
+      ],
+      [
+        "2",
+        "'[{\"a\":2}]'"
+      ]
+    ]
+  },
+  "JSON_QUERY RETURNING NCLOB, OMIT QUOTES": {
+    "sql": "SELECT K, JSON_QUERY(C, '$.b' RETURNING NCLOB(1M) OMIT QUOTES) FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'téxt 😀'"
+      ],
+      [
+        "2",
+        "'x'"
+      ]
+    ]
+  },
+  "a key of a JSON_OBJECT": {
+    "sql": "SELECT K, JSON_QUERY(JSON_OBJECT('a' VALUE K RETURNING NCLOB(1M)), '$.\"a\"') FROM QTEMP.P6JL WHERE K IN (1, 2) ORDER BY K",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "K",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'1'"
+      ],
+      [
+        "2",
+        "'2'"
+      ]
+    ]
+  },
+  "LISTAGG of JSON_QUERY OMIT QUOTES (CLOB)": {
+    "sql": "SELECT LISTAGG(JSON_QUERY(C, '$.b' OMIT QUOTES), CAST(? AS NVARCHAR(32))) FROM QTEMP.P6JL",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -171,
+    "message": "SQL0171 - Argument 02 of function LISTAGG not valid. (-171) (SQLPrepare)"
+  },
+  "LISTAGG of JSON_QUERY RETURNING NCLOB OMIT QUOTES": {
+    "sql": "SELECT LISTAGG(JSON_QUERY(C, '$.b' RETURNING NCLOB(1M) OMIT QUOTES), CAST(? AS NVARCHAR(32))) WITHIN GROUP (ORDER BY JSON_QUERY(C, '$.b' RETURNING NCLOB(1M) OMIT QUOTES)) FROM QTEMP.P6JL",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1048576,
+        "precision": 1048576,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'téxt 😀,x'"
       ]
     ]
   },

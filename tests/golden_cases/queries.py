@@ -20,6 +20,7 @@ from django.db.models import (
     Value,
     When,
 )
+from django.db.models.functions import JSONArray, JSONObject
 from django.db.models.lookups import LessThan
 
 from tests.golden_cases.base import (
@@ -561,6 +562,18 @@ CASES: tuple[Case, ...] = (
             ("has_key_emoji", lambda: JSONDoc.objects.filter(data__has_key="\U0001f600")),
             ("key_text_icontains", lambda: JSONDoc.objects.filter(data__city__icontains="é")),
             ("values_key", lambda: JSONDoc.objects.values("data__tags__1").order_by("data__n")),
+            (
+                "json_object",
+                lambda: JSONDoc.objects.annotate(
+                    x=JSONObject(name="name", data="data", empty=JSONObject())
+                ).values("x"),
+            ),
+            (
+                "json_array",
+                lambda: JSONDoc.objects.annotate(
+                    x=JSONArray("name", Value(None, CharField()), JSONObject(n="name"))
+                ).values("x"),
+            ),
         )
     ),
 )

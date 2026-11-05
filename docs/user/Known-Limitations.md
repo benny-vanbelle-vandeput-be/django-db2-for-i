@@ -618,6 +618,9 @@ work, through Db2 for i's `JSON_QUERY`, `JSON_VALUE` and `JSON_EXISTS`. Differen
 - **A key with a double quote** (`data__has_key='a"b'`) cannot be written in
   a Db2 for i JSON path; such a lookup raises `NotSupportedError`. Other
   characters work, also `'`, `%`, `\` and emoji.
+- **No index or check constraint on a key.** Db2 for i refuses a JSON
+  function in an index expression (`Index("data__key", ...)`, SQL0356) and in
+  a `CheckConstraint` condition (`Q(data__key=...)`, SQL0546).
 - **Ordering by a key compares its JSON text**, as on Oracle and MariaDB:
   `-1` sorts before `-100` and `10` before `9`. Use `Cast()` to order
   numerically.

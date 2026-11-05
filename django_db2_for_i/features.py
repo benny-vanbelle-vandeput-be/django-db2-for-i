@@ -79,6 +79,10 @@ REASON_JSON_KEY_ORDER_AS_TEXT = (
     "ordering by a JSON key compares its JSON text, as on Oracle and MariaDB (JSON_QUERY; "
     "probe json_lookups)"
 )
+REASON_JSON_IN_CHECK_OR_INDEX = (
+    "Db2 for i refuses a JSON function in a CHECK condition (SQL0546) and in an index "
+    "expression (SQL0356)"
+)
 REASON_JSON_KEY_DOUBLE_QUOTE = (
     "a Db2 for i JSON path cannot hold a key with a double quote in any form (probe "
     "json_lookups); the backend raises NotSupportedError"
@@ -357,6 +361,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "db_functions.text.test_sha384.SHA384Tests.test_basic",
             "db_functions.text.test_sha384.SHA384Tests.test_transform",
         },
+        # On Django 5.2 and 6.0 only (compat.py): the one skip that differs per
+        # version. As an expected failure it marked the inherited test function
+        # itself (unittest's expectedFailure sets a flag on it), so the parent
+        # DateFunctionTests.test_trunc_none, which passes, became an unexpected
+        # success; a skip wraps the function instead.
+        REASON_TRUNC_NULL_ZONEINFO: set(compat.TRUNC_NULL_FAILING),
     }
     expected_failures: dict[str, set[str]] = {
         # Subtracts from a TimeField stored with microseconds (TIME has none).
@@ -387,8 +397,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_trunc_lookup_name_sql_injection",
             "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_lookup_name_sql_injection",
         },
-        # On Django 5.2 and 6.0 only (compat.py).
-        REASON_TRUNC_NULL_ZONEINFO: set(compat.TRUNC_NULL_FAILING),
         # Chr(ord("É")) and Ord on "Élena".
         REASON_SINGLE_BYTE_CHR: {
             "db_functions.text.test_chr.ChrTests.test_non_ascii",
@@ -505,6 +513,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         },
         REASON_JSON_KEY_ORDER_AS_TEXT: {
             "model_fields.test_jsonfield.TestQuerying.test_ordering_by_transform",
+        },
+        REASON_JSON_IN_CHECK_OR_INDEX: {
+            "schema.tests.SchemaTests.test_check_constraint_exact_jsonfield",
+            "schema.tests.SchemaTests.test_func_index_json_key_transform",
+            "schema.tests.SchemaTests.test_func_index_json_key_transform_cast",
         },
         REASON_JSON_KEY_DOUBLE_QUOTE: {
             "model_fields.test_jsonfield.TestQuerying.test_key_sql_injection_escape",

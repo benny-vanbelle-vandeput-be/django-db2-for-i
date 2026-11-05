@@ -290,6 +290,7 @@ def test_skips_are_grouped_by_fixed_reasons() -> None:
     assert set(cls.django_test_skips) == {
         features.REASON_NO_COLUMN_RENAME,
         features.REASON_NO_SUCH_FUNCTION,
+        features.REASON_TRUNC_NULL_ZONEINFO,
     }
     # Each entry is one test id, never a whole class.
     for test_ids in cls.django_test_skips.values():
@@ -297,12 +298,13 @@ def test_skips_are_grouped_by_fixed_reasons() -> None:
 
 
 def test_skips_are_the_same_on_every_django_version() -> None:
-    """Skips are not filtered per version (compat), and a test is never both
+    """Skips are not filtered per version (compat), except the Trunc NULL test
+    of 5.2 and 6.0 (an inherited test, features.py), and a test is never both
     skipped and an expected failure."""
-    from django_db2_for_i import features
+    from django_db2_for_i import compat, features
 
     cls = features.DatabaseFeatures
-    skipped = set().union(*cls.django_test_skips.values())
+    skipped = set().union(*cls.django_test_skips.values()) - set(compat.TRUNC_NULL_FAILING)
     assert skipped == {
         "schema.tests.SchemaTests.test_m2m_repoint",
         "schema.tests.SchemaTests.test_m2m_repoint_custom",
@@ -340,10 +342,10 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
         features.REASON_EXTRACT_IN_SQL,
         features.REASON_TRUNC_KIND_REFUSED,
         features.REASON_SINGLE_BYTE_CHR,
-        features.REASON_TRUNC_NULL_ZONEINFO,
         features.REASON_NO_JSON_CHECK,
         features.REASON_JSON_KEY_ORDER_AS_TEXT,
         features.REASON_JSON_KEY_DOUBLE_QUOTE,
+        features.REASON_JSON_IN_CHECK_OR_INDEX,
     }
     # Each entry is one test id, never a whole class.
     for test_ids in cls.expected_failures.values():
