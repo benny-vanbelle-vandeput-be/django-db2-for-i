@@ -104,7 +104,8 @@ class Recorder:
         from tests.corpus.store import dumps, encode_query, encode_statements
 
         try:
-            pickled = dumps(compiler.query)
+            with _no_queryset_evaluation():
+                pickled = dumps(compiler.query)
         except Exception as exc:
             self._skip("unpicklable", exc)
             return
@@ -221,6 +222,29 @@ class Recorder:
 
 class NeedsDatabase(Exception):
     """Raised inside the hook's own compile when the compiler would execute SQL."""
+
+
+@contextlib.contextmanager
+def _no_queryset_evaluation() -> Iterator[None]:
+    """Pickling a QuerySet runs it (``QuerySet.__getstate__`` fetches its rows),
+    which would send a query the test did not send, as for
+    ``Coalesce(queryset.filter(id=0), 42)``, which holds a QuerySet itself. While
+    the hook pickles, an unevaluated QuerySet refuses instead: the statement is
+    skipped as unpicklable and the test's queries stay its own."""
+    from django.db.models.query import QuerySet
+
+    original = QuerySet.__getstate__
+
+    def getstate(queryset):
+        if queryset._result_cache is None:
+            raise NeedsDatabase("pickling an unevaluated QuerySet runs it")
+        return original(queryset)
+
+    QuerySet.__getstate__ = getstate
+    try:
+        yield
+    finally:
+        QuerySet.__getstate__ = original
 
 
 def wrapped_execute_sql(original, recorder: Recorder):
