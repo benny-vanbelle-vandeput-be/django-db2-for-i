@@ -220,6 +220,7 @@ from django.db.models.expressions import (
     Exists,
     Expression,
     ExpressionWrapper,
+    Func,
     NegatedExpression,
     OrderBy,
     RawSQL,
@@ -481,9 +482,47 @@ def value_as_db2_for_i(self, compiler, connection, **extra_context):
 Value.as_db2_for_i = value_as_db2_for_i
 
 
+class TypedNull(Expression):
+    """``CAST(NULL AS <type>)``: SQL NULL with a type. Not ``Value(None,
+    output_field=...)``, which a JSONField writes as JSON ``null``."""
+
+    def __init__(self, output_field):
+        super().__init__(output_field=output_field)
+
+    def as_sql(self, compiler, connection):
+        cast_type = value_cast_type(None, self.output_field, connection, explicit=True)
+        return f"CAST(NULL AS {cast_type})", ()
+
+
+def _is_untyped_null(expression) -> bool:
+    """An expression that compiles to a bare NULL: ``Value(None)`` without an
+    output_field, or a function of only such values (``Coalesce(None, None)``)."""
+    if isinstance(expression, Value):
+        return expression.value is None and explicit_output_field(expression) is None
+    if isinstance(expression, Func):
+        sources = expression.get_source_expressions()
+        return bool(sources) and all(_is_untyped_null(source) for source in sources)
+    return False
+
+
 def case_as_db2_for_i(self, compiler, connection, **extra_context):
-    sql, params = self.as_sql(compiler, connection, **extra_context)
+    """A CASE whose results are all a bare NULL is refused (SQL0580), as in
+    ``bulk_update()`` of a field to ``Value(None)``: then each result gets the
+    CASE's type. A bare NULL next to a typed result is accepted and stays."""
     output_field = self._output_field_or_none
+    *cases, default = self.get_source_expressions()
+    results = [when.get_source_expressions()[1] for when in cases]
+    if output_field is not None and cases and all(map(_is_untyped_null, [*results, default])):
+        typed = []
+        for when in cases:
+            condition, _result = when.get_source_expressions()
+            when = when.copy()
+            when.set_source_expressions([condition, TypedNull(output_field)])
+            typed.append(when)
+        clone = self.copy()
+        clone.set_source_expressions([*typed, TypedNull(output_field)])
+        self = clone
+    sql, params = self.as_sql(compiler, connection, **extra_context)
     if sql == "NULL" and not params and output_field is not None:
         cast_type = value_cast_type(None, output_field, connection, explicit=True)
         return f"CAST(NULL AS {cast_type})", params
