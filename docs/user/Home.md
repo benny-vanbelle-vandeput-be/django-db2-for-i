@@ -7,13 +7,16 @@ scratch and tested against Django's own test suite.
 DATABASES = {"default": {"ENGINE": "django_db2_for_i", ...}}
 ```
 
-> **Status: early development, not production ready.**
-> The backend connects, creates tables, and runs basic queries, inserts and
-> pagination against IBM i 7.5, with transactions and savepoints (nested
-> `atomic()`). Many Django features are still switched off
-> (foreign key constraints, JSON, window functions,
-> ...) and are enabled one at a time as Django's test suite proves them.
-> Settings and behaviour may still change without notice.
+> **Status: beta, not production ready.**
+> On IBM i 7.5 and Django 5.2, 6.0 and 6.1: transactions and savepoints,
+> queries, lookups, aggregation and expressions, the schema editor (migrations,
+> foreign keys, check constraints, indexes, introspection, `inspectdb`),
+> returning inserts and `bulk_create()` with conflict handling, window
+> functions, `JSONField`, the database functions and, on Django 6.1, DB-level
+> `on_delete`. Features are enabled one at a time as Django's test suite proves
+> them; `select_for_update()` is not available yet. What differs from other
+> databases is in [Known limitations](Known-Limitations.md). Settings and
+> behaviour may still change between beta releases.
 
 ## Pages
 

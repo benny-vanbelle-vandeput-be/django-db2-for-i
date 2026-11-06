@@ -392,7 +392,7 @@ django-db2-for-i/
    Also: the column order of created tables is the model's field order (issue #23, closed).
 5. **Returning & bulk** (done, [record](docs/phases/phase-5.md)). `FINAL TABLE` returning columns, `bulk_create`, unique constraint variants,
    partial / expression / covering indexes; the `constraints`, `indexes` and `model_indexes` modules.
-6. **Advanced.** Window functions, `JSONField`, db functions, DB-level `on_delete` (6.1+).
+6. **Advanced** (done, [record](docs/phases/phase-6.md)). Window functions, `JSONField`, db functions, DB-level `on_delete` (6.1+).
 7. **Polish and release 1.0.0** ([proposal](docs/phases/phase-7.md)). Review every expected failure,
    skip and flag that is off; the open issues; IBM i system names from Django; more supported modules; a smoke set, the golden
    verification job, README, packaging; then release 1.0.0.

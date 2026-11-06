@@ -97,6 +97,30 @@ SQLCODE, as for the other constraint violations.
 first. A raw `DELETE` or a `QuerySet.update()` of a key does not run
 Django's `on_delete` handling.
 
+With Django 6.1's `on_delete=DB_SET_DEFAULT`, SQL0532 also comes when you
+delete the parent row the default points to: Db2 for i will not set the
+children to a key it is deleting. Delete or repoint those children first.
+
+## SQL0356 (-356): "Index expression ... not valid" on a JSONField key
+
+```
+DatabaseError: [HY000] ... SQL0356 - Index expression 1 not valid. (-356)
+```
+
+**Cause:** an `Index` (or a functional `UniqueConstraint`) on a key of a
+`JSONField`, such as `Index("data__key", name=...)`. Db2 for i allows no JSON
+function in an index expression. The same goes for a `CheckConstraint` on a
+key (`Q(data__key=...)`), which fails with SQL0546.
+
+**Fix:** keep the value you want to index or check in a column of its own.
+
+## NotSupportedError: "the JSON key ... has a double quote"
+
+**Cause:** a `JSONField` lookup on a key that contains `"` (for example
+`data__has_key='a"b'`). A Db2 for i JSON path cannot express such a key.
+
+**Fix:** use keys without a double quote.
+
 ## SQL0538 (-538): "FOREIGN key ... not same as the parent key"
 
 **Cause:** an `ALTER TABLE ... ADD CONSTRAINT ... FOREIGN KEY` whose column

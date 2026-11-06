@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3428 | 2 | 0 | 0 | 2026-11-05 06:34:13 UTC |
-| IBM i tests | 416 | 0 | 1 | 0 | 2026-11-05 11:08:54 UTC |
-| Django suite on IBM i | 2715 | 229 | 84 | 0 | 2026-11-05 06:21:35 UTC |
-| Replay tests | 2648 | 0 | 0 | 0 | 2026-11-05 06:35:14 UTC |
+| Offline tests | – | – | – | – | not run yet |
+| IBM i tests | – | – | – | – | not run yet |
+| Django suite on IBM i | – | – | – | – | not run yet |
+| Replay tests | – | – | – | – | not run yet |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3429 | 1 | 0 | 0 | 2026-11-05 11:43:58 UTC |
-| IBM i tests | 19 | 0 | 0 | 0 | 2026-11-05 11:50:53 UTC |
-| Django suite on IBM i | 2608 | 213 | 82 | 0 | 2026-11-05 03:48:27 UTC |
-| Replay tests | 2588 | 0 | 0 | 0 | 2026-11-05 11:49:44 UTC |
+| Offline tests | – | – | – | – | not run yet |
+| IBM i tests | – | – | – | – | not run yet |
+| Django suite on IBM i | – | – | – | – | not run yet |
+| Replay tests | – | – | – | – | not run yet |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3426 | 1 | 0 | 0 | 2026-11-05 11:53:52 UTC |
-| IBM i tests | 19 | 0 | 0 | 0 | 2026-11-05 11:55:34 UTC |
-| Django suite on IBM i | 2564 | 207 | 83 | 0 | 2026-11-05 04:44:38 UTC |
-| Replay tests | 2540 | 0 | 0 | 0 | 2026-11-05 11:54:45 UTC |
+| Offline tests | – | – | – | – | not run yet |
+| IBM i tests | – | – | – | – | not run yet |
+| Django suite on IBM i | 79 | 3 | 0 | 0 | 2026-11-05 20:56:16 UTC |
+| Replay tests | – | – | – | – | not run yet |
 
 ### About the tests
 
@@ -75,7 +75,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
   (PUB400, IBM i 7.5): queries with model instances, schema changes, transactions,
   and every golden file executed on the server. They run for every backend change.
 - **Django suite on IBM i:** Django's official test suite, limited to the modules that use
-  the database and that this backend supports so far: `aggregation`, `basic`, `bulk_create`, `constraints`, `db_functions`, `expressions`, `expressions_window`, `indexes`, `inspectdb`, `introspection`, `lookup`, `migrate_signals`, `migrations`, `model_indexes`, `ordering`, `queries`, `schema`, `transactions`. They run on
+  the database and that this backend supports so far: `basic`. They run on
   PUB400 before every release (the status run) and for the modules a change
   touches.
 - **Replay tests:** the SQL of every passing test of that Django test suite is
@@ -103,7 +103,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (66 enabled on Django 6.1) �
 | 2: window functions (expressions_window) | done | [#227](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/227) |
 | 3: DB-level on_delete (6.1) | done | [#227](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/227) |
 | 4: JSONField (model_fields.test_jsonfield) | done | [#227](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/227) |
-| Close-out: supported modules, phase record | planned |  |
+| Close-out: supported modules, phase record | in progress |  |
 
 | Phase | Content | Status |
 |---|---|---|
@@ -137,8 +137,9 @@ Open tracks:
 > [known limitations](docs/user/Known-Limitations.md). Inserts return their
 > keys and `db_default` values, and `bulk_create()` inserts many rows per
 > statement, also with conflict handling (a `MERGE`). Nullable unique
-> constraints and partial and expression indexes work. Window functions,
-> `JSONField` and database functions (phase 6) are not done yet. Not for
+> constraints and partial and expression indexes work, and so do window
+> functions, `JSONField`, the database functions and, on Django 6.1, DB-level
+> `on_delete`. `select_for_update()` is not available yet. Not for
 > production use; APIs and settings may change between beta releases.
 
 ## What it is
