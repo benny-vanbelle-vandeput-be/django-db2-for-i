@@ -486,3 +486,26 @@ def test_the_runner_passes_the_capture_settings(monkeypatch, tmp_path) -> None:
     assert seen["DB2I_CORPUS_LABEL"] == "ordering"
     log = (tmp_path / "test-results/6.1/ordering.log").read_text()
     assert "# capture: yes" in log
+
+
+def test_recording_never_runs_a_queryset_the_query_holds(tmp_path) -> None:
+    """``Coalesce(queryset, 42)`` keeps the QuerySet itself in the query, and
+    pickling a QuerySet fetches its rows: the hook must not send that query
+    (it broke ``assertNumQueries`` in db_functions on Django 5.2). The statement
+    is skipped as unpicklable, and the QuerySet stays unevaluated."""
+    from django.db.models import Value
+    from django.db.models.functions import Coalesce
+    from django.db.models.query import QuerySet
+
+    inner = Author.objects.filter(id=0).values("id")
+    query = Author.objects.annotate(x=Coalesce(inner, Value(42))).query
+    compiler = query.get_compiler("default")
+    with (
+        capture.installed(tmp_path / "raw.jsonl") as recorder,
+        mock.patch.object(QuerySet, "_fetch_all", side_effect=AssertionError("ran")),
+    ):
+        recorder.start("m.t.T.test_a")
+        recorder.record(compiler)
+    assert recorder.counts["unpicklable"] == 1
+    assert inner._result_cache is None
+    assert "pickling an unevaluated QuerySet" in "".join(recorder.reasons)
