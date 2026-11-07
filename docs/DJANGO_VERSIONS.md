@@ -90,7 +90,9 @@ Status values:
 | `DatabaseFeatures.supports_bit_aggregations` | `False` | done |
 | Aliases quoted systematically (`SQLCompiler.quote_name()`) | The goldens are 6.1 SQL | done |
 | Default model ordering applied to combined querysets | Compound query goldens are 6.1 SQL | done |
-| DB-level `on_delete` (`supports_on_delete_db_*`) | `False` | later (phase 6, 6.1+) |
+| DB-level `on_delete` (`supports_on_delete_db_*`) | `True`: Django writes `ON DELETE CASCADE / SET NULL / SET DEFAULT` through its own foreign key template; each works on Db2 for i (`lib_on_delete`, #220) | done (phase 6, #227) |
+| `JSONField__in` on the whole document is its own lookup (`JSONIn`) | `compat.JSONIn` (None before 6.1); the backend compares both sides as compact JSON text. On 6.0 and 5.2 Django's `In` compares the stored text | done (phase 6, #227) |
+| `Trunc` of a NULL datetime: the check moved from `TruncBase.convert_value` to `ops.convert_trunc_expression()` | The backend keeps the NULL there (no time zone database). Before 6.1 Django's own converter raises `ValueError`: one test skipped on 6.0 and 5.2 (`compat.TRUNC_NULL_FAILING`; a skip, as an expected failure on an inherited test also flagged its parent) | done (phase 6, #227) |
 
 ### Django 6.0: what it lacks compared with 6.1
 
@@ -103,7 +105,7 @@ All of these also apply to 5.2.
 | Combined querysets ignore the default model ordering | Different SQL and results: goldens per series. The compound-query goldens of 6.0 and 5.2 equal 6.1's (apart from alias quoting), and the `queries` labels pass on all three versions. | checked |
 | `mark_expected_failures_and_skips` has no `ImportError` fallback | A skip or expected-failure name that 6.0's suite lacks breaks every run, so the lists must be per Django version. All names in today's lists exist in the 6.0 and 5.2 suites. Two `schema` expected failures pass on 5.2 and are left out there (`compat.PASSING_ON_THIS_VERSION`, 2026-10-24). | checked |
 | No `has_native_boolean_field` / `pattern_lookup_needs_param_pattern` base flags | Same behaviour as our values (`conditional_expression_supported_in_where_clause()` is always True; the pattern is always applied) | n/a |
-| No `supports_inspectdb`, `supports_bit_aggregations`, `supports_on_delete_db_*` | Our False values are ignored; no tests in the supported modules depend on them | n/a |
+| No `supports_inspectdb`, `supports_bit_aggregations`, `supports_on_delete_db_*` | Our values are ignored (`on_delete` exists from 6.1); no tests in the supported modules depend on them | n/a |
 
 ### Django 5.2: what it lacks compared with 6.0
 
@@ -132,7 +134,7 @@ steps of phase 3 find real differences:
 |---|---|---|
 | Django 6.0 only | nothing known yet | 6.0 is dropped |
 | Django 5.2 only | `StringAgg` (None on 5.2), `DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON`, `PASSING_ON_THIS_VERSION` (two `schema` expected failures that pass on 5.2, [DECISIONS](DECISIONS.md#2026-10-24-the-first-per-version-expected-failure-list)) | 5.2 is dropped |
-| Before 6.1 (6.0 and 5.2) | `install_duration_adapter()` (the duration range check, [DECISIONS](DECISIONS.md#2026-10-20-the-duration-range-check-before-django-61)) | both are dropped |
+| Before 6.1 (6.0 and 5.2) | `install_duration_adapter()` (the duration range check, [DECISIONS](DECISIONS.md#2026-10-20-the-duration-range-check-before-django-61)), `JSONIn` (None), `TRUNC_NULL_FAILING` (a skip) | both are dropped |
 
 **Dropping a version** means deleting its section, its entries in the
 per-version lists, `tests/offline/golden/<version>/`, its line in
