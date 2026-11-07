@@ -59,6 +59,14 @@ CASES: tuple[Case, ...] = (
         annotate(lambda: CaseExpr(When(name="a", then=Value(1)), default=Value(None))),
         (AUTHOR,),
     ),
+    # Every result a bare NULL (bulk_update() to Value(None)): CAST(NULL AS <type>),
+    # as Db2 for i refuses such a CASE (SQL0580).
+    Case(
+        "values/null_untyped_every_case_result",
+        "query",
+        annotate(lambda: CaseExpr(When(name="a", then=Value(None)), output_field=CharField())),
+        (AUTHOR,),
+    ),
     Case("values/boolean", "query", annotate(lambda: Value(True)), (AUTHOR,)),
     Case("values/decimal", "query", annotate(lambda: Value(Decimal("12.345"))), (AUTHOR,)),
     Case(

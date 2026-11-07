@@ -427,3 +427,19 @@ def test_a_uuid_key_value_is_sent_as_hex() -> None:
     queryset = Author.objects.annotate(x=Value(value, output_field=Link._meta.get_field("tag")))
     sql, params = queryset.values("x").query.get_compiler("default").as_sql()
     assert "CAST(%s AS CHAR(32))" in sql and params == ("12345678123456781234567812345678",)
+
+
+def test_case_results_that_are_bare_nulls_get_the_case_type() -> None:
+    """bulk_update() writes CASE WHEN pk = ... THEN <value> END; a bare NULL as
+    every result is refused (SQL0580), so such a result is CAST(NULL AS <type>),
+    also from Coalesce(None, None). A JSONField gets SQL NULL, not JSON null."""
+    from django.db.models import Case, IntegerField, JSONField, When
+    from django.db.models.functions import Coalesce
+
+    for result in (Value(None), Coalesce(None, None, output_field=IntegerField())):
+        case = Case(When(pk=1, then=result), output_field=JSONField())
+        sql = cast_of(case)
+        assert "THEN CAST(NULL AS NVARCHAR(32))" in sql, sql
+        assert "'null'" not in sql
+    mixed = Case(When(pk=1, then=Value(1)), default=Value(None), output_field=IntegerField())
+    assert cast_of(mixed).endswith("THEN CAST(%s AS INTEGER) ELSE NULL END")
