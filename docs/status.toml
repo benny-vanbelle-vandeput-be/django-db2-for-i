@@ -204,7 +204,7 @@ prs = [217]
 [[phases]]
 phase = "6"
 content = "Advanced (window functions, JSONField, db functions, DB-level on_delete)"
-status = "in progress"
+status = "done"
 
 [[phases.steps]]
 step = "0: plan, probes, lib_ probes (#220, #221)"
@@ -232,8 +232,9 @@ status = "done"
 prs = [227]
 
 [[phases.steps]]
-step = "Close-out: supported modules, phase record"
-status = "in progress"
+step = "Close-out: supported modules, phase record, status run"
+status = "done"
+prs = [229, 230, 231]
 
 [[phases]]
 phase = "7"

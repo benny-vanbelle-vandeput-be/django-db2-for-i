@@ -77,7 +77,13 @@ Django versions runs the full own IBM i tier once.
 **Close-out**
 - This record; `db_functions`, `expressions_window` and the
   `model_fields.test_jsonfield` label in `docs/status.toml`; the status run on all
-  three versions.
+  three versions, which found two defects, each fixed in its own pull request: the
+  corpus capture hook ran a QuerySet a query held
+  ([#229](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/229)),
+  and a `CASE` with only bare NULL results had no type
+  ([#230](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/230)).
+  Three of its runs lost the connection to PUB400 (`08S01`, `CWBCO1034`) and one
+  was cut off by a reboot; they were run again and passed, without a change.
 
 ## Key decisions
 - **The plan's answers** (2026-11-01, [#218](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/218)):
@@ -117,8 +123,20 @@ The final cycle on `1e75b78` (#227), PUB400 (IBM i 7.5), Python 3.14, `--clean`,
 0 failures and 0 errors in each; also in `aggregation`, `expressions` and `delete` on
 all three, and `schema`, `introspection` and `inspectdb` on 6.1. The own IBM i tests
 on 6.1: 416 passed, 1 expected failure. The whole `model_fields` module, measured once
-for information (answer 5): **to be measured after the status run (this pull request is a draft until then)**. The complete status comes from
-the status run after this phase: [TEST_STATUS](../TEST_STATUS.md).
+for information (answer 5), on 6.1 on 2026-11-10 (PUB400, `--clean`): 570 tests,
+129 skipped, 4 expected failures, **2 failures**, 0 errors. Both have known causes;
+neither is a new defect:
+
+- `test_datetimefield.DateTimeFieldTests.test_datetimes_save_completely`: a
+  `TimeField` loses its microseconds (Db2 for i `TIME` has no fractional seconds;
+  `REASON_TIME_FRACTIONS`, Known Limitations).
+- `tests.BasicFieldTests.test_get_placeholder_sql_shim`: the test compares the exact
+  SQL `(1 + %s)`; the backend types the parameter marker (`CAST(%s AS INTEGER)`).
+
+Only the `test_jsonfield` label is supported; the rest of `model_fields` can join
+the supported modules once these two are on the lists with their reasons (a later
+pull request). The complete status comes from the close-out's status run on
+`ecbec96` (5.2, 6.0 and 6.1, 29 runs each, all passed): [TEST_STATUS](../TEST_STATUS.md).
 
 ## Carried forward
 - **Row locks** (`select_for_update`, 6 flags): a dedicated IBM i, two connections.
