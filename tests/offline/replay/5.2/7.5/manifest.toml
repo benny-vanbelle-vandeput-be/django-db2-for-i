@@ -5,20 +5,20 @@ django_commit = "cae7247962de54a94023d28d84f05fc9842e9646"
 profile = "7.5"
 
 [modules.aggregation]
-captured = "2026-11-02"
+captured = "2026-11-07"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
 needs_database = 0
 no_sql = 6
 not_compiled = 2
 pickle_format = 2
-recorded = 316
+recorded = 317
 unencodable = 0
-unique = 296
+unique = 297
 unpicklable = 5
 volatile = 0
 
 [modules.basic]
-captured = "2026-11-01"
+captured = "2026-11-07"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
 needs_database = 0
 no_sql = 4
@@ -31,7 +31,7 @@ unpicklable = 0
 volatile = 0
 
 [modules.bulk_create]
-captured = "2026-11-02"
+captured = "2026-11-07"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
 needs_database = 0
 no_sql = 0
@@ -44,33 +44,59 @@ unpicklable = 0
 volatile = 0
 
 [modules.constraints]
-captured = "2026-11-01"
+captured = "2026-11-07"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
 needs_database = 0
-no_sql = 6
+no_sql = 8
 not_compiled = 0
 pickle_format = 2
-recorded = 77
+recorded = 81
 unencodable = 0
-unique = 54
+unique = 56
 unpicklable = 0
 volatile = 0
 
+[modules.db_functions]
+captured = "2026-11-07"
+level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
+needs_database = 0
+no_sql = 0
+not_compiled = 15
+pickle_format = 2
+recorded = 904
+unencodable = 0
+unique = 656
+unpicklable = 2
+volatile = 0
+
 [modules.expressions]
-captured = "2026-11-02"
+captured = "2026-11-07"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
 needs_database = 0
 no_sql = 0
 not_compiled = 6
 pickle_format = 2
-recorded = 547
+recorded = 551
 unencodable = 0
-unique = 400
+unique = 404
 unpicklable = 1
 volatile = 0
 
+[modules.expressions_window]
+captured = "2026-11-07"
+level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
+needs_database = 0
+no_sql = 0
+not_compiled = 13
+pickle_format = 2
+recorded = 63
+unencodable = 0
+unique = 61
+unpicklable = 0
+volatile = 0
+
 [modules.lookup]
-captured = "2026-11-02"
+captured = "2026-11-07"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
 needs_database = 0
 no_sql = 10
@@ -83,11 +109,11 @@ unpicklable = 1
 volatile = 0
 
 [modules.migrations]
-captured = "2026-11-01"
+captured = "2026-11-07"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
 needs_database = 0
 no_sql = 0
-not_compiled = 1722
+not_compiled = 1727
 pickle_format = 2
 recorded = 14
 unencodable = 0
@@ -95,8 +121,21 @@ unique = 11
 unpicklable = 0
 volatile = 0
 
+[modules.model_fields]
+captured = "2026-11-07"
+level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
+needs_database = 0
+no_sql = 0
+not_compiled = 4
+pickle_format = 2
+recorded = 208
+unencodable = 0
+unique = 192
+unpicklable = 0
+volatile = 0
+
 [modules.ordering]
-captured = "2026-11-01"
+captured = "2026-11-07"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
 needs_database = 0
 no_sql = 0
@@ -109,20 +148,20 @@ unpicklable = 0
 volatile = 0
 
 [modules.queries]
-captured = "2026-11-02"
+captured = "2026-11-07"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
 needs_database = 1
 no_sql = 49
 not_compiled = 8
 pickle_format = 2
-recorded = 1416
+recorded = 1430
 unencodable = 0
-unique = 1111
+unique = 1120
 unpicklable = 1
 volatile = 4
 
 [modules.transactions]
-captured = "2026-11-01"
+captured = "2026-11-07"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 5.2.19.dev20261009120732"
 needs_database = 0
 no_sql = 0
