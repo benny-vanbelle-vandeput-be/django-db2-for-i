@@ -717,8 +717,11 @@ def test_status_run_labels_come_from_status_toml() -> None:
 
     run = release.labels()
     modules = tomllib.loads(release.STATUS_DATA.read_text())["modules"]
-    assert run[: len(modules) - 1] == [module["module"] for module in modules[:-1]]
-    assert "queries" not in run  # run as its labels
+    # Each module in order, as itself or as its labels (queries, model_fields).
+    expected = [label for module in modules for label in module.get("labels", [module["module"]])]
+    assert run == expected
+    assert "queries" not in run and "model_fields" not in run  # run as their labels
+    assert "model_fields.test_jsonfield" in run
     assert "queries.tests" in run and "queries.test_bulk_update" in run
     assert len(run) == len(set(run))
     for label in run:

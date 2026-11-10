@@ -244,6 +244,23 @@ def feature_section() -> list[str]:
         lines.append(f"| {reason} | {failures} | {skips} |")
     if not reasons:
         lines.append("| (none) | 0 | 0 |")
+    # The tests themselves, per reason, as features.py lists them for the Django
+    # version that generates this file (compat.py adds or removes a few per version).
+    from django_db2_for_i import compat
+
+    lines += [
+        "",
+        f"The tests per reason, as `features.py` lists them on Django {compat.DJANGO_SERIES}"
+        " (`compat.py` adjusts a few entries per Django version):",
+    ]
+    for reason in reasons:
+        tests = [(t, "expected failure") for t in sorted(cls.expected_failures.get(reason, ()))]
+        tests += [(t, "skip") for t in sorted(cls.django_test_skips.get(reason, ()))]
+        if not tests:
+            continue
+        lines += ["", f"<details><summary>{reason} ({len(tests)})</summary>", ""]
+        lines += [f"- `{test}` ({kind})" for test, kind in tests]
+        lines += ["", "</details>"]
     return lines
 
 

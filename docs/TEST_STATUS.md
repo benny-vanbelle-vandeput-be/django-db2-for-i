@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3120 | 2 | 0 | 0 | 2026-11-02 19:50:41 UTC |
-| IBM i tests | 374 | 0 | 1 | 0 | 2026-11-01 13:02:45 UTC |
-| Django suite on IBM i | 2314 | 205 | 63 | 0 | 2026-11-02 14:31:45 UTC |
-| Replay tests | 2648 | 0 | 0 | 0 | 2026-11-02 19:51:31 UTC |
+| Offline tests | 3440 | 2 | 0 | 0 | 2026-11-07 06:58:54 UTC |
+| IBM i tests | 415 | 2 | 1 | 0 | 2026-11-10 02:34:47 UTC |
+| Django suite on IBM i | 2807 | 262 | 88 | 0 | 2026-11-10 01:59:29 UTC |
+| Replay tests | 2648 | 0 | 0 | 0 | 2026-11-07 07:01:05 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3121 | 1 | 0 | 0 | 2026-11-02 19:46:45 UTC |
-| IBM i tests | 374 | 0 | 1 | 0 | 2026-11-01 10:32:42 UTC |
-| Django suite on IBM i | 2218 | 183 | 64 | 0 | 2026-11-02 16:30:27 UTC |
-| Replay tests | 2588 | 0 | 0 | 0 | 2026-11-02 19:47:29 UTC |
+| Offline tests | 3441 | 1 | 0 | 0 | 2026-11-07 06:49:30 UTC |
+| IBM i tests | 414 | 3 | 1 | 0 | 2026-11-09 21:04:32 UTC |
+| Django suite on IBM i | 2698 | 218 | 89 | 0 | 2026-11-09 03:01:31 UTC |
+| Replay tests | 2588 | 0 | 0 | 0 | 2026-11-07 06:50:49 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3119 | 1 | 0 | 0 | 2026-11-02 19:42:39 UTC |
-| IBM i tests | 369 | 3 | 1 | 0 | 2026-11-01 08:06:56 UTC |
-| Django suite on IBM i | 2175 | 176 | 65 | 0 | 2026-11-02 18:13:48 UTC |
-| Replay tests | 2540 | 0 | 0 | 0 | 2026-11-02 19:43:24 UTC |
+| Offline tests | 3438 | 1 | 0 | 0 | 2026-11-07 06:41:04 UTC |
+| IBM i tests | 409 | 5 | 1 | 0 | 2026-11-08 22:09:10 UTC |
+| Django suite on IBM i | 2652 | 210 | 89 | 0 | 2026-11-07 20:27:31 UTC |
+| Replay tests | 2540 | 0 | 0 | 0 | 2026-11-07 06:42:24 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,10 +73,10 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-11-01 05:59:34 UTC to 2026-11-02 18:13:48 UTC
+- **Runs:** 2026-11-07 06:36:56 UTC to 2026-11-10 01:59:29 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
 - **Python:** 3.14.8
-- **Backend commits:** 42f2123 2026-11-01, 5d73708 2026-11-02 (per module in the table)
+- **Backend commits:** ecbec96 2026-11-07 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
@@ -85,59 +85,69 @@ The Django suite on IBM i per module and Django version.
 
 | Module | Django | Tests | Passed | Failures | Errors | Skipped | Expected failures | Unexpected successes | Result | Run | Backend commit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| aggregation | 5.2 | 140 | 139 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-02 17:50:17 UTC | 5d73708 2026-11-02 |
-| aggregation | 6.0 | 156 | 151 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-02 15:51:17 UTC | 5d73708 2026-11-02 |
-| aggregation | 6.1 | 168 | 152 | 0 | 0 | 16 | 0 | 0 | OK | 2026-11-02 13:58:55 UTC | 5d73708 2026-11-02 |
-| basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-01 05:59:34 UTC | 42f2123 2026-11-01 |
-| basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-01 08:08:05 UTC | 42f2123 2026-11-01 |
-| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-01 10:34:09 UTC | 42f2123 2026-11-01 |
-| bulk_create | 5.2 | 52 | 38 | 0 | 0 | 7 | 7 | 0 | OK | 2026-11-02 18:07:06 UTC | 5d73708 2026-11-02 |
-| bulk_create | 6.0 | 59 | 43 | 0 | 0 | 9 | 7 | 0 | OK | 2026-11-02 16:15:21 UTC | 5d73708 2026-11-02 |
-| bulk_create | 6.1 | 60 | 43 | 0 | 0 | 10 | 7 | 0 | OK | 2026-11-02 14:18:37 UTC | 5d73708 2026-11-02 |
-| constraints | 5.2 | 103 | 89 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-01 07:21:15 UTC | 42f2123 2026-11-01 |
-| constraints | 6.0 | 101 | 87 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-01 09:46:03 UTC | 42f2123 2026-11-01 |
-| constraints | 6.1 | 102 | 87 | 0 | 0 | 15 | 0 | 0 | OK | 2026-11-01 12:15:52 UTC | 42f2123 2026-11-01 |
-| expressions | 5.2 | 208 | 201 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 17:55:23 UTC | 5d73708 2026-11-02 |
-| expressions | 6.0 | 212 | 205 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 15:58:32 UTC | 5d73708 2026-11-02 |
-| expressions | 6.1 | 213 | 206 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 14:06:29 UTC | 5d73708 2026-11-02 |
-| indexes | 5.2 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-01 07:22:08 UTC | 42f2123 2026-11-01 |
-| indexes | 6.0 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-01 09:46:57 UTC | 42f2123 2026-11-01 |
-| indexes | 6.1 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-01 12:16:46 UTC | 42f2123 2026-11-01 |
-| inspectdb | 5.2 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-01 07:17:13 UTC | 42f2123 2026-11-01 |
-| inspectdb | 6.0 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-01 09:40:47 UTC | 42f2123 2026-11-01 |
-| inspectdb | 6.1 | 31 | 18 | 0 | 0 | 13 | 0 | 0 | OK | 2026-11-01 12:10:43 UTC | 42f2123 2026-11-01 |
-| introspection | 5.2 | 21 | 19 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 07:14:44 UTC | 42f2123 2026-11-01 |
-| introspection | 6.0 | 21 | 19 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 09:38:13 UTC | 42f2123 2026-11-01 |
-| introspection | 6.1 | 24 | 19 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-01 12:07:48 UTC | 42f2123 2026-11-01 |
-| lookup | 5.2 | 100 | 91 | 0 | 0 | 7 | 2 | 0 | OK | 2026-11-02 18:01:41 UTC | 5d73708 2026-11-02 |
-| lookup | 6.0 | 100 | 93 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 16:08:58 UTC | 5d73708 2026-11-02 |
-| lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-02 14:12:56 UTC | 5d73708 2026-11-02 |
-| migrate_signals | 5.2 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 07:18:59 UTC | 42f2123 2026-11-01 |
-| migrate_signals | 6.0 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 09:42:38 UTC | 42f2123 2026-11-01 |
-| migrate_signals | 6.1 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 12:12:36 UTC | 42f2123 2026-11-01 |
-| migrations | 5.2 | 784 | 739 | 0 | 0 | 21 | 24 | 0 | OK | 2026-11-01 06:11:35 UTC | 42f2123 2026-11-01 |
-| migrations | 6.0 | 811 | 765 | 0 | 0 | 22 | 24 | 0 | OK | 2026-11-01 08:21:25 UTC | 42f2123 2026-11-01 |
-| migrations | 6.1 | 825 | 779 | 0 | 0 | 22 | 24 | 0 | OK | 2026-11-01 10:49:26 UTC | 42f2123 2026-11-01 |
-| model_indexes | 5.2 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 07:23:05 UTC | 42f2123 2026-11-01 |
-| model_indexes | 6.0 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 09:47:55 UTC | 42f2123 2026-11-01 |
-| model_indexes | 6.1 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 12:17:49 UTC | 42f2123 2026-11-01 |
-| ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 06:05:29 UTC | 42f2123 2026-11-01 |
-| ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 08:14:44 UTC | 42f2123 2026-11-01 |
-| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-01 10:41:25 UTC | 42f2123 2026-11-01 |
-| queries | 5.2 | 493 | 471 | 0 | 0 | 16 | 6 | 0 | OK | 2026-11-02 18:13:48 UTC | 5d73708 2026-11-02 |
-| queries | 6.0 | 495 | 473 | 0 | 0 | 16 | 6 | 0 | OK | 2026-11-02 16:30:27 UTC | 5d73708 2026-11-02 |
-| queries | 6.1 | 506 | 485 | 0 | 0 | 16 | 5 | 0 | OK | 2026-11-02 14:31:45 UTC | 5d73708 2026-11-02 |
-| schema | 5.2 | 220 | 130 | 0 | 0 | 67 | 23 | 0 | OK | 2026-11-01 07:02:58 UTC | 42f2123 2026-11-01 |
-| schema | 6.0 | 222 | 131 | 0 | 0 | 69 | 22 | 0 | OK | 2026-11-01 09:24:52 UTC | 42f2123 2026-11-01 |
-| schema | 6.1 | 227 | 133 | 0 | 0 | 72 | 22 | 0 | OK | 2026-11-01 11:54:58 UTC | 42f2123 2026-11-01 |
-| transactions | 5.2 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 06:00:48 UTC | 42f2123 2026-11-01 |
-| transactions | 6.0 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 08:09:25 UTC | 42f2123 2026-11-01 |
-| transactions | 6.1 | 88 | 86 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-01 10:35:35 UTC | 42f2123 2026-11-01 |
+| aggregation | 5.2 | 140 | 140 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-07 07:00:26 UTC | ecbec96 2026-11-07 |
+| aggregation | 6.0 | 156 | 153 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-08 22:32:38 UTC | ecbec96 2026-11-07 |
+| aggregation | 6.1 | 168 | 154 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-09 21:05:19 UTC | ecbec96 2026-11-07 |
+| basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-07 06:36:56 UTC | ecbec96 2026-11-07 |
+| basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-08 22:10:23 UTC | ecbec96 2026-11-07 |
+| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-09 07:04:16 UTC | ecbec96 2026-11-07 |
+| bulk_create | 5.2 | 52 | 38 | 0 | 0 | 7 | 7 | 0 | OK | 2026-11-07 11:11:39 UTC | ecbec96 2026-11-07 |
+| bulk_create | 6.0 | 59 | 43 | 0 | 0 | 9 | 7 | 0 | OK | 2026-11-09 02:32:12 UTC | ecbec96 2026-11-07 |
+| bulk_create | 6.1 | 60 | 43 | 0 | 0 | 10 | 7 | 0 | OK | 2026-11-09 23:37:12 UTC | ecbec96 2026-11-07 |
+| constraints | 5.2 | 103 | 91 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-07 11:17:08 UTC | ecbec96 2026-11-07 |
+| constraints | 6.0 | 101 | 89 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-09 02:42:08 UTC | ecbec96 2026-11-07 |
+| constraints | 6.1 | 102 | 89 | 0 | 0 | 13 | 0 | 0 | OK | 2026-11-09 23:41:26 UTC | ecbec96 2026-11-07 |
+| db_functions | 5.2 | 363 | 319 | 0 | 0 | 26 | 18 | 0 | OK | 2026-11-07 11:25:45 UTC | ecbec96 2026-11-07 |
+| db_functions | 6.0 | 363 | 319 | 0 | 0 | 26 | 18 | 0 | OK | 2026-11-09 02:50:03 UTC | ecbec96 2026-11-07 |
+| db_functions | 6.1 | 371 | 322 | 0 | 0 | 31 | 18 | 0 | OK | 2026-11-09 23:44:35 UTC | ecbec96 2026-11-07 |
+| expressions | 5.2 | 208 | 204 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-07 07:07:01 UTC | ecbec96 2026-11-07 |
+| expressions | 6.0 | 212 | 208 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-08 22:38:26 UTC | ecbec96 2026-11-07 |
+| expressions | 6.1 | 213 | 209 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-09 21:07:43 UTC | ecbec96 2026-11-07 |
+| expressions_window | 5.2 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-07 11:34:18 UTC | ecbec96 2026-11-07 |
+| expressions_window | 6.0 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-09 02:57:09 UTC | ecbec96 2026-11-07 |
+| expressions_window | 6.1 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-09 23:50:19 UTC | ecbec96 2026-11-07 |
+| indexes | 5.2 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-07 11:20:23 UTC | ecbec96 2026-11-07 |
+| indexes | 6.0 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-09 02:45:08 UTC | ecbec96 2026-11-07 |
+| indexes | 6.1 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-09 23:42:31 UTC | ecbec96 2026-11-07 |
+| inspectdb | 5.2 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-07 11:03:57 UTC | ecbec96 2026-11-07 |
+| inspectdb | 6.0 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-09 02:26:15 UTC | ecbec96 2026-11-07 |
+| inspectdb | 6.1 | 31 | 19 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-09 23:33:34 UTC | ecbec96 2026-11-07 |
+| introspection | 5.2 | 21 | 20 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-07 10:54:39 UTC | ecbec96 2026-11-07 |
+| introspection | 6.0 | 21 | 20 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-09 02:13:25 UTC | ecbec96 2026-11-07 |
+| introspection | 6.1 | 24 | 23 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-09 23:25:18 UTC | ecbec96 2026-11-07 |
+| lookup | 5.2 | 100 | 91 | 0 | 0 | 7 | 2 | 0 | OK | 2026-11-07 06:55:11 UTC | ecbec96 2026-11-07 |
+| lookup | 6.0 | 100 | 93 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-08 22:27:15 UTC | ecbec96 2026-11-07 |
+| lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-09 07:19:20 UTC | ecbec96 2026-11-07 |
+| migrate_signals | 5.2 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-07 11:10:28 UTC | ecbec96 2026-11-07 |
+| migrate_signals | 6.0 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-09 02:31:16 UTC | ecbec96 2026-11-07 |
+| migrate_signals | 6.1 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-09 23:36:32 UTC | ecbec96 2026-11-07 |
+| migrations | 5.2 | 784 | 739 | 0 | 0 | 21 | 24 | 0 | OK | 2026-11-07 20:27:31 UTC | ecbec96 2026-11-07 |
+| migrations | 6.0 | 811 | 765 | 0 | 0 | 22 | 24 | 0 | OK | 2026-11-08 22:44:14 UTC | ecbec96 2026-11-07 |
+| migrations | 6.1 | 825 | 779 | 0 | 0 | 22 | 24 | 0 | OK | 2026-11-09 21:11:08 UTC | ecbec96 2026-11-07 |
+| model_fields | 5.2 | 97 | 82 | 0 | 0 | 11 | 4 | 0 | OK | 2026-11-07 11:36:03 UTC | ecbec96 2026-11-07 |
+| model_fields | 6.0 | 102 | 84 | 0 | 0 | 14 | 4 | 0 | OK | 2026-11-09 02:58:29 UTC | ecbec96 2026-11-07 |
+| model_fields | 6.1 | 129 | 88 | 0 | 0 | 37 | 4 | 0 | OK | 2026-11-09 23:51:22 UTC | ecbec96 2026-11-07 |
+| model_indexes | 5.2 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-07 11:24:31 UTC | ecbec96 2026-11-07 |
+| model_indexes | 6.0 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-09 02:49:03 UTC | ecbec96 2026-11-07 |
+| model_indexes | 6.1 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-09 23:44:01 UTC | ecbec96 2026-11-07 |
+| ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-07 06:52:15 UTC | ecbec96 2026-11-07 |
+| ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-08 22:24:05 UTC | ecbec96 2026-11-07 |
+| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-09 07:17:28 UTC | ecbec96 2026-11-07 |
+| queries | 5.2 | 493 | 473 | 0 | 0 | 14 | 6 | 0 | OK | 2026-11-07 11:39:36 UTC | ecbec96 2026-11-07 |
+| queries | 6.0 | 495 | 475 | 0 | 0 | 14 | 6 | 0 | OK | 2026-11-09 03:01:31 UTC | ecbec96 2026-11-07 |
+| queries | 6.1 | 506 | 487 | 0 | 0 | 14 | 5 | 0 | OK | 2026-11-09 23:53:54 UTC | ecbec96 2026-11-07 |
+| schema | 5.2 | 220 | 131 | 0 | 0 | 64 | 25 | 0 | OK | 2026-11-07 10:32:17 UTC | ecbec96 2026-11-07 |
+| schema | 6.0 | 222 | 132 | 0 | 0 | 65 | 25 | 0 | OK | 2026-11-09 01:49:48 UTC | ecbec96 2026-11-07 |
+| schema | 6.1 | 227 | 136 | 0 | 0 | 66 | 25 | 0 | OK | 2026-11-10 01:59:29 UTC | ecbec96 2026-11-07 |
+| transactions | 5.2 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-07 06:40:54 UTC | ecbec96 2026-11-07 |
+| transactions | 6.0 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-08 22:13:36 UTC | ecbec96 2026-11-07 |
+| transactions | 6.1 | 88 | 86 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-09 07:06:59 UTC | ecbec96 2026-11-07 |
 
 ## Feature flags set to True by the backend
 
 - `allow_sliced_subqueries_with_in`
 - `allows_auto_pk_0`
+- `allows_group_by_lob`
 - `can_introspect_check_constraints`
 - `can_introspect_default`
 - `can_introspect_foreign_keys`
@@ -149,26 +159,36 @@ The Django suite on IBM i per module and Django version.
 - `can_use_chunked_reads`
 - `delete_can_self_reference_subquery`
 - `has_bulk_insert`
+- `has_real_datatype`
 - `ignores_table_name_case`
+- `ignores_unnecessary_order_by_in_subqueries`
 - `implied_column_null`
 - `indexes_foreign_keys`
 - `nulls_order_largest`
 - `pattern_lookup_needs_param_pattern`
 - `requires_compound_order_by_subquery`
 - `requires_literal_defaults`
+- `supports_aggregate_distinct_multiple_argument`
 - `supports_aggregate_order_by_clause`
 - `supports_any_value`
 - `supports_boolean_expr_in_select_clause`
+- `supports_cast_with_precision`
 - `supports_column_check_constraints`
+- `supports_default_in_lead_lag`
 - `supports_default_keyword_in_bulk_insert`
 - `supports_default_keyword_in_insert`
 - `supports_expression_indexes`
 - `supports_foreign_keys`
+- `supports_frame_range_fixed_distance`
 - `supports_functions_in_partial_indexes`
 - `supports_ignore_conflicts`
 - `supports_index_column_ordering`
 - `supports_inspectdb`
 - `supports_nullable_unique_constraints`
+- `supports_on_delete_db_cascade`
+- `supports_on_delete_db_default`
+- `supports_on_delete_db_null`
+- `supports_over_clause`
 - `supports_parentheses_in_compound`
 - `supports_partial_indexes`
 - `supports_partially_nullable_unique_constraints`
@@ -194,20 +214,235 @@ The Django suite on IBM i per module and Django version.
 
 | Reason | Expected failures | Skips |
 |---|---|---|
-| Db2 for i TIME has no fractional seconds | 1 | 0 |
+| CHR and ASCII on Db2 for i work on single-byte characters; a non-ASCII character gives a substitute character (probes db_functions, db_function_args) | 2 | 0 |
+| Db2 for i TIME has no fractional seconds | 4 | 0 |
 | Db2 for i cannot change this column type in place (SQL0190) | 10 | 0 |
 | Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6) | 27 | 3 |
+| Db2 for i has no such function (REVERSE, HASH_SHA224, HASH_SHA384: SQL0204); the backend raises NotSupportedError | 0 | 8 |
+| Db2 for i refuses CHECK (C IS JSON) on an NCLOB (SQL0546, probe lib_json_check), so invalid JSON written past Django's encoder is stored | 1 | 0 |
+| Db2 for i refuses a JSON function in a CHECK condition (SQL0546) and in an index expression (SQL0356) | 3 | 0 |
 | Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546) | 2 | 0 |
 | Db2 for i rejects an untyped NULL as an expression (SQL0206) | 1 | 0 |
-| JSONField is not supported yet (phase 6) | 0 | 0 |
+| a Db2 for i JSON path cannot hold a key with a double quote in any form (probe json_lookups); the backend raises NotSupportedError | 2 | 0 |
 | a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 3 | 0 |
+| an unknown Trunc kind raises ValueError before any SQL is sent; the test accepts only a database error or no rows | 2 | 0 |
+| before Django 6.1, Trunc of a NULL datetime with USE_TZ raises ValueError when has_zoneinfo_database is off; 6.1 lets the backend keep the NULL | 0 | 0 |
 | bulk_create(update_conflicts=True) is a MERGE, which returns no rows (FINAL TABLE takes only INSERT): the objects get no primary keys | 7 | 0 |
+| converting datetimes to another time zone in SQL is not supported yet: Db2 for i has no time zone database; the backend raises NotSupportedError | 5 | 0 |
 | identity restart deferred in TestCase (SQL0910) | 1 | 0 |
 | null=True to null=False with a default sets the NULLs (UPDATE) and then runs SET NOT NULL in the same transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910) | 7 | 0 |
+| ordering by a JSON key compares its JSON text, as on Oracle and MariaDB (JSON_QUERY; probe json_lookups) | 1 | 0 |
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
+| the test counts the word EXTRACT in the SQL; Db2 for i writes YEAR(...) and the like | 6 | 0 |
 | the test looks for RETURNING in the SQL; Db2 for i returns columns with FINAL TABLE | 2 | 0 |
 | the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i | 1 | 0 |
 
+The tests per reason, as `features.py` lists them on Django 6.1 (`compat.py` adjusts a few entries per Django version):
+
+<details><summary>CHR and ASCII on Db2 for i work on single-byte characters; a non-ASCII character gives a substitute character (probes db_functions, db_function_args) (2)</summary>
+
+- `db_functions.text.test_chr.ChrTests.test_non_ascii` (expected failure)
+- `db_functions.text.test_ord.OrdTests.test_basic` (expected failure)
+
+</details>
+
+<details><summary>Db2 for i TIME has no fractional seconds (4)</summary>
+
+- `db_functions.comparison.test_cast.CastTests.test_cast_from_db_datetime_to_time` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionTests.test_trunc_time_func` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_time_func` (expected failure)
+- `expressions.tests.FTimeDeltaTests.test_time_subtraction` (expected failure)
+
+</details>
+
+<details><summary>Db2 for i cannot change this column type in place (SQL0190) (10)</summary>
+
+- `migrations.test_executor.ExecutorTests.test_alter_id_type_with_fk` (expected failure)
+- `migrations.test_operations.OperationTests.test_alter_field_pk_fk_char_to_int` (expected failure)
+- `migrations.test_operations.OperationTests.test_alter_field_reloads_state_fk_with_to_field_related_name_target_type_change` (expected failure)
+- `migrations.test_operations.OperationTests.test_alter_field_reloads_state_on_fk_with_to_field_target_type_change` (expected failure)
+- `schema.tests.SchemaTests.test_alter_auto_field_to_char_field` (expected failure)
+- `schema.tests.SchemaTests.test_alter_text_field_to_date_field` (expected failure)
+- `schema.tests.SchemaTests.test_alter_text_field_to_datetime_field` (expected failure)
+- `schema.tests.SchemaTests.test_alter_text_field_to_time_field` (expected failure)
+- `schema.tests.SchemaTests.test_char_field_pk_to_auto_field` (expected failure)
+- `schema.tests.SchemaTests.test_char_field_with_db_index_to_fk` (expected failure)
+
+</details>
+
+<details><summary>Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6) (30)</summary>
+
+- `migrations.test_operations.OperationTests.test_alter_fk_non_fk` (expected failure)
+- `migrations.test_operations.OperationTests.test_alter_id_pk_to_uuid_pk` (expected failure)
+- `migrations.test_operations.OperationTests.test_alter_model_table_m2m_field` (expected failure)
+- `migrations.test_operations.OperationTests.test_rename_field` (expected failure)
+- `migrations.test_operations.OperationTests.test_rename_field_add_non_nullable_field_with_composite_pk` (expected failure)
+- `migrations.test_operations.OperationTests.test_rename_field_index_together` (expected failure)
+- `migrations.test_operations.OperationTests.test_rename_field_reloads_state_on_fk_target_changes` (expected failure)
+- `migrations.test_operations.OperationTests.test_rename_field_unique_together` (expected failure)
+- `migrations.test_operations.OperationTests.test_rename_m2m_model_after_rename_field` (expected failure)
+- `migrations.test_operations.OperationTests.test_rename_m2m_target_model` (expected failure)
+- `migrations.test_operations.OperationTests.test_rename_model_with_db_table_rename_m2m` (expected failure)
+- `migrations.test_operations.OperationTests.test_rename_model_with_m2m` (expected failure)
+- `migrations.test_operations.OperationTests.test_rename_model_with_m2m_models_in_different_apps_with_same_name` (expected failure)
+- `migrations.test_operations.OperationTests.test_rename_model_with_self_referential_m2m` (expected failure)
+- `migrations.test_operations.OperationTests.test_repoint_field_m2m` (expected failure)
+- `schema.tests.SchemaTests.test_alter_pk_with_self_referential_field` (expected failure)
+- `schema.tests.SchemaTests.test_alter_to_fk` (expected failure)
+- `schema.tests.SchemaTests.test_autofield_to_o2o` (expected failure)
+- `schema.tests.SchemaTests.test_m2m_rename_field_in_target_model` (expected failure)
+- `schema.tests.SchemaTests.test_referenced_field_without_constraint_rename_inside_atomic_block` (expected failure)
+- `schema.tests.SchemaTests.test_rename` (expected failure)
+- `schema.tests.SchemaTests.test_rename_column_renames_deferred_sql_references` (expected failure)
+- `schema.tests.SchemaTests.test_rename_field_with_check_to_truncated_name` (expected failure)
+- `schema.tests.SchemaTests.test_rename_keep_db_default` (expected failure)
+- `schema.tests.SchemaTests.test_rename_keep_null_status` (expected failure)
+- `schema.tests.SchemaTests.test_rename_referenced_field` (expected failure)
+- `schema.tests.SchemaTests.test_unique` (expected failure)
+- `schema.tests.SchemaTests.test_m2m_repoint` (skip)
+- `schema.tests.SchemaTests.test_m2m_repoint_custom` (skip)
+- `schema.tests.SchemaTests.test_m2m_repoint_inherited` (skip)
+
+</details>
+
+<details><summary>Db2 for i has no such function (REVERSE, HASH_SHA224, HASH_SHA384: SQL0204); the backend raises NotSupportedError (8)</summary>
+
+- `db_functions.text.test_reverse.ReverseTests.test_basic` (skip)
+- `db_functions.text.test_reverse.ReverseTests.test_expressions` (skip)
+- `db_functions.text.test_reverse.ReverseTests.test_null` (skip)
+- `db_functions.text.test_reverse.ReverseTests.test_transform` (skip)
+- `db_functions.text.test_sha224.SHA224Tests.test_basic` (skip)
+- `db_functions.text.test_sha224.SHA224Tests.test_transform` (skip)
+- `db_functions.text.test_sha384.SHA384Tests.test_basic` (skip)
+- `db_functions.text.test_sha384.SHA384Tests.test_transform` (skip)
+
+</details>
+
+<details><summary>Db2 for i refuses CHECK (C IS JSON) on an NCLOB (SQL0546, probe lib_json_check), so invalid JSON written past Django's encoder is stored (1)</summary>
+
+- `model_fields.test_jsonfield.JSONFieldTests.test_db_check_constraints` (expected failure)
+
+</details>
+
+<details><summary>Db2 for i refuses a JSON function in a CHECK condition (SQL0546) and in an index expression (SQL0356) (3)</summary>
+
+- `schema.tests.SchemaTests.test_check_constraint_exact_jsonfield` (expected failure)
+- `schema.tests.SchemaTests.test_func_index_json_key_transform` (expected failure)
+- `schema.tests.SchemaTests.test_func_index_json_key_transform_cast` (expected failure)
+
+</details>
+
+<details><summary>Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546) (2)</summary>
+
+- `migrations.test_operations.OperationTests.test_add_constraint_percent_escaping` (expected failure)
+- `migrations.test_operations.OperationTests.test_create_model_constraint_percent_escaping` (expected failure)
+
+</details>
+
+<details><summary>Db2 for i rejects an untyped NULL as an expression (SQL0206) (1)</summary>
+
+- `lookup.tests.LookupTests.test_exact_none_transform` (expected failure)
+
+</details>
+
+<details><summary>a Db2 for i JSON path cannot hold a key with a double quote in any form (probe json_lookups); the backend raises NotSupportedError (2)</summary>
+
+- `model_fields.test_jsonfield.TestQuerying.test_key_sql_injection_escape` (expected failure)
+- `model_fields.test_jsonfield.TestQuerying.test_lookups_special_chars_double_quotes` (expected failure)
+
+</details>
+
+<details><summary>a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL (3)</summary>
+
+- `expressions.tests.BasicExpressionsTests.test_annotate_values_filter` (expected failure)
+- `queries.test_query.TestQueryNoModel.test_rawsql_annotation` (expected failure)
+- `queries.tests.Queries1Tests.test_tickets_1878_2939` (expected failure)
+
+</details>
+
+<details><summary>an unknown Trunc kind raises ValueError before any SQL is sent; the test accepts only a database error or no rows (2)</summary>
+
+- `db_functions.datetime.test_extract_trunc.DateFunctionTests.test_trunc_lookup_name_sql_injection` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_lookup_name_sql_injection` (expected failure)
+
+</details>
+
+<details><summary>bulk_create(update_conflicts=True) is a MERGE, which returns no rows (FINAL TABLE takes only INSERT): the objects get no primary keys (7)</summary>
+
+- `bulk_create.tests.BulkCreateTests.test_update_conflicts_two_fields_unique_fields_both` (expected failure)
+- `bulk_create.tests.BulkCreateTests.test_update_conflicts_two_fields_unique_fields_first` (expected failure)
+- `bulk_create.tests.BulkCreateTests.test_update_conflicts_two_fields_unique_fields_second` (expected failure)
+- `bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_fields` (expected failure)
+- `bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_fields_update_fields_db_column` (expected failure)
+- `bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_two_fields_unique_fields_both` (expected failure)
+- `bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_two_fields_unique_fields_one` (expected failure)
+
+</details>
+
+<details><summary>converting datetimes to another time zone in SQL is not supported yet: Db2 for i has no time zone database; the backend raises NotSupportedError (5)</summary>
+
+- `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_explicit_timezone_priority` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_with_timezone` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_with_timezone_minus_no_offset` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_func_with_timezone` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_timezone_applied_before_truncation` (expected failure)
+
+</details>
+
+<details><summary>identity restart deferred in TestCase (SQL0910) (1)</summary>
+
+- `backends.tests.SequenceResetTest.test_generic_relation` (expected failure)
+
+</details>
+
+<details><summary>null=True to null=False with a default sets the NULLs (UPDATE) and then runs SET NOT NULL in the same transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910) (7)</summary>
+
+- `migrations.test_operations.OperationTests.test_alter_field_change_blank_nullable_database_default_to_not_null` (expected failure)
+- `migrations.test_operations.OperationTests.test_alter_field_change_nullable_to_database_default_not_null` (expected failure)
+- `migrations.test_operations.OperationTests.test_alter_field_change_nullable_to_decimal_database_default_not_null` (expected failure)
+- `schema.tests.SchemaTests.test_alter_field_default_dropped` (expected failure)
+- `schema.tests.SchemaTests.test_alter_null_to_not_null` (expected failure)
+- `schema.tests.SchemaTests.test_alter_null_with_default_value_deferred_constraints` (expected failure)
+- `schema.tests.SchemaTests.test_alter_text_field_to_not_null_with_default_value` (expected failure)
+
+</details>
+
+<details><summary>ordering by a JSON key compares its JSON text, as on Oracle and MariaDB (JSON_QUERY; probe json_lookups) (1)</summary>
+
+- `model_fields.test_jsonfield.TestQuerying.test_ordering_by_transform` (expected failure)
+
+</details>
+
+<details><summary>parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i (1)</summary>
+
+- `lookup.tests.LookupTests.test_lookup_direct_value_rhs_unwrapped` (expected failure)
+
+</details>
+
+<details><summary>the test counts the word EXTRACT in the SQL; Db2 for i writes YEAR(...) and the like (6)</summary>
+
+- `db_functions.datetime.test_extract_trunc.DateFunctionTests.test_extract_year_exact_lookup` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionTests.test_extract_year_greaterthan_lookup` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionTests.test_extract_year_lessthan_lookup` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_exact_lookup` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_greaterthan_lookup` (expected failure)
+- `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_lessthan_lookup` (expected failure)
+
+</details>
+
+<details><summary>the test looks for RETURNING in the SQL; Db2 for i returns columns with FINAL TABLE (2)</summary>
+
+- `queries.test_db_returning.ReturningValuesTests.test_insert_returning` (expected failure)
+- `queries.test_db_returning.ReturningValuesTests.test_insert_returning_multiple` (expected failure)
+
+</details>
+
+<details><summary>the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i (1)</summary>
+
+- `indexes.tests.PartialIndexTests.test_multiple_conditions` (expected failure)
+
+</details>
+
 ## Golden files
 
-559 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
+648 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
