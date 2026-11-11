@@ -295,3 +295,38 @@ def test_connections_never_tries_more_than_four(common, connections_probe, maxim
     with pytest.raises(common.ProbeError, match="--max"):
         connections_probe.run(SETTINGS, maximum, opener(common, None, attempts, []), print)
     assert attempts == []
+
+
+def test_twojobs_refuses_a_job_while_odbc_pooling_is_on(common, monkeypatch) -> None:
+    """#162: with pooling a closed connection stays connected, so the count of
+    connections could pass the limit (CLAUDE.md, at most three)."""
+    fake = types.SimpleNamespace(Error=Exception, pooling=True)
+    monkeypatch.setitem(sys.modules, "pyodbc", fake)
+    two = load(PROBES / "_twojobs.py", "_twojobs", monkeypatch)
+    assert fake.pooling is False, "pooling is switched off at import"
+    fake.pooling = True
+    opened = []
+    monkeypatch.setattr(two, "connect", lambda *a, **k: opened.append(a))
+    with pytest.raises(common.ProbeError, match="pooling"):
+        two.open_job(object(), "LIB")
+    assert opened == []
+
+
+def test_lock_table_ddl_deallocates_by_each_tables_system_name(common, monkeypatch) -> None:
+    """--ddl (#162): OBJECT_LOCK_INFO names the SQL name; DLCOBJ needs the system name."""
+    monkeypatch.setitem(
+        sys.modules, "pyodbc", types.SimpleNamespace(Error=Exception, pooling=False)
+    )
+    probe = load(PROBES / "lib_lock_table.py", "lib_lock_table", monkeypatch)
+    sent = []
+    monkeypatch.setattr(probe.two, "timed", lambda conn, label, sql, *a, **k: sent.append(sql))
+    cases = probe.DdlCases(None, [object(), object()], "LIB")
+    cases.a_job = "1/U/A"
+    cases.shorts = {"DJDB2I_LOCKPROBE": "DJDB200001", "DJDB2I_LOCKPROBE2": "DJDB200002"}
+    rows = [
+        {"JOB_NAME": "1/U/A", "OBJECT_NAME": "DJDB2I_LOCKPROBE2", "LOCK_STATE": "*EXCL"},
+        {"JOB_NAME": "1/U/A", "OBJECT_NAME": "OTHER", "LOCK_STATE": "*EXCL"},
+        {"JOB_NAME": "2/U/B", "OBJECT_NAME": "DJDB2I_LOCKPROBE", "LOCK_STATE": "*SHRRD"},
+    ]
+    cases.dlcobj(rows)
+    assert sent == ["CALL QSYS2.QCMDEXC('DLCOBJ OBJ((LIB/DJDB200002 *FILE *EXCL))')"]

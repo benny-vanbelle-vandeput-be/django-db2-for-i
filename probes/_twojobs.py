@@ -23,6 +23,18 @@ from _common import ProbeError, Settings, connect, print_query, run_query
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from tests import table_registry
 
+
+def _pooling_off() -> None:
+    """Pooling must be off before the first connection of the process (pyodbc)."""
+    try:
+        import pyodbc
+    except ImportError:  # offline tests without the driver
+        return
+    pyodbc.pooling = False
+
+
+_pooling_off()
+
 OBJECT = "SELECT OBJNAME FROM TABLE(QSYS2.OBJECT_STATISTICS(?, '*FILE', ?)) X"
 WAIT_SECONDS = 2  # CHGPF WAITRCD: how long a blocked row access waits
 
@@ -49,7 +61,9 @@ def open_job(
     server, with its job and its locks (the second follow-up run on #162)."""
     import pyodbc
 
-    pyodbc.pooling = False
+    # Set off at import (_pooling_off); never silently switched back here.
+    if pyodbc.pooling is not False:
+        raise ProbeError("config", "ODBC pooling is on: closed connections would stay connected", 1)
     return connect(
         settings,
         {"CMT": cmt, "TRUEAUTOCOMMIT": trueautocommit, "DBQ": library},

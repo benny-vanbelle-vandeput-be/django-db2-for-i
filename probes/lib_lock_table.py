@@ -297,10 +297,224 @@ def run_followup(settings: Settings, jobs: list, library: str) -> dict[str, Any]
     return {"followup": cases, "cleanup": cleanup}
 
 
+# --- DDL and row changes (#162, lib_lock_table --ddl) -------------------------------
+
+TABLE2 = "DJDB2I_LOCKPROBE2"
+INDEX = "DJDB2I_LOCKPROBE_IX"
+
+
+class DdlCases(Followup):
+    """Do the locks of DDL statements and row changes in a transaction outlive the
+    driver's commit, as a LOCK TABLE lock does?"""
+
+    def __init__(self, settings: Settings, jobs: list, library: str):
+        super().__init__(settings, jobs, library)
+        self.shorts: dict[str, str] = {}
+        self.t2 = f"{library}.{TABLE2}"
+
+    def locks(self) -> list[dict[str, Any]] | str:
+        """The library's rows of OBJECT_LOCK_INFO for the probe's tables (read-only)."""
+        result = run_query(
+            self.b,
+            "OBJECT_LOCK_INFO",
+            "SELECT OBJECT_NAME, OBJECT_TYPE, MEMBER_NAME, LOCK_STATE, LOCK_STATUS, "
+            "LOCK_SCOPE, JOB_NAME FROM QSYS2.OBJECT_LOCK_INFO "
+            "WHERE OBJECT_SCHEMA = ? AND OBJECT_NAME IN (?, ?)",
+            (self.library, TABLE, TABLE2),
+        )
+        two.end(self.b)
+        print_query(result)
+        if not result["ok"]:
+            return f"error {result.get('sqlstate')} {result.get('message', '')[:200]}"
+        return result["rows"]
+
+    def dlcobj(self, rows) -> list[dict[str, Any]]:
+        results = []
+        for row in self.a_locks(rows):
+            short = self.shorts.get(str(row.get("OBJECT_NAME") or "").strip())
+            if not short:
+                continue
+            state = str(row.get("LOCK_STATE") or "").strip()
+            member = str(row.get("MEMBER_NAME") or "").strip()
+            target = f"{self.library}/{short} *FILE {state}" + (f" {member}" if member else "")
+            results.append(
+                two.timed(
+                    self.a,
+                    f"A DLCOBJ {short} {state} {member}".rstrip(),
+                    f"CALL QSYS2.QCMDEXC('DLCOBJ OBJ(({target}))')",
+                )
+            )
+        return results
+
+    def b_run(self, statements) -> dict[str, Any]:
+        record: dict[str, Any] = {}
+        for label, sql in statements:
+            record[label] = two.timed(self.b, f"B {label}", sql, fetch=sql.startswith("SELECT"))
+            if not record[label]["ok"]:
+                break  # blocked: the next statement would only wait again
+        two.end(self.b)
+        return record
+
+    def ddl_case(self, name: str, table: str, act, how: str, statements) -> dict[str, Any]:
+        print(f"\n======== {name} ========")
+        record: dict[str, Any] = {"A": dict(self.a_attrs, cmt="*CS", job=self.a_job)}
+        record["B before"] = two.timed(
+            self.b, "B SELECT before", f"SELECT * FROM {self.t}", fetch=True
+        )
+        two.end(self.b)
+        if not record["B before"]["ok"]:
+            raise ProbeError("check", f"{name}: the table is not free before the case; stopping")
+        record["A statement"] = act()
+        record["locks while held"] = self.locks()
+        record["release"] = (
+            two.timed(self.a, f"A {how}", how)
+            if how in ("COMMIT", "ROLLBACK")
+            else two.end(self.a, how)
+        )
+        record["locks after"] = self.locks()
+        record["B after"] = self.b_run(statements)
+        first = next(iter(record["B after"].values()), {"ok": True})
+        record["B after"]["SELECT"] = first  # what release_leftover reads
+        self.release_leftover(record)
+        return record
+
+    def run(self, cases: dict[str, Any]) -> dict[str, Any]:
+        t, t2 = self.t, self.t2
+        self.reopen_a(**BACKEND)
+        cases["cursor behavior"] = {
+            name: _getinfo(self.a, name)
+            for name in ("SQL_CURSOR_COMMIT_BEHAVIOR", "SQL_CURSOR_ROLLBACK_BEHAVIOR")
+        }
+        print(f"  cursor behavior: {cases['cursor behavior']}")
+        uses = (
+            ("SELECT", f"SELECT * FROM {t}"),
+            ("INSERT", f"INSERT INTO {t} (ID, V) VALUES (9, 9)"),
+        )
+
+        def statement(label, sql, register=None):
+            def act():
+                if register:
+                    entry = two.table_registry.parse(sql, self.library)
+                    two.table_registry.record(two.table_registry.list_path(), entry)
+                return two.timed(self.a, f"A {label}", sql)
+
+            return act
+
+        cases["D1. CREATE TABLE, driver commit"] = self.ddl_case(
+            "D1",
+            t2,
+            statement("CREATE TABLE", f"CREATE TABLE {t2} (ID INTEGER, V INTEGER)", register=True),
+            "commit",
+            (("SELECT", f"SELECT * FROM {t2}"), ("INSERT", f"INSERT INTO {t2} VALUES (1, 1)")),
+        )
+        self.shorts[TABLE2] = two.system_name(self.b, self.library, TABLE2)
+        two.end(self.b)
+        cases["D2. ALTER TABLE ADD COLUMN, driver commit"] = self.ddl_case(
+            "D2",
+            t,
+            statement("ALTER TABLE", f"ALTER TABLE {t} ADD COLUMN W INTEGER"),
+            "commit",
+            uses,
+        )
+        cases["D3. ALTER TABLE ADD COLUMN, driver rollback"] = self.ddl_case(
+            "D3",
+            t,
+            statement("ALTER TABLE", f"ALTER TABLE {t} ADD COLUMN W2 INTEGER"),
+            "rollback",
+            uses,
+        )
+        cases["D4. CREATE INDEX, driver commit"] = self.ddl_case(
+            "D4",
+            t,
+            statement("CREATE INDEX", f"CREATE INDEX {self.library}.{INDEX} ON {t} (V)"),
+            "commit",
+            uses,
+        )
+        cases["D5. ALTER TABLE ADD COLUMN, SQL COMMIT"] = self.ddl_case(
+            "D5",
+            t,
+            statement("ALTER TABLE", f"ALTER TABLE {t} ADD COLUMN W3 INTEGER"),
+            "COMMIT",
+            uses,
+        )
+        cases["R1. INSERT, driver commit"] = self.ddl_case(
+            "R1",
+            t,
+            statement("INSERT", f"INSERT INTO {t} (ID, V) VALUES (5, 5)"),
+            "commit",
+            (
+                ("UPDATE", f"UPDATE {t} SET V = 6 WHERE ID = 5"),
+                ("SELECT", f"SELECT * FROM {t} WHERE ID = 5"),
+            ),
+        )
+        cases["R2. UPDATE, driver commit"] = self.ddl_case(
+            "R2",
+            t,
+            statement("UPDATE", f"UPDATE {t} SET V = 7 WHERE ID = 1"),
+            "commit",
+            (("UPDATE", f"UPDATE {t} SET V = 8 WHERE ID = 1"),),
+        )
+        print("\n======== R3 ========")
+        r3: dict[str, Any] = {
+            "A UPDATE": two.timed(self.a, "A UPDATE", f"UPDATE {t} SET V = 10 WHERE ID = 1")
+        }
+        r3["B UPDATE while A holds the row"] = two.timed(
+            self.b, "B UPDATE", f"UPDATE {t} SET V = 11 WHERE ID = 1"
+        )
+        two.end(self.b)
+        r3["A commit"] = two.end(self.a, "commit")
+        r3["B UPDATE after A's commit"] = two.timed(
+            self.b, "B UPDATE again", f"UPDATE {t} SET V = 11 WHERE ID = 1"
+        )
+        two.end(self.b)
+        cases["R3. a row lock exists, then the driver's commit"] = r3
+        return cases
+
+
+def _getinfo(conn, name: str) -> Any:
+    """Read-only SQLGetInfo; 0 delete, 1 close, 2 preserve (ODBC SQL_CB_*)."""
+    import pyodbc
+
+    try:
+        return conn.getinfo(getattr(pyodbc, name))
+    except Exception as exc:  # recorded, the probe goes on
+        return f"error {exc!s:.120}"
+
+
+def run_ddl(settings: Settings, jobs: list, library: str) -> dict[str, Any]:
+    cases_run = DdlCases(settings, jobs, library)
+    cases: dict[str, Any] = {}
+    cleanup: dict[str, Any] = {}
+    try:
+        two.create(jobs[0], library, TABLE, "ID INTEGER, V INTEGER", "(1, 1), (2, 2)")
+        cases_run.shorts[TABLE] = two.system_name(jobs[0], library, TABLE)
+        two.end(jobs[0])
+        cases_run.run(cases)
+    except ProbeError as exc:
+        cases["stopped"] = str(exc)
+        print(f"\nSTOPPED: {exc}", file=sys.stderr)
+    finally:
+        two.end(jobs[1])
+        with contextlib.suppress(Exception):
+            cases_run.reopen_a(**BACKEND)
+        cleanup = two.drop(jobs[0], library, (TABLE2, TABLE))
+    print("\nSummary")
+    for name, record in cases.items():
+        if isinstance(record, dict) and "B after" in record:
+            results = {
+                k: two.outcome(v) for k, v in record["B after"].items() if isinstance(v, dict)
+            }
+            print(f"  {name}: {results}")
+        else:
+            print(f"  {name}: {record}")
+    return {"ddl": cases, "cleanup": cleanup}
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--execute", action="store_true", help="create, use and drop the table")
     parser.add_argument("--followup", action="store_true", help="the cases of what releases it")
+    parser.add_argument("--ddl", action="store_true", help="DDL and row changes, then a commit")
     args = parser.parse_args(argv)
     jobs: list = []
     try:
@@ -309,12 +523,15 @@ def main(argv: list[str]) -> int:
         if not library:
             raise ProbeError("config", "DB2I_DEFAULT_LIBRARY is not set", 1)
         jobs.append(two.open_job(settings, library))
-        two.checks(jobs[0], library, (TABLE,))
+        two.checks(jobs[0], library, (TABLE, TABLE2) if args.ddl else (TABLE,))
         if not args.execute:
             print("\nDry run: nothing was changed. Re-run with --execute to apply.")
             return 0
         jobs.append(two.open_job(settings, library))
-        if args.followup:
+        if args.ddl:
+            result = run_ddl(settings, jobs, library)
+            name = "lib_lock_table_ddl"
+        elif args.followup:
             result = run_followup(settings, jobs, library)
             name = "lib_lock_table_followup"
         else:
