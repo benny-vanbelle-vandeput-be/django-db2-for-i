@@ -2496,10 +2496,87 @@ MODE`, every statement of B fails with SQL0913 after about 30 s: `SELECT` (also
 `LOCK TABLE ... IN SHARE MODE`. **After A's `ROLLBACK`, B's control `SELECT` and
 `INSERT` still failed with SQL0913**, so the lock was apparently not released by the
 rollback; the `IN SHARE MODE` series that followed is therefore not valid (every
-statement SQL0913, as under the exclusive lock). What releases it (`COMMIT`,
-`UNLOCK TABLE`, the end of the connection) is not known yet: a follow-up probe,
-with its own approval, on #162. It matters for `add_field()`, which locks the table
+statement SQL0913, as under the exclusive lock). What releases it: see "What releases the lock" below. It matters for `add_field()`, which locks the table
 this way (`schema.py`, `sql_lock_table`).
+
+What the documentation says (sources found by the maintainer, 2026-11-11; not yet
+checked by a probe, except where a probe result above says so):
+
+- IBM's [LOCK TABLE](https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_73/db2/rbafzh2lockt.htm)
+  (7.3, read 2026-11-11): the lock is released when the unit of work ends, **unless
+  it ends with `COMMIT HOLD` or `ROLLBACK HOLD`**; also when the activation group
+  ends, when the connection is disconnected, and in a few other cases (the first SQL
+  program in the stack ends, a type 1 `CONNECT`, release-pending). It can be released
+  by hand with the CL command `DLCOBJ`.
+- There is **no `UNLOCK TABLE`** statement in SQL on IBM i, also not in 7.6;
+  `DLCOBJ` is the way ([midrange-l, 2026-03](https://archive.midrange.com/midrange-l/202603/msg00197.html)).
+- IBM i Access ODBC keyword
+  [`TRUEAUTOCOMMIT`](https://www.ibm.com/support/knowledgecenter/en/ssw_ibm_i_74/rzaik/connectkeywords.htm),
+  default 0: autocommit then runs under `*NONE`, with no unit of work, so a rollback
+  cannot release a lock. The backend sets `TRUEAUTOCOMMIT=1`
+  (`drivers/pyodbc.py`, `CONNECTION_DEFAULTS`), and so did job A in this probe.
+- **Hypothesis, not verified:** the driver preserves cursors over commit and
+  rollback by default (`CWB_ATTR_PRESERVE_CURSORS`), possibly as `COMMIT HOLD` /
+  `ROLLBACK HOLD`, which would keep the `LOCK TABLE` lock. Row locks were released by
+  the driver's rollback in `lib_select_for_update` (B continued at once).
+
+**What releases the lock** (`lib_lock_table --followup`, 2026-11-11, approved on
+#162; [lib_lock_table_followup.json](../probes/results/lib_lock_table_followup.json)).
+Job A `*CS`, ODBC pooling off as in the backend; each case on a free table, A locks
+`IN EXCLUSIVE MODE` (three locks show in `OBJECT_LOCK_INFO`: `*SHRRD`, `*SHRRD`,
+`*EXCL`, scope `JOB`), then:
+
+| Case | Job A | Release | B after |
+|---|---|---|---|
+| 2 | transaction, `TRUEAUTOCOMMIT=1` (the backend) | pyodbc `rollback()` | **SQL0913: still locked** |
+| 3 | the same | SQL statement `ROLLBACK` | ok, the locks are gone |
+| 4a | the same | pyodbc `commit()` | **SQL0913: still locked** |
+| 4b | the same | SQL statement `COMMIT` | ok |
+| 5 | the same | `DLCOBJ` of each of A's three locks (`QSYS2.QCMDEXC`) | ok |
+| 1 | autocommit, `TRUEAUTOCOMMIT=0` | pyodbc `rollback()` | **SQL0913: still locked** |
+| 6 | autocommit, `TRUEAUTOCOMMIT=1` | pyodbc `rollback()` | **SQL0913: still locked** |
+| 7 | transaction | the connection closed | ok |
+
+- **The driver's commit and rollback (`SQLEndTran`) keep a `LOCK TABLE` lock; the SQL
+  statements `COMMIT` and `ROLLBACK` release it.** This fits IBM's text (the lock
+  stays when the unit of work ends with `COMMIT HOLD` / `ROLLBACK HOLD`) and the
+  hypothesis that the driver ends units of work with HOLD; the driver's own setting is
+  not known. Row locks are released by the driver's commit and rollback
+  (`lib_select_for_update`).
+- In autocommit (`TRUEAUTOCOMMIT` 0 or 1) the lock also outlives the statement.
+- Closing the connection, `DLCOBJ` of every lock, or an SQL `COMMIT` / `ROLLBACK`
+  release it.
+- So **the backend's `LOCK TABLE` in `add_field()` and `_refuse_changed_values()`
+  keeps the table locked for every other job after the migration's commit, until the
+  connection closes.** The connection's own job is not blocked (the locks are
+  job-scoped), which is why the test runs, with one connection, never showed it.
+- `QSYS2.OBJECT_LOCK_INFO.OBJECT_NAME` holds the SQL name (`DJDB2I_LOCKPROBE`), not
+  the system name: the probe's filter on the system name found no rows, so its
+  summary column "A's locks left" reads 0 throughout; the library-wide rows it
+  printed instead are the evidence above.
+- The two earlier follow-up runs stopped after case 2 (the probe's own faults: the
+  leftover lock was not released, and ODBC pooling was on, so closing A did not
+  disconnect it); the table was dropped each time. With pooling on, the `*RR` part of
+  `lib_merge_concurrency` briefly had four physical connections (two closed ones
+  still connected in the pool, two new), not two; the helper turns pooling off since.
+
+**DDL and row changes** (`lib_lock_table --ddl`, 2026-11-11, approved on #162;
+[lib_lock_table_ddl.json](../probes/results/lib_lock_table_ddl.json)). Job A as the
+backend (`*CS`, `TRUEAUTOCOMMIT=1`, a transaction, pooling off):
+
+- The driver reports `SQL_CURSOR_COMMIT_BEHAVIOR` and `SQL_CURSOR_ROLLBACK_BEHAVIOR`
+  = 2 (`SQL_CB_PRESERVE`): it keeps cursors over commit and rollback, which fits the
+  `COMMIT HOLD` / `ROLLBACK HOLD` explanation above.
+- **Only the `LOCK TABLE` lock outlives the driver's commit.** After the driver's
+  commit (or rollback) of `CREATE TABLE`, `ALTER TABLE ... ADD COLUMN` and
+  `CREATE INDEX`, job B read and wrote the table at once; the same after an SQL
+  `COMMIT` (control).
+- Row locks: after A's `INSERT` or `UPDATE` and the driver's commit, B updated the
+  row at once; while A's `UPDATE` was not yet committed, B waited and got SQL0913
+  after 2.2 s, and succeeded right after A's commit.
+- The probe's `OBJECT_LOCK_INFO` query named a column that does not exist
+  (`MEMBER_NAME`, SQL0206), so this run has no lock rows; job B's results are the
+  evidence.
 
 **MERGE with two jobs** (`lib_merge_concurrency`), the backend's `MERGE` with the
 conflict on a unique key `K`; A merges `K = 1` and does not commit yet:

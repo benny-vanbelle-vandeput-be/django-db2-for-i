@@ -1,0 +1,499 @@
+{
+  "probe": "lib_lock_table_ddl",
+  "utc": "20261111T194754Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "approved": "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/162#issuecomment-6805581322",
+  "approved_by": "benny-vanbelle-vandeput-be",
+  "ddl": {
+    "cursor behavior": {
+      "SQL_CURSOR_COMMIT_BEHAVIOR": 2,
+      "SQL_CURSOR_ROLLBACK_BEHAVIOR": 2
+    },
+    "D1. CREATE TABLE, driver commit": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "431994/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ]
+        ],
+        "ok": true,
+        "ms": 168
+      },
+      "A statement": {
+        "label": "A CREATE TABLE",
+        "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE2 (ID INTEGER, V INTEGER)",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 65
+      },
+      "locks while held": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "release": "ok",
+      "locks after": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE2",
+          "params": [],
+          "rows": [],
+          "ok": true,
+          "ms": 155
+        },
+        "INSERT": {
+          "label": "B INSERT",
+          "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE2 VALUES (1, 1)",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 52
+        }
+      }
+    },
+    "D2. ALTER TABLE ADD COLUMN, driver commit": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "431994/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ]
+        ],
+        "ok": true,
+        "ms": 129
+      },
+      "A statement": {
+        "label": "A ALTER TABLE",
+        "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ADD COLUMN W INTEGER",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 156
+      },
+      "locks while held": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "release": "ok",
+      "locks after": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+          "params": [],
+          "rows": [
+            [
+              1,
+              1,
+              null
+            ],
+            [
+              2,
+              2,
+              null
+            ]
+          ],
+          "ok": true,
+          "ms": 154
+        },
+        "INSERT": {
+          "label": "B INSERT",
+          "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE (ID, V) VALUES (9, 9)",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 50
+        }
+      }
+    },
+    "D3. ALTER TABLE ADD COLUMN, driver rollback": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "431994/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1,
+            1,
+            null
+          ],
+          [
+            2,
+            2,
+            null
+          ]
+        ],
+        "ok": true,
+        "ms": 155
+      },
+      "A statement": {
+        "label": "A ALTER TABLE",
+        "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ADD COLUMN W2 INTEGER",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 169
+      },
+      "locks while held": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "release": "ok",
+      "locks after": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+          "params": [],
+          "rows": [
+            [
+              1,
+              1,
+              null
+            ],
+            [
+              2,
+              2,
+              null
+            ]
+          ],
+          "ok": true,
+          "ms": 135
+        },
+        "INSERT": {
+          "label": "B INSERT",
+          "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE (ID, V) VALUES (9, 9)",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 44
+        }
+      }
+    },
+    "D4. CREATE INDEX, driver commit": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "431994/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1,
+            1,
+            null
+          ],
+          [
+            2,
+            2,
+            null
+          ]
+        ],
+        "ok": true,
+        "ms": 111
+      },
+      "A statement": {
+        "label": "A CREATE INDEX",
+        "sql": "CREATE INDEX <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE_IX ON <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE (V)",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 94
+      },
+      "locks while held": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "release": "ok",
+      "locks after": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+          "params": [],
+          "rows": [
+            [
+              1,
+              1,
+              null
+            ],
+            [
+              2,
+              2,
+              null
+            ]
+          ],
+          "ok": true,
+          "ms": 159
+        },
+        "INSERT": {
+          "label": "B INSERT",
+          "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE (ID, V) VALUES (9, 9)",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 42
+        }
+      }
+    },
+    "D5. ALTER TABLE ADD COLUMN, SQL COMMIT": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "431994/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1,
+            1,
+            null
+          ],
+          [
+            2,
+            2,
+            null
+          ]
+        ],
+        "ok": true,
+        "ms": 122
+      },
+      "A statement": {
+        "label": "A ALTER TABLE",
+        "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ADD COLUMN W3 INTEGER",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 227
+      },
+      "locks while held": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "release": {
+        "label": "A COMMIT",
+        "sql": "COMMIT",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 92
+      },
+      "locks after": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+          "params": [],
+          "rows": [
+            [
+              1,
+              1,
+              null,
+              null
+            ],
+            [
+              2,
+              2,
+              null,
+              null
+            ]
+          ],
+          "ok": true,
+          "ms": 159
+        },
+        "INSERT": {
+          "label": "B INSERT",
+          "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE (ID, V) VALUES (9, 9)",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 47
+        }
+      }
+    },
+    "R1. INSERT, driver commit": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "431994/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1,
+            1,
+            null,
+            null
+          ],
+          [
+            2,
+            2,
+            null,
+            null
+          ]
+        ],
+        "ok": true,
+        "ms": 127
+      },
+      "A statement": {
+        "label": "A INSERT",
+        "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE (ID, V) VALUES (5, 5)",
+        "params": [],
+        "rowcount": 1,
+        "ok": true,
+        "ms": 44
+      },
+      "locks while held": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "release": "ok",
+      "locks after": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "B after": {
+        "UPDATE": {
+          "label": "B UPDATE",
+          "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE SET V = 6 WHERE ID = 5",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 63
+        },
+        "SELECT": {
+          "label": "B UPDATE",
+          "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE SET V = 6 WHERE ID = 5",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 63
+        }
+      }
+    },
+    "R2. UPDATE, driver commit": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "431994/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT * FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1,
+            1,
+            null,
+            null
+          ],
+          [
+            2,
+            2,
+            null,
+            null
+          ],
+          [
+            5,
+            5,
+            null,
+            null
+          ]
+        ],
+        "ok": true,
+        "ms": 136
+      },
+      "A statement": {
+        "label": "A UPDATE",
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE SET V = 7 WHERE ID = 1",
+        "params": [],
+        "rowcount": 1,
+        "ok": true,
+        "ms": 40
+      },
+      "locks while held": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "release": "ok",
+      "locks after": "error 42S22 [42S22] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0206 - Column or global variable MEMBER_NAME not found. (-206) (SQLPrepare)",
+      "B after": {
+        "UPDATE": {
+          "label": "B UPDATE",
+          "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE SET V = 8 WHERE ID = 1",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 44
+        },
+        "SELECT": {
+          "label": "B UPDATE",
+          "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE SET V = 8 WHERE ID = 1",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 44
+        }
+      }
+    },
+    "R3. a row lock exists, then the driver's commit": {
+      "A UPDATE": {
+        "label": "A UPDATE",
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE SET V = 10 WHERE ID = 1",
+        "params": [],
+        "rowcount": 1,
+        "ok": true,
+        "ms": 39
+      },
+      "B UPDATE while A holds the row": {
+        "label": "B UPDATE",
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE SET V = 11 WHERE ID = 1",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 2229
+      },
+      "A commit": "ok",
+      "B UPDATE after A's commit": {
+        "label": "B UPDATE again",
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE SET V = 11 WHERE ID = 1",
+        "params": [],
+        "rowcount": 1,
+        "ok": true,
+        "ms": 66
+      }
+    }
+  },
+  "cleanup": {
+    "DJDB2I_LOCKPROBE2": true,
+    "DJDB2I_LOCKPROBE": true,
+    "left": []
+  }
+}
