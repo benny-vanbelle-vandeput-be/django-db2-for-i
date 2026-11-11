@@ -133,7 +133,7 @@ supports_uuid4_function_in_default.off = "There is no `UUID4()` database functio
 supports_uuid7_function.description = "The `UUID7()` database function (Django 6.1+)."
 supports_uuid7_function.off = "Db2 for i has no function that generates a time-ordered UUID (not verified on IBM i)."
 test_db_allows_multiple_connections.description = "The test database may be used by several connections at once."
-test_db_allows_multiple_connections.off = "The shared PUB400 system limits connections per client."
+test_db_allows_multiple_connections.planned = "phase 7 (a second connection to the same test library; PUB400 allows up to three for such tests since #236)"
 
 # Decided in phase 4 (docs/phases/phase-4.md): off, with the reason.
 can_create_inline_fk.description = "Foreign keys are created inline in `CREATE TABLE`."
@@ -187,8 +187,8 @@ supports_nulls_distinct_unique_constraints.off = "Db2 for i takes no `NULLS DIST
 # --- Planned ----------------------------------------------------------------
 
 # Phase 6: window functions, JSONField, database functions, DB-level on_delete.
-# Also query flags left from phase 2. The row locks of select_for_update() wait for a
-# dedicated IBM i (the maintainer's answer 1 on #218): blocking needs two connections.
+# Also query flags left from phase 2. The row locks of select_for_update(): phase 7,
+# verified with two jobs on PUB400 (lib_select_for_update, #237; two connections since #236).
 # Not verified on IBM i yet, except: LOB columns in GROUP BY (probe queries) and
 # LISTAGG(DISTINCT ...) with a separator (probe listagg) work; Django's tests
 # decide. Some may stay off (NOWAIT, EXCLUDE in window frames).
@@ -200,18 +200,18 @@ can_introspect_json_field.description = "Introspection recognizes a `JSONField` 
 can_introspect_json_field.off = "Db2 for i refuses `CHECK (C IS JSON)` on an `NCLOB` (SQL0546, probe `lib_json_check`), so a JSON column cannot be recognized."
 has_json_object_function.description = "JSON objects can be built in SQL (`JSONObject`)."
 has_select_for_update.description = "`select_for_update()` locks the selected rows."
-has_select_for_update.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
+has_select_for_update.planned = "phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237)"
 has_select_for_update_nowait.description = "`select_for_update(nowait=True)` fails instead of waiting for a lock."
-has_select_for_update_nowait.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
+has_select_for_update_nowait.off = "Db2 for i has no per-statement no-wait: `NOWAIT`, `WAIT 0` and `SET CURRENT LOCK TIMEOUT` are SQL0104 (probes `select_for_update`, `lib_select_for_update`)."
 has_select_for_update_of.description = "`select_for_update(of=...)` locks rows of the named tables only."
-has_select_for_update_of.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
+has_select_for_update_of.planned = "phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237)"
 has_select_for_update_skip_locked.description = "`select_for_update(skip_locked=True)` skips locked rows."
-has_select_for_update_skip_locked.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
+has_select_for_update_skip_locked.planned = "phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237)"
 ignores_unnecessary_order_by_in_subqueries.description = "Django may leave an `ORDER BY` in a subquery; the database accepts and ignores it."
 rounds_to_even.description = "`Round()` rounds halves to even."
 rounds_to_even.off = "Db2 for i's `ROUND` takes halves away from zero: 2.5 to 3, -2.5 to -3 (probe `db_functions`)."
 select_for_update_of_column.description = "`select_for_update(of=...)` is written with column names, not table names."
-select_for_update_of_column.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
+select_for_update_of_column.planned = "phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237)"
 supports_aggregate_distinct_multiple_argument.description = "`StringAgg(..., distinct=True)` with a delimiter (`distinct` with several arguments)."
 supports_cast_with_precision.description = "`Cast()` to a type with a length or precision, e.g. `DecimalField(max_digits=...)`."
 supports_default_in_lead_lag.description = "`Lead()` / `Lag()` with a `default`."
@@ -230,7 +230,7 @@ supports_over_clause.description = "Window functions (`Window`, `OVER (...)`)."
 supports_primitives_in_json_field.description = "`JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays."
 supports_primitives_in_json_field.off = "Db2 for i's JSON functions cannot read a root scalar (NULL; probe `json_functions`); it is stored and read back, but key lookups on it give nothing."
 supports_select_for_update_with_limit.description = "`select_for_update()` on a sliced queryset."
-supports_select_for_update_with_limit.planned = "a dedicated IBM i (blocking needs two connections; open question of phase 6)"
+supports_select_for_update_with_limit.planned = "phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237)"
 
 # --- Not applicable ---------------------------------------------------------
 

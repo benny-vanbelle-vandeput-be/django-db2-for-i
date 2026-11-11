@@ -243,7 +243,7 @@ prs = [229, 230, 231]
 
 [[phases]]
 phase = "7"
-content = "Polish and release 1.0.0 (proposal, not yet approved)"
+content = "Polish and beta 4, then 1.0.0 (proposal, not yet approved)"
 status = "planned"
 
 [[phases]]
@@ -361,10 +361,7 @@ text = "Errors in `annotations` / `expressions_case`, outside the phase 2 module
 text = "Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier."
 
 [[tracks]]
-text = "`lib_merge_concurrency`: `MERGE` under concurrency (`ignore_conflicts`, `update_conflicts`, `m2m.add()`) is documented from IBM's documentation, not verified on IBM i. The probe needs two connections, so a dedicated IBM i ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#merge-under-concurrency-not-verified-on-ibm-i))."
+text = "The LOB limit of a multi-row statement is measured for 1 and 2 LOB columns only (about 1,024 markers); with 3 and 5 own IBM i tests show that the batches work and that 1,080 or 1,100 markers are refused, not where the limit lies; a QTEMP probe in phase 7 ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#returning-bulk-inserts-indexes-unique-nulls-cursors-phase-5-step-0))."
 
 [[tracks]]
-text = "The LOB limit of a multi-row statement is measured for 1 and 2 LOB columns only (about 1,024 markers); with 3 and 5 own IBM i tests show that the batches work and that 1,080 or 1,100 markers are refused, not where the limit lies ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#returning-bulk-inserts-indexes-unique-nulls-cursors-phase-5-step-0))."
-
-[[tracks]]
-text = "`select_for_update()` stays off: row locking matters for real multi-user use, and blocking can only be verified with two connections, so a dedicated IBM i ([phase 6, decision 1](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/phases/phase-6.md#key-decisions))."
+text = "`select_for_update()` is off until phase 7: verified with two jobs on PUB400 (`lib_select_for_update`, #237), it needs `FOR UPDATE ... WITH RS`; `nowait` stays off ([phase 7](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/phases/phase-7.md))."
