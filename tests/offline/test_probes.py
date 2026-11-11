@@ -151,3 +151,94 @@ def test_the_maintainers_comment_approves(approval) -> None:
 def test_anything_else_does_not(approval, url, fetch, message) -> None:
     with pytest.raises(approval.ApprovalError, match=message):
         approval.check(url, fetch or fake_github("benny-vanbelle-vandeput-be"))
+
+
+# --- probes/qtemp_connections.py (#234) --------------------------------------------
+
+
+class FakeConnection:
+    """Answers SELECT 1 and the job name; records whether it was closed."""
+
+    def __init__(self, number: int, closed: list[int]):
+        self.number, self.closed = number, closed
+
+    def cursor(self):
+        conn = self
+
+        class Cursor:
+            def execute(self, sql, params=()):
+                column = "JOB_NAME" if "JOB_NAME" in sql else "ONE"
+                self.description = [(column,)]
+                self.rows = [(f"{conn.number:06d}/USER/QZDASOINIT" if column == "JOB_NAME" else 1,)]
+
+            def fetchall(self):
+                return self.rows
+
+            def close(self):
+                pass
+
+        return Cursor()
+
+    def close(self):
+        self.closed.append(self.number)
+
+
+@pytest.fixture
+def connections_probe(common, monkeypatch):
+    monkeypatch.setitem(sys.modules, "pyodbc", types.SimpleNamespace(Error=Exception))
+    return load(PROBES / "qtemp_connections.py", "qtemp_connections", monkeypatch)
+
+
+def opener(common, refuse_at: int | None, attempts: list[int], closed: list[int]):
+    def open_connection(settings):
+        attempts.append(len(attempts) + 1)
+        if attempts[-1] == refuse_at:
+            raise common.ProbeError("connection", "refused, password secret", 3)
+        return FakeConnection(attempts[-1], closed)
+
+    return open_connection
+
+
+SETTINGS = types.SimpleNamespace(scrub=lambda text: text.replace("secret", "***"))
+
+
+def test_connections_opens_up_to_four_holds_them_and_closes_in_reverse(
+    common, connections_probe
+) -> None:
+    attempts, closed, sleeps = [], [], []
+    result = connections_probe.run(
+        SETTINGS, 4, opener(common, None, attempts, closed), sleeps.append
+    )
+    assert attempts == [1, 2, 3, 4]
+    assert result["connections_open_together"] == 4 and result["separate_jobs"]
+    assert [len(step["pings"]) for step in result["steps"]] == [1, 2, 3, 4]
+    assert [h["after_seconds"] for h in result["hold"]] == [10, 20, 30]
+    assert sleeps == [10, 10, 10] and result["all_pings_ok"]
+    assert closed == [4, 3, 2, 1] and "refused" not in result
+
+
+def test_connections_stops_at_the_first_refusal_without_retry(common, connections_probe) -> None:
+    attempts, closed = [], []
+    result = connections_probe.run(
+        SETTINGS, 4, opener(common, 3, attempts, closed), lambda seconds: None
+    )
+    assert attempts == [1, 2, 3], "no retry and no 4th connection after a refusal"
+    assert result["connections_open_together"] == 2
+    assert result["refused"]["connection"] == 3
+    assert "secret" not in result["refused"]["message"]
+    assert closed == [2, 1]
+
+
+def test_connections_without_a_first_connection_fails_as_usual(common, connections_probe) -> None:
+    attempts, closed = [], []
+    with pytest.raises(common.ProbeError):
+        connections_probe.run(SETTINGS, 4, opener(common, 1, attempts, closed), lambda s: None)
+    assert attempts == [1] and closed == []
+
+
+@pytest.mark.parametrize("maximum", [0, 5])
+def test_connections_never_tries_more_than_four(common, connections_probe, maximum) -> None:
+    attempts = []
+    with pytest.raises(common.ProbeError, match="--max"):
+        connections_probe.run(SETTINGS, maximum, opener(common, None, attempts, []), print)
+    assert attempts == []
