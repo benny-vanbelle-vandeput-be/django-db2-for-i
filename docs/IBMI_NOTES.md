@@ -2428,6 +2428,24 @@ refused, so it never existed. Result: `probes/results/lib_json_check.json`.
   variants tried", although the variants did run, because the check itself was refused. The script is corrected;
   the cases above are right. Not run again for a label.
 
+### Connections at the same time (`probes/qtemp_connections.py`, #234)
+
+PUB400 (IBM i 7.5), 2026-11-11, read-only (nothing created or changed), once,
+with the maintainer's "ok" on #234; result in
+[probes/results/qtemp_connections.json](../probes/results/qtemp_connections.json).
+
+- **Four connections at the same time work.** Each was opened while the earlier
+  ones stayed open (about 1.4 to 1.6 s each, TLS), each is its own job
+  (`QZDASSINIT`, the TLS database server job), none was refused.
+- **They stay usable together:** all four answered a `SELECT 1` after each new
+  connection and every 10 seconds during 30 seconds held open.
+- **The limit itself is unknown:** the probe stops at four by design (no fifth
+  connection was tried), and PUB400 states only "a hard restriction on number of
+  connections from a single IP".
+- So the earlier statement "PUB400 allows one connection per run" (here and in
+  DECISIONS) was this project's rule, not PUB400's limit. The rule stays until it is
+  changed in a pull request of its own (#234, step 2).
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

@@ -1,0 +1,146 @@
+{
+  "probe": "qtemp_connections",
+  "utc": "20261111T150620Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "read-only (SELECT 1 and the job name; nothing created or changed)",
+  "maximum_tried": 4,
+  "steps": [
+    {
+      "connection": 1,
+      "connect_ms": 1552,
+      "job_name": "404890/QUSER/QZDASSINIT",
+      "pings": [
+        {
+          "connection": 1,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "connection": 2,
+      "connect_ms": 1352,
+      "job_name": "404895/QUSER/QZDASSINIT",
+      "pings": [
+        {
+          "connection": 1,
+          "ok": true
+        },
+        {
+          "connection": 2,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "connection": 3,
+      "connect_ms": 1492,
+      "job_name": "404903/QUSER/QZDASSINIT",
+      "pings": [
+        {
+          "connection": 1,
+          "ok": true
+        },
+        {
+          "connection": 2,
+          "ok": true
+        },
+        {
+          "connection": 3,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "connection": 4,
+      "connect_ms": 1576,
+      "job_name": "404921/QUSER/QZDASSINIT",
+      "pings": [
+        {
+          "connection": 1,
+          "ok": true
+        },
+        {
+          "connection": 2,
+          "ok": true
+        },
+        {
+          "connection": 3,
+          "ok": true
+        },
+        {
+          "connection": 4,
+          "ok": true
+        }
+      ]
+    }
+  ],
+  "connections_open_together": 4,
+  "separate_jobs": true,
+  "hold": [
+    {
+      "after_seconds": 10,
+      "pings": [
+        {
+          "connection": 1,
+          "ok": true
+        },
+        {
+          "connection": 2,
+          "ok": true
+        },
+        {
+          "connection": 3,
+          "ok": true
+        },
+        {
+          "connection": 4,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "after_seconds": 20,
+      "pings": [
+        {
+          "connection": 1,
+          "ok": true
+        },
+        {
+          "connection": 2,
+          "ok": true
+        },
+        {
+          "connection": 3,
+          "ok": true
+        },
+        {
+          "connection": 4,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "after_seconds": 30,
+      "pings": [
+        {
+          "connection": 1,
+          "ok": true
+        },
+        {
+          "connection": 2,
+          "ok": true
+        },
+        {
+          "connection": 3,
+          "ok": true
+        },
+        {
+          "connection": 4,
+          "ok": true
+        }
+      ]
+    }
+  ],
+  "all_pings_ok": true
+}
