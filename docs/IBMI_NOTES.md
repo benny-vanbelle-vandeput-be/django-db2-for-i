@@ -2501,6 +2501,27 @@ statement SQL0913, as under the exclusive lock). What releases it (`COMMIT`,
 with its own approval, on #162. It matters for `add_field()`, which locks the table
 this way (`schema.py`, `sql_lock_table`).
 
+What the documentation says (sources found by the maintainer, 2026-11-11; not yet
+checked by a probe, except where a probe result above says so):
+
+- IBM's [LOCK TABLE](https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_73/db2/rbafzh2lockt.htm)
+  (7.3, read 2026-11-11): the lock is released when the unit of work ends, **unless
+  it ends with `COMMIT HOLD` or `ROLLBACK HOLD`**; also when the activation group
+  ends, when the connection is disconnected, and in a few other cases (the first SQL
+  program in the stack ends, a type 1 `CONNECT`, release-pending). It can be released
+  by hand with the CL command `DLCOBJ`.
+- There is **no `UNLOCK TABLE`** statement in SQL on IBM i, also not in 7.6;
+  `DLCOBJ` is the way ([midrange-l, 2026-03](https://archive.midrange.com/midrange-l/202603/msg00197.html)).
+- IBM i Access ODBC keyword
+  [`TRUEAUTOCOMMIT`](https://www.ibm.com/support/knowledgecenter/en/ssw_ibm_i_74/rzaik/connectkeywords.htm),
+  default 0: autocommit then runs under `*NONE`, with no unit of work, so a rollback
+  cannot release a lock. The backend sets `TRUEAUTOCOMMIT=1`
+  (`drivers/pyodbc.py`, `CONNECTION_DEFAULTS`), and so did job A in this probe.
+- **Hypothesis, not verified:** the driver preserves cursors over commit and
+  rollback by default (`CWB_ATTR_PRESERVE_CURSORS`), possibly as `COMMIT HOLD` /
+  `ROLLBACK HOLD`, which would keep the `LOCK TABLE` lock. Row locks were released by
+  the driver's rollback in `lib_select_for_update` (B continued at once).
+
 **MERGE with two jobs** (`lib_merge_concurrency`), the backend's `MERGE` with the
 conflict on a unique key `K`; A merges `K = 1` and does not commit yet:
 
