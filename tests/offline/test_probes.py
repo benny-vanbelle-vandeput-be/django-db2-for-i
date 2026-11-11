@@ -12,7 +12,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 PROBES = ROOT / "probes"
-NOT_PROBES = {"_common.py", "run.py"}
+NOT_PROBES = {"_common.py", "_twojobs.py", "run.py"}
 URL = "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/143#issuecomment-42"
 
 
@@ -66,7 +66,34 @@ def test_lib_probes_connect_only_through_the_gate() -> None:
     for path in PROBES.glob("lib_*.py"):
         text = path.read_text()
         assert "pyodbc.connect" not in text, f"{path.name} must connect through _common.connect"
-        assert re.search(r"\bconnect\(", text), path.name
+        assert re.search(r"\b(connect|open_job)\(", text), path.name
+    # The two-job helper (#162, #237, #238) opens its jobs through the same gate.
+    helper = (PROBES / "_twojobs.py").read_text()
+    assert "pyodbc.connect" not in helper and re.search(r"\bconnect\(", helper)
+
+
+@pytest.mark.parametrize(
+    ("message", "code"),
+    [
+        (
+            "[SQL0913] Row or object DJDB2I_X in L type *FILE in use. (-913) (SQLExecDirectW)",
+            "SQL0913",
+        ),
+        ("Duplicate key value specified. (-803) (SQLExecDirectW)", "SQL0803"),
+        ("no code here", "?"),
+    ],
+)
+def test_twojobs_reads_the_sqlcode(common, message, code) -> None:
+    two = load(PROBES / "_twojobs.py", "_twojobs")
+    assert two.sqlcode(message) == code
+
+
+def test_twojobs_probes_never_open_more_than_two_jobs_at_once() -> None:
+    """CLAUDE.md: a lock test may use at most three connections (#234); these use two."""
+    for name in ("lib_lock_table", "lib_select_for_update", "lib_merge_concurrency"):
+        text = (PROBES / f"{name}.py").read_text()
+        assert text.count("two.open_job(") <= 4, name
+        assert "jobs.clear()" in text or text.count("two.open_job(") == 2, name
 
 
 def test_qtemp_probes_with_an_entry_point_run_through_one_session() -> None:
