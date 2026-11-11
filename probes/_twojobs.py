@@ -140,17 +140,44 @@ def create(conn, library: str, table: str, body: str, rows: str) -> None:
     entry = table_registry.parse(sql, library)
     assert entry is not None and entry.name == table
     table_registry.record(table_registry.list_path(), entry)
+    created = timed(conn, f"create {table}", sql)
+    end(conn, "commit")
+    # A CL command takes the 10-character system name, not the SQL name (CPD0074
+    # on the first runs, #237).
+    names = run_query(
+        conn,
+        f"system name of {table}",
+        "SELECT SYSTEM_TABLE_NAME AS N FROM QSYS2.SYSTABLES "
+        "WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?",
+        (library, table),
+    )
+    system_name = names["rows"][0]["N"] if created["ok"] and names["ok"] and names["rows"] else table
     for label, statement in (
-        (f"create {table}", sql),
-        (f"rows of {table}", f"INSERT INTO {library}.{table} VALUES {rows}"),
+        # Before the rows: CHGPF needs the file to itself, and the job may keep the
+        # file open after an INSERT.
         (
-            f"WAITRCD({WAIT_SECONDS}) of {table}",
-            f"CALL QSYS2.QCMDEXC('CHGPF FILE({library}/{table}) WAITRCD({WAIT_SECONDS})')",
+            f"WAITRCD({WAIT_SECONDS}) of {table} ({system_name})",
+            f"CALL QSYS2.QCMDEXC('CHGPF FILE({library}/{system_name}) WAITRCD({WAIT_SECONDS})')",
         ),
+        (f"rows of {table}", f"INSERT INTO {library}.{table} VALUES {rows}"),
     ):
-        if not timed(conn, label, statement)["ok"]:
+        if not created["ok"]:
+            raise ProbeError("refused", f"create {table} failed: {created.get('message', '')}")
+        result = timed(conn, label, statement)
+        if not result["ok"]:
+            # The command's own messages (CPD...) are in this job's log; read-only.
+            log = run_query(
+                conn,
+                "job log",
+                "SELECT MESSAGE_ID, MESSAGE_TEXT FROM TABLE(QSYS2.JOBLOG_INFO('*')) X "
+                "ORDER BY ORDINAL_POSITION DESC FETCH FIRST 6 ROWS ONLY",
+            )
+            print_query(log)
             end(conn)
-            raise ProbeError("refused", f"{label} failed; the cleanup drops what exists")
+            raise ProbeError(
+                "refused",
+                f"{label} failed: {result.get('message', '')}; the cleanup drops what exists",
+            )
         end(conn, "commit")
 
 
