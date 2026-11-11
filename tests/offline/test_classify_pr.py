@@ -674,3 +674,44 @@ def test_the_workflow_takes_the_previous_head_from_the_comment() -> None:
     labels = workflow.index('gh api "repos/$REPO/issues/$PR/labels"')
     comment = workflow.index("-F body=@comment.md")
     assert labels < comment  # the labels before the comment that names the head
+
+
+# --- The working tree (bin/check, --worktree) -------------------------------------------
+
+
+def test_the_working_tree_counts_uncommitted_and_new_files(repo, capsys) -> None:
+    """bin/check classifies what is on disk, not only the commits (phase 7, section 9)."""
+    _git(repo, "switch", "-q", "-c", "pr")
+    _commit(repo, {"docs/b.md": b"b\n"}, "docs: b")
+    (repo / "django_db2_for_i" / "client.py").write_bytes(b"x = 2\n")  # unstaged
+    (repo / "django_db2_for_i" / "new_module.py").write_bytes(b"y = 1\n")  # untracked
+    assert cp.main(["--base", "main", "--worktree", "--format", "json"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    paths = {finding["path"] for finding in result["files"]}
+    assert {"docs/b.md", "django_db2_for_i/client.py", "django_db2_for_i/new_module.py"} <= paths
+    assert result["labels"] == ["run-ibmi"]  # docs only without the uncommitted files
+
+
+def test_without_worktree_only_the_commits_count(repo, capsys) -> None:
+    _git(repo, "switch", "-q", "-c", "pr")
+    _commit(repo, {"docs/b.md": b"b\n"}, "docs: b")
+    (repo / "django_db2_for_i" / "client.py").write_bytes(b"x = 2\n")
+    assert cp.main(["--base", "main", "--format", "json"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert {finding["path"] for finding in result["files"]} == {"docs/b.md"}
+
+
+def test_the_working_tree_report_names_the_uncommitted_files(repo, capsys) -> None:
+    _git(repo, "switch", "-q", "-c", "pr")
+    (repo / "docs" / "a.md").write_bytes(b"changed\n")
+    (repo / ".gitignore").write_bytes(b"ignored.txt\n")
+    (repo / "ignored.txt").write_bytes(b"x\n")
+    assert cp.main(["--base", "main", "--worktree"]) == 0
+    out = capsys.readouterr().out
+    assert "working tree: 2 uncommitted or new file(s) included" in out
+    assert "ignored.txt" not in out
+
+
+def test_worktree_has_no_previous_head(repo) -> None:
+    with pytest.raises(SystemExit):
+        cp.main(["--base", "main", "--worktree", "--before", "HEAD"])

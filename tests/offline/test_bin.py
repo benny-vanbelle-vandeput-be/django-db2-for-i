@@ -362,7 +362,7 @@ def test_check_runs_lint_offline_corpus_then_the_gate(tmp_path) -> None:
         r"tests nox -s lint offline\(3.14-django6.1\) replay\(3.14-django6.1\)"
     )
     assert lines[1].endswith("tests nox -s gate")
-    assert "scripts/classify_pr.py --base origin/main" in lines[2]
+    assert "scripts/classify_pr.py --base origin/main --worktree" in lines[2]
 
 
 @needs_bin
