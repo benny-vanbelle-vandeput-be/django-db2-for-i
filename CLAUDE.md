@@ -145,7 +145,11 @@ Development starts on **PUB400** (public community IBM i, 7.5) until a dedicated
     a rollback `bin/ibmi-cleanup` drops whichever of the names exists. A table
     not on the list is never added by a rename. The marker rule above is
     unchanged.
-- PUB400 limits connections per IP: one connection per run, `--parallel=1`, no retry storms.
+- PUB400 limits connections per IP (no number published; four at once worked,
+  `qtemp_connections`, #234). Normal runs use one connection, or two when a test uses
+  the `other` database; lock and concurrency tests (row locks, `LOCK TABLE`, `MERGE`
+  under concurrency) may use **at most three at the same time**; the fourth is never
+  used, as a margin. Always `--parallel=1`, no retry storms.
 - **One PUB400 job at a time on this machine**, through `scripts/pub400.sh` and its
   lock (CONTRIBUTING.md, "Development environment").
 - No uptime guarantee: test runs must fail fast and clearly when the system is unreachable.
@@ -256,7 +260,7 @@ CONTRIBUTING.md, "Test sets".
 - Day-to-day: single modules against the primary version (6.1).
 - Before every release: one run of all Django test modules we support (the modules in
   `docs/TEST_STATUS.md`) plus our own IBM i tests, for every supported Django version,
-  newest Python. Sequential, one connection at a time, preferably off-peak. Never the full
+  newest Python. Sequential, as few connections as possible (section 3), preferably off-peak. Never the full
   Django suite. The status run stays complete, but may be spread over several nights:
   it is resumable per Django version. During development: single modules/labels, and
   IBM i runs as the PR's classification requires (section 2).

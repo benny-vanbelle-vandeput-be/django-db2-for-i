@@ -249,7 +249,8 @@ The scripts in `bin/` run on the host; each has `--help` and `--dry-run`:
 
 **IBM i rules for contributors** (details in [CONTRIBUTING.md](CONTRIBUTING.md)):
 never run the full Django test suite against a shared system such as PUB400,
-use one connection at a time, keep probes read-only (only `QTEMP` may be
+use as few connections as possible (at most three, the extra ones only for
+lock tests), keep probes read-only (only `QTEMP` may be
 changed), and never put credentials in the repository; `.env` stays local.
 
 | Service | Build target | Contents | Use |

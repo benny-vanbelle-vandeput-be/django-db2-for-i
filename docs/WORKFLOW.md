@@ -152,7 +152,8 @@ pushed to a public registry (IBM's license).
 ## ibmi: working with PUB400
 
 1. PUB400 is a shared community system: never the full Django test suite,
-   one connection at a time, `--parallel=1`, no retry storms.
+   one connection (two with the `other` database); lock and concurrency tests
+   at most three at the same time, never four; `--parallel=1`, no retry storms.
 2. **One PUB400 job at a time on this machine.** Every run goes through
    `scripts/pub400.sh` and its lock; a second job stops with
    "PUB400 busy: <holder>", or queues with `--wait`.

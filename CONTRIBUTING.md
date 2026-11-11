@@ -24,6 +24,9 @@ other form), you agree that it is licensed under the same BSD 3-Clause License.
   and a note in `docs/IBMI_NOTES.md`.
 - Every test skip or expected failure carries a one-line reason.
 - Never run the full Django test suite against PUB400 or any other shared system.
+- On PUB400, one connection per run (two when a test uses the `other` database);
+  only lock and concurrency tests may open more, at most three at the same time
+  (#234). Always `--parallel=1`, no retries.
 
 ## Development environment
 

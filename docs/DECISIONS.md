@@ -1769,3 +1769,24 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   not excluded); waiting for a dedicated IBM i (phase 8); more than four connections
   (not needed: a lock test needs two, three with the `other` database).
 
+## 2026-11-11: At most three connections on PUB400, the extra ones only for lock tests (#234)
+- **Decision:** normal runs (probes, IBM i tests, Django modules) keep one
+  connection, or two when a test uses the `other` database, as before. Lock and
+  concurrency tests (row locks of `select_for_update()`, `LOCK TABLE`, `MERGE` under
+  concurrency) may use at most three connections at the same time. A fourth is never
+  used. Unchanged: `--parallel=1`, no retries, one PUB400 job at a time through the
+  lock. Every `lib_` probe still needs its own approval comment.
+- **Why:** the maintainer's decision on #234
+  ([comment](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/234#issuecomment-6799908602)).
+  `qtemp_connections` (#235) opened four connections at once on PUB400, all
+  usable for 30 seconds, none refused; PUB400's limit itself is unknown. A lock test
+  needs two jobs, three with the `other` database. More connections would not make
+  runs faster: parallel Django workers each need their own test database, which two
+  pre-existing libraries cannot give.
+- **Alternatives:** all four for every run (no gain, no margin below the unknown
+  limit, more load on a shared system); keeping one connection and waiting for a
+  dedicated IBM i (phase 8) for the lock features.
+- **Supersedes:** "one connection per run" (CLAUDE.md before #234) and the exception
+  for `qtemp_connections` above; the 2026-10-31 and 2026-11-01 entries said the
+  two-job verification waits for a dedicated IBM i, which is no longer required.
+
