@@ -3,7 +3,8 @@
 Rules (see CLAUDE.md):
 - Read-only: probes only run SELECT statements against catalog views and
   SQL services. Anything that changes the IBM i is proposed separately.
-- At most one ODBC connection per run, no retries.
+- At most one ODBC connection per run, no retries (the one exception:
+  qtemp_connections, docs/DECISIONS.md 2026-11-11, #234).
 - The password and the full connection string are never printed or logged.
 
 Settings come from DB2I_* environment variables, which compose injects from

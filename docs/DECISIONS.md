@@ -1752,3 +1752,20 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   every later core change, would cost days. One cycle for the phase pays that price once.
 - **Alternatives:** the four PRs of the approved plan, each with its own cycle (2026-11-01);
   PRs 1 and 2 combined and the rest separate.
+
+## 2026-11-11: One probe may open up to four connections to PUB400 (#234)
+- **Decision:** the read-only probe `qtemp_connections` opens connections one by one,
+  up to at most four, keeping the earlier ones open, holds them about 30 seconds and
+  closes them. The first refused connection ends it, with no retry. It is the only
+  exception to "one connection per run"; every other run keeps one connection until
+  its result is known and the rule is changed in a pull request of its own.
+- **Why:** the maintainer's request (#234). "One connection per run" was never
+  measured: PUB400 states a hard restriction per IP without a number, and Django's
+  multi-db tests have had two connections open at once. If several connections work,
+  the row locks of `select_for_update()`, `lib_lock_table` (#162) and
+  `lib_merge_concurrency` can be verified on PUB400 instead of waiting for a
+  dedicated IBM i (phase 8).
+- **Alternatives:** asking on the PUB400 forum first (still the safest option, and
+  not excluded); waiting for a dedicated IBM i (phase 8); more than four connections
+  (not needed: a lock test needs two, three with the `other` database).
+
