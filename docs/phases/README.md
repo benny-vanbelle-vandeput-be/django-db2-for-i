@@ -47,5 +47,5 @@ done. Every file follows the template below.
 | 4 | Schema editor completeness | [phase-4.md](phase-4.md) |
 | 5 | Returning & bulk | [phase-5.md](phase-5.md) |
 | 6 | Advanced | [phase-6.md](phase-6.md) |
-| 7 | Polish and release 1.0.0 | [phase-7.md](phase-7.md) (proposal, not yet approved) |
-| 8 | On a dedicated IBM i | [phase-8.md](phase-8.md) (proposal, not yet approved) |
+| 7 | Polish and beta 4 | [phase-7.md](phase-7.md) (in progress) |
+| 8 | On a dedicated IBM i | [phase-8.md](phase-8.md) (approved plan) |

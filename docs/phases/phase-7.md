@@ -1,7 +1,7 @@
 # Phase 7: Polish and beta 4
 
-> Status: Proposed, not yet approved. Nothing in it starts before
-> approval (CLAUDE.md: plan before code).
+> Status: In progress. Approved by the maintainer on 2026-11-11 (the merge of
+> [#242](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/242)).
 
 ## Goal
 Make what runs on PUB400 complete and clean, and release it as **beta 4**
@@ -48,7 +48,7 @@ of `select_for_update()`, and Python 3.15.
   (`lib_merge_concurrency`, #238), `LOCK TABLE` (#162: the driver's commit kept the
   lock; fixed in #241).
 - **Open issues:** #82, #95, #124, #233 (Python 3.15); #162, #237, #238 are done
-  (their probes ran) and can be closed once #241 is merged.
+  and closed (their probes ran; #162's fix is #241).
 
 ## 2. The review of expected failures
 Each reason gets one of three verdicts: **fix** (a backend change can make the
@@ -100,8 +100,10 @@ after the migration's commit or rollback).
 
 **`test_db_allows_multiple_connections`** (moved from phase 8): it needs only a
 second connection to the same test library, not `CREATE SCHEMA` (that is
-`can_clone_databases`, phase 8). On, with the tests that would open more than
-three connections at once skipped with a reason (open question 1).
+`can_clone_databases`, phase 8). On (answer 6): only the specific Django tests that
+need more connections than PUB400's rule allows are skipped, with that reason, and
+listed exactly here and in [phase 8](phase-8.md) to be unskipped on a dedicated IBM
+i. Our own tests stay within the limit.
 
 **The LOB limit for 3 or more LOB columns and `MERGE`** (moved from phase 8): a
 measurement with one connection, a QTEMP probe (`qtemp_bulk_lobs`, as
@@ -132,9 +134,9 @@ beyond checking that each reason still holds on the newest PTF level PUB400 has.
 |---|---|
 | [#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82) `annotations` / `expressions_case` | Run both modules, fix what is the backend's (untyped NULL, `FullResultSet` with a grouped predicate, bytes `Value`), make them supported modules. |
 | [#95](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/95) `Value(Decimal)` with more digits than its field | Decide the rule (round, refuse, or widen the cast), fix, own IBM i test. |
-| [#124](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/124) tables in another library than `NAME` | Qualified constraint and index names. Possible on PUB400 with the second library (`other`); a `lib_` probe with approval (with the foreign keys across journals, section 3, if the maintainer wants one probe). |
+| [#124](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/124) tables in another library than `NAME` | Qualified constraint and index names. Possible on PUB400 with the second library (`other`); a `lib_` probe of its own, with its own approval request (answer 8). |
 | [#233](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/233) Python 3.15 | Section 8. |
-| [#162](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/162), [#237](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/237), [#238](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/238) | Done (probes run, results in IBMI_NOTES); #162 with the fix [#241](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/241). Close after #241 is merged. |
+| [#162](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/162), [#237](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/237), [#238](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/238) | Done (probes run, results in IBMI_NOTES); #162 with the fix [#241](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/241). Closed 2026-11-11. |
 
 Checked: [#154](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/154)
 (`test_probes.py` on its own) and the STRJRNLIB issue
@@ -182,9 +184,10 @@ long name, as a suggested mapping otherwise). Goldens for every new SQL shape, o
 IBM i tests (create, add column, rename, introspection, the duplicate refusal).
 
 ## 7. The original phase 7 items
-- **A smoke set** (`nox -s smoke`): about 30 own IBM i tests of the most common
-  patterns, minutes instead of hours, for a user to check their own IBM i after
-  installing (open question 4: for beta 4 or for 1.0.0).
+- **A smoke set** (`nox -s smoke`), **before beta 4** (answer 9): a selection of
+  about 30 existing own IBM i tests of the most common patterns plus a nox session,
+  minutes instead of hours, for a user (and the maintainer, trying beta 4 on another
+  IBM i) to check their own IBM i after installing.
 - **The golden verification job:** done in practice (`bin/verify`, the stamps, the
   CI gate). Only documentation left.
 - **README and user docs:** a review from the point of view of a first-time user;
@@ -196,7 +199,11 @@ Django supports Python 3.15 from **6.1.3** (6.0 and 5.2 do not). So, officially
 supported: **3.15 × Django 6.1 (6.1.3 or newer)**:
 - the image gets 3.15 (`docker/Dockerfile`), the nox matrix adds 3.15 to 6.1 only,
   the `pyproject.toml` classifier, `docs/DJANGO_VERSIONS.md` (per Django version
-  its Pythons, with the 6.1.3 release notes), `docs/user/Installation.md`;
+  its Pythons, with the 6.1.3 release notes), README and `docs/user/Installation.md`;
+- the minimum Django stays as it is for everyone; only Python 3.15 users need
+  Django 6.1.3 or newer, through an environment marker next to the normal range
+  (`"django>=6.1.3; python_version >= '3.15'"`, answer 7), documented in the README
+  and `docs/DJANGO_VERSIONS.md`;
 - the image change is "needs full IBM i run": the full own IBM i tests on 3.15 ×
   6.1;
 - the matrix rule (CLAUDE.md section 6): the IBM i tests and the status run use the
@@ -230,10 +237,10 @@ building, **one final cycle** on 6.1, 6.0 and 5.2, then **one status run** for b
 | Part | What | IBM i | ETA (PUB400's speed) |
 |---|---|---|---|
 | 0 | #241 (the `LOCK TABLE` fix): its full run | full own tier on 6.1 | ~5 h, running |
-| 1 | Workflow polish (section 9), docs (section 7 docs part) | none | 2–3 days of work |
+| 1 | Workflow polish (section 9, the three new items first), docs (section 7 docs part), the smoke set (a selection + a nox session; its first run with the next IBM i run) | none (the smoke set: one short run) | 2–3 days of work |
 | 2 | Python 3.15 (section 8), its own pull request | full own tier on 3.15 × 6.1 | 1 day + ~5 h run |
 | 3 | QTEMP probes: the section 3 flags, `CHR` / `ASCII`, `qtemp_system_names`, `qtemp_bulk_lobs` | QTEMP probes, minutes each | 1–2 days |
-| 4 | `lib_` probe: foreign keys across journals (and #124), after approval | one probe | 1 day |
+| 4 | Two `lib_` probes, each after its own approval: foreign keys across the two journals; #124 (a table in `other`) | two probes | 1 day |
 | 5 | The backend branch, a commit per step: `select_for_update`; `test_db_allows_multiple_connections`; system names; #82 / #95 and the **fix** verdicts; the LOB batch size; the extra modules measured and fixed | targeted runs on 6.1 (a module: 10–60 min; the own tier: ~5 h) | 2–3 weeks |
 | 6 | The final cycle: supported modules + own tier on 6.1, 6.0, 5.2 | ~1 day per version | 3–4 days |
 | 7 | The status run, then `bin/release-prepare 0.1.0b4` | ~1–2 days per version | 4–6 days |
@@ -263,19 +270,19 @@ targeted runs wait.
 5. System names: a must; options A and C, `FOR SYSTEM NAME` / `FOR COLUMN` (and
    for indexes if the probe allows), introspection and `inspectdb`, the duplicate
    refusal; constraints out of scope; every form verified by the QTEMP probe.
+6. `test_db_allows_multiple_connections`: on; only the specific tests that need more
+   connections than PUB400's rule allows are skipped with that reason, listed
+   exactly, and marked in phase 8 to be unskipped there; our own tests stay within
+   the limit.
+7. Python 3.15: an environment marker (`django>=6.1.3; python_version >= '3.15'`),
+   documented in the README and DJANGO_VERSIONS; the minimum is not raised for
+   everyone.
+8. Foreign keys across the two journals and #124: two separate `lib_` probes, each
+   with its own approval request.
+9. The smoke set: before beta 4.
 
 ## Open questions
-1. `test_db_allows_multiple_connections`: some of Django's tests that it enables
-   start threads, each with its own connection (for example in `backends` and
-   `transactions`); a test may then hold more than three at once. Skip those with
-   a reason ("more connections than PUB400's rule allows"), or keep the flag off
-   until phase 8?
-2. Python 3.15 needs Django 6.1.3 or newer: raise the minimum 6.1 patch in
-   `pyproject.toml` for everyone, or only for Python 3.15 (an environment marker),
-   or only document it?
-3. Foreign keys across the two journals and #124 (a table in `other`): one `lib_`
-   probe for both, or two? (An approval request follows either way.)
-4. The smoke set (section 7): before beta 4, or for 1.0.0?
+None at the moment; new ones are collected and asked all at once.
 
 ## Links
 - [phase-8.md](phase-8.md): what needs a dedicated IBM i.

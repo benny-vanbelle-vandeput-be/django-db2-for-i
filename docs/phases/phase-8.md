@@ -1,7 +1,8 @@
 # Phase 8: On a dedicated IBM i
 
-> Status: Proposed, not yet approved. It starts when a dedicated IBM
-> i is available; nothing in it can run on PUB400.
+> Status: Approved by the maintainer on 2026-11-11 (the merge of
+> [#242](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/242)). It starts when a dedicated IBM
+> i is available.
 
 ## Goal
 Verify and enable what a shared system cannot show: creating schemas and parallel
@@ -38,6 +39,11 @@ the test database), journaled automatically, with the existing mode kept for
 shared systems. Then **`can_clone_databases`** (a schema per test process) and
 `--parallel` greater than 1 for the full suite. Configuration (`TEST`), docs and
 own tests for both modes.
+
+**Unskip on a dedicated IBM i:** the Django tests that phase 7 skips because they
+need more connections than PUB400's rule allows (`test_db_allows_multiple_connections`,
+phase 7 answer 6); the exact list is in [phase-7.md](phase-7.md) once the flag is
+on.
 
 ## 3. The full Django suite (tier 3)
 CLAUDE.md section 6: the source of truth for the flags is Django's whole suite on a

@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3461 | 2 | 0 | 0 | 2026-11-11 21:56:14 UTC |
+| Offline tests | 3461 | 2 | 0 | 0 | 2026-11-11 22:02:46 UTC |
 | IBM i tests | 419 | 2 | 1 | 0 | 2026-11-11 21:27:29 UTC |
 | Django suite on IBM i | 2807 | 262 | 88 | 0 | 2026-11-10 01:59:29 UTC |
-| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-11 21:56:25 UTC |
+| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-11 22:02:57 UTC |
 
 ### Django 6.0 âœ…
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3462 | 1 | 0 | 0 | 2026-11-11 21:54:04 UTC |
+| Offline tests | 3462 | 1 | 0 | 0 | 2026-11-11 22:00:41 UTC |
 | IBM i tests | 414 | 3 | 1 | 0 | 2026-11-09 21:04:32 UTC |
 | Django suite on IBM i | 2698 | 218 | 89 | 0 | 2026-11-09 03:01:31 UTC |
-| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-11 21:54:14 UTC |
+| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-11 22:00:52 UTC |
 
 ### Django 5.2 âœ…
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3459 | 1 | 0 | 0 | 2026-11-11 21:52:01 UTC |
+| Offline tests | 3459 | 1 | 0 | 0 | 2026-11-11 21:58:39 UTC |
 | IBM i tests | 409 | 5 | 1 | 0 | 2026-11-08 22:09:10 UTC |
 | Django suite on IBM i | 2652 | 210 | 89 | 0 | 2026-11-07 20:27:31 UTC |
-| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-11 21:52:11 UTC |
+| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-11 21:58:50 UTC |
 
 ### About the tests
 
@@ -94,6 +94,19 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (66 enabled on Django 6.1) Â
 <!-- status:start -->
 ## Project status
 
+**Phase 7: Polish and beta 4, then 1.0.0** (in progress)
+
+| Step | State | Pull requests |
+|---|---|---|
+| 0: the LOCK TABLE fix (#162) | done | [#241](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/241) |
+| 1: workflow polish, docs, the smoke set | planned |  |
+| 2: Python 3.15 (#233) | planned |  |
+| 3: QTEMP probes (flags, CHR / ASCII, system names, the LOB limit) | planned |  |
+| 4: lib_ probes: foreign keys across the two journals; #124 | planned |  |
+| 5: the backend branch (select_for_update, multiple connections, system names, #82, #95, more modules) | planned |  |
+| 6: the final cycle on 6.1, 6.0 and 5.2 | planned |  |
+| 7: the status run and beta 4 | planned |  |
+
 | Phase | Content | Status |
 |---|---|---|
 | [0](docs/phases/phase-0.md) | Skeleton & environment | done |
@@ -103,8 +116,8 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (66 enabled on Django 6.1) Â
 | [4](docs/phases/phase-4.md) | Schema editor completeness | done |
 | [5](docs/phases/phase-5.md) | Returning & bulk | done |
 | [6](docs/phases/phase-6.md) | Advanced (window functions, JSONField, db functions, DB-level on_delete) | done |
-| [7](docs/phases/phase-7.md) | Polish and beta 4, then 1.0.0 (proposal, not yet approved) | planned |
-| [8](docs/phases/phase-8.md) | On a dedicated IBM i (proposal; starts when the system is available) | planned |
+| [7](docs/phases/phase-7.md) | Polish and beta 4, then 1.0.0 | in progress |
+| [8](docs/phases/phase-8.md) | On a dedicated IBM i (starts when the system is available) | planned |
 
 Latest release: **`v0.1.0b3`** (2026-11-11): Phase 6: db functions, window functions, JSONField, DB-level on_delete (status runs on 5.2, 6.0 and 6.1, 29 runs each, 0 failed). ([CHANGELOG](CHANGELOG.md))
 
