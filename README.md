@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3440 | 2 | 0 | 0 | 2026-11-11 07:41:21 UTC |
+| Offline tests | 3440 | 2 | 0 | 0 | 2026-11-11 07:54:07 UTC |
 | IBM i tests | 415 | 2 | 1 | 0 | 2026-11-10 02:34:47 UTC |
 | Django suite on IBM i | 2807 | 262 | 88 | 0 | 2026-11-10 01:59:29 UTC |
-| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-11 07:42:05 UTC |
+| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-11 07:54:51 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3441 | 1 | 0 | 0 | 2026-11-11 07:37:55 UTC |
+| Offline tests | 3441 | 1 | 0 | 0 | 2026-11-11 07:50:22 UTC |
 | IBM i tests | 414 | 3 | 1 | 0 | 2026-11-09 21:04:32 UTC |
 | Django suite on IBM i | 2698 | 218 | 89 | 0 | 2026-11-09 03:01:31 UTC |
-| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-11 07:38:32 UTC |
+| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-11 07:51:03 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3438 | 1 | 0 | 0 | 2026-11-11 07:34:20 UTC |
+| Offline tests | 3438 | 1 | 0 | 0 | 2026-11-11 07:46:31 UTC |
 | IBM i tests | 409 | 5 | 1 | 0 | 2026-11-08 22:09:10 UTC |
 | Django suite on IBM i | 2652 | 210 | 89 | 0 | 2026-11-07 20:27:31 UTC |
-| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-11 07:35:03 UTC |
+| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-11 07:47:13 UTC |
 
 ### About the tests
 
@@ -103,7 +103,8 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (66 enabled on Django 6.1) �
 | [4](docs/phases/phase-4.md) | Schema editor completeness | done |
 | [5](docs/phases/phase-5.md) | Returning & bulk | done |
 | [6](docs/phases/phase-6.md) | Advanced (window functions, JSONField, db functions, DB-level on_delete) | done |
-| [7](docs/phases/phase-7.md) | PUB400 tier & release prep | planned |
+| [7](docs/phases/phase-7.md) | Polish and release 1.0.0 (proposal, not yet approved) | planned |
+| [8](docs/phases/phase-8.md) | On a dedicated IBM i (proposal; starts when the system is available) | planned |
 
 Latest release: **`v0.1.0b3`** (2026-11-11): Phase 6: db functions, window functions, JSONField, DB-level on_delete (status runs on 5.2, 6.0 and 6.1, 29 runs each, 0 failed). ([CHANGELOG](CHANGELOG.md))
 

@@ -243,7 +243,12 @@ prs = [229, 230, 231]
 
 [[phases]]
 phase = "7"
-content = "PUB400 tier & release prep"
+content = "Polish and release 1.0.0 (proposal, not yet approved)"
+status = "planned"
+
+[[phases]]
+phase = "8"
+content = "On a dedicated IBM i (proposal; starts when the system is available)"
 status = "planned"
 
 [[phases]]
