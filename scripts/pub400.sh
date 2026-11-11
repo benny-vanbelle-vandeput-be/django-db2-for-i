@@ -46,6 +46,14 @@ esac
 cd "$(dirname "$0")/.."
 # Read on the host: in a git worktree the container cannot read the repository.
 commit=$(git log -1 --format='%h %cs' 2>/dev/null || echo unknown)
+# The full commit and whether the tree is clean: a resumed own IBM i run must be on
+# the same commit without uncommitted or new files (tests/progress.py).
+run_commit=$(git rev-parse HEAD 2>/dev/null || echo unknown)
+if [ -z "$(git status --porcelain 2>/dev/null)" ] && [ "$run_commit" != unknown ]; then
+    run_tree=clean
+else
+    run_tree=changed
+fi
 # The state directory of the lock, outside every checkout, also holds the list
 # of objects test runs create (tests/table_registry.py, bin/ibmi-cleanup).
 state=$(python3 scripts/pub400_lock.py --dir)
@@ -57,6 +65,7 @@ container="db2i-pub400-$$"
 DB2I_NOX_ENVS=$(scripts/nox_volume.sh .)
 export DB2I_NOX_ENVS
 set -- docker compose run --rm --name "$container" -e DB2I_BACKEND_COMMIT="$commit" \
+    -e DB2I_RUN_COMMIT="$run_commit" -e DB2I_RUN_TREE="$run_tree" \
     -v "$state:/db2i-state" -e DB2I_TABLE_LIST=/db2i-state/created-objects.txt \
     tests nox -s "$session" -- "$@"
 if command -v caffeinate >/dev/null 2>&1; then

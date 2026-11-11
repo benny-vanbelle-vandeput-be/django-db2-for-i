@@ -28,6 +28,39 @@ def _tables_only_in_a_marked_library():
 
 
 @pytest.fixture(scope="session", autouse=True)
+def _clean_before_a_resumed_part(django_db_blocker):
+    """A resumed run (tests/progress.py) first drops what the interrupted test left:
+    bin/ibmi-cleanup's logic, under its standing approval (only listed tables, only
+    in the marked library)."""
+    clean_if_resuming(django_db_blocker)
+
+
+def _load_cleanup():
+    import importlib.util
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parents[2] / "scripts" / "ibmi_cleanup.py"
+    spec = importlib.util.spec_from_file_location("ibmi_cleanup", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def clean_if_resuming(blocker, load_cleanup=_load_cleanup) -> bool:
+    """True if a resumed part cleaned up first; stops the run if that failed."""
+    from tests import progress
+
+    run = progress.active()
+    if run is None or not run.resuming:
+        return False
+    print("\nprogress: resumed part: dropping the interrupted test's leftover tables first")
+    with blocker.unblock():
+        if load_cleanup().clean(yes=True) != 0:
+            pytest.exit("resume: the leftover tables could not be cleaned up", returncode=3)
+    return True
+
+
+@pytest.fixture(scope="session", autouse=True)
 def _close_connections_at_end(django_db_blocker):
     yield
     with django_db_blocker.unblock():
