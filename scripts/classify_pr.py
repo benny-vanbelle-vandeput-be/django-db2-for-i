@@ -125,6 +125,7 @@ IBMI_RUN_PATHS = {
     "tests/offline/golden/unverifiable.toml": "the expected failures of the IBM i golden check",
     "tests/verification_gate.py": "the unverifiable list (read by the IBM i golden check)",
     "tests/results_summary.py": "the results summary plugin",
+    "tests/progress.py": "the progress and resume plugin of the own IBM i tests",
     "tests/redaction.py": "the log redaction",
     "tests/scenarios/": "scenarios of the IBM i tests",
     "tests/corpus/capture.py": "the corpus capture (runs on IBM i)",

@@ -90,6 +90,7 @@ SHARED_OWN_TEST_PATHS = (
     "tests/golden.py",
     "tests/redaction.py",
     "tests/results_summary.py",
+    "tests/progress.py",
     "tests/table_registry.py",
     "tests/scenarios/boolean_condition_scenarios.py",
     "tests/scenarios/tuple_lookup_scenarios.py",

@@ -14,8 +14,9 @@ on which commit (all parts on the same one).
   in a git worktree the container cannot read the repository);
 - no uncommitted or new files (``DB2I_RUN_TREE=clean``, the same way);
 - the same Django version (``django.__version__``, not only the series);
-- the same settings: the settings module and the ``DB2I_*`` connection settings
-  (the password left out; only a hash is stored);
+- the same settings: the settings module and the ``DB2I_*`` connection settings,
+  the password and anything named like a secret left out entirely (``is_secret``:
+  nothing derived from them, not even a hash; only the key's hash is stored);
 - the same selection (the marker expression and the arguments).
 Anything missing or different starts afresh, and says why.
 
@@ -36,7 +37,12 @@ import pytest
 
 # The only outcome a resumed part skips: every other test runs again.
 SKIPPED_ON_RESUME = "passed"
-SECRET_SETTINGS = ("DB2I_PASSWORD",)
+# Never part of the key, not even hashed: the password and anything named like a secret.
+SECRET_NAME_PARTS = ("PASSWORD", "PWD", "SECRET", "TOKEN", "KEY")
+
+
+def is_secret(name: str) -> bool:
+    return any(part in name.upper() for part in SECRET_NAME_PARTS)
 
 
 class Progress:
@@ -87,7 +93,7 @@ def run_key(environ: dict, django_version: str, settings_module: str, selection:
         (name, value)
         for name, value in environ.items()
         if name.startswith("DB2I_")
-        and name not in SECRET_SETTINGS
+        and not is_secret(name)
         and name not in ("DB2I_RUN_COMMIT", "DB2I_RUN_TREE")
     )
     digest = hashlib.sha256(

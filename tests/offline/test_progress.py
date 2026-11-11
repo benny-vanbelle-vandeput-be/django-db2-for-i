@@ -109,9 +109,53 @@ def test_another_password_is_the_same_settings(run, monkeypatch) -> None:
     run(fixed=True).assert_outcomes(passed=2, skipped=1, xfailed=1, deselected=1)
 
 
-def test_the_progress_file_never_holds_the_password(run) -> None:
+PASSWORD = "Pw-7f3e9c2a"
+
+
+def derived(secret: str) -> list[str]:
+    """The secret and the forms a careless implementation could store."""
+    import base64
+    import hashlib
+
+    raw = secret.encode()
+    return [
+        secret,
+        hashlib.sha256(raw).hexdigest(),
+        hashlib.sha1(raw).hexdigest(),
+        hashlib.md5(raw).hexdigest(),
+        base64.b64encode(raw).decode(),
+    ]
+
+
+def test_the_key_does_not_depend_on_the_password_at_all() -> None:
+    env = {"DB2I_RUN_COMMIT": COMMIT, "DB2I_RUN_TREE": "clean", "DB2I_HOST": "h"}
+    without = progress.run_key(env, "6.1.3", "s", "-m ibmi")
+    assert progress.run_key({**env, "DB2I_PASSWORD": PASSWORD}, "6.1.3", "s", "-m ibmi") == without
+    assert progress.run_key({**env, "DB2I_PASSWORD": "other"}, "6.1.3", "s", "-m ibmi") == without
+    # Anything named like a secret is left out the same way.
+    for name in ("DB2I_PWD", "DB2I_API_TOKEN", "DB2I_SECRET", "DB2I_KEY_FILE"):
+        assert progress.run_key({**env, name: PASSWORD}, "6.1.3", "s", "-m ibmi") == without
+    # A non-secret setting does count.
+    assert progress.run_key({**env, "DB2I_HOST": "x"}, "6.1.3", "s", "-m ibmi") != without
+
+
+def test_the_progress_and_results_files_hold_nothing_derived_from_the_password(
+    run, monkeypatch, tmp_path
+) -> None:
+    from tests import results_summary
+
+    monkeypatch.setenv("DB2I_PASSWORD", PASSWORD)
     run()
-    assert "one" not in run.path.read_text().replace("done", "")
+    run(fixed=True)
+    records = progress.load(run.path)
+    summary = tmp_path / "pub400.json"
+    run_record = progress.Progress(tmp_path / "again.jsonl", records[0]["key"], "why", False)
+    counts = {"passed": 1, "skipped": 0, "expected_failures": 0, "failed": 0}
+    results_summary.write(summary, counts, extra=run_record.summary(COMMIT))
+    run_record.end(all_passed=True)
+    for path in (run.path, summary, tmp_path / "again.jsonl"):
+        text = path.read_text()
+        assert not [form for form in derived(PASSWORD) if form in text], path.name
 
 
 def test_after_a_run_that_fully_passed_the_next_run_starts_afresh(run) -> None:
