@@ -52,6 +52,11 @@ version = "6.2"
 state = "planned"
 
 [[releases]]
+tag = "v0.1.0b3"
+date = "2026-11-11"
+summary = "Phase 6: db functions, window functions, JSONField, DB-level on_delete (status runs on 5.2, 6.0 and 6.1, 29 runs each, 0 failed)."
+
+[[releases]]
 tag = "v0.1.0b2"
 date = "2026-11-02"
 summary = "Phase 5: returning columns, bulk_create, conflicts through MERGE, partial and expression indexes, unique variants (status runs on 5.2, 6.0 and 6.1, 26 runs each, 0 failed)."
@@ -238,7 +243,12 @@ prs = [229, 230, 231]
 
 [[phases]]
 phase = "7"
-content = "PUB400 tier & release prep"
+content = "Polish and release 1.0.0 (proposal, not yet approved)"
+status = "planned"
+
+[[phases]]
+phase = "8"
+content = "On a dedicated IBM i (proposal; starts when the system is available)"
 status = "planned"
 
 [[phases]]

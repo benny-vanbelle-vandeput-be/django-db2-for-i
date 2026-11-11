@@ -147,7 +147,8 @@ pull request). The complete status comes from the close-out's status run on
   JSON key, no `contains`, no negative indexes, no lookups on a root scalar;
   `Reverse`, `SHA224`, `SHA384`; `Chr` / `Ord` beyond ASCII; window frames with
   `exclusion` or a fixed `RANGE` over dates; a float as text with 16 digits.
-- **Phase 7**: the PUB400 tier and release preparation.
+- **Phase 7** (polish and release 1.0.0) and **phase 8** (a dedicated IBM i): the
+  proposals [phase-7.md](phase-7.md) and [phase-8.md](phase-8.md), not yet approved.
 - **Open issues:** [#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82),
   [#95](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/95),
   [#124](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/124).
