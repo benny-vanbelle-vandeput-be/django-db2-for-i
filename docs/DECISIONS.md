@@ -1790,3 +1790,29 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   for `qtemp_connections` above; the 2026-10-31 and 2026-11-01 entries said the
   two-job verification waits for a dedicated IBM i, which is no longer required.
 
+## 2026-11-11: A transaction that took a LOCK TABLE ends with the SQL COMMIT / ROLLBACK (#162)
+- **Decision:** the schema editor sets a flag on the connection **before** its
+  `LOCK TABLE ... IN EXCLUSIVE MODE` (`add_field()` of a NOT NULL column without a
+  default, a narrowing `alter_field()`). While it is set, `DatabaseWrapper._commit()`
+  and `_rollback()` end the unit of work with the SQL statement `COMMIT` / `ROLLBACK`
+  and clear it; a failed SQL `ROLLBACK` closes the connection (the driver's rollback
+  would keep the lock; closing releases it, and Django connects again on the next
+  query), a failed `COMMIT` keeps it for the rollback that follows. Savepoints keep it until
+  the outermost commit or rollback; a new connection and `close()` clear it. Every
+  other transaction keeps the driver's commit and rollback.
+- **Why:** the IBM i Access ODBC Driver preserves cursors over commit and rollback
+  (`SQL_CB_PRESERVE`), and its commit and rollback keep a `LOCK TABLE` lock, while
+  the SQL statements release it; the locks of DDL statements and row changes are
+  released by the driver's commit (`lib_lock_table --followup`, `--ddl`). Without
+  the fix the table stayed locked for every other job until the migrating
+  connection closed. Approved by the maintainer (option A on #162), with the flag
+  before the lock, the savepoint rule and the reset on close as conditions.
+- **Alternatives:** the SQL statements for every transaction (B: a cursor that
+  lives across a commit, `QuerySet.iterator()` with an `atomic()` in the loop,
+  would be closed); `DLCOBJ` after the transaction (C: three locks per table,
+  system names, no hook after a rollback); dropping the `LOCK TABLE` (D: only
+  possible for `add_field()`); a driver setting for cursor preservation (no
+  documented attribute ID or connection keyword).
+- **Side effect:** in a transaction that took the lock, the SQL `COMMIT` closes the
+  connection's open cursors (Known Limitations).
+

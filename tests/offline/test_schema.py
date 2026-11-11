@@ -634,9 +634,30 @@ def test_an_empty_table_gets_the_column(monkeypatch) -> None:
 
 
 def test_without_a_transaction_there_is_no_lock(monkeypatch) -> None:
+    monkeypatch.setattr(_wrapper(), "_table_lock_held", False)
     editor, executed = _executing_editor(monkeypatch, has_rows=False, in_atomic_block=False)
     editor.add_field(Book, _new_field(models.BigIntegerField()))
     assert not any(sql.startswith("LOCK TABLE") for sql in executed)
+    assert _wrapper()._table_lock_held is False
+
+
+def test_the_lock_flag_is_set_before_the_lock(monkeypatch) -> None:
+    """#162: a failure right after LOCK TABLE must still end with the SQL ROLLBACK."""
+    import django.db
+
+    monkeypatch.setattr(_wrapper(), "_table_lock_held", False)
+    editor, executed = _executing_editor(monkeypatch, has_rows=True)
+    flags = []
+    record = editor.execute
+    monkeypatch.setattr(
+        editor,
+        "execute",
+        lambda sql, params=(): (flags.append(_wrapper()._table_lock_held), record(sql, params)),
+    )
+    with pytest.raises(django.db.IntegrityError):
+        editor.add_field(Book, _new_field(models.BigIntegerField()))
+    assert executed[0].startswith("LOCK TABLE") and flags[0] is True
+    assert _wrapper()._table_lock_held is True
 
 
 # --- A literal "%" in DDL without parameters ------------------------------------------

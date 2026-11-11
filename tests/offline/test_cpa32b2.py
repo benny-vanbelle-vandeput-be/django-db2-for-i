@@ -455,6 +455,8 @@ def test_alter_field_locks_the_table_in_a_transaction(executed) -> None:
             wrapper.in_atomic_block = False
     assert executed[0] == 'LOCK TABLE "TESTAPP_DEFAULTS" IN EXCLUSIVE MODE'
     assert "SET DATA TYPE NVARCHAR(5)" in executed[1]
+    # The transaction must end with the SQL statement, which releases the lock (#162).
+    assert wrapper._table_lock_held is True
     check = 'SELECT 1 FROM "TESTAPP_DEFAULTS" WHERE LENGTH("TEXT") > 5 FETCH FIRST 1 ROW ONLY'
     assert server.statements == [check, *SUPPRESS, inquiry.DISCARD_SQL]
 

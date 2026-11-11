@@ -932,6 +932,91 @@ def test_not_null_column_without_default_refused_on_a_table_with_rows(live, not_
     assert list(not_null_model.objects.values_list("name", flat=True)) == ["first"]
 
 
+# --- The LOCK TABLE lock ends with the migration (#162) -------------------------------
+# The driver's commit and rollback keep a LOCK TABLE lock (probe lib_lock_table
+# --followup); the backend ends such a transaction with the SQL statement. A second
+# connection (a second job; at most three for lock tests, CLAUDE.md) must read and
+# write the table right after the migration, not wait and fail with SQL0913.
+
+
+@pytest.fixture
+def second_job(live):
+    """A second connection with the same settings: another job on the server."""
+    from django.db import connections
+
+    wrapper = connections[live.alias]  # live is the connection proxy
+    other = type(wrapper)(dict(wrapper.settings_dict), alias="second_job")
+    try:
+        yield other
+    finally:
+        other.close()
+
+
+def _second_job_uses_the_table(second) -> None:
+    with second.cursor() as cursor:
+        cursor.execute('SELECT COUNT(*) FROM "TESTAPP_ADDNOTNULL"')
+        cursor.fetchone()
+        cursor.execute(
+            'INSERT INTO "TESTAPP_ADDNOTNULL" ("NAME", "POSITION") VALUES (%s, %s)',
+            ["second job", 1],
+        )
+        cursor.execute('DELETE FROM "TESTAPP_ADDNOTNULL" WHERE "NAME" = %s', ["second job"])
+
+
+def test_the_table_is_free_after_a_migration_that_commits(live, not_null_model, second_job) -> None:
+    with live.schema_editor() as editor:
+        editor.add_field(not_null_model, _not_null_column(not_null_model))
+    assert live._table_lock_held is False
+    _second_job_uses_the_table(second_job)
+
+
+def test_the_table_is_free_after_a_migration_that_rolls_back(
+    live, not_null_model, second_job
+) -> None:
+    from django.db import IntegrityError
+
+    not_null_model.objects.create(name="first")
+    with (
+        pytest.raises(IntegrityError, match="the table has rows"),
+        live.schema_editor() as editor,
+    ):
+        editor.add_field(not_null_model, _not_null_column(not_null_model))
+    assert live._table_lock_held is False
+    with second_job.cursor() as cursor:
+        cursor.execute('SELECT COUNT(*) FROM "TESTAPP_ADDNOTNULL"')
+        assert cursor.fetchone()[0] == 1
+        cursor.execute('INSERT INTO "TESTAPP_ADDNOTNULL" ("NAME") VALUES (%s)', ["second job"])
+        cursor.execute('DELETE FROM "TESTAPP_ADDNOTNULL" WHERE "NAME" = %s', ["second job"])
+
+
+def test_the_table_is_free_after_an_outer_atomic_commits(live, not_null_model, second_job) -> None:
+    """Inside an outer atomic() the lock is taken under a savepoint; it ends with
+    the outermost commit."""
+    from django.db import transaction
+
+    with transaction.atomic(using=live.alias):
+        with live.schema_editor() as editor:
+            editor.add_field(not_null_model, _not_null_column(not_null_model))
+        assert live._table_lock_held is True
+    assert live._table_lock_held is False
+    _second_job_uses_the_table(second_job)
+
+
+def test_the_table_is_free_after_a_narrowing_migration(live, not_null_model, second_job) -> None:
+    """The other LOCK TABLE: a narrowing alter_field() checks the values first."""
+    old = not_null_model._meta.get_field("name")
+    new = models.CharField(max_length=10)
+    new.set_attributes_from_name("name")
+    new.model = not_null_model
+    with live.schema_editor() as editor:
+        editor.alter_field(not_null_model, old, new, strict=True)
+    assert live._table_lock_held is False
+    with second_job.cursor() as cursor:
+        cursor.execute('SELECT COUNT(*) FROM "TESTAPP_ADDNOTNULL"')
+        cursor.execute('INSERT INTO "TESTAPP_ADDNOTNULL" ("NAME") VALUES (%s)', ["second"])
+        cursor.execute('DELETE FROM "TESTAPP_ADDNOTNULL" WHERE "NAME" = %s', ["second"])
+
+
 # --- Check constraints --------------------------------------------------------------
 
 

@@ -38,6 +38,7 @@ is restored at close (inquiry.py, docs/DECISIONS.md).
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import re
 from collections.abc import Mapping, Sequence
@@ -46,6 +47,7 @@ from typing import Any
 from django.core.exceptions import ImproperlyConfigured
 from django.db import DatabaseError, NotSupportedError, OperationalError
 from django.db.backends.base.base import NO_DB_ALIAS, BaseDatabaseWrapper
+from django.db.backends.utils import debug_transaction
 from django.utils.functional import cached_property
 
 from . import capabilities as caps
@@ -236,6 +238,12 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         self._inquiry_override_pending = False
         self._inquiry_suppressed = False
         self._schema_editor_depth = 0
+        # A LOCK TABLE lock outlives the driver's commit and rollback (the driver
+        # preserves cursors, SQL_CB_PRESERVE: its units of work end with HOLD;
+        # probes lib_lock_table --followup / --ddl, #162). The schema editor sets
+        # this before it locks a table; while it is set, the outermost commit or
+        # rollback is the SQL statement, which releases the lock (_commit()).
+        self._table_lock_held = False
 
     # --- Configuration ---------------------------------------------------------
 
@@ -344,6 +352,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         # A new connection is a new job: nothing to restore from the old one.
         self._inquiry_reply_original = self._inquiry_reply_active = None
         self._inquiry_override_pending = self._inquiry_suppressed = False
+        self._table_lock_held = False
         try:
             return self.driver.connect(
                 conn_params["params"], autocommit=self.settings_dict["AUTOCOMMIT"]
@@ -495,8 +504,9 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         logger.debug("Database '%s': CPA32B2 no longer suppressed.", self.alias)
 
     def _close(self):
-        # The job ends with the connection, and its QTEMP with it.
+        # The job ends with the connection, and its QTEMP and locks with it.
         self._inquiry_override_pending = self._inquiry_suppressed = False
+        self._table_lock_held = False
         if self.connection is not None and self._inquiry_reply_original is not None:
             try:
                 self.restore_inquiry_message_reply()
@@ -527,6 +537,43 @@ class DatabaseWrapper(BaseDatabaseWrapper):
 
     def create_cursor(self, name: str | None = None) -> FormatStyleCursor:
         return FormatStyleCursor(self.connection.cursor())
+
+    # --- Transactions ------------------------------------------------------------
+    # Savepoints (an atomic() inside another, a TestCase's test) do not end the
+    # unit of work: the flag stays until the outermost commit or rollback.
+
+    def _commit(self):
+        if self.connection is not None and self._table_lock_held:
+            self._end_with_statement("COMMIT")
+            return None
+        return super()._commit()
+
+    def _rollback(self):
+        if self.connection is not None and self._table_lock_held:
+            try:
+                self._end_with_statement("ROLLBACK")
+            except Exception:
+                # The driver's rollback would keep the lock (#162); closing the
+                # connection ends the job's unit of work and releases it. Django
+                # connects again on the next query.
+                self._table_lock_held = False
+                with contextlib.suppress(Exception):
+                    self.close()
+                raise
+            return None
+        return super()._rollback()
+
+    def _end_with_statement(self, statement: str) -> None:
+        """End the unit of work with the SQL statement COMMIT or ROLLBACK, which
+        releases a LOCK TABLE lock (the driver's would keep it), then clear the
+        flag. A failed COMMIT keeps it: Django rolls back next."""
+        with debug_transaction(self, statement), self.wrap_database_errors:
+            cursor = self.connection.cursor()
+            try:
+                cursor.execute(statement)
+            finally:
+                cursor.close()
+        self._table_lock_held = False
 
     def _set_autocommit(self, autocommit: bool) -> None:
         with self.wrap_database_errors:
