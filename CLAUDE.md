@@ -399,11 +399,11 @@ django-db2-for-i/
 5. **Returning & bulk** (done, [record](docs/phases/phase-5.md)). `FINAL TABLE` returning columns, `bulk_create`, unique constraint variants,
    partial / expression / covering indexes; the `constraints`, `indexes` and `model_indexes` modules.
 6. **Advanced** (done, [record](docs/phases/phase-6.md)). Window functions, `JSONField`, db functions, DB-level `on_delete` (6.1+).
-7. **Polish and beta 4** ([proposal](docs/phases/phase-7.md)). Review every expected failure,
+7. **Polish and beta 4** (in progress, [plan](docs/phases/phase-7.md)). Review every expected failure,
    skip and flag that is off; `select_for_update()` with two connections; the open issues; IBM i
    system names from Django; more supported modules; Python 3.15; workflow polish; then beta 4,
    and 1.0.0 after it.
-8. **On a dedicated IBM i** ([proposal](docs/phases/phase-8.md)). Test schemas and parallel tests,
+8. **On a dedicated IBM i** ([plan](docs/phases/phase-8.md); when the system is available). Test schemas and parallel tests,
    the full Django suite, system-wide settings, TR / PTF levels and more IBM i releases, time
    zones, performance, other drivers.
 

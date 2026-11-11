@@ -243,12 +243,45 @@ prs = [229, 230, 231]
 
 [[phases]]
 phase = "7"
-content = "Polish and beta 4, then 1.0.0 (proposal, not yet approved)"
+content = "Polish and beta 4, then 1.0.0"
+status = "in progress"
+
+[[phases.steps]]
+step = "0: the LOCK TABLE fix (#162)"
+status = "done"
+prs = [241]
+
+[[phases.steps]]
+step = "1: workflow polish, docs, the smoke set"
+status = "planned"
+
+[[phases.steps]]
+step = "2: Python 3.15 (#233)"
+status = "planned"
+
+[[phases.steps]]
+step = "3: QTEMP probes (flags, CHR / ASCII, system names, the LOB limit)"
+status = "planned"
+
+[[phases.steps]]
+step = "4: lib_ probes: foreign keys across the two journals; #124"
+status = "planned"
+
+[[phases.steps]]
+step = "5: the backend branch (select_for_update, multiple connections, system names, #82, #95, more modules)"
+status = "planned"
+
+[[phases.steps]]
+step = "6: the final cycle on 6.1, 6.0 and 5.2"
+status = "planned"
+
+[[phases.steps]]
+step = "7: the status run and beta 4"
 status = "planned"
 
 [[phases]]
 phase = "8"
-content = "On a dedicated IBM i (proposal; starts when the system is available)"
+content = "On a dedicated IBM i (starts when the system is available)"
 status = "planned"
 
 [[phases]]
