@@ -104,6 +104,7 @@ Off on purpose, with the reason.
 | `has_native_duration_field` | `DurationField` is a native interval column. | ❌ | ❌ | ❌ | A `DurationField` is stored as a `BIGINT` of microseconds (probe durations). |
 | `has_native_json_field` | `JSONField` is a native JSON column type. | ❌ | ❌ | ❌ | Db2 for i 7.5 has no JSON column type; JSON is stored as text (not verified on IBM i). |
 | `has_native_uuid_field` | `UUIDField` is a native UUID column. | ❌ | ❌ | ❌ | A `UUIDField` is stored as `CHAR(32)` (probe column types); Db2 for i has no UUID type (not verified on IBM i). |
+| `has_select_for_update_nowait` | `select_for_update(nowait=True)` fails instead of waiting for a lock. | ❌ | ❌ | ❌ | Db2 for i has no per-statement no-wait: `NOWAIT`, `WAIT 0` and `SET CURRENT LOCK TIMEOUT` are SQL0104 (probes `select_for_update`, `lib_select_for_update`). |
 | `has_zoneinfo_database` | The database has its own time zone database. | ❌ | ❌ | ❌ | Db2 for i has no time zone names; conversions happen in Python. |
 | `order_by_nulls_first` | NULL sorts first in ascending order. | ❌ | ❌ | ❌ | Db2 for i sorts NULL as the largest value: last in ascending order (probe queries). |
 | `rounds_to_even` | `Round()` rounds halves to even. | ❌ | ❌ | ❌ | Db2 for i's `ROUND` takes halves away from zero: 2.5 to 3, -2.5 to -3 (probe `db_functions`). |
@@ -143,7 +144,6 @@ Off on purpose, with the reason.
 | `supports_uuid4_function_in_default` | `db_default=UUID4()` (Django 6.1+). | – | – | ❌ | There is no `UUID4()` database function (`supports_uuid4_function`). |
 | `supports_uuid7_function` | The `UUID7()` database function (Django 6.1+). | – | – | ❌ | Db2 for i has no function that generates a time-ordered UUID (not verified on IBM i). |
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
-| `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ❌ | ❌ | ❌ | The shared PUB400 system limits connections per client. |
 
 ## Planned (6)
 
@@ -151,12 +151,12 @@ Off for now; planned for the phase shown.
 
 | Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Phase |
 |---|---|---|---|---|---|
-| `has_select_for_update` | `select_for_update()` locks the selected rows. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
-| `has_select_for_update_nowait` | `select_for_update(nowait=True)` fails instead of waiting for a lock. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
-| `has_select_for_update_of` | `select_for_update(of=...)` locks rows of the named tables only. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
-| `has_select_for_update_skip_locked` | `select_for_update(skip_locked=True)` skips locked rows. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
-| `select_for_update_of_column` | `select_for_update(of=...)` is written with column names, not table names. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
-| `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | 🗓️ | 🗓️ | 🗓️ | a dedicated IBM i (blocking needs two connections; open question of phase 6) |
+| `has_select_for_update` | `select_for_update()` locks the selected rows. | 🗓️ | 🗓️ | 🗓️ | phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237) |
+| `has_select_for_update_of` | `select_for_update(of=...)` locks rows of the named tables only. | 🗓️ | 🗓️ | 🗓️ | phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237) |
+| `has_select_for_update_skip_locked` | `select_for_update(skip_locked=True)` skips locked rows. | 🗓️ | 🗓️ | 🗓️ | phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237) |
+| `select_for_update_of_column` | `select_for_update(of=...)` is written with column names, not table names. | 🗓️ | 🗓️ | 🗓️ | phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237) |
+| `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | 🗓️ | 🗓️ | 🗓️ | phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237) |
+| `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | 🗓️ | 🗓️ | 🗓️ | phase 7 (a second connection to the same test library; PUB400 allows up to three for such tests since #236) |
 
 ## Not applicable (17)
 

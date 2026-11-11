@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3440 | 2 | 0 | 0 | 2026-11-11 07:54:07 UTC |
-| IBM i tests | 415 | 2 | 1 | 0 | 2026-11-10 02:34:47 UTC |
+| Offline tests | 3461 | 2 | 0 | 0 | 2026-11-11 21:56:14 UTC |
+| IBM i tests | 419 | 2 | 1 | 0 | 2026-11-11 21:27:29 UTC |
 | Django suite on IBM i | 2807 | 262 | 88 | 0 | 2026-11-10 01:59:29 UTC |
-| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-11 07:54:51 UTC |
+| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-11 21:56:25 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3441 | 1 | 0 | 0 | 2026-11-11 07:50:22 UTC |
+| Offline tests | 3462 | 1 | 0 | 0 | 2026-11-11 21:54:04 UTC |
 | IBM i tests | 414 | 3 | 1 | 0 | 2026-11-09 21:04:32 UTC |
 | Django suite on IBM i | 2698 | 218 | 89 | 0 | 2026-11-09 03:01:31 UTC |
-| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-11 07:51:03 UTC |
+| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-11 21:54:14 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3438 | 1 | 0 | 0 | 2026-11-11 07:46:31 UTC |
+| Offline tests | 3459 | 1 | 0 | 0 | 2026-11-11 21:52:01 UTC |
 | IBM i tests | 409 | 5 | 1 | 0 | 2026-11-08 22:09:10 UTC |
 | Django suite on IBM i | 2652 | 210 | 89 | 0 | 2026-11-07 20:27:31 UTC |
-| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-11 07:47:13 UTC |
+| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-11 21:52:11 UTC |
 
 ### About the tests
 
@@ -103,7 +103,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (66 enabled on Django 6.1) �
 | [4](docs/phases/phase-4.md) | Schema editor completeness | done |
 | [5](docs/phases/phase-5.md) | Returning & bulk | done |
 | [6](docs/phases/phase-6.md) | Advanced (window functions, JSONField, db functions, DB-level on_delete) | done |
-| [7](docs/phases/phase-7.md) | Polish and release 1.0.0 (proposal, not yet approved) | planned |
+| [7](docs/phases/phase-7.md) | Polish and beta 4, then 1.0.0 (proposal, not yet approved) | planned |
 | [8](docs/phases/phase-8.md) | On a dedicated IBM i (proposal; starts when the system is available) | planned |
 
 Latest release: **`v0.1.0b3`** (2026-11-11): Phase 6: db functions, window functions, JSONField, DB-level on_delete (status runs on 5.2, 6.0 and 6.1, 29 runs each, 0 failed). ([CHANGELOG](CHANGELOG.md))
@@ -112,9 +112,8 @@ Open tracks:
 
 - Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82)).
 - Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier.
-- `lib_merge_concurrency`: `MERGE` under concurrency (`ignore_conflicts`, `update_conflicts`, `m2m.add()`) is documented from IBM's documentation, not verified on IBM i. The probe needs two connections, so a dedicated IBM i ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#merge-under-concurrency-not-verified-on-ibm-i)).
-- The LOB limit of a multi-row statement is measured for 1 and 2 LOB columns only (about 1,024 markers); with 3 and 5 own IBM i tests show that the batches work and that 1,080 or 1,100 markers are refused, not where the limit lies ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#returning-bulk-inserts-indexes-unique-nulls-cursors-phase-5-step-0)).
-- `select_for_update()` stays off: row locking matters for real multi-user use, and blocking can only be verified with two connections, so a dedicated IBM i ([phase 6, decision 1](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/phases/phase-6.md#key-decisions)).
+- The LOB limit of a multi-row statement is measured for 1 and 2 LOB columns only (about 1,024 markers); with 3 and 5 own IBM i tests show that the batches work and that 1,080 or 1,100 markers are refused, not where the limit lies; a QTEMP probe in phase 7 ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#returning-bulk-inserts-indexes-unique-nulls-cursors-phase-5-step-0)).
+- `select_for_update()` is off until phase 7: verified with two jobs on PUB400 (`lib_select_for_update`, #237), it needs `FOR UPDATE ... WITH RS`; `nowait` stays off ([phase 7](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/phases/phase-7.md)).
 <!-- status:end -->
 
 > [!WARNING]
