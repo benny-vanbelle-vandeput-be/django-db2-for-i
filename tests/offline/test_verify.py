@@ -337,6 +337,27 @@ def test_select_runs_the_full_own_tier_for_shared_code(selecting, results_dir, c
     assert "the full tier (tests/ibmi/conftest.py: shared own-test code)" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize("path", ["tests/corpus/capture.py", "tests/corpus/store.py"])
+def test_a_changed_capture_hook_runs_django_labels_with_capture(
+    selecting, results_dir, capsys, path
+) -> None:
+    """The hook runs inside Django's test runs, which bin/verify captures; the own
+    IBM i tests never use it (phase 7, section 9)."""
+    selecting.paths = [path]
+    assert verify.select("6.1", "origin/main") == 0
+    assert runs(results_dir) == [["django", *verify.CAPTURE_CHECK_LABELS]]
+    selection = json.loads((results_dir / "selection.json").read_text())
+    assert selection["capture_check"] == list(verify.CAPTURE_CHECK_LABELS)
+    assert "for the changed capture hook" in capsys.readouterr().out
+
+
+def test_other_corpus_files_add_no_capture_check(selecting, results_dir) -> None:
+    selecting.paths = ["tests/corpus/test_replay.py"]
+    assert verify.select("6.1", "origin/main") == 0
+    selection = json.loads((results_dir / "selection.json").read_text())
+    assert selection["capture_check"] == []
+
+
 def test_select_does_not_repeat_a_full_own_tier_done_on_another_version(
     selecting, results_dir, capsys
 ) -> None:
