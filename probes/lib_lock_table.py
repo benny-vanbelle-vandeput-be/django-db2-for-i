@@ -317,7 +317,7 @@ class DdlCases(Followup):
         result = run_query(
             self.b,
             "OBJECT_LOCK_INFO",
-            "SELECT OBJECT_NAME, OBJECT_TYPE, MEMBER_NAME, LOCK_STATE, LOCK_STATUS, "
+            "SELECT OBJECT_NAME, OBJECT_TYPE, LOCK_STATE, LOCK_STATUS, "
             "LOCK_SCOPE, JOB_NAME FROM QSYS2.OBJECT_LOCK_INFO "
             "WHERE OBJECT_SCHEMA = ? AND OBJECT_NAME IN (?, ?)",
             (self.library, TABLE, TABLE2),
