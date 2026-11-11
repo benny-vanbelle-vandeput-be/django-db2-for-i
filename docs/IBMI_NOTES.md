@@ -2560,6 +2560,24 @@ Job A `*CS`, ODBC pooling off as in the backend; each case on a free table, A lo
   `lib_merge_concurrency` briefly had four physical connections (two closed ones
   still connected in the pool, two new), not two; the helper turns pooling off since.
 
+**DDL and row changes** (`lib_lock_table --ddl`, 2026-11-11, approved on #162;
+[lib_lock_table_ddl.json](../probes/results/lib_lock_table_ddl.json)). Job A as the
+backend (`*CS`, `TRUEAUTOCOMMIT=1`, a transaction, pooling off):
+
+- The driver reports `SQL_CURSOR_COMMIT_BEHAVIOR` and `SQL_CURSOR_ROLLBACK_BEHAVIOR`
+  = 2 (`SQL_CB_PRESERVE`): it keeps cursors over commit and rollback, which fits the
+  `COMMIT HOLD` / `ROLLBACK HOLD` explanation above.
+- **Only the `LOCK TABLE` lock outlives the driver's commit.** After the driver's
+  commit (or rollback) of `CREATE TABLE`, `ALTER TABLE ... ADD COLUMN` and
+  `CREATE INDEX`, job B read and wrote the table at once; the same after an SQL
+  `COMMIT` (control).
+- Row locks: after A's `INSERT` or `UPDATE` and the driver's commit, B updated the
+  row at once; while A's `UPDATE` was not yet committed, B waited and got SQL0913
+  after 2.2 s, and succeeded right after A's commit.
+- The probe's `OBJECT_LOCK_INFO` query named a column that does not exist
+  (`MEMBER_NAME`, SQL0206), so this run has no lock rows; job B's results are the
+  evidence.
+
 **MERGE with two jobs** (`lib_merge_concurrency`), the backend's `MERGE` with the
 conflict on a unique key `K`; A merges `K = 1` and does not commit yet:
 
