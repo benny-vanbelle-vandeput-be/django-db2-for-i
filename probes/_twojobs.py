@@ -44,7 +44,12 @@ def open_job(
     autocommit: bool = False,
 ):
     """One job; by default the backend's connection attributes (CMT=1 is *CS,
-    TRUEAUTOCOMMIT=1), autocommit off."""
+    TRUEAUTOCOMMIT=1), autocommit off. ODBC pooling off, as the backend
+    (drivers/pyodbc.py): with pooling a closed connection stays connected on the
+    server, with its job and its locks (the second follow-up run on #162)."""
+    import pyodbc
+
+    pyodbc.pooling = False
     return connect(
         settings,
         {"CMT": cmt, "TRUEAUTOCOMMIT": trueautocommit, "DBQ": library},

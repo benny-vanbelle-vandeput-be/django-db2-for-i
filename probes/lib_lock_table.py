@@ -35,7 +35,7 @@ import sys
 from typing import Any
 
 import _twojobs as two
-from _common import ProbeError, Settings, run_query, write_result
+from _common import ProbeError, Settings, print_query, run_query, write_result
 
 TABLE = "DJDB2I_LOCKPROBE"
 
@@ -137,11 +137,25 @@ class Followup:
             self.b,
             "OBJECT_LOCK_INFO",
             "SELECT * FROM QSYS2.OBJECT_LOCK_INFO WHERE OBJECT_SCHEMA = ? AND OBJECT_NAME = ?",
-            (self.library, self.short),
+            (self.library, TABLE),  # OBJECT_NAME is the SQL name
         )
         two.end(self.b)
         if not result["ok"]:
-            return f"error {result.get('sqlstate')} {result.get('message', '')[:160]}"
+            error = f"error {result.get('sqlstate')} {result.get('message', '')[:200]}"
+            print(f"  OBJECT_LOCK_INFO: {error}")
+            return error
+        if not result["rows"]:
+            print("  OBJECT_LOCK_INFO: no rows for the table; the library's rows:")
+            library = run_query(
+                self.b,
+                "OBJECT_LOCK_INFO, library",
+                "SELECT OBJECT_NAME, OBJECT_TYPE, LOCK_STATE, LOCK_STATUS, LOCK_SCOPE, JOB_NAME "
+                "FROM QSYS2.OBJECT_LOCK_INFO WHERE OBJECT_SCHEMA = ?",
+                (self.library,),
+            )
+            two.end(self.b)
+            print_query(library)
+            return library["rows"] if library["ok"] else []
         for row in result["rows"]:
             print(
                 f"  lock: {row.get('JOB_NAME')} {row.get('LOCK_STATE')} "
@@ -192,7 +206,9 @@ class Followup:
             return
         record["leftover: DLCOBJ"] = self.dlcobj(rows)
         record["leftover: locks"] = self.locks()
-        if self.a_locks(record["leftover: locks"]):
+        # Reconnect A also when the lock rows show nothing but B was blocked
+        # (the first follow-up run: OBJECT_LOCK_INFO had no rows for A).
+        if self.a_locks(record["leftover: locks"]) or not record["B after"]["SELECT"]["ok"]:
             record["leftover: A reconnected"] = True
             self.reopen_a(**self.a_attrs)
 
@@ -215,8 +231,8 @@ class Followup:
         self.release_leftover(record)
         return record
 
-    def run(self) -> dict[str, Any]:
-        cases: dict[str, Any] = {}
+    def run(self, cases: dict[str, Any]) -> dict[str, Any]:
+        """Fills `cases` as it goes, so a stop still leaves the earlier cases."""
         sql = lambda label, stmt: lambda record: two.timed(self.a, label, stmt)  # noqa: E731
 
         def driver(how):
@@ -256,7 +272,10 @@ def run_followup(settings: Settings, jobs: list, library: str) -> dict[str, Any]
         two.create(jobs[0], library, TABLE, "ID INTEGER, V INTEGER", "(1, 1), (2, 2)")
         follow.short = two.system_name(jobs[0], library, TABLE)
         two.end(jobs[0])
-        cases = follow.run()
+        follow.run(cases)
+    except ProbeError as exc:
+        cases["stopped"] = str(exc)
+        print(f"\nSTOPPED: {exc}", file=sys.stderr)
     finally:
         # The last resort: closing job A releases its locks (IBM's LOCK TABLE page).
         two.end(jobs[1])
@@ -265,6 +284,9 @@ def run_followup(settings: Settings, jobs: list, library: str) -> dict[str, Any]
         cleanup = two.drop(jobs[0], library, (TABLE,))
     print("\nSummary")
     for name, record in cases.items():
+        if not isinstance(record, dict) or "B after" not in record:
+            print(f"  {name}: {record if not isinstance(record, dict) else 'incomplete'}")
+            continue
         after = record["B after"]
         held = (
             len(follow.a_locks(record["locks after"]))
