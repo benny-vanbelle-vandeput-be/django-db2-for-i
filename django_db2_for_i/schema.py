@@ -285,7 +285,8 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     # _rename_field_sql()).
     sql_rename_table = "RENAME TABLE %(old_table)s TO %(new_table)s"
     # Held until the migration's transaction ends: no row can be added between
-    # the check for rows and the ADD COLUMN of a NOT NULL column (add_field()).
+    # the check for rows and the ADD COLUMN of a NOT NULL column (add_field()),
+    # or a value narrowed (_refuse_changed_values()). Through _lock_table() only.
     sql_lock_table = "LOCK TABLE %(table)s IN EXCLUSIVE MODE"
     sql_rename_index = "RENAME INDEX %(old_name)s TO %(new_name)s"
     # A UniqueConstraint with a condition or expressions is a unique index. A
@@ -431,7 +432,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         table = self.quote_name(model._meta.db_table)
         if not self.collect_sql:
             if self.connection.in_atomic_block:
-                self.execute(self.sql_lock_table % {"table": table})
+                self._lock_table(table)
             with self.connection.cursor() as cursor:
                 cursor.execute(f"SELECT 1 FROM {table} FETCH FIRST 1 ROW ONLY")
                 has_rows = cursor.fetchone() is not None
@@ -506,6 +507,15 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             for field in lobs:
                 field.db_index = True
 
+    def _lock_table(self, table: str) -> None:
+        """LOCK TABLE ... IN EXCLUSIVE MODE, in a transaction. The driver's commit
+        and rollback would keep this lock (#162), so the connection ends this
+        unit of work with the SQL statement instead (DatabaseWrapper._commit()).
+        The flag comes first: a failure right after the lock still ends with the
+        SQL ROLLBACK."""
+        self.connection._table_lock_held = True
+        self.execute(self.sql_lock_table % {"table": table})
+
     def _refuse_changed_values(self, model, old_field, new_field, old_type, new_type):
         """DataError if the type change would truncate or round a value
         (narrowing_check()). In a transaction the table is locked first, so
@@ -516,7 +526,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         condition, found = check
         table = self.quote_name(model._meta.db_table)
         if self.connection.in_atomic_block:
-            self.execute(self.sql_lock_table % {"table": table})
+            self._lock_table(table)
         with self.connection.cursor() as cursor:
             cursor.execute(f"SELECT 1 FROM {table} WHERE {condition} FETCH FIRST 1 ROW ONLY")
             changed = cursor.fetchone() is not None

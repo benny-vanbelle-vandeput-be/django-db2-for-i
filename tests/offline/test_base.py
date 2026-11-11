@@ -374,3 +374,113 @@ def test_table_list_leaves_out_system_catalog_views() -> None:
     tables = make_wrapper().introspection.get_table_list(Cursor())
     assert [t.name for t in tables] == ["testapp_author"]
     assert "SYSTEM_TABLE = 'N'" in executed[0]
+
+
+# --- Ending a transaction that holds a LOCK TABLE lock (#162) ----------------------
+
+
+class FakeDriverConnection:
+    """Records the driver's commit / rollback and the statements of its cursors."""
+
+    def __init__(self, fail: str = ""):
+        self.calls: list[str] = []
+        self.fail = fail
+
+    def commit(self):
+        self.calls.append("driver commit")
+
+    def rollback(self):
+        self.calls.append("driver rollback")
+
+    def close(self):
+        self.calls.append("close")
+
+    def cursor(self):
+        conn = self
+
+        class Cursor:
+            def execute(self, sql, params=None):
+                conn.calls.append(f"SQL {sql}")
+                if sql == conn.fail:
+                    raise Database.OperationalError(f"{sql} failed")
+
+            def close(self):
+                pass
+
+        return Cursor()
+
+
+def wrapper_with(fake, held: bool) -> DatabaseWrapper:
+    wrapper = make_wrapper()
+    wrapper.connection = fake
+    wrapper._table_lock_held = held
+    return wrapper
+
+
+def test_without_a_table_lock_the_driver_ends_the_transaction() -> None:
+    fake = FakeDriverConnection()
+    wrapper = wrapper_with(fake, held=False)
+    wrapper._commit()
+    wrapper._rollback()
+    assert fake.calls == ["driver commit", "driver rollback"]
+
+
+@pytest.mark.parametrize("method", ["_commit", "_rollback"])
+def test_a_table_lock_ends_with_the_sql_statement(method) -> None:
+    """The driver's commit and rollback keep a LOCK TABLE lock; the SQL statements
+    release it (probe lib_lock_table --followup)."""
+    fake = FakeDriverConnection()
+    wrapper = wrapper_with(fake, held=True)
+    getattr(wrapper, method)()
+    assert fake.calls == ["SQL COMMIT" if method == "_commit" else "SQL ROLLBACK"]
+    assert wrapper._table_lock_held is False
+    getattr(wrapper, method)()  # the next transaction: the driver again
+    assert fake.calls[-1].startswith("driver")
+
+
+def test_a_failed_sql_commit_keeps_the_flag_for_the_rollback() -> None:
+    fake = FakeDriverConnection(fail="COMMIT")
+    wrapper = wrapper_with(fake, held=True)
+    with pytest.raises(django.db.OperationalError):
+        wrapper._commit()
+    assert wrapper._table_lock_held is True
+    wrapper._rollback()
+    assert fake.calls == ["SQL COMMIT", "SQL ROLLBACK"]
+    assert wrapper._table_lock_held is False
+
+
+def test_a_failed_sql_rollback_closes_the_connection() -> None:
+    """The driver's rollback would keep the lock (#162); closing releases it."""
+    fake = FakeDriverConnection(fail="ROLLBACK")
+    wrapper = wrapper_with(fake, held=True)
+    with pytest.raises(django.db.OperationalError):
+        wrapper._rollback()
+    assert fake.calls == ["SQL ROLLBACK", "close"]
+    assert "driver rollback" not in fake.calls
+    assert wrapper.connection is None  # Django connects again on the next query
+    assert wrapper._table_lock_held is False
+
+
+def test_a_savepoint_rollback_keeps_the_flag() -> None:
+    """An atomic() inside another (a TestCase's test): the unit of work goes on."""
+    fake = FakeDriverConnection()
+    wrapper = wrapper_with(fake, held=True)
+    wrapper.cursor = lambda: FormatStyleCursor(fake.cursor())
+    wrapper._savepoint_rollback("S1")
+    assert wrapper._table_lock_held is True
+    assert not any(call.startswith("driver") for call in fake.calls)
+
+
+def test_close_clears_the_flag() -> None:
+    fake = FakeDriverConnection()
+    wrapper = wrapper_with(fake, held=True)
+    wrapper._close()
+    assert wrapper._table_lock_held is False
+
+
+def test_a_new_connection_clears_the_flag(monkeypatch) -> None:
+    wrapper = make_wrapper()
+    wrapper._table_lock_held = True
+    monkeypatch.setattr(wrapper.driver, "connect", lambda params, autocommit: object())
+    wrapper.get_new_connection(wrapper.get_connection_params())
+    assert wrapper._table_lock_held is False
