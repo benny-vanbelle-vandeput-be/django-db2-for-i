@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3440 | 2 | 0 | 0 | 2026-11-07 06:58:54 UTC |
+| Offline tests | 3440 | 2 | 0 | 0 | 2026-11-11 07:30:34 UTC |
 | IBM i tests | 415 | 2 | 1 | 0 | 2026-11-10 02:34:47 UTC |
 | Django suite on IBM i | 2807 | 262 | 88 | 0 | 2026-11-10 01:59:29 UTC |
-| Replay tests | 2648 | 0 | 0 | 0 | 2026-11-07 07:01:05 UTC |
+| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-11 07:31:15 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3441 | 1 | 0 | 0 | 2026-11-07 06:49:30 UTC |
+| Offline tests | 3441 | 1 | 0 | 0 | 2026-11-11 07:27:01 UTC |
 | IBM i tests | 414 | 3 | 1 | 0 | 2026-11-09 21:04:32 UTC |
 | Django suite on IBM i | 2698 | 218 | 89 | 0 | 2026-11-09 03:01:31 UTC |
-| Replay tests | 2588 | 0 | 0 | 0 | 2026-11-07 06:50:49 UTC |
+| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-11 07:27:40 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3438 | 1 | 0 | 0 | 2026-11-07 06:41:04 UTC |
+| Offline tests | 3438 | 1 | 0 | 0 | 2026-11-11 07:23:25 UTC |
 | IBM i tests | 409 | 5 | 1 | 0 | 2026-11-08 22:09:10 UTC |
 | Django suite on IBM i | 2652 | 210 | 89 | 0 | 2026-11-07 20:27:31 UTC |
-| Replay tests | 2540 | 0 | 0 | 0 | 2026-11-07 06:42:24 UTC |
+| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-11 07:24:04 UTC |
 
 ### About the tests
 

@@ -10,6 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Changes since the last release are in [changelog.d/](changelog.d/), one
 fragment per pull request; they are assembled here at release time.
 
+## [0.1.0b3] - 2026-11-11
+
+### Added
+- Database functions write Db2 for i SQL where Django's default does not work: `Length` counts characters (`CHARACTER_LENGTH`), `Log(a, b)` is `LN(b) / LN(a)`, `Concat` treats NULL as empty text, `ATan2` passes its arguments in Db2 for i's order, `MD5`, `SHA1`, `SHA256` and `SHA512` hash the text as UTF-8 (`HASH_*`), and `LPad`, `RPad` and `Repeat` take a NULL argument. `Reverse`, `SHA224` and `SHA384` raise `NotSupportedError`: Db2 for i has no such functions. Django's `db_functions` tests pass on 6.1. (#227)
+
+### Enabled features
+- `allows_group_by_lob`: `values()`, `GROUP BY` and `DISTINCT` over a `TextField` or `BinaryField`. (#227)
+- `supports_aggregate_distinct_multiple_argument` (Django 6.0+): `StringAgg(..., distinct=True)` with a separator. (#227)
+- `supports_cast_with_precision`: `Cast()` to a `CharField(max_length=...)` or a `DecimalField(max_digits=..., decimal_places=...)`; a number cast to a decimal is rounded, halves away from zero, as Django expects (Db2 for i's `CAST` alone cuts off), and a float cast to text reads `3` and `4.5`, not `3E0` and `4.5E0`. (#227)
+- `ignores_unnecessary_order_by_in_subqueries`: Django no longer removes an `ORDER BY` from a subquery; Db2 for i accepts it. (#227)
+- `has_real_datatype`: Db2 for i has a single-precision `REAL`. (#227)
+- `supports_over_clause`: window functions (`Window`), with partitions, ordering and `ROWS` / `RANGE` frames; also `supports_default_in_lead_lag` (`Lag` / `Lead` with a `default`) and `supports_frame_range_fixed_distance` (`ValueRange(start=-5, end=5)` over a number). `PercentRank` and `CumeDist` return floats. (#227)
+- `supports_on_delete_db_cascade`, `supports_on_delete_db_null`, `supports_on_delete_db_default` (Django 6.1): `on_delete=DB_CASCADE`, `DB_SET_NULL` and `DB_SET_DEFAULT` write `ON DELETE CASCADE`, `SET NULL` and `SET DEFAULT` into the foreign key, and Db2 for i deletes or changes the related rows. `DB_SET_DEFAULT` cannot delete the parent the default points to (SQL0532). (#227)
+- `supports_json_field` and `has_json_object_function`: `JSONField`, as an `NCLOB`, with key lookups, `has_key` / `has_keys` / `has_any_keys`, `isnull`, `in`, numeric comparisons and text lookups through Db2 for i's `JSON_QUERY`, `JSON_VALUE` and `JSON_EXISTS`, and `JSONObject()`. Not available: `contains` / `contained_by`, negative array indexes, key lookups on a document that is a single value, and keys with a double quote (Known Limitations). (#227)
+
+### Fixed
+- `bulk_update()` of a field to `Value(None)` or another expression that is NULL for every object (such as `Coalesce(None, None)`) no longer fails with SQL0580: when every result of a `CASE` is a bare NULL, each gets the `CASE`'s type. A `JSONField` set this way gets SQL NULL, not JSON `null`. (#230)
+
+### Known limitations
+- `Chr` and `Ord` work on ASCII only: Db2 for i's `CHR` and `ASCII` give a substitute character for anything else. Converting datetimes to another time zone in `Extract` and `Trunc` stays unsupported (`NotSupportedError`), as before. (#227)
+
 ## [0.1.0b2] - 2026-11-02
 
 ### Enabled features
@@ -638,7 +659,8 @@ The tag is not moved or recreated.
   escaped quotes in DEFAULT constants wrongly. Unsupported values raise
   `NotSupportedError`.
 
-[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b2...HEAD
+[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b3...HEAD
+[0.1.0b3]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b2...v0.1.0b3
 [0.1.0b2]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b1...v0.1.0b2
 [0.1.0b1]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a4...v0.1.0b1
 [0.1.0a4]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a3...v0.1.0a4
