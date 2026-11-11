@@ -151,7 +151,8 @@ def create(conn, library: str, table: str, body: str, rows: str) -> None:
         "WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?",
         (library, table),
     )
-    system_name = names["rows"][0]["N"] if created["ok"] and names["ok"] and names["rows"] else table
+    found = created["ok"] and names["ok"] and names["rows"]
+    system_name = names["rows"][0]["N"] if found else table
     for label, statement in (
         # Before the rows: CHGPF needs the file to itself, and the job may keep the
         # file open after an INSERT.
