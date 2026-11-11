@@ -1,0 +1,897 @@
+{
+  "probe": "lib_lock_table_followup",
+  "utc": "20261111T182550Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "approved": "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/162#issuecomment-6803549334",
+  "approved_by": "benny-vanbelle-vandeput-be",
+  "followup": {
+    "2. transaction, driver rollback": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "422872/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT ID FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "ok": true,
+        "ms": 144
+      },
+      "A lock": {
+        "label": "A LOCK TABLE EXCLUSIVE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN EXCLUSIVE MODE",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 66
+      },
+      "locks while held": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422872/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422872/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422872/QUSER/QZDASSINIT"
+        }
+      ],
+      "release": "ok",
+      "locks after": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422872/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422872/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422872/QUSER/QZDASSINIT"
+        }
+      ],
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+          "params": [],
+          "ok": false,
+          "sqlstate": "HY000",
+          "sqlcode": "SQL0913",
+          "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+          "ms": 31585
+        },
+        "INSERT": "not run: the SELECT was blocked"
+      },
+      "leftover: DLCOBJ": [
+        {
+          "label": "A DLCOBJ *SHRRD",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *SHRRD))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 89
+        },
+        {
+          "label": "A DLCOBJ *SHRRD",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *SHRRD))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 50
+        },
+        {
+          "label": "A DLCOBJ *EXCL",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *EXCL))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 75
+        }
+      ],
+      "leftover: locks": [],
+      "leftover: A reconnected": true
+    },
+    "3. transaction, SQL ROLLBACK": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "422880/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT ID FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "ok": true,
+        "ms": 170
+      },
+      "A lock": {
+        "label": "A LOCK TABLE EXCLUSIVE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN EXCLUSIVE MODE",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 42
+      },
+      "locks while held": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422880/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422880/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422880/QUSER/QZDASSINIT"
+        }
+      ],
+      "release": {
+        "label": "A ROLLBACK",
+        "sql": "ROLLBACK",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 54
+      },
+      "locks after": [],
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+          "params": [],
+          "rows": [
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ]
+          ],
+          "ok": true,
+          "ms": 161
+        },
+        "INSERT": {
+          "label": "B INSERT",
+          "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE VALUES (9, 9)",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 44
+        }
+      }
+    },
+    "4a. transaction, driver commit": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "422880/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT ID FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "ok": true,
+        "ms": 107
+      },
+      "A lock": {
+        "label": "A LOCK TABLE EXCLUSIVE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN EXCLUSIVE MODE",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 69
+      },
+      "locks while held": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422880/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422880/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422880/QUSER/QZDASSINIT"
+        }
+      ],
+      "release": "ok",
+      "locks after": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422880/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422880/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422880/QUSER/QZDASSINIT"
+        }
+      ],
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+          "params": [],
+          "ok": false,
+          "sqlstate": "HY000",
+          "sqlcode": "SQL0913",
+          "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+          "ms": 63192
+        },
+        "INSERT": "not run: the SELECT was blocked"
+      },
+      "leftover: DLCOBJ": [
+        {
+          "label": "A DLCOBJ *SHRRD",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *SHRRD))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 88
+        },
+        {
+          "label": "A DLCOBJ *SHRRD",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *SHRRD))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 52
+        },
+        {
+          "label": "A DLCOBJ *EXCL",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *EXCL))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 51
+        }
+      ],
+      "leftover: locks": [],
+      "leftover: A reconnected": true
+    },
+    "4b. transaction, SQL COMMIT": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "422921/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT ID FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "ok": true,
+        "ms": 153
+      },
+      "A lock": {
+        "label": "A LOCK TABLE EXCLUSIVE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN EXCLUSIVE MODE",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 44
+      },
+      "locks while held": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422921/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422921/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422921/QUSER/QZDASSINIT"
+        }
+      ],
+      "release": {
+        "label": "A COMMIT",
+        "sql": "COMMIT",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 56
+      },
+      "locks after": [],
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+          "params": [],
+          "rows": [
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ]
+          ],
+          "ok": true,
+          "ms": 176
+        },
+        "INSERT": {
+          "label": "B INSERT",
+          "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE VALUES (9, 9)",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 55
+        }
+      }
+    },
+    "5. transaction, DLCOBJ": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "422921/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT ID FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "ok": true,
+        "ms": 207
+      },
+      "A lock": {
+        "label": "A LOCK TABLE EXCLUSIVE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN EXCLUSIVE MODE",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 67
+      },
+      "locks while held": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422921/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422921/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "422921/QUSER/QZDASSINIT"
+        }
+      ],
+      "release": [
+        {
+          "label": "A DLCOBJ *SHRRD",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *SHRRD))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 64
+        },
+        {
+          "label": "A DLCOBJ *SHRRD",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *SHRRD))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 61
+        },
+        {
+          "label": "A DLCOBJ *EXCL",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *EXCL))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 44
+        }
+      ],
+      "locks after": [],
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+          "params": [],
+          "rows": [
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ]
+          ],
+          "ok": true,
+          "ms": 139
+        },
+        "INSERT": {
+          "label": "B INSERT",
+          "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE VALUES (9, 9)",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 57
+        }
+      }
+    },
+    "1. autocommit, TRUEAUTOCOMMIT=0, driver rollback": {
+      "A": {
+        "trueautocommit": "0",
+        "autocommit": true,
+        "cmt": "*CS",
+        "job": "423059/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT ID FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "ok": true,
+        "ms": 146
+      },
+      "A lock": {
+        "label": "A LOCK TABLE EXCLUSIVE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN EXCLUSIVE MODE",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 40
+      },
+      "locks while held": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423059/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423059/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423059/QUSER/QZDASSINIT"
+        }
+      ],
+      "release": "ok",
+      "locks after": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423059/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423059/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423059/QUSER/QZDASSINIT"
+        }
+      ],
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+          "params": [],
+          "ok": false,
+          "sqlstate": "HY000",
+          "sqlcode": "SQL0913",
+          "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+          "ms": 63152
+        },
+        "INSERT": "not run: the SELECT was blocked"
+      },
+      "leftover: DLCOBJ": [
+        {
+          "label": "A DLCOBJ *SHRRD",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *SHRRD))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 56
+        },
+        {
+          "label": "A DLCOBJ *SHRRD",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *SHRRD))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 49
+        },
+        {
+          "label": "A DLCOBJ *EXCL",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *EXCL))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 54
+        }
+      ],
+      "leftover: locks": [],
+      "leftover: A reconnected": true
+    },
+    "6. autocommit, TRUEAUTOCOMMIT=1, driver rollback": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": true,
+        "cmt": "*CS",
+        "job": "423197/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT ID FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "ok": true,
+        "ms": 182
+      },
+      "A lock": {
+        "label": "A LOCK TABLE EXCLUSIVE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN EXCLUSIVE MODE",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 37
+      },
+      "locks while held": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423197/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423197/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423197/QUSER/QZDASSINIT"
+        }
+      ],
+      "release": "ok",
+      "locks after": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423197/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423197/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423197/QUSER/QZDASSINIT"
+        }
+      ],
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+          "params": [],
+          "ok": false,
+          "sqlstate": "HY000",
+          "sqlcode": "SQL0913",
+          "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+          "ms": 63109
+        },
+        "INSERT": "not run: the SELECT was blocked"
+      },
+      "leftover: DLCOBJ": [
+        {
+          "label": "A DLCOBJ *SHRRD",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *SHRRD))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 47
+        },
+        {
+          "label": "A DLCOBJ *SHRRD",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *SHRRD))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 55
+        },
+        {
+          "label": "A DLCOBJ *EXCL",
+          "sql": "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((<DEFAULT_LIBRARY>/DJDB200001 *FILE *EXCL))')",
+          "params": [],
+          "rowcount": 0,
+          "ok": true,
+          "ms": 48
+        }
+      ],
+      "leftover: locks": [],
+      "leftover: A reconnected": true
+    },
+    "7. transaction, connection closed": {
+      "A": {
+        "trueautocommit": "1",
+        "autocommit": false,
+        "cmt": "*CS",
+        "job": "423283/QUSER/QZDASSINIT"
+      },
+      "B before": {
+        "label": "B SELECT before",
+        "sql": "SELECT ID FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE",
+        "params": [],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "ok": true,
+        "ms": 143
+      },
+      "A lock": {
+        "label": "A LOCK TABLE EXCLUSIVE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN EXCLUSIVE MODE",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 41
+      },
+      "locks while held": [
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423283/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*SHRRD",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423283/QUSER/QZDASSINIT"
+        },
+        {
+          "OBJECT_NAME": "DJDB2I_LOCKPROBE",
+          "OBJECT_TYPE": "*FILE",
+          "LOCK_STATE": "*EXCL",
+          "LOCK_STATUS": "HELD",
+          "LOCK_SCOPE": "JOB",
+          "JOB_NAME": "423283/QUSER/QZDASSINIT"
+        }
+      ],
+      "release": "A closed and opened again",
+      "locks after": [],
+      "B after": {
+        "SELECT": {
+          "label": "B SELECT",
+          "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+          "params": [],
+          "rows": [
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ]
+          ],
+          "ok": true,
+          "ms": 135
+        },
+        "INSERT": {
+          "label": "B INSERT",
+          "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE VALUES (9, 9)",
+          "params": [],
+          "rowcount": 1,
+          "ok": true,
+          "ms": 53
+        }
+      }
+    }
+  },
+  "cleanup": {
+    "DJDB2I_LOCKPROBE": true,
+    "left": []
+  }
+}
