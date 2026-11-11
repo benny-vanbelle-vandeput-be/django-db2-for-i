@@ -227,8 +227,9 @@ as Db2 for i does:
 
 Change such values first, in a data migration, then narrow the field. In a
 migration's transaction the table is locked before the check, so no such
-value can arrive in between (the lock can outlive the migration: "A table can
-stay locked after a migration"); with `atomic = False` there is no lock.
+value can arrive in between (until the migration commits or rolls back, as in
+"Adding a NOT NULL column without a default"); with `atomic = False` there is no
+lock.
 
 Not checked: a change **to** `FloatField` (`DOUBLE`) rounds to the nearest
 double, as on other databases (a `BigIntegerField` above 2^53 loses its last
@@ -301,36 +302,15 @@ so the column ends up NOT NULL without a default, as on PostgreSQL.
   EXCLUSIVE MODE` before it checks for rows, so no row can be added in
   between. Other jobs can then do nothing with the table, not even read it
   (`WITH UR` included): they wait, and fail with SQL0913 after the job's wait
-  time (about 30 seconds on PUB400). **The lock can outlive the migration:** see
-  "A table can stay locked after a migration" below.
+  time (about 30 seconds on PUB400). The lock ends with the migration's commit or
+  rollback (with an outer `atomic()`, with that one). That commit closes the
+  connection's open cursors, so do not iterate a queryset across such a
+  migration in the same transaction.
 - **`atomic = False`:** outside a transaction there is no lock, so a row
   inserted by another job between the check and the `ADD COLUMN` would get
   the system default.
 - **`sqlmigrate`** has no database to check: it shows the `DEFAULT NOT NULL`
   and `DROP DEFAULT` statements without the check.
-
-## A table can stay locked after a migration
-
-> Verified on IBM i 7.5 with two jobs (probe `lib_lock_table --followup`,
-> 2026-11-11). A fix is planned.
-
-Two schema changes lock the table with `LOCK TABLE ... IN EXCLUSIVE MODE` in a
-migration's transaction: adding a NOT NULL column without a default (above) and
-narrowing a column ("Narrowing a column"). The IBM i Access ODBC Driver ends a
-transaction in a way that keeps such a lock (the SQL statements `COMMIT` and
-`ROLLBACK` would release it, the driver's commit and rollback do not). So
-**after the migration the table stays locked for every other job until the
-migrating connection closes**: other jobs cannot read or write it and fail with
-SQL0913.
-
-- **`manage.py migrate` is not affected in practice:** the command ends and its
-  connection closes, which releases the lock.
-- **Avoid running migrations inside long-running processes** (for example
-  `call_command("migrate")` in a running web or worker process, or a test setup
-  that keeps its connection) until this is fixed, or close the connection
-  afterwards: `django.db.connection.close()`.
-- The connection's own job is not blocked, so the process that ran the migration
-  does not notice it.
 
 ## Foreign keys
 

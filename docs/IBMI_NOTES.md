@@ -2550,6 +2550,8 @@ Job A `*CS`, ODBC pooling off as in the backend; each case on a free table, A lo
   keeps the table locked for every other job after the migration's commit, until the
   connection closes.** The connection's own job is not blocked (the locks are
   job-scoped), which is why the test runs, with one connection, never showed it.
+  Fixed: such a transaction ends with the SQL statement (DECISIONS, 2026-11-11, "A
+  transaction that took a LOCK TABLE ends with the SQL COMMIT / ROLLBACK").
 - `QSYS2.OBJECT_LOCK_INFO.OBJECT_NAME` holds the SQL name (`DJDB2I_LOCKPROBE`), not
   the system name: the probe's filter on the system name found no rows, so its
   summary column "A's locks left" reads 0 throughout; the library-wide rows it
