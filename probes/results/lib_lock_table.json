@@ -1,0 +1,236 @@
+{
+  "probe": "lib_lock_table",
+  "utc": "20261111T171051Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "approved": "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/162#issuecomment-6801604658",
+  "approved_by": "benny-vanbelle-vandeput-be",
+  "rounds": {
+    "EXCLUSIVE": {
+      "A lock": {
+        "label": "A lock EXCLUSIVE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN EXCLUSIVE MODE",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 46
+      },
+      "B SELECT (*CS)": {
+        "label": "B SELECT (*CS)",
+        "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31583
+      },
+      "B SELECT WITH UR": {
+        "label": "B SELECT WITH UR",
+        "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID WITH UR",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31567
+      },
+      "B SELECT WITH NC": {
+        "label": "B SELECT WITH NC",
+        "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID WITH NC",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31590
+      },
+      "B INSERT": {
+        "label": "B INSERT",
+        "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE VALUES (3, 3)",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31720
+      },
+      "B UPDATE": {
+        "label": "B UPDATE",
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE SET V = V + 1 WHERE ID = 1",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31587
+      },
+      "B DELETE": {
+        "label": "B DELETE",
+        "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE WHERE ID = 2",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31682
+      },
+      "B ALTER TABLE ADD COLUMN": {
+        "label": "B ALTER TABLE ADD COLUMN",
+        "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ADD COLUMN W INTEGER",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB2I_LOCKPROBE in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 30284
+      },
+      "B LOCK TABLE IN SHARE MODE": {
+        "label": "B LOCK TABLE IN SHARE MODE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN SHARE MODE",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 30124
+      },
+      "A rollback": "ok",
+      "B control SELECT": {
+        "label": "B control SELECT",
+        "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31679
+      },
+      "B control INSERT": {
+        "label": "B control INSERT",
+        "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE VALUES (4, 4)",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31657
+      }
+    },
+    "SHARE": {
+      "A lock": {
+        "label": "A lock SHARE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN SHARE MODE",
+        "params": [],
+        "rowcount": 0,
+        "ok": true,
+        "ms": 56
+      },
+      "B SELECT (*CS)": {
+        "label": "B SELECT (*CS)",
+        "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31628
+      },
+      "B SELECT WITH UR": {
+        "label": "B SELECT WITH UR",
+        "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID WITH UR",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31613
+      },
+      "B SELECT WITH NC": {
+        "label": "B SELECT WITH NC",
+        "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID WITH NC",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31582
+      },
+      "B INSERT": {
+        "label": "B INSERT",
+        "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE VALUES (3, 3)",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31586
+      },
+      "B UPDATE": {
+        "label": "B UPDATE",
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE SET V = V + 1 WHERE ID = 1",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31573
+      },
+      "B DELETE": {
+        "label": "B DELETE",
+        "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE WHERE ID = 2",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31586
+      },
+      "B ALTER TABLE ADD COLUMN": {
+        "label": "B ALTER TABLE ADD COLUMN",
+        "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ADD COLUMN W INTEGER",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB2I_LOCKPROBE in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 30119
+      },
+      "B LOCK TABLE IN SHARE MODE": {
+        "label": "B LOCK TABLE IN SHARE MODE",
+        "sql": "LOCK TABLE <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE IN SHARE MODE",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 30170
+      },
+      "A rollback": "ok",
+      "B control SELECT": {
+        "label": "B control SELECT",
+        "sql": "SELECT ID, V FROM <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE ORDER BY ID",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31595
+      },
+      "B control INSERT": {
+        "label": "B control INSERT",
+        "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_LOCKPROBE VALUES (4, 4)",
+        "params": [],
+        "ok": false,
+        "sqlstate": "HY000",
+        "sqlcode": "SQL0913",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0913 - Row or object DJDB200001 in <DEFAULT_LIBRARY> type *FILE in use. (-913) (SQLExecDirectW)",
+        "ms": 31611
+      }
+    }
+  },
+  "cleanup": {
+    "DJDB2I_LOCKPROBE": true,
+    "left": []
+  }
+}

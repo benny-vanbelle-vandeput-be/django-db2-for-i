@@ -2143,11 +2143,9 @@ constraint), so the key was a unique index. Each case ran on fresh rows:
 
 ### MERGE under concurrency (not verified on IBM i)
 
-**Not verified on IBM i.** A concurrent insert needs two jobs, so two
-connections and a shared table: QTEMP is private to one job. No probe has run
-this yet. (Written when the project allowed one connection per run on PUB400;
-since #234 a lock or concurrency probe may use up to three, so an approved
-`lib_merge_concurrency` can run on PUB400.) Phase 5
+**Verified since 2026-11-11** by `lib_merge_concurrency`: the results are in
+[Two jobs: row locks, LOCK TABLE, MERGE](#two-jobs-row-locks-lock-table-merge-lib_select_for_update-lib_lock_table-lib_merge_concurrency),
+which replace the expectations below. Phase 5
 answer a asked for this to be investigated and documented; what follows is the
 documented part, and the investigation waits for a dedicated IBM i.
 
@@ -2448,6 +2446,81 @@ with the maintainer's "ok" on #234; result in
   DECISIONS) was this project's rule, not PUB400's limit. The new rule: at most three
   at the same time, the extra ones only for lock and concurrency tests (CLAUDE.md,
   DECISIONS 2026-11-11).
+
+### Two jobs: row locks, LOCK TABLE, MERGE (`lib_select_for_update`, `lib_lock_table`, `lib_merge_concurrency`)
+
+PUB400 (IBM i 7.5), 2026-11-11, two connections at the same time (#236), each probe
+once with the maintainer's approval (#237, #162, #238). Own tables in the journaled
+default library, `CHGPF WAITRCD(2)`, dropped at the end (none left). Both jobs use the
+backend's attributes (`*CS`, autocommit off). Results:
+[lib_select_for_update.json](../probes/results/lib_select_for_update.json),
+[lib_lock_table.json](../probes/results/lib_lock_table.json),
+[lib_merge_concurrency.json](../probes/results/lib_merge_concurrency.json).
+
+- **A CL command takes the system name.** `CHGPF FILE(<lib>/DJDB2I_SFUPARENT)` fails
+  with CPD0074 (more than 10 characters, shown as SQL0443 / CPF0006); the name from
+  `QSYS2.SYSTABLES.SYSTEM_TABLE_NAME` works.
+- **Wait times:** a blocked row waits the file's `WAITRCD` (2 s here, SQL0913 after
+  about 2.3 s); a blocked table (object) lock waits the job's default wait, about
+  30 s on PUB400, whatever `WAITRCD` says.
+
+**Row locks** (`lib_select_for_update`). Job A locks row 1, fetches all rows and
+closes the cursor, as Django does; then job B:
+
+| A's statement | B reads row 1 (`*CS`) | B updates row 1 | B `SKIP LOCKED DATA` returns | row 2, `WITH UR` / `NC` |
+|---|---|---|---|---|
+| `FOR UPDATE` | ok | ok | 1, 2, 3 | free |
+| `FOR UPDATE OF V` | ok | ok | 1, 2, 3 | free |
+| `FOR UPDATE WITH RS` | SQL0913 | SQL0913 | 2, 3 | free |
+| `FOR UPDATE OF V WITH RS` | SQL0913 | SQL0913 | 2, 3 | free |
+| `WITH RS USE AND KEEP EXCLUSIVE LOCKS` | SQL0913 | SQL0913 | 2, 3 | free |
+| a slice (`FETCH FIRST 1 ROWS ONLY`), `USE AND KEEP` | SQL0913 | SQL0913 | 2, 3 | free |
+| a join parent–child, `USE AND KEEP` | SQL0913 | SQL0913, also the child row | 2, 3 | free |
+
+- **Under `*CS` a plain `FOR UPDATE` locks nothing once the rows are fetched**: the
+  lock moves with the cursor and is gone when it closes. `WITH RS` keeps the locks
+  until the transaction ends; that is the form `select_for_update()` needs.
+- `SKIP LOCKED DATA` skips exactly the locked rows (`FOR UPDATE ... SKIP LOCKED DATA`,
+  also with `OF V`, and `WITH CS SKIP LOCKED DATA`).
+- `FOR UPDATE OF <column> WITH RS` locks like the form without `OF`.
+- A join locks the rows of every table in it; `FOR UPDATE` is refused with a join
+  (SQL0511, `qtemp_select_for_update`), so `of=` cannot limit a join's locks to one table.
+- `SET CURRENT LOCK TIMEOUT` (`= 0`, `NOT WAIT`, `NULL`) is SQL0104: there is no
+  per-statement "no wait" (and `NOWAIT`, `WAIT 0` were SQL0104 before).
+- B waiting for row 1 continues as soon as A commits or rolls back (B done after
+  about 0.5 s, when A ended).
+
+**LOCK TABLE** (`lib_lock_table`, #162). While A holds `LOCK TABLE ... IN EXCLUSIVE
+MODE`, every statement of B fails with SQL0913 after about 30 s: `SELECT` (also
+`WITH UR` and `WITH NC`), `INSERT`, `UPDATE`, `DELETE`, `ALTER TABLE ... ADD COLUMN`,
+`LOCK TABLE ... IN SHARE MODE`. **After A's `ROLLBACK`, B's control `SELECT` and
+`INSERT` still failed with SQL0913**, so the lock was apparently not released by the
+rollback; the `IN SHARE MODE` series that followed is therefore not valid (every
+statement SQL0913, as under the exclusive lock). What releases it (`COMMIT`,
+`UNLOCK TABLE`, the end of the connection) is not known yet: a follow-up probe,
+with its own approval, on #162. It matters for `add_field()`, which locks the table
+this way (`schema.py`, `sql_lock_table`).
+
+**MERGE with two jobs** (`lib_merge_concurrency`), the backend's `MERGE` with the
+conflict on a unique key `K`; A merges `K = 1` and does not commit yet:
+
+| Case | `ignore_conflicts` (`*CS`) | `update_conflicts` (`*CS`) | `ignore_conflicts` (`*RR`) |
+|---|---|---|---|
+| B merges the same key | **no wait, 0 rows inserted** | SQL0913 after 2.3 s | SQL0913 after 30 s |
+| A commits within the wait (0.5 s) | 0 rows; A's row stays | B waits, then updates A's row | B waits, then 0 rows |
+| A commits after the wait (3 s) | 0 rows | SQL0913, A's row unchanged | B waits about 3.1 s, then 0 rows |
+| A rolls back (0.5 s) | **0 rows: neither row is there** | B waits, then inserts its row | B waits, then inserts its row |
+| B's batch of 5, one key A's | 4 rows, A's key skipped | SQL0913 | not run |
+| race, 20 keys, both jobs | A: 2 × SQL0803; B: 20 ok | no errors | not run |
+| B retries once A committed | ok (transaction and autocommit) | ok | not run |
+
+- **Under `*CS`, `ignore_conflicts` treats another job's uncommitted row as a
+  conflict without waiting for it.** If that job rolls back, the row is missing from
+  both. Under `*RR` B waits and inserts its row after the rollback.
+- `update_conflicts` waits for the other job's row (2 s here) and then updates it or
+  inserts; it gives up with SQL0913 if the other job takes longer.
+- A real race still gives SQL0803 with `ignore_conflicts` (2 of 20 keys here), as
+  IBM's documentation says: the retry of Known Limitations is needed.
 
 ## String encoding investigation (`nox -s probe_encoding`)
 
