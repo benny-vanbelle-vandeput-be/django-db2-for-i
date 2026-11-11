@@ -36,9 +36,32 @@ def sqlcode(message: str) -> str:
     return f"SQL{code}" if not code.startswith("-") else f"SQL{abs(int(code)):04d}"
 
 
-def open_job(settings: Settings, library: str, cmt: str = "1"):
-    """One job with the backend's connection attributes (CMT=1 is *CS), autocommit off."""
-    return connect(settings, {"CMT": cmt, "TRUEAUTOCOMMIT": "1", "DBQ": library}, autocommit=False)
+def open_job(
+    settings: Settings,
+    library: str,
+    cmt: str = "1",
+    trueautocommit: str = "1",
+    autocommit: bool = False,
+):
+    """One job; by default the backend's connection attributes (CMT=1 is *CS,
+    TRUEAUTOCOMMIT=1), autocommit off."""
+    return connect(
+        settings,
+        {"CMT": cmt, "TRUEAUTOCOMMIT": trueautocommit, "DBQ": library},
+        autocommit=autocommit,
+    )
+
+
+def system_name(conn, library: str, table: str) -> str:
+    """The 10-character system name a CL command needs (CPD0074 otherwise, #237)."""
+    names = run_query(
+        conn,
+        f"system name of {table}",
+        "SELECT SYSTEM_TABLE_NAME AS N FROM QSYS2.SYSTABLES "
+        "WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?",
+        (library, table),
+    )
+    return names["rows"][0]["N"] if names["ok"] and names["rows"] else table
 
 
 def timed(conn, label: str, sql: str, params: tuple = (), fetch: bool = False) -> dict[str, Any]:
@@ -142,23 +165,13 @@ def create(conn, library: str, table: str, body: str, rows: str) -> None:
     table_registry.record(table_registry.list_path(), entry)
     created = timed(conn, f"create {table}", sql)
     end(conn, "commit")
-    # A CL command takes the 10-character system name, not the SQL name (CPD0074
-    # on the first runs, #237).
-    names = run_query(
-        conn,
-        f"system name of {table}",
-        "SELECT SYSTEM_TABLE_NAME AS N FROM QSYS2.SYSTABLES "
-        "WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?",
-        (library, table),
-    )
-    found = created["ok"] and names["ok"] and names["rows"]
-    system_name = names["rows"][0]["N"] if found else table
+    short = system_name(conn, library, table) if created["ok"] else table
     for label, statement in (
         # Before the rows: CHGPF needs the file to itself, and the job may keep the
         # file open after an INSERT.
         (
-            f"WAITRCD({WAIT_SECONDS}) of {table} ({system_name})",
-            f"CALL QSYS2.QCMDEXC('CHGPF FILE({library}/{system_name}) WAITRCD({WAIT_SECONDS})')",
+            f"WAITRCD({WAIT_SECONDS}) of {table} ({short})",
+            f"CALL QSYS2.QCMDEXC('CHGPF FILE({library}/{short}) WAITRCD({WAIT_SECONDS})')",
         ),
         (f"rows of {table}", f"INSERT INTO {library}.{table} VALUES {rows}"),
     ):

@@ -93,7 +93,33 @@ def test_twojobs_probes_never_open_more_than_two_jobs_at_once() -> None:
     for name in ("lib_lock_table", "lib_select_for_update", "lib_merge_concurrency"):
         text = (PROBES / f"{name}.py").read_text()
         assert text.count("two.open_job(") <= 4, name
-        assert "jobs.clear()" in text or text.count("two.open_job(") == 2, name
+        # A probe that reopens a job closes it first (jobs.clear() or reopen_a()).
+        assert (
+            "jobs.clear()" in text or "def reopen_a" in text or text.count("two.open_job(") == 2
+        ), name
+
+
+def test_lock_table_followup_deallocates_only_job_as_locks_on_its_table(
+    common, monkeypatch
+) -> None:
+    """#162 follow-up: DLCOBJ with each lock's own state (and member), job A's rows only."""
+    monkeypatch.setitem(sys.modules, "pyodbc", types.SimpleNamespace(Error=Exception))
+    monkeypatch.setitem(sys.modules, "tests.table_registry", types.SimpleNamespace())
+    probe = load(PROBES / "lib_lock_table.py", "lib_lock_table", monkeypatch)
+    sent = []
+    monkeypatch.setattr(probe.two, "timed", lambda conn, label, sql, *a, **k: sent.append(sql))
+    follow = probe.Followup(None, [object(), object()], "LIB")
+    follow.short, follow.a_job = "DJDB200001", "1/U/A"
+    rows = [
+        {"JOB_NAME": "1/U/A", "LOCK_STATE": "*EXCL", "MEMBER_NAME": None},
+        {"JOB_NAME": "1/U/A", "LOCK_STATE": "*SHRRD", "MEMBER_NAME": "DJDB200001"},
+        {"JOB_NAME": "2/U/B", "LOCK_STATE": "*SHRRD", "MEMBER_NAME": None},
+    ]
+    follow.dlcobj(rows)
+    assert sent == [
+        "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((LIB/DJDB200001 *FILE *EXCL))')",
+        "CALL QSYS2.QCMDEXC('DLCOBJ OBJ((LIB/DJDB200001 *FILE *SHRRD DJDB200001))')",
+    ]
 
 
 def test_qtemp_probes_with_an_entry_point_run_through_one_session() -> None:
