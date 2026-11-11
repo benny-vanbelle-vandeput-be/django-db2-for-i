@@ -2144,8 +2144,10 @@ constraint), so the key was a unique index. Each case ran on fresh rows:
 ### MERGE under concurrency (not verified on IBM i)
 
 **Not verified on IBM i.** A concurrent insert needs two jobs, so two
-connections and a shared table: QTEMP is private to one job, and PUB400 allows
-one connection per run. No probe has run this, and none may on PUB400. Phase 5
+connections and a shared table: QTEMP is private to one job. No probe has run
+this yet. (Written when the project allowed one connection per run on PUB400;
+since #234 a lock or concurrency probe may use up to three, so an approved
+`lib_merge_concurrency` can run on PUB400.) Phase 5
 answer a asked for this to be investigated and documented; what follows is the
 documented part, and the investigation waits for a dedicated IBM i.
 
@@ -2443,8 +2445,9 @@ with the maintainer's "ok" on #234; result in
   connection was tried), and PUB400 states only "a hard restriction on number of
   connections from a single IP".
 - So the earlier statement "PUB400 allows one connection per run" (here and in
-  DECISIONS) was this project's rule, not PUB400's limit. The rule stays until it is
-  changed in a pull request of its own (#234, step 2).
+  DECISIONS) was this project's rule, not PUB400's limit. The new rule: at most three
+  at the same time, the extra ones only for lock and concurrency tests (CLAUDE.md,
+  DECISIONS 2026-11-11).
 
 ## String encoding investigation (`nox -s probe_encoding`)
 
