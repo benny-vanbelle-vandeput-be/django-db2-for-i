@@ -164,6 +164,11 @@ pushed to a public registry (IBM's license).
      library, only with the maintainer's approval comment for it (CLAUDE.md);
    - `bin/ibmi-test own <tests>`, `bin/ibmi-test django <label>...`,
      `bin/ibmi-test --full-tier`, `bin/ibmi-test --affected`;
+   - `bin/ibmi-test --smoke` (`nox -s smoke`): the smoke set, about 30 own IBM i
+     tests of the most common patterns (`tests/ibmi/smoke.txt`) in minutes, to
+     check an IBM i after installing, such as another system than PUB400. One
+     connection, a clean test library, no system changes; it does not count
+     for TEST_STATUS or replace the IBM i run a pull request asks for;
    - `bin/verify`: targeted runs with stamps (topic `change`);
    - `bin/ibmi-cleanup`: lists the leftover test tables of a crashed run;
      `--yes` drops them (only listed tables, only in a marked test library).

@@ -7,6 +7,8 @@
 #   bin/ibmi-test django <label> [...]      Django test modules or ids (--clean), one run per label;
 #                                           every label runs, also after one failed
 #   bin/ibmi-test --full-tier               the full own IBM i tests (needs-full-ibmi-run)
+#   bin/ibmi-test --smoke                   the smoke set: about 30 own IBM i tests in minutes
+#                                           (tests/ibmi/smoke.txt), to check an IBM i
 #   bin/ibmi-test --affected                the tests bin/verify would select (no stamps
 #                                           written, no corpus capture; scripts/verify.py)
 #   bin/ibmi-test --django 6.0 ...          another supported Django version (default: the newest)
@@ -24,13 +26,14 @@ source "$(dirname "$0")/_common.sh"
 common_args "$@"
 
 django=$(newest_django)
-mode= full=0 affected=0
+mode= full=0 affected=0 smoke=0
 rest=()
 set -- ${ARGS[@]+"${ARGS[@]}"}
 while [ $# -gt 0 ]; do
     case $1 in
         --django) django=${2:?--django needs a version}; shift 2 ;;
         --full-tier) full=1; shift ;;
+        --smoke) smoke=1; shift ;;
         --affected) affected=1; shift ;;
         own | django)
             [ -z "$mode" ] || die "choose one of own / django"
@@ -47,13 +50,18 @@ done
 nox_combinations | awk '{ print $2 }' | grep -qx "$django" || die "Django $django is not supported (noxfile.py)"
 
 if [ "$affected" = 1 ]; then
-    [ -z "$mode" ] && [ "$full" = 0 ] || die "--affected selects the tests itself; no own/django/--full-tier"
+    [ -z "$mode" ] && [ "$full" = 0 ] && [ "$smoke" = 0 ] || die "--affected selects the tests itself; no own/django/--full-tier/--smoke"
     dir=test-results/verify/$django
     container uv run --no-project python scripts/verify.py select "$django" || exit 3
     failed=0
     ibmi_runs "$django" "$ROOT/$dir/runs.txt" "$ROOT/$dir/results.txt" 0 || failed=1
     container uv run --no-project python scripts/verify.py finish "$django" --no-stamp || failed=1
     exit "$failed"
+fi
+if [ "$smoke" = 1 ]; then
+    [ -z "$mode" ] && [ "$full" = 0 ] || die "--smoke runs the smoke set; no own/django/--full-tier"
+    pub400 smoke "$django"
+    exit
 fi
 if [ "$full" = 1 ]; then
     [ -z "$mode" ] || die "--full-tier runs all own IBM i tests; no own/django selection"

@@ -425,6 +425,7 @@ def test_the_ibmi_scripts_go_through_pub400_sh(tmp_path) -> None:
         f"+ {ROOT}/scripts/django_suite.sh 6.0 --clean basic",
         f"+ {ROOT}/scripts/django_suite.sh 6.0 --clean lookup",
     ]
+    assert dry(str(BIN / "ibmi-test"), "--dry-run", "--smoke") == [f"+ {pub400} smoke 6.1"]
     assert dry(str(BIN / "ibmi-cleanup"), "--dry-run") == [f"+ {pub400} ibmi_cleanup"]
     assert dry(str(BIN / "ibmi-cleanup"), "--dry-run", "--yes") == [
         f"+ {pub400} ibmi_cleanup --yes"
@@ -453,6 +454,7 @@ def test_the_ibmi_scripts_refuse_what_is_not_allowed(tmp_path) -> None:
         ((str(BIN / "ibmi-test"), "django"), "never the full suite"),
         ((str(BIN / "ibmi-test"), "--django", "9.9", "own", "x"), "Django 9.9 is not supported"),
         ((str(BIN / "ibmi-test"), "--full-tier", "own", "x"), "no own/django selection"),
+        ((str(BIN / "ibmi-test"), "--smoke", "own", "x"), "--smoke runs the smoke set"),
         ((str(BIN / "ibmi-cleanup"), "--force"), "unknown argument: --force"),
     ]
     for args, message in cases:

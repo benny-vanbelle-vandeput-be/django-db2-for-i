@@ -106,6 +106,10 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 def pytest_configure(config: pytest.Config) -> None:
     import os
 
+    config.addinivalue_line(
+        "markers", "smoke: the smoke set of the own IBM i tests (tests/ibmi/smoke.txt)"
+    )
+
     if config.getoption("--update-goldens") and os.environ.get("CI"):
         raise pytest.UsageError("--update-goldens must not be used in CI")
     if config.getoption("--update-corpus") and os.environ.get("CI"):
