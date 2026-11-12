@@ -2435,6 +2435,31 @@ parent 2, read both tables, `ROLLBACK` (CMT=1).
   libraries with different journals fail on every delete of the parent; Django's own
   `CASCADE` (in Python, the database rule `NO ACTION`) is not affected.
 
+### Constraints and indexes on a table in another library (`probes/lib_other_library.py`, #124)
+
+2026-11-12, PUB400 (IBM i 7.5), approved on
+[#124](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/124#issuecomment-6839279187).
+The connection's current schema is the default library (`DBQ = NAME`); tables
+`DJDB2I_OLP` and `DJDB2I_OLC` in the `other` library, on the cleanup list, dropped at the
+end (child first, `RESTRICT`), each index dropped explicitly first; a last catalog check
+found no `DJDB2I_OL*` object in either library. No data rows. Result:
+`probes/results/lib_other_library.json`.
+
+| Statement on `<other>.DJDB2I_OLC` | Unqualified name | Qualified `<other>.` |
+|---|---|---|
+| `ADD CONSTRAINT ... FOREIGN KEY` (to a table in `other`) | **SQL5051** "Qualifier <default> not same as name <other>" | ok, in `other` |
+| `ADD CONSTRAINT ... UNIQUE` | **SQL5051** | ok, in `other` |
+| `ADD CONSTRAINT ... CHECK` | **SQL5051** | ok, in `other` |
+| `CREATE INDEX` | ok, but the index lands in **the default library** (`SYSINDEXES.INDEX_SCHEMA`) | ok, in `other` |
+
+- `CREATE INDEX <default>.X ON <other>.T` is accepted too: an index may live in another
+  library than its table. `DROP INDEX` needs the index's own library.
+- So for a model whose `db_table` is in another library, the schema editor must qualify
+  every constraint name and every index name with the table's library. Unqualified, a
+  constraint fails and an index ends up in the `NAME` library, where Django's
+  introspection of the table's library (and `bin/ibmi-cleanup`) would not find it.
+- `DROP CONSTRAINT <other>.<name>` works with the qualified name.
+
 ### CHECK ... IS JSON on an NCLOB (`probes/lib_json_check.py`)
 
 2026-11-02, PUB400 (IBM i 7.5), in the journaled default library, approved on

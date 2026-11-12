@@ -436,8 +436,9 @@ its table, so creating a constraint on a table in another library fails with
 `SQL5051 - Qualifier ... not same as name ...`. Models whose `db_table` points
 to another library are therefore **not supported yet**; planned, see
 [#124](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/124).
-(Verified for foreign key constraints; index names in another library have not
-been tested yet.)
+The same holds for unique and check constraints. An index with an unqualified
+name does not fail, but lands in the `NAME` library, not in its table's
+library (verified on PUB400, probe `lib_other_library`).
 
 ## Strings longer than 1M characters are refused
 

@@ -1,0 +1,279 @@
+{
+  "probe": "lib_other_library",
+  "utc": "20261112T234821Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "approved": "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/124#issuecomment-6839279187",
+  "approved_by": "benny-vanbelle-vandeput-be",
+  "cases": {
+    "foreign key, unqualified": {
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT DJDB2I_OLC_FOREI FOREIGN KEY (P_ID) REFERENCES <OTHER_LIBRARY>.DJDB2I_OLP (ID)",
+      "result": "-5051",
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL5051 - Qualifier <DEFAULT_LIBRARY> not same as name <OTHER_LIBRARY>. (-5051) (SQLExecDirectW)"
+    },
+    "foreign key, qualified": {
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_FOREI FOREIGN KEY (P_ID) REFERENCES <OTHER_LIBRARY>.DJDB2I_OLP (ID)",
+      "result": "ok",
+      "catalog": [
+        {
+          "CONSTRAINT_SCHEMA": "<OTHER_LIBRARY>",
+          "CONSTRAINT_NAME": "DJDB2I_OLC_FOREI",
+          "TABLE_SCHEMA": "<OTHER_LIBRARY>",
+          "TABLE_NAME": "DJDB2I_OLC",
+          "CONSTRAINT_TYPE": "FOREIGN KEY"
+        }
+      ],
+      "drop": {
+        "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC DROP CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_FOREI",
+        "result": "ok"
+      }
+    },
+    "unique, unqualified": {
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT DJDB2I_OLC_UNIQU UNIQUE (NAME)",
+      "result": "-5051",
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL5051 - Qualifier <DEFAULT_LIBRARY> not same as name <OTHER_LIBRARY>. (-5051) (SQLExecDirectW)"
+    },
+    "unique, qualified": {
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_UNIQU UNIQUE (NAME)",
+      "result": "ok",
+      "catalog": [
+        {
+          "CONSTRAINT_SCHEMA": "<OTHER_LIBRARY>",
+          "CONSTRAINT_NAME": "DJDB2I_OLC_UNIQU",
+          "TABLE_SCHEMA": "<OTHER_LIBRARY>",
+          "TABLE_NAME": "DJDB2I_OLC",
+          "CONSTRAINT_TYPE": "UNIQUE"
+        }
+      ],
+      "drop": {
+        "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC DROP CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_UNIQU",
+        "result": "ok"
+      }
+    },
+    "check, unqualified": {
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT DJDB2I_OLC_CHECK CHECK (ID > 0)",
+      "result": "-5051",
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL5051 - Qualifier <DEFAULT_LIBRARY> not same as name <OTHER_LIBRARY>. (-5051) (SQLExecDirectW)"
+    },
+    "check, qualified": {
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_CHECK CHECK (ID > 0)",
+      "result": "ok",
+      "catalog": [
+        {
+          "CONSTRAINT_SCHEMA": "<OTHER_LIBRARY>",
+          "CONSTRAINT_NAME": "DJDB2I_OLC_CHECK",
+          "TABLE_SCHEMA": "<OTHER_LIBRARY>",
+          "TABLE_NAME": "DJDB2I_OLC",
+          "CONSTRAINT_TYPE": "CHECK"
+        }
+      ],
+      "drop": {
+        "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC DROP CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_CHECK",
+        "result": "ok"
+      }
+    },
+    "index, unqualified": {
+      "sql": "CREATE INDEX DJDB2I_OLIX ON <OTHER_LIBRARY>.DJDB2I_OLC (NAME)",
+      "result": "ok",
+      "catalog": [
+        {
+          "INDEX_SCHEMA": "<DEFAULT_LIBRARY>",
+          "INDEX_NAME": "DJDB2I_OLIX",
+          "TABLE_SCHEMA": "<OTHER_LIBRARY>",
+          "TABLE_NAME": "DJDB2I_OLC"
+        }
+      ],
+      "in default": true,
+      "in other": false,
+      "drop in default": {
+        "sql": "DROP INDEX <DEFAULT_LIBRARY>.DJDB2I_OLIX",
+        "result": "ok"
+      }
+    },
+    "index, qualified with other": {
+      "sql": "CREATE INDEX <OTHER_LIBRARY>.DJDB2I_OLIX ON <OTHER_LIBRARY>.DJDB2I_OLC (NAME)",
+      "result": "ok",
+      "catalog": [
+        {
+          "INDEX_SCHEMA": "<OTHER_LIBRARY>",
+          "INDEX_NAME": "DJDB2I_OLIX",
+          "TABLE_SCHEMA": "<OTHER_LIBRARY>",
+          "TABLE_NAME": "DJDB2I_OLC"
+        }
+      ],
+      "in default": false,
+      "in other": true,
+      "drop in other": {
+        "sql": "DROP INDEX <OTHER_LIBRARY>.DJDB2I_OLIX",
+        "result": "ok"
+      }
+    },
+    "index, qualified with default": {
+      "sql": "CREATE INDEX <DEFAULT_LIBRARY>.DJDB2I_OLIX2 ON <OTHER_LIBRARY>.DJDB2I_OLC (NAME)",
+      "result": "ok",
+      "catalog": [
+        {
+          "INDEX_SCHEMA": "<DEFAULT_LIBRARY>",
+          "INDEX_NAME": "DJDB2I_OLIX2",
+          "TABLE_SCHEMA": "<OTHER_LIBRARY>",
+          "TABLE_NAME": "DJDB2I_OLC"
+        }
+      ],
+      "in default": true,
+      "in other": false,
+      "drop in default": {
+        "sql": "DROP INDEX <DEFAULT_LIBRARY>.DJDB2I_OLIX2",
+        "result": "ok"
+      }
+    }
+  },
+  "cleanup": {
+    "<OTHER_LIBRARY>.DJDB2I_OLC": true,
+    "<OTHER_LIBRARY>.DJDB2I_OLP": true
+  },
+  "left": {
+    "<DEFAULT_LIBRARY>": [],
+    "<OTHER_LIBRARY>": []
+  },
+  "statements": [
+    {
+      "label": "create <OTHER_LIBRARY>.DJDB2I_OLP",
+      "sql": "CREATE TABLE <OTHER_LIBRARY>.DJDB2I_OLP (ID INTEGER NOT NULL PRIMARY KEY)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "create <OTHER_LIBRARY>.DJDB2I_OLC",
+      "sql": "CREATE TABLE <OTHER_LIBRARY>.DJDB2I_OLC (ID INTEGER NOT NULL PRIMARY KEY, P_ID INTEGER, NAME VARCHAR(20))",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "foreign key, unqualified: add",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT DJDB2I_OLC_FOREI FOREIGN KEY (P_ID) REFERENCES <OTHER_LIBRARY>.DJDB2I_OLP (ID)",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL5051 - Qualifier <DEFAULT_LIBRARY> not same as name <OTHER_LIBRARY>. (-5051) (SQLExecDirectW)"
+    },
+    {
+      "label": "foreign key, qualified: add",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_FOREI FOREIGN KEY (P_ID) REFERENCES <OTHER_LIBRARY>.DJDB2I_OLP (ID)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "foreign key, qualified: drop",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC DROP CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_FOREI",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "unique, unqualified: add",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT DJDB2I_OLC_UNIQU UNIQUE (NAME)",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL5051 - Qualifier <DEFAULT_LIBRARY> not same as name <OTHER_LIBRARY>. (-5051) (SQLExecDirectW)"
+    },
+    {
+      "label": "unique, qualified: add",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_UNIQU UNIQUE (NAME)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "unique, qualified: drop",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC DROP CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_UNIQU",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "check, unqualified: add",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT DJDB2I_OLC_CHECK CHECK (ID > 0)",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL5051 - Qualifier <DEFAULT_LIBRARY> not same as name <OTHER_LIBRARY>. (-5051) (SQLExecDirectW)"
+    },
+    {
+      "label": "check, qualified: add",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_CHECK CHECK (ID > 0)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "check, qualified: drop",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_OLC DROP CONSTRAINT <OTHER_LIBRARY>.DJDB2I_OLC_CHECK",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "index, unqualified: create",
+      "sql": "CREATE INDEX DJDB2I_OLIX ON <OTHER_LIBRARY>.DJDB2I_OLC (NAME)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "index, unqualified: drop",
+      "sql": "DROP INDEX <DEFAULT_LIBRARY>.DJDB2I_OLIX",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "index, other: create",
+      "sql": "CREATE INDEX <OTHER_LIBRARY>.DJDB2I_OLIX ON <OTHER_LIBRARY>.DJDB2I_OLC (NAME)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "index, other: drop",
+      "sql": "DROP INDEX <OTHER_LIBRARY>.DJDB2I_OLIX",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "index, default: create",
+      "sql": "CREATE INDEX <DEFAULT_LIBRARY>.DJDB2I_OLIX2 ON <OTHER_LIBRARY>.DJDB2I_OLC (NAME)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "index, default: drop",
+      "sql": "DROP INDEX <DEFAULT_LIBRARY>.DJDB2I_OLIX2",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJDB2I_OLC",
+      "sql": "DROP TABLE <OTHER_LIBRARY>.DJDB2I_OLC RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJDB2I_OLP",
+      "sql": "DROP TABLE <OTHER_LIBRARY>.DJDB2I_OLP RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    }
+  ]
+}
