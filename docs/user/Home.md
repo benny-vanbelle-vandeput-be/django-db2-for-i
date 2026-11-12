@@ -20,7 +20,8 @@ DATABASES = {"default": {"ENGINE": "django_db2_for_i", ...}}
 
 ## Pages
 
-- [Installation](Installation.md)
+- [Installation](Installation.md): install, first steps, check your own IBM i
+- [Upgrading](Upgrading.md): what changes between beta releases
 - [ODBC driver setup](ODBC-Driver-Setup.md)
 - [Configuration](Configuration.md): `DATABASES` and `OPTIONS`
 - [IBM i requirements](IBM-i-Requirements.md): journaling, authorities
