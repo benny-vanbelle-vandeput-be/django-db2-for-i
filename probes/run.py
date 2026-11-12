@@ -71,11 +71,11 @@ import qtemp_own_jobs
 import qtemp_packages
 import qtemp_phase6_flags
 import qtemp_phase7_flags
-import qtemp_record_wait
 import qtemp_qaqqini_inquiry
 import qtemp_qaqqini_lifecycle
 import qtemp_queries
 import qtemp_reachability
+import qtemp_record_wait
 import qtemp_renames
 import qtemp_returning
 import qtemp_select_for_update

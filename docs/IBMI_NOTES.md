@@ -2708,6 +2708,22 @@ PUB400 (IBM i 7.5), 2026-11-12, QTEMP only. The forms the backend would write fo
 - `WITH RS USE AND KEEP EXCLUSIVE LOCKS`, also `... SKIP LOCKED DATA` and with a join,
   is accepted in QTEMP.
 
+### The record wait of a table created with SQL (`probes/qtemp_record_wait.py`)
+
+PUB400 (IBM i 7.5), 2026-11-12, QTEMP only: a table from `CREATE TABLE`, read with
+`DSPFD ... TYPE(*ATR) OUTPUT(*OUTFILE)` into QTEMP. Result:
+[record_wait.json](../probes/results/record_wait.json).
+
+- **Maximum record wait (`PHWATR`, `WAITRCD`): 60 seconds; maximum file wait
+  (`PHWAIT`, `WAITFILE`): 30 seconds.** After `CHGPF WAITRCD(5)` the record wait is 5.
+- So a statement that meets another job's row lock (`select_for_update()`, also a
+  plain read under `*CS`) waits up to 60 s on a table Django created, then fails with
+  SQL0913. Django's `select_for_update.tests.test_block` reads the locked row without
+  `FOR UPDATE` and expects no wait (PostgreSQL); here it waits and fails.
+- The system names that `QSYS2.SYSTABLES` returns (`SYSTEM_TABLE_SCHEMA`,
+  `SYSTEM_TABLE_NAME`) are padded with blanks; a CL command needs them stripped
+  (`CHGPF FILE(<lib> /<name>)` is CPD0104 "Expression not allowed").
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one
