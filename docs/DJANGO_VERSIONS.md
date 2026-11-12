@@ -30,7 +30,7 @@ this file marked "planned" is implemented yet.
 
 | Django | Django's Python support | Our matrix | pyproject floor |
 |---|---|---|---|
-| 6.1 | 3.12, 3.13, 3.14 | 3.12, 3.13, 3.14 | 6.1.0 |
+| 6.1 | 3.12, 3.13, 3.14, 3.15 (3.15 from 6.1.3) | 3.12, 3.13, 3.14, 3.15 | 6.1.0; 6.1.3 on Python 3.15 (environment marker) |
 | 6.0 | 3.12, 3.13, 3.14 | 3.12, 3.13, 3.14 | 6.0.3 (pyproject floor) |
 | 5.2 LTS | 3.10–3.14 (3.14 from 5.2.8) | 3.12, 3.13, 3.14 | 5.2.12 (pyproject floor) |
 
@@ -39,8 +39,23 @@ this file marked "planned" is implemented yet.
 they are the patch releases with the latest Python 3.14 fixes, and the matrix
 tests 3.14 on every version. The release notes say:
 
-- **6.1**: `docs/releases/6.1.txt`, "Python compatibility": supports 3.12,
-  3.13 and 3.14.
+- **6.1**: `docs/releases/6.1.txt`, "Python compatibility": "Django 6.1
+  supports Python 3.12, 3.13, 3.14, and 3.15 (as of 6.1.3)."
+  `6.1.3.txt` (2026-11-03): "It also adds compatibility with Python 3.15."
+
+**Python 3.15** (phase 7, #233): only Django 6.1.3 and later support it; 6.0
+and 5.2 stop at 3.14. The minimum Django stays as it is for everyone; an
+environment marker next to the normal range asks for 6.1.3 or later on
+Python 3.15 only:
+
+```toml
+"Django>=5.2.12,!=6.0.0,!=6.0.1,!=6.0.2,<6.2",
+"Django>=6.1.3; python_version >= '3.15'",
+```
+
+pyodbc has `cp315` wheels from 5.5.0 (2026-11-08); the floor `>=5.3` stays,
+pip picks a version with a wheel. Free-threaded Python (`3.15t`) is not
+supported (phase 8).
 - **6.0**: `docs/releases/6.0.txt`: "Django 6.0 supports Python 3.12, 3.13, and
   3.14." The later 3.14 fixes are:
   - `6.0.1.txt`: "Fixed a bug where management command colorized help
@@ -144,7 +159,9 @@ this file.
 ## Testing per version
 The four test sets are described in [CONTRIBUTING.md](../CONTRIBUTING.md#test-sets).
 - **Offline tests:** every Python × every supported Django version, in CI.
-- **IBM i tests:** for every backend change, on each Django version the change touches.
+- **IBM i tests:** for every backend change, on each Django version the change touches,
+  on the newest Python of that Django version (3.15 for 6.1, 3.14 for 6.0 and 5.2;
+  `scripts/pub400.sh` passes it to nox with `--force-python`). The status run too.
 - **Django suite on IBM i:** before every release, the status run per Django version
   (`scripts/pub400.sh status_run <django>`, [DECISIONS](DECISIONS.md#2026-10-19-the-status-run-as-one-nox-session));
   it also captures the offline query corpus.

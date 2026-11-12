@@ -16,10 +16,19 @@ PYPROJECT = nox.project.load_toml("pyproject.toml")
 DJANGO_PYTHONS = {
     "5.2": ["3.12", "3.13", "3.14"],
     "6.0": ["3.12", "3.13", "3.14"],
-    "6.1": ["3.12", "3.13", "3.14"],
+    "6.1": ["3.12", "3.13", "3.14", "3.15"],
 }
 NEWEST_DJANGO = "6.1"
 NEWEST_PYTHON = DJANGO_PYTHONS[NEWEST_DJANGO][-1]
+
+
+def _version(python: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in python.split("."))
+
+
+# The newest Python that every supported Django version supports: for sessions
+# that install more than one Django version (features).
+COMMON_PYTHON = min((pythons[-1] for pythons in DJANGO_PYTHONS.values()), key=_version)
 
 OFFLINE_MATRIX = [
     (python, django) for django, pythons in DJANGO_PYTHONS.items() for python in pythons
@@ -60,10 +69,27 @@ def django_argument(session: nox.Session) -> tuple[str, list[str]]:
     """A supported Django version given as the first argument (default: the
     newest), and the other arguments."""
     if session.posargs and session.posargs[0] in DJANGO_PYTHONS:
-        return session.posargs[0], session.posargs[1:]
-    if session.posargs and session.posargs[0][:1].isdigit():
+        django, args = session.posargs[0], session.posargs[1:]
+    elif session.posargs and session.posargs[0][:1].isdigit():
         session.error(f"Django {session.posargs[0]} is not supported: {', '.join(DJANGO_PYTHONS)}")
-    return NEWEST_DJANGO, list(session.posargs)
+    else:
+        django, args = NEWEST_DJANGO, list(session.posargs)
+    newest_python_for(session, django)
+    return django, args
+
+
+def newest_python_for(session: nox.Session, django: str) -> None:
+    """IBM i runs use the newest Python of their Django version (CLAUDE.md section 6):
+    3.15 for 6.1, 3.14 for 6.0 and 5.2. scripts/pub400.sh passes it with --force-python."""
+    if django not in DJANGO_PYTHONS:
+        session.error(f"Django {django} is not supported: {', '.join(DJANGO_PYTHONS)}")
+    python = DJANGO_PYTHONS[django][-1]
+    if session.python != python:
+        session.error(
+            f"Django {django} runs on Python {python} here, not {session.python}: "
+            f"nox --force-python {python} -s {session.name} -- {django} ... "
+            "(scripts/pub400.sh does this itself)"
+        )
 
 
 @nox.session(python=NEWEST_PYTHON)
@@ -277,6 +303,7 @@ def django_suite(session: nox.Session) -> None:
             "usage: nox -s django_suite -- <django-version> [--clean] [--debug-sql] <module> ..."
         )
     version = session.posargs[0]
+    newest_python_for(session, version)
     checkout = f"vendor/django-{version}"
     # Django from the vendor checkout (stable/<version>.x); the backend without
     # dependency resolution, since the checkout's version is a pre-release.
@@ -300,6 +327,7 @@ def status_run(session: nox.Session) -> None:
     """
     if not session.posargs or session.posargs[0].startswith("-"):
         session.error("usage: nox -s status_run -- <django-version> [--restart] [--limit N]")
+    newest_python_for(session, session.posargs[0])
     # Django from the vendor checkout, as in django_suite, for the modules and the tier.
     install_groups(session, "test")
     session.install("-e", f"vendor/django-{session.posargs[0]}")
@@ -314,7 +342,7 @@ def status_run(session: nox.Session) -> None:
     session.run("python", "scripts/status_run.py", *session.posargs)
 
 
-@nox.session(python=NEWEST_PYTHON)
+@nox.session(python=COMMON_PYTHON)
 def features(session: nox.Session) -> None:
     """docs/FEATURES.md: dump the feature flags on every supported Django (offline), then render."""
     install_groups(session, "test")

@@ -160,7 +160,8 @@ the IBM i Access ODBC Driver.
   [IBM i requirements](docs/user/IBM-i-Requirements.md).
 - **IBM i Access ODBC Driver** and unixODBC, see
   [ODBC driver setup](docs/user/ODBC-Driver-Setup.md).
-- **Python** 3.12, 3.13 or 3.14.
+- **Python** 3.12, 3.13 or 3.14; 3.15 with Django 6.1.3 or later (pip
+  picks it on 3.15).
 - **Django** 5.2 LTS (5.2.12 or later), 6.0 (6.0.3 or later) or 6.1; always
   use the latest security release of your Django version
   ([supported versions](docs/DJANGO_VERSIONS.md)).
@@ -271,7 +272,7 @@ changed), and never put credentials in the repository; `.env` stays local.
 
 | Service | Build target | Contents | Use |
 |---|---|---|---|
-| `tests` | `full` | uv, Python 3.12–3.14, nox, unixODBC, IBM i Access ODBC Driver | all test sets, probes |
+| `tests` | `full` | uv, Python 3.12–3.15, nox, unixODBC, IBM i Access ODBC Driver | all test sets, probes |
 | `offline` | `offline` | the same without the IBM driver | offline test sets, lint, CI |
 
 On Apple Silicon the `tests` service runs as `linux/amd64` under emulation:

@@ -81,7 +81,8 @@ This file holds the project's design and what is specific to Claude.
   release notes and record the impact in `docs/DJANGO_VERSIONS.md`.
 
 ### Python
-- Python **3.12, 3.13, 3.14** — verify per Django version in its release notes
+- Python **3.12, 3.13, 3.14**, and **3.15** with Django 6.1 (6.1.3 or later, through an
+  environment marker in `pyproject.toml`) — verify per Django version in its release notes
   (including the minimum 6.0.x and 5.2.x patch releases that support 3.14).
 
 ### IBM i
@@ -260,14 +261,14 @@ CONTRIBUTING.md, "Test sets".
 - Day-to-day: single modules against the primary version (6.1).
 - Before every release: one run of all Django test modules we support (the modules in
   `docs/TEST_STATUS.md`) plus our own IBM i tests, for every supported Django version,
-  newest Python. Sequential, as few connections as possible (section 3), preferably off-peak. Never the full
+  each with the newest Python of that Django version. Sequential, as few connections as possible (section 3), preferably off-peak. Never the full
   Django suite. The status run stays complete, but may be spread over several nights:
   it is resumable per Django version. During development: single modules/labels, and
   IBM i runs as the PR's classification requires (section 2).
 
 ### Version matrix
 - offline: every Python × every Django version.
-- IBM i tests: one combination (newest Python, newest Django) during development; every
+- IBM i tests: one combination (newest Django with its newest Python) during development; every
   supported Django version in the status run, each with the newest Python supported
   by that Django version.
 - full: every Django version with the newest Python supported by that Django version,
@@ -279,7 +280,7 @@ CONTRIBUTING.md, "Test sets".
 - Provide `docker/Dockerfile`, `compose.yaml` and `.devcontainer/` so Claude Code can run
   inside the same environment.
 - The image contains: IBM i Access ODBC Driver for Linux (installed from IBM's repository
-  during build), unixODBC, `uv` with Python 3.12 / 3.13 / 3.14, `nox`.
+  during build), unixODBC, `uv` with Python 3.12 / 3.13 / 3.14 / 3.15, `nox`.
 - The ODBC driver is subject to IBM's license: the image is built locally / in private CI and
   **never pushed to a public registry**. Document this in `README.md`.
 - Check whether an arm64 build of the ODBC driver exists; otherwise document running with

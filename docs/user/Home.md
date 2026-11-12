@@ -33,7 +33,7 @@ DATABASES = {"default": {"ENGINE": "django_db2_for_i", ...}}
 | Component | Versions |
 |---|---|
 | Django | 5.2 LTS (5.2.12+), 6.0 (6.0.3+), 6.1; see [Installation](Installation.md#requirements) |
-| Python | 3.12, 3.13, 3.14 |
+| Python | 3.12, 3.13, 3.14; 3.15 with Django 6.1.3+ |
 | IBM i | 7.5 and later |
 | Driver | pyodbc 5.3+ with the IBM i Access ODBC Driver |
 

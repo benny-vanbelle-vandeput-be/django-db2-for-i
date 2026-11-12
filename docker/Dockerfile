@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 #
 # Build targets:
-#   offline  - Python 3.12/3.13/3.14 via uv, nox, unixODBC. No IBM software.
+#   offline  - Python 3.12/3.13/3.14/3.15 via uv, nox, unixODBC. No IBM software.
 #   full     - offline + IBM i Access ODBC Driver for Linux.
 #
 # The "full" image contains IBM-licensed software. Build it locally or in
@@ -35,7 +35,7 @@ ENV UV_PYTHON_INSTALL_DIR=/opt/uv/python \
     PYTHONDONTWRITEBYTECODE=1
 
 ARG NOX_VERSION=2026.8.17
-RUN uv python install 3.12 3.13 3.14 \
+RUN uv python install 3.12 3.13 3.14 3.15 \
     && uv tool install "nox==${NOX_VERSION}" \
     && rm -rf /home/dev/.cache/uv
 

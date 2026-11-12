@@ -32,6 +32,10 @@ state = "supported"
 version = "3.14"
 state = "supported"
 
+[[python]]
+version = "3.15"
+state = "supported"
+
 [[django]]
 version = "5.2"
 state = "supported"
