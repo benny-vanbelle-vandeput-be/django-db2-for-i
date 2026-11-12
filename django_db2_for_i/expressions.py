@@ -216,6 +216,7 @@ from django.db.models.expressions import (
     Case,
     Col,
     Combinable,
+    CombinedExpression,
     DurationExpression,
     Exists,
     Expression,
@@ -296,12 +297,16 @@ DECIMAL_MAX_PRECISION = 63
 # Largest NVARCHAR(n) a cast accepts with a value of that length (probe
 # string_limits: NVARCHAR(16382) and up fail with SQL0901).
 NVARCHAR_MAX = 16370
+# VARBINARY takes 1 to 32,740 bytes (IBM's SQL reference for 7.5; a longer bytes
+# Value is cast to BLOB).
+VARBINARY_MAX = 32740
 STRING_BUCKETS = (32, 256, 1024, 4000, NVARCHAR_MAX)
 
 SUPPORTED_TYPES = frozenset(
     {
         "CharField",
         "TextField",
+        "BinaryField",
         "BooleanField",
         "SmallIntegerField",
         "IntegerField",
@@ -436,6 +441,11 @@ def value_cast_type(
             # with CWB0111; probe long_string_params), so its own bucket.
             return string_type(utf16_length(value))
         return f"NVARCHAR({max_length})"
+    if internal == "BinaryField":
+        # VARBINARY up to its limit, a BLOB above it; the length of the value
+        # (an empty one as 1, VARBINARY(0) does not exist).
+        length = max(len(value) if value is not None else 1, 1)
+        return f"VARBINARY({length})" if length <= VARBINARY_MAX else f"BLOB({length})"
     if internal == "JSONField":
         # The JSON text (JSONField.get_db_prep_value), as for a TextField.
         return string_type(utf16_length(value) if value is not None else 0)
@@ -530,6 +540,43 @@ def case_as_db2_for_i(self, compiler, connection, **extra_context):
 
 
 Case.as_db2_for_i = case_as_db2_for_i
+
+
+BITWISE_CONNECTORS = frozenset(
+    {
+        Combinable.BITAND,
+        Combinable.BITOR,
+        Combinable.BITXOR,
+        Combinable.BITLEFTSHIFT,
+        Combinable.BITRIGHTSHIFT,
+    }
+)
+
+
+def combined_as_db2_for_i(self, compiler, connection, **extra_context):
+    """``F("rating") + None``: Django writes the None as a bare NULL, which Db2
+    for i refuses as an operand (SQL0206, #82). It gets the type of the other
+    operand, or of the whole expression. Subclasses (TemporalSubtraction, ...)
+    keep their own SQL; only their operands change. Bitwise operators type a
+    NULL themselves (operations.combine_expression: BIGINT)."""
+    if self.connector in BITWISE_CONNECTORS:
+        return self.as_sql(compiler, connection, **extra_context)
+    lhs, rhs = self.get_source_expressions()
+    operands, changed = [], False
+    for operand, other in ((lhs, rhs), (rhs, lhs)):
+        if _is_untyped_null(operand):
+            field = other._output_field_or_none or self._output_field_or_none
+            if field is not None:
+                operand, changed = TypedNull(field), True
+        operands.append(operand)
+    if not changed:
+        return self.as_sql(compiler, connection, **extra_context)
+    clone = self.copy()
+    clone.set_source_expressions(operands)
+    return clone.as_sql(compiler, connection, **extra_context)
+
+
+CombinedExpression.as_db2_for_i = combined_as_db2_for_i
 
 # --- Predicates as operands ---------------------------------------------------------------
 

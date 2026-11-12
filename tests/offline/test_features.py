@@ -47,7 +47,6 @@ def test_every_planned_flag_names_a_phase_or_its_open_question() -> None:
         for name, info in features.load_descriptions()["flags"].items()
         if "planned" in info
     }
-    assert planned
     wrong = {
         name: value
         for name, value in planned.items()

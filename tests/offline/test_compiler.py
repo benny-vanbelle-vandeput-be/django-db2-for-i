@@ -431,3 +431,34 @@ def test_a_subquery_is_no_join(monkeypatch) -> None:
     inner = Book.objects.filter(author=OuterRef("pk"))
     sql = locking(monkeypatch, Author.objects.filter(Exists(inner)).select_for_update())
     assert sql.endswith("FOR UPDATE WITH RS")
+
+
+# Bare NULLs and always-true predicates Django writes (#82).
+
+
+def test_a_none_operand_gets_the_other_operands_type() -> None:
+    from django.db.models import F
+
+    for expression in (F("pages") + None, None + F("pages")):
+        sql = compiled(Book.objects.annotate(x=expression).values("x"))[1]
+        assert "CAST(NULL AS INTEGER)" in sql
+        assert " NULL)" not in sql.replace("CAST(NULL AS INTEGER)", "")
+
+
+def test_an_empty_subquery_column_is_typed() -> None:
+    from django.db.models import Subquery
+
+    queryset = Author.objects.annotate(empty=Subquery(Author.objects.values("id").none()))
+    sql = compiled(queryset.values("empty"))[1]
+    assert sql.startswith("SELECT CAST(NULL AS INTEGER) AS ")
+
+
+def test_an_always_true_predicate_is_grouped_as_true() -> None:
+    from django.db.models import BooleanField, Count, ExpressionWrapper
+
+    queryset = Book.objects.annotate(
+        selected=ExpressionWrapper(~Q(pk__in=[]), output_field=BooleanField()),
+        n=Count("id"),
+    )
+    sql = compiled(queryset)[1]
+    assert "CROSS JOIN LATERAL (SELECT CAST(%s AS BOOLEAN) AS " in sql

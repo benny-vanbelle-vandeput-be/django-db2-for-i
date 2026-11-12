@@ -12,6 +12,7 @@ from django.db.models import (
     CharField,
     DecimalField,
     F,
+    Field,
     FloatField,
     IntegerField,
     JSONField,
@@ -93,8 +94,26 @@ def test_buckets_end_at_the_maximum() -> None:
 
 
 def test_types_without_a_rule_are_refused() -> None:
-    with pytest.raises(NotSupportedError, match="Value of type bytes"):
-        cast_of(Value(b"\x00\x01"))
+    class OtherField(Field):
+        def get_internal_type(self) -> str:
+            return "OtherField"
+
+    with pytest.raises(NotSupportedError, match="output field OtherField is not supported yet"):
+        cast_of(Value("x", output_field=OtherField()))
+
+
+@pytest.mark.parametrize(
+    ("value", "cast"),
+    [
+        (b"\x00\x01", "VARBINARY(2)"),
+        (b"", "VARBINARY(1)"),
+        (b"x" * 32740, "VARBINARY(32740)"),
+        (b"x" * 32741, "BLOB(32741)"),
+    ],
+)
+def test_bytes_are_varbinary_up_to_its_limit(value, cast) -> None:
+    """#82: a bytes Value (BinaryField) gets its own length."""
+    assert cast_of(Value(value)) == f"CAST(%s AS {cast})"
 
 
 def test_json_values_are_text() -> None:

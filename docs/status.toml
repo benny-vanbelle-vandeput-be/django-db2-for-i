@@ -399,6 +399,14 @@ note = "split into labels Q1–Q5 because of its size"
 module = "select_for_update"
 status = "done"
 
+[[modules]]
+module = "annotations"
+status = "done"
+
+[[modules]]
+module = "expressions_case"
+status = "done"
+
 [[tracks]]
 text = "Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82))."
 

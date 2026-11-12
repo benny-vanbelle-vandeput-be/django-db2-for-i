@@ -80,6 +80,7 @@ with an expression, the other schema use of these queries.
 
 from __future__ import annotations
 
+from django.core.exceptions import EmptyResultSet, FullResultSet
 from django.db import NotSupportedError
 from django.db.models import IntegerField
 from django.db.models.constants import OnConflict
@@ -92,13 +93,14 @@ from django.db.models.expressions import (
     OrderBy,
     RawSQL,
     Ref,
+    Value,
 )
 from django.db.models.lookups import Exact, In, IsNull, Lookup
 from django.db.models.sql import compiler
 from django.db.models.sql.query import Query
 from django.db.models.sql.where import WhereNode
 
-from .expressions import NegatedValue, renders_as_predicate
+from .expressions import NegatedValue, renders_as_predicate, value_cast_type
 
 # Exists() as a value: the first-row subquery, NULL when there is no row.
 EXISTS_AS_VALUE = "((%(subquery)s) IS NOT NULL)"
@@ -291,6 +293,36 @@ class SQLCompiler(compiler.SQLCompiler):
             sql = self._for_update_with_join(sql)
         return sql, params
 
+    def _compile_grouped(self, source):
+        """A grouped expression as Django's get_select() compiles a selected one:
+        an always-true predicate (``~Q(pk__in=[])``) raises FullResultSet and is
+        selected as TRUE, an always-false one as FALSE or its empty value (#82)."""
+        try:
+            return self.compile(source)
+        except FullResultSet:
+            return self.compile(Value(True))
+        except EmptyResultSet:
+            empty = getattr(source, "empty_result_set_value", NotImplemented)
+            return self.compile(Value(False if empty is NotImplemented else empty))
+
+    def get_select(self, with_col_aliases=False):
+        """A selected column that compiles to a bare NULL (an empty subquery,
+        ``Subquery(qs.none())``, whose value Django selects as ``Value(None)``) is
+        refused by Db2 for i (SQL0206): it is cast to the column's type (#82)."""
+        select, klass_info, annotation_col_map = super().get_select(with_col_aliases)
+        return [self._typed_null_column(item) for item in select], klass_info, annotation_col_map
+
+    def _typed_null_column(self, item):
+        col, (sql, params), alias = item
+        field = getattr(col, "_output_field_or_none", None)
+        if sql != "NULL" or params or field is None:
+            return item
+        try:
+            cast_type = value_cast_type(None, field, self.connection, explicit=True)
+        except NotSupportedError:
+            return item
+        return col, (f"CAST(NULL AS {cast_type})", params), alias
+
     def _joins_tables(self) -> bool:
         """Whether the last FROM clause built had more than one table (a join),
         counted by get_from_clause before the grouping columns are added."""
@@ -350,7 +382,7 @@ class SQLCompiler(compiler.SQLCompiler):
             source
             for source in grouped
             if not source.contains_aggregate
-            and (self.compile(source)[1] or self._nested(source, annotations))
+            and (self._compile_grouped(source)[1] or self._nested(source, annotations))
         ]
         table = self.connection.ops.quote_name(GROUPING_TABLE)
         return {
@@ -378,7 +410,7 @@ class SQLCompiler(compiler.SQLCompiler):
             self._grouping_columns = {}  # compile the expressions themselves
             try:
                 for source, column in saved.items():
-                    sql, source_params = self.compile(source)
+                    sql, source_params = self._compile_grouped(source)
                     columns.append(f"{sql} AS {column.rsplit('.', 1)[1]}")
                     params.extend(source_params)
             finally:
