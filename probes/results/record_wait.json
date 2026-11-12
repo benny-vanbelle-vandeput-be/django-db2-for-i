@@ -1,0 +1,1663 @@
+{
+  "probe": "record_wait",
+  "utc": "20261112T111827Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (a table and an outfile gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "after CREATE TABLE: DSPFD": {
+    "result": "ok"
+  },
+  "after CREATE TABLE: the wait columns": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "COLUMN_NAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "COLUMN_TEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'PHWAIT'",
+        "'Maximum file wait time:  -1=*IMMED, 0=*CLS'"
+      ],
+      [
+        "'PHWATR'",
+        "'Maximum record wait time:  -1=*IMMED, -2=*NOMAX'"
+      ]
+    ]
+  },
+  "after CREATE TABLE: the outfile": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "PHRCEN",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHRDAT",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHRTIM",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHFILE",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHLIB",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHFTYP",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHFILA",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      },
+      {
+        "name": "PHMXD",
+        "type": "str",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHFATR",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHSYSN",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      },
+      {
+        "name": "PHASP",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHRES",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      },
+      {
+        "name": "PHDTAT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHWAIT",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHWATR",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHSHAR",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHLVLC",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHTXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "PHNOFM",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHFCCN",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHFCDT",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHFCTM",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHFLS",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHICAP",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHRES2",
+        "type": "str",
+        "size": 9,
+        "precision": 9,
+        "scale": 0
+      },
+      {
+        "name": "PHACCP",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHSELO",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHCSEQ",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHNOMB",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHRES3",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHSQLT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHRES4",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      },
+      {
+        "name": "PHMAXM",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHMANT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHRECV",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHFKAP",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHSIZ",
+        "type": "Decimal",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHSIZI",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHSIZM",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHRCDC",
+        "type": "Decimal",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHALLO",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHCONT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHUNIT",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHFRCR",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHDLTP",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHMXKL",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHMXRL",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHJRNL",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHJRNM",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHJRLB",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHJRIM",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHJRSC",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHJRSD",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHJRST",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHJROM",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHNAML",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHRMTN",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "PHRDLT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHNACM",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHACCM",
+        "type": "str",
+        "size": 14,
+        "precision": 14,
+        "scale": 0
+      },
+      {
+        "name": "PHALRD",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHALWT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHALUP",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHALDT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHDCTL",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHINID",
+        "type": "Decimal",
+        "size": 11,
+        "precision": 11,
+        "scale": 0
+      },
+      {
+        "name": "PHDCTN",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHFILN",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHRUSE",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHCSID",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHMXK2",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHSSEQ",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHSSLB",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHLGID",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHTBSH",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHTBSU",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHNOCS",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHNOTR",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHTBLN",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHLNTB",
+        "type": "str",
+        "size": 258,
+        "precision": 258,
+        "scale": 0
+      },
+      {
+        "name": "PHAPSZ",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHDSTF",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHNODG",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHNODL",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHNUMP",
+        "type": "Decimal",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      },
+      {
+        "name": "PHPRTK",
+        "type": "str",
+        "size": 3300,
+        "precision": 3300,
+        "scale": 0
+      },
+      {
+        "name": "PHFLPS",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHPRBY",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQMT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQRF",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQOE",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQCL",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "PHAPGS",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHVOLT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQRS",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQRM",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQWN",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHKPIM",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1'",
+        "'261112'",
+        "'111826'",
+        "'PRCDWAIT  '",
+        "'QTEMP     '",
+        "'P'",
+        "'*PHY'",
+        "'   '",
+        "'PF    '",
+        "'PUB400  '",
+        "Decimal('1')",
+        "'    '",
+        "'D'",
+        "Decimal('30')",
+        "Decimal('60')",
+        "' '",
+        "'Y'",
+        "'                                                  '",
+        "Decimal('1')",
+        "'1'",
+        "'261112'",
+        "'111825'",
+        "'Y'",
+        "'N'",
+        "'         '",
+        "'A'",
+        "'N'",
+        "'N'",
+        "Decimal('1')",
+        "' '",
+        "'T'",
+        "'        '",
+        "Decimal('1')",
+        "' '",
+        "' '",
+        "' '",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('0')",
+        "'N'",
+        "'N'",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('4')",
+        "'N'",
+        "'          '",
+        "'          '",
+        "' '",
+        "' '",
+        "'      '",
+        "'      '",
+        "' '",
+        "Decimal('0')",
+        "'                                                  '",
+        "' '",
+        "Decimal('0')",
+        "'              '",
+        "'Y'",
+        "'Y'",
+        "'Y'",
+        "'Y'",
+        "'N'",
+        "Decimal('0')",
+        "'          '",
+        "'          '",
+        "'Y'",
+        "Decimal('65535')",
+        "Decimal('0')",
+        "'*HEX      '",
+        "'          '",
+        "'ENU       '",
+        "' '",
+        "' '",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('0')",
+        "''",
+        "'1'",
+        "'N'",
+        "'          '",
+        "'          '",
+        "Decimal('0')",
+        "''",
+        "'N'",
+        "'0'",
+        "' '",
+        "' '",
+        "' '",
+        "'  '",
+        "Decimal('0')",
+        "'0'",
+        "' '",
+        "' '",
+        "' '",
+        "'N'"
+      ]
+    ]
+  },
+  "CHGPF WAITRCD(5)": {
+    "result": "ok"
+  },
+  "after CHGPF WAITRCD(5): DSPFD": {
+    "result": "ok"
+  },
+  "after CHGPF WAITRCD(5): the wait columns": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "COLUMN_NAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "COLUMN_TEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'PHWAIT'",
+        "'Maximum file wait time:  -1=*IMMED, 0=*CLS'"
+      ],
+      [
+        "'PHWATR'",
+        "'Maximum record wait time:  -1=*IMMED, -2=*NOMAX'"
+      ]
+    ]
+  },
+  "after CHGPF WAITRCD(5): the outfile": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "PHRCEN",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHRDAT",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHRTIM",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHFILE",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHLIB",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHFTYP",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHFILA",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      },
+      {
+        "name": "PHMXD",
+        "type": "str",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHFATR",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHSYSN",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      },
+      {
+        "name": "PHASP",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHRES",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      },
+      {
+        "name": "PHDTAT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHWAIT",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHWATR",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHSHAR",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHLVLC",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHTXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "PHNOFM",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHFCCN",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHFCDT",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHFCTM",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHFLS",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHICAP",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHRES2",
+        "type": "str",
+        "size": 9,
+        "precision": 9,
+        "scale": 0
+      },
+      {
+        "name": "PHACCP",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHSELO",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHCSEQ",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHNOMB",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHRES3",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHSQLT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHRES4",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      },
+      {
+        "name": "PHMAXM",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHMANT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHRECV",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHFKAP",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHSIZ",
+        "type": "Decimal",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHSIZI",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHSIZM",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHRCDC",
+        "type": "Decimal",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHALLO",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHCONT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHUNIT",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHFRCR",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHDLTP",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHMXKL",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHMXRL",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHJRNL",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHJRNM",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHJRLB",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHJRIM",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHJRSC",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHJRSD",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHJRST",
+        "type": "str",
+        "size": 6,
+        "precision": 6,
+        "scale": 0
+      },
+      {
+        "name": "PHJROM",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHNAML",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHRMTN",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "PHRDLT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHNACM",
+        "type": "Decimal",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "PHACCM",
+        "type": "str",
+        "size": 14,
+        "precision": 14,
+        "scale": 0
+      },
+      {
+        "name": "PHALRD",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHALWT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHALUP",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHALDT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHDCTL",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHINID",
+        "type": "Decimal",
+        "size": 11,
+        "precision": 11,
+        "scale": 0
+      },
+      {
+        "name": "PHDCTN",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHFILN",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHRUSE",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHCSID",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHMXK2",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHSSEQ",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHSSLB",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHLGID",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHTBSH",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHTBSU",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHNOCS",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHNOTR",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHTBLN",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHLNTB",
+        "type": "str",
+        "size": 258,
+        "precision": 258,
+        "scale": 0
+      },
+      {
+        "name": "PHAPSZ",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHDSTF",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHNODG",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHNODL",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "PHNUMP",
+        "type": "Decimal",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      },
+      {
+        "name": "PHPRTK",
+        "type": "str",
+        "size": 3300,
+        "precision": 3300,
+        "scale": 0
+      },
+      {
+        "name": "PHFLPS",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHPRBY",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQMT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQRF",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQOE",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQCL",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "PHAPGS",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      },
+      {
+        "name": "PHVOLT",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQRS",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQRM",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHMQWN",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "PHKPIM",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'1'",
+        "'261112'",
+        "'111826'",
+        "'PRCDWAIT  '",
+        "'QTEMP     '",
+        "'P'",
+        "'*PHY'",
+        "'   '",
+        "'PF    '",
+        "'PUB400  '",
+        "Decimal('1')",
+        "'    '",
+        "'D'",
+        "Decimal('30')",
+        "Decimal('5')",
+        "' '",
+        "'Y'",
+        "'                                                  '",
+        "Decimal('1')",
+        "'1'",
+        "'261112'",
+        "'111825'",
+        "'Y'",
+        "'N'",
+        "'         '",
+        "'A'",
+        "'N'",
+        "'N'",
+        "Decimal('1')",
+        "' '",
+        "'T'",
+        "'        '",
+        "Decimal('1')",
+        "' '",
+        "' '",
+        "' '",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('0')",
+        "'N'",
+        "'N'",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('4')",
+        "'N'",
+        "'          '",
+        "'          '",
+        "' '",
+        "' '",
+        "'      '",
+        "'      '",
+        "' '",
+        "Decimal('0')",
+        "'                                                  '",
+        "' '",
+        "Decimal('0')",
+        "'              '",
+        "'Y'",
+        "'Y'",
+        "'Y'",
+        "'Y'",
+        "'N'",
+        "Decimal('0')",
+        "'          '",
+        "'          '",
+        "'Y'",
+        "Decimal('65535')",
+        "Decimal('0')",
+        "'*HEX      '",
+        "'          '",
+        "'ENU       '",
+        "' '",
+        "' '",
+        "Decimal('0')",
+        "Decimal('0')",
+        "Decimal('0')",
+        "''",
+        "'1'",
+        "'N'",
+        "'          '",
+        "'          '",
+        "Decimal('0')",
+        "''",
+        "'N'",
+        "'0'",
+        "' '",
+        "' '",
+        "' '",
+        "'  '",
+        "Decimal('0')",
+        "'0'",
+        "' '",
+        "' '",
+        "' '",
+        "'N'"
+      ]
+    ]
+  }
+}
