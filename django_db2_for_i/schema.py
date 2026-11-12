@@ -37,7 +37,7 @@ from django.db import (
 )
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
-from . import inquiry
+from . import fields, inquiry
 from .expressions import NVARCHAR_MAX
 
 
@@ -634,6 +634,12 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         return self._column_default_sql(field) % self.prepare_default(value), []
 
     def _iter_column_sql(self, column_db_type, params, model, field, *args, **kwargs):
+        # The column's IBM i system name (fields.py, #253): "<column> FOR COLUMN
+        # <system name> <type> ...", in CREATE TABLE and ADD COLUMN alike (probe
+        # qtemp_system_names). None for a column whose name already is it.
+        system = fields.system_name(field)
+        if system and system != field.column.upper():
+            yield f"FOR COLUMN {system}"
         for part in super()._iter_column_sql(column_db_type, params, model, field, *args, **kwargs):
             # db_default=None: no default, rather than DEFAULT NULL (which a
             # NOT NULL column would reject).

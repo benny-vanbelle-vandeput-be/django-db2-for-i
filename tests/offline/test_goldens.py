@@ -178,6 +178,7 @@ def allowed_identifiers() -> set[str]:
         "POSITION",
         "SLUG",
         "OWNER_ID",
+        "PLANNED_MINUTES",
     }
     models = (
         Account,

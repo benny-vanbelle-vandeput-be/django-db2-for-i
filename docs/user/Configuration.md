@@ -37,6 +37,53 @@ DATABASES = {
 Unknown option names raise `ImproperlyConfigured`, so typos do not go
 unnoticed.
 
+## IBM i system names
+
+Every table and column on IBM i has, next to its SQL name, a **system name** of at
+most 10 characters: the name RPG and CL programs, `DSPFD` and most IBM i tools
+use. A name of at most 10 characters (letters, digits, `_`) is its own system
+name. For a longer one, IBM i makes one up (`DELIVERY_ADDRESS` becomes
+something like `DELIV00001`), unless you set it.
+
+**Columns:** give the field type the mixin from `django_db2_for_i.fields` and
+pass `db_system_name`:
+
+```python
+from django.db import models
+from django_db2_for_i.fields import SystemNameMixin, with_system_name
+
+
+class AddressField(SystemNameMixin, models.CharField):
+    pass
+
+
+SystemNameIntegerField = with_system_name(models.IntegerField, __name__)
+
+
+class Customer(models.Model):
+    delivery_address = AddressField(max_length=100, db_system_name="DLVADDR")
+    amount = SystemNameIntegerField(db_system_name="QTY")
+```
+
+- The backend writes `"DELIVERY_ADDRESS" FOR COLUMN DLVADDR ...` in
+  `CREATE TABLE` and `ALTER TABLE ... ADD COLUMN`. The name is kept in
+  migrations (`deconstruct()`), so define the field type in a module of your
+  own, at module level.
+- A system name has at most 10 characters: letters, digits or `_`, starting
+  with a letter; it is stored in upper case. Any field with a `db_system_name`
+  attribute counts, also a mixin of your own.
+- Plain Django fields get no system name from the backend, as before.
+- The checks (`manage.py check --database default`, `migrate`) report an
+  invalid name (`django_db2_for_i.E001`) and two columns of one table with the
+  same system name (`django_db2_for_i.E002`); a short column name counts as
+  its own system name.
+- Changing `db_system_name` of an existing column gives an `AlterField`
+  migration that changes nothing in the database: Db2 for i has no statement
+  to rename a column (see
+  [Known limitations](Known-Limitations.md#renaming-a-column)).
+
+System names for tables and indexes: not yet (#253).
+
 ## Connection defaults
 
 The backend connects with these IBM i Access ODBC keywords:

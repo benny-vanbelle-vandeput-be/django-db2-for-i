@@ -7,6 +7,11 @@
   and ``TEST["NAME"]``) would not be journaled, so transactions and
   constraints fail with SQL7008 (docs/user/IBM-i-Requirements.md).
 - ``django_db2_for_i.W002``: that could not be checked.
+- ``django_db2_for_i.E001``: a field's ``db_system_name`` is not a valid IBM i
+  system name (fields.py).
+- ``django_db2_for_i.E002``: two columns of one model would get the same system
+  name (an explicit one, or a short column name, which is its own); Db2 for i
+  would refuse the table with SQL0612.
 
 Both can be silenced with ``SILENCED_SYSTEM_CHECKS``; with W001 silenced the
 check does not query the server at all.
@@ -30,10 +35,13 @@ from django.core import checks
 from django.db import DatabaseError
 from django.db.backends.base.validation import BaseDatabaseValidation
 
+from . import fields as system_names
 from .creation import _SYSTEM_NAME
 
 W001 = "django_db2_for_i.W001"
 W002 = "django_db2_for_i.W002"
+E001 = "django_db2_for_i.E001"
+E002 = "django_db2_for_i.E002"
 
 JOURNAL_HINT = (
     "Create a QSQJRN journal in it, or journal the library with STRJRNLIB "
@@ -99,7 +107,46 @@ def journaling_problem(row: tuple, library: str) -> str | None:
     return f"library {library} has no QSQJRN journal and is not journaled (STRJRNLIB)"
 
 
+def _own_system_name(field) -> str:
+    """The system name a column gets without help: its name, if that is one."""
+    column = (getattr(field, "column", None) or "").upper()
+    return column if system_names.SYSTEM_NAME.fullmatch(column) else ""
+
+
+def check_system_name(field) -> list[checks.CheckMessage]:
+    """E001 / E002 for one field (#253)."""
+    try:
+        explicit = system_names.system_name(field)
+    except Exception as exc:  # ImproperlyConfigured from an invalid name
+        return [checks.Error(str(exc), obj=field, id=E001)]
+    name = explicit or _own_system_name(field)
+    if not name or getattr(field, "model", None) is None:
+        return []
+    for other in field.model._meta.local_concrete_fields:
+        if other is field:
+            break
+        try:
+            other_explicit = system_names.system_name(other)
+        except Exception:
+            continue  # reported on that field
+        other_name = other_explicit or _own_system_name(other)
+        if other_name == name and (explicit or other_explicit):
+            return [
+                checks.Error(
+                    f"The system name {name!r} of {field.name!r} is the system name of "
+                    f"{other.name!r} too; Db2 for i refuses the table (SQL0612).",
+                    hint="Give each column of the table its own system name.",
+                    obj=field,
+                    id=E002,
+                )
+            ]
+    return []
+
+
 class DatabaseValidation(BaseDatabaseValidation):
+    def check_field(self, field, **kwargs):
+        return [*super().check_field(field, **kwargs), *check_system_name(field)]
+
     def check(self, **kwargs):
         issues = super().check(**kwargs)
         if W001 in settings.SILENCED_SYSTEM_CHECKS:
