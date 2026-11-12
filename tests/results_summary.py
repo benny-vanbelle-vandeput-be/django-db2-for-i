@@ -41,11 +41,15 @@ def counts_from_coverage(coverage: dict[str, dict[str, int]]) -> dict[str, int]:
     }
 
 
-def write(path: Path, counts: dict[str, int], now: dt.datetime | None = None) -> None:
+def write(
+    path: Path, counts: dict[str, int], now: dt.datetime | None = None, extra: dict | None = None
+) -> None:
+    """``extra``: more facts of the run (a resumed own IBM i run: parts, commit)."""
     from django_db2_for_i.compat import DJANGO_SERIES
 
     finished = (now or dt.datetime.now(dt.UTC)).strftime("%Y-%m-%d %H:%M:%S UTC")
     data = {
+        **(extra or {}),
         **counts,
         "django": DJANGO_SERIES,
         "python": platform.python_version(),

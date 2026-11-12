@@ -24,8 +24,10 @@ test-results/verify/<django>/runs.txt, one run per line (tab-separated):
   IBM i settings) or to what needs the full tier cannot be mapped to single
   tests: then the full own IBM i tier runs;
 - ``django <label> ...``: at most three Django test labels per line: one test
-  id per unverified corpus entry, and the test ids that left the skip or
-  expected-failure lists. Many ids of one class (module, app) are collapsed
+  id per unverified corpus entry, the test ids that left the skip or
+  expected-failure lists, and, when the corpus capture hook changed
+  (``CAPTURE_PATHS``), ``CAPTURE_CHECK_LABELS`` (bin/verify runs every Django
+  label with ``--capture``). Many ids of one class (module, app) are collapsed
   into one label; more than ``--max-labels`` labels or ``--max-runs`` lines
   are refused (exit 5), to protect the shared system.
 
@@ -88,11 +90,17 @@ SHARED_OWN_TEST_PATHS = (
     "tests/golden.py",
     "tests/redaction.py",
     "tests/results_summary.py",
+    "tests/progress.py",
     "tests/table_registry.py",
     "tests/scenarios/boolean_condition_scenarios.py",
     "tests/scenarios/tuple_lookup_scenarios.py",
     "tests/django_settings/settings_ibmi.py",
 )
+# The corpus capture hook runs inside Django's test runs (--capture), not in the own
+# IBM i tests: a change to it runs these labels with --capture (a small module, and
+# the test #229 found: the hook must never run a query of its own).
+CAPTURE_PATHS = ("tests/corpus/capture.py", "tests/corpus/store.py")
+CAPTURE_CHECK_LABELS = ("basic", "db_functions.comparison.test_coalesce")
 # Where the skip and expected-failure lists live.
 SKIP_LIST_FILES = ("django_db2_for_i/features.py", "django_db2_for_i/compat.py")
 TEST_ID = re.compile(r"^[a-z_][a-z0-9_]*(?:\.[A-Za-z_]\w*){2,}$")
@@ -403,6 +411,10 @@ def unverifiable_names(django: str) -> list[str]:
     return list(reasons(django))
 
 
+def capture_changed(paths: Sequence[str]) -> bool:
+    return any(path in CAPTURE_PATHS for path in paths)
+
+
 def select(
     django: str,
     base: str,
@@ -427,7 +439,8 @@ def select(
         current_text,
         ROOT / "vendor" / f"django-{django}" / "tests",
     )
-    labels = collapse([*corpus_ids, *unlisted])
+    capture_check = [label for label in CAPTURE_CHECK_LABELS if capture_changed(paths)]
+    labels = [*collapse([*corpus_ids, *unlisted]), *capture_check]
     runs = django_runs(labels)
 
     lines = []
@@ -455,6 +468,7 @@ def select(
                 "own_tests": own.tests,
                 "corpus_test_ids": corpus_ids,
                 "unlisted_test_ids": unlisted,
+                "capture_check": capture_check,
                 "django_labels": labels,
             },
             indent=2,
@@ -475,7 +489,9 @@ def select(
         print(f"  own IBM i tests: {len(own.tests)} new or changed")
     print(
         f"  Django test labels: {len(labels)} in {len(runs)} runs "
-        f"({len(corpus_ids)} for unverified corpus entries, {len(unlisted)} no longer skipped)"
+        f"({len(corpus_ids)} for unverified corpus entries, {len(unlisted)} no longer skipped"
+        + (f", {len(capture_check)} for the changed capture hook" if capture_check else "")
+        + ")"
     )
     if len(labels) > max_labels or len(runs) > max_runs:
         print(

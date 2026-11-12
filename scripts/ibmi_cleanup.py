@@ -51,6 +51,12 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--yes", action="store_true", help="drop (otherwise only list)")
     args = parser.parse_args(argv)
+    return clean(args.yes)
+
+
+def clean(yes: bool) -> int:
+    """The cleanup itself; also called before a resumed own IBM i run
+    (tests/progress.py, tests/ibmi/conftest.py) with ``yes=True``."""
     path = table_registry.list_path()
     if path is None:
         print(f"refused: {table_registry.ENV} is not set; run through scripts/pub400.sh")
@@ -98,7 +104,7 @@ def main(argv: list[str]) -> int:
                     f"{library}: not on the list, not dropped (needs approval): "
                     f"{', '.join(unlisted)}"
                 )
-            if args.yes and drop:
+            if yes and drop:
                 creation._drop(cursor, library, drop, inventory)
                 dropped += [f"{inventory[name]}\t{library}\t{name}" for name in drop]
                 inventory = creation._inventory(cursor, library)
@@ -109,7 +115,7 @@ def main(argv: list[str]) -> int:
         stamp = dt.datetime.now(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
         (RESULTS / f"{stamp}.txt").write_text("\n".join(dropped) + "\n")
         print(f"dropped {len(dropped)} object(s); written to test-results/cleanup/{stamp}.txt")
-    elif not args.yes:
+    elif not yes:
         print("nothing dropped: without --yes bin/ibmi-cleanup only lists")
     # Only the libraries checked here: entries of others stay on the list.
     kept = [

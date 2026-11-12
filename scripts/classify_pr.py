@@ -1,10 +1,13 @@
 """Classify a pull request from its changed files, and decide whether a push needs a new IBM i run.
 
-    python scripts/classify_pr.py [--base origin/main] [--head HEAD]
+    python scripts/classify_pr.py [--base origin/main] [--head HEAD | --worktree]
                                   [--before SHA | --previous-comment FILE [--print-before]]
                                   [--format text|markdown|json]
 
 The changed files are those of ``git diff <merge-base of base and head> <head>``.
+With ``--worktree`` (``bin/check``) they are those of the working tree instead:
+the commits, plus the staged, unstaged and new (untracked, not ignored) files, so a
+change not yet committed is classified too.
 Every file gets one of three classes; the pull request gets the most demanding:
 
 - **needs full IBM i run**: the driver layer (``django_db2_for_i/drivers/``),
@@ -64,6 +67,7 @@ import subprocess
 import sys
 import tomllib
 from collections.abc import Callable, Iterable
+from pathlib import Path
 
 DOCS, SQL, FULL = "docs/tests only", "SQL-affecting", "needs full IBM i run"
 RANK = {DOCS: 0, SQL: 1, FULL: 2}
@@ -121,6 +125,7 @@ IBMI_RUN_PATHS = {
     "tests/offline/golden/unverifiable.toml": "the expected failures of the IBM i golden check",
     "tests/verification_gate.py": "the unverifiable list (read by the IBM i golden check)",
     "tests/results_summary.py": "the results summary plugin",
+    "tests/progress.py": "the progress and resume plugin of the own IBM i tests",
     "tests/redaction.py": "the log redaction",
     "tests/scenarios/": "scenarios of the IBM i tests",
     "tests/corpus/capture.py": "the corpus capture (runs on IBM i)",
@@ -484,11 +489,39 @@ def reader(ref: str) -> Reader:
 
 
 def changes_between(old_ref: str, new_ref: str) -> list[Change]:
-    out = git("diff", "--name-status", "--no-renames", old_ref, new_ref)
+    """The changed files from ``old_ref`` to ``new_ref``; an empty ``new_ref`` is
+    the working tree (tracked files only)."""
+    out = git("diff", "--name-status", "--no-renames", old_ref, *([new_ref] if new_ref else []))
     return [
         Change(status[0], path)
         for status, path in (line.split("\t", 1) for line in out.splitlines())
     ]
+
+
+def changes_to_worktree(old_ref: str) -> list[Change]:
+    """``changes_between()`` from ``old_ref`` to the working tree: tracked files as
+    they are on disk (staged or not) and the untracked files that are not ignored."""
+    changes = changes_between(old_ref, "")
+    seen = {c.path for c in changes}
+    untracked = git("ls-files", "--others", "--exclude-standard").splitlines()
+    return changes + [Change("A", path) for path in untracked if path not in seen]
+
+
+def worktree_reader() -> Reader:
+    top = Path(git("rev-parse", "--show-toplevel").strip())
+
+    def read(path: str) -> bytes | None:
+        try:
+            return (top / path).read_bytes()
+        except OSError:
+            return None
+
+    return read
+
+
+def uncommitted_paths() -> list[str]:
+    """The working tree's paths that differ from HEAD (for the report)."""
+    return sorted({c.path for c in changes_to_worktree("HEAD")})
 
 
 def classify_refs(old_ref: str, new_ref: str) -> Classification:
@@ -604,7 +637,13 @@ def as_markdown(result: Classification, push: PushCheck | None, head_sha: str | 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--base", default="origin/main")
-    parser.add_argument("--head", default="HEAD")
+    heads = parser.add_mutually_exclusive_group()
+    heads.add_argument("--head", default="HEAD")
+    heads.add_argument(
+        "--worktree",
+        action="store_true",
+        help="classify the working tree: the commits plus the uncommitted and new files",
+    )
     previous = parser.add_mutually_exclusive_group()
     previous.add_argument("--before", help="the previous head, to check the push")
     previous.add_argument(
@@ -626,14 +665,28 @@ def main(argv: list[str]) -> int:
     if args.print_before:
         print(before or "")
         return 0
+    if args.worktree and before:
+        parser.error("--worktree classifies the working tree; it has no previous head")
     try:
         merge_base = git("merge-base", args.base, args.head).strip()
-        result = classify_refs(merge_base, args.head)
+        if args.worktree:
+            result = classify(
+                changes_to_worktree(merge_base), reader(merge_base), worktree_reader()
+            )
+            uncommitted = uncommitted_paths()
+        else:
+            result = classify_refs(merge_base, args.head)
+            uncommitted = []
         push = check_push(before, args.head, args.base) if before else None
         head_sha = git("rev-parse", args.head).strip()
     except subprocess.CalledProcessError as exc:
         print(f"error: git {' '.join(exc.cmd[1:])}: {(exc.stderr or '').strip()}", file=sys.stderr)
         return 2
+    if uncommitted and args.format == "text":
+        print(
+            f"working tree: {len(uncommitted)} uncommitted or new file(s) included "
+            f"(e.g. {', '.join(uncommitted[:3])})"
+        )
     if args.format == "markdown":
         print(as_markdown(result, push, head_sha))
     else:

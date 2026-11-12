@@ -9,8 +9,8 @@
 #
 # Runs lint, the offline tier and the corpus replay (nox -s lint offline
 # replay), then the verification gate (nox -s gate), then shows the branch's
-# classification against origin/main (scripts/classify_pr.py; fetch first for
-# an up-to-date origin/main).
+# classification against origin/main, uncommitted and new files included
+# (scripts/classify_pr.py --worktree; fetch first for an up-to-date origin/main).
 #
 # Exit codes: 0 all passed; 1 lint, offline or corpus failed; 3 only the
 # verification gate failed: a pull request with new SQL may still be pushed
@@ -43,7 +43,7 @@ done < <(nox_combinations)
 container nox -s "${sessions[@]}" || exit 1
 gate=0
 container nox -s gate || gate=$?
-container uv run --no-project python scripts/classify_pr.py --base origin/main || true
+container uv run --no-project python scripts/classify_pr.py --base origin/main --worktree || true
 if [ "$gate" != 0 ]; then
     echo "bin/check: only the verification gate failed (see above): run bin/verify or request run-ibmi" >&2
     exit 3

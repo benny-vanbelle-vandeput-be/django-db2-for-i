@@ -236,6 +236,10 @@ def ibmi(session: nox.Session) -> None:
         # with the report redaction in tests/redaction.py).
         "--tb=short",
         f"--results-summary={results_summary(django, 'pub400')}",
+        # Each finished test is saved at once; a rerun on the same code after an
+        # interruption skips what already finished (tests/progress.py).
+        f"--progress=test-results/{django}/ibmi-progress.jsonl",
+        "--resume",
         *reuse,
         *args,
     )

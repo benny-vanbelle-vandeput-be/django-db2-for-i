@@ -9,11 +9,12 @@ Offline tests must never open a database connection: for them,
 Every report is scrubbed of the password (tests/redaction.py).
 """
 
+import os
 from pathlib import Path
 
 import pytest
 
-pytest_plugins = ["tests.redaction", "pytester"]
+pytest_plugins = ["tests.redaction", "tests.progress", "pytester"]
 
 TESTS_DIR = Path(__file__).parent
 TIER_DIRS = {
@@ -123,9 +124,16 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config: pytest.Config)
             _write_corpus_summary(Path(summary))
         return
     if summary:
-        from tests import results_summary
+        from tests import progress, results_summary
 
-        results_summary.write(Path(summary), results_summary.counts_from(terminalreporter.stats))
+        counts = results_summary.counts_from(terminalreporter.stats)
+        # A resumed own IBM i run adds the tests that passed in its earlier parts,
+        # and says so (parts, commit).
+        earlier = progress.earlier_counts()
+        counts = {name: counts[name] + earlier[name] for name in counts}
+        run = progress.active()
+        extra = run.summary(os.environ.get("DB2I_RUN_COMMIT")) if run else None
+        results_summary.write(Path(summary), counts, extra=extra)
     if "offline" not in (config.option.markexpr or ""):
         return
     goldens = [read(path) for path in all_golden_paths()]

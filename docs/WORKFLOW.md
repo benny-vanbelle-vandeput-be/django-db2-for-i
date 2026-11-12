@@ -226,6 +226,15 @@ releases; `bin/release-prepare` only prints steps 3 and 4.
 - **The Mac slept during a run** (`08S01` "Communication link failure",
   CWBCO1034): `scripts/pub400.sh` wraps runs in `caffeinate`; keep the lid
   open, or start again (`bin/status-run` resumes).
+- **An own IBM i run was interrupted** (a dropped connection, Ctrl-C): start
+  the same run again, on the same commit with no uncommitted or new files. It
+  resumes (`tests/progress.py`): it first drops the interrupted test's leftover
+  tables (`bin/ibmi-cleanup`'s logic), skips the tests that already passed, runs
+  the rest (failed ones included), and reports the counts of all parts. Its
+  summary says "resumed run: N parts, all on commit ..."; say so in the result
+  posted on a pull request. Another commit, uncommitted files, another Django
+  version or other settings start afresh, as does a run after one that fully
+  passed.
 - **CPA32B2 / HY008** (an `ALTER TABLE` that drops data is cancelled):
   migrations suppress it for their own job; outside a field change (RunSQL,
   a raw cursor) it still cancels, see [Troubleshooting](user/Troubleshooting.md).
