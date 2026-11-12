@@ -381,3 +381,53 @@ def test_ignore_conflicts_without_a_matchable_key_is_a_plain_insert() -> None:
     query.insert_values([Author._meta.get_field("name")], [Author(name="a")])
     ((sql, _params),) = query.get_compiler(connection=connection).as_sql()
     assert sql == 'INSERT INTO "TESTAPP_AUTHOR" ("NAME") VALUES (%s)'
+
+
+# select_for_update(): FOR UPDATE ... WITH RS, and the join form (phase 7, step 5).
+# Django refuses select_for_update() outside a transaction; offline there is no
+# connection to ask, so get_autocommit is stubbed.
+
+
+def locking(monkeypatch, queryset) -> str:
+    monkeypatch.setattr(connection, "get_autocommit", lambda: False)
+    return compiled(queryset)[1]
+
+
+def test_select_for_update_keeps_the_locks_with_rs(monkeypatch) -> None:
+    sql = locking(monkeypatch, Author.objects.select_for_update().filter(pk=1))
+    assert sql.endswith('WHERE "TESTAPP_AUTHOR"."ID" = %s FOR UPDATE WITH RS')
+
+
+def test_select_for_update_skip_locked(monkeypatch) -> None:
+    sql = locking(monkeypatch, Author.objects.select_for_update(skip_locked=True))
+    assert sql.endswith("FOR UPDATE WITH RS SKIP LOCKED DATA")
+
+
+def test_select_for_update_of_writes_unqualified_columns(monkeypatch) -> None:
+    sql = locking(monkeypatch, Author.objects.select_for_update(of=("self",)))
+    assert sql.endswith('FOR UPDATE OF "ID" WITH RS')
+
+
+def test_select_for_update_of_a_slice(monkeypatch) -> None:
+    sql = locking(monkeypatch, Author.objects.select_for_update().order_by("pk")[1:3])
+    assert sql.endswith("OFFSET 1 ROWS FETCH FIRST 2 ROWS ONLY FOR UPDATE WITH RS")
+
+
+def test_select_for_update_with_a_join_uses_use_and_keep(monkeypatch) -> None:
+    queryset = Book.objects.select_related("author").select_for_update(skip_locked=True)
+    sql = locking(monkeypatch, queryset)
+    assert " INNER JOIN " in sql
+    assert "FOR UPDATE" not in sql
+    assert sql.endswith("WITH RS USE AND KEEP EXCLUSIVE LOCKS SKIP LOCKED DATA")
+
+
+def test_select_for_update_of_with_a_join_locks_every_table(monkeypatch) -> None:
+    queryset = Book.objects.select_related("author").select_for_update(of=("author",))
+    sql = locking(monkeypatch, queryset)
+    assert sql.endswith("WITH RS USE AND KEEP EXCLUSIVE LOCKS")
+
+
+def test_a_subquery_is_no_join(monkeypatch) -> None:
+    inner = Book.objects.filter(author=OuterRef("pk"))
+    sql = locking(monkeypatch, Author.objects.filter(Exists(inner)).select_for_update())
+    assert sql.endswith("FOR UPDATE WITH RS")

@@ -287,7 +287,27 @@ class SQLCompiler(compiler.SQLCompiler):
         sql, params = super().as_sql(with_limits, with_col_aliases)
         if self.query.combinator and sql.startswith(COMPOUND_WRAPPER):
             sql = LATERAL_COMPOUND_WRAPPER + sql.removeprefix(COMPOUND_WRAPPER)
+        if self.query.select_for_update and self._joins_tables():
+            sql = self._for_update_with_join(sql)
         return sql, params
+
+    def _joins_tables(self) -> bool:
+        """Whether the last FROM clause built had more than one table (a join),
+        counted by get_from_clause before the grouping columns are added."""
+        return getattr(self, "_from_parts", 1) > 1
+
+    def _for_update_with_join(self, sql: str) -> str:
+        """A join cannot take FOR UPDATE (SQL0511): its row locks are written
+        WITH RS USE AND KEEP EXCLUSIVE LOCKS, which locks the rows of every joined
+        table, also with of=() (a Known Limitation)."""
+        ops = self.connection.ops
+        skip_locked = self.query.select_for_update_skip_locked
+        clause = ops.for_update_sql(
+            skip_locked=skip_locked, of=self.get_select_for_update_of_arguments()
+        )
+        if not sql.endswith(clause):
+            return sql
+        return sql.removesuffix(clause) + ops.for_update_join_sql(skip_locked=skip_locked)
 
     def _is_query_condition(self, node) -> bool:
         conditions = (
@@ -350,6 +370,9 @@ class SQLCompiler(compiler.SQLCompiler):
 
     def get_from_clause(self):
         result, params = super().get_from_clause()
+        # A join is a part of its own; select_for_update() needs to know (as_sql
+        # resets the alias refcounts, so they cannot tell afterwards).
+        self._from_parts = len(result)
         if self._grouping_columns:
             columns, saved = [], self._grouping_columns
             self._grouping_columns = {}  # compile the expressions themselves

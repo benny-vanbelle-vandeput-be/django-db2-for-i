@@ -346,6 +346,9 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
         features.REASON_JSON_KEY_ORDER_AS_TEXT,
         features.REASON_JSON_KEY_DOUBLE_QUOTE,
         features.REASON_JSON_IN_CHECK_OR_INDEX,
+        features.REASON_READERS_WAIT_FOR_ROW_LOCKS,
+        features.REASON_JOIN_LOCKED_WITHOUT_FOR_UPDATE,
+        features.REASON_FOR_UPDATE_TEXT,
     }
     # Each entry is one test id, never a whole class.
     for test_ids in cls.expected_failures.values():

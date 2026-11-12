@@ -666,6 +666,26 @@ Values that fit the old size keep working, and nothing is cut off. **Restart you
 workers after a migration that widens a column**, or close their connections. A
 migration on the same connection is handled by the backend.
 
+## select_for_update()
+
+`select_for_update()` locks the selected rows until the transaction ends
+(`FOR UPDATE ... WITH RS`; a plain `FOR UPDATE` under `*CS` would keep no lock
+once Django has fetched the rows). `skip_locked=True` (`SKIP LOCKED DATA`),
+`of=(...)` and sliced querysets work. What differs:
+
+- **Another job's plain read of a locked row waits too.** Under `*CS` a
+  `SELECT` without `select_for_update()` waits for the row, up to the table's
+  record wait (60 seconds for tables Django creates), and then fails with
+  `OperationalError` (SQL0913). On PostgreSQL such a read does not wait. A
+  shorter wait for one table: `CHGPF FILE(<library>/<system name>) WAITRCD(<seconds>)`.
+- **`nowait=True` is not available** (`NotSupportedError`): Db2 for i has no
+  per-statement no-wait.
+- **A query with a join locks the rows of every joined table.** Db2 for i
+  refuses `FOR UPDATE` with a join (SQL0511), so the backend writes
+  `WITH RS USE AND KEEP EXCLUSIVE LOCKS` for it: `select_related()`,
+  multi-table inheritance and proxy models of them lock the related rows as
+  well, and `of=(...)` cannot narrow that down.
+
 ## Not available on Db2 for i
 
 Db2 for i has no equivalent for these Django features, so they stay off
@@ -707,6 +727,5 @@ Django's system checks report the first three when a model uses them.
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and
-enabled one at a time: `select_for_update`,
-and creating test schemas (tests
+enabled one at a time: creating test schemas (tests
 run in an existing library, see [Configuration](Configuration.md#test-database-test)).

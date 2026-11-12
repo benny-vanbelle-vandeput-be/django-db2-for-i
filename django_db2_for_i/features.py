@@ -87,6 +87,20 @@ REASON_JSON_KEY_DOUBLE_QUOTE = (
     "a Db2 for i JSON path cannot hold a key with a double quote in any form (probe "
     "json_lookups); the backend raises NotSupportedError"
 )
+REASON_READERS_WAIT_FOR_ROW_LOCKS = (
+    "under *CS a plain read of a row that another job locked with select_for_update() waits "
+    "for the lock (the table's record wait, 60 s by default) and then fails with SQL0913; "
+    "PostgreSQL readers do not wait (probes lib_select_for_update, record_wait)"
+)
+REASON_JOIN_LOCKED_WITHOUT_FOR_UPDATE = (
+    "a query with a join cannot take FOR UPDATE (SQL0511): its row locks are written WITH RS "
+    "USE AND KEEP EXCLUSIVE LOCKS, which locks every joined table, so the SQL has no "
+    "FOR UPDATE OF"
+)
+REASON_FOR_UPDATE_TEXT = (
+    "the test looks for FOR UPDATE right before WHERE (for_update_after_from, SQL Server's "
+    "form); Db2 for i writes FOR UPDATE ... WITH RS at the end"
+)
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -176,7 +190,17 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # compound_parts).
     supports_parentheses_in_compound = True
     supports_slicing_ordering_in_compound = True
-    supports_select_for_update_with_limit = False
+    # select_for_update(): FOR UPDATE [OF <columns>] WITH RS [SKIP LOCKED DATA]. Under
+    # *CS a plain FOR UPDATE locks nothing once Django has fetched the rows; WITH RS
+    # keeps the row locks until the transaction ends (lib_select_for_update, #237).
+    # A query with a join cannot take FOR UPDATE (SQL0511): it is written
+    # WITH RS USE AND KEEP EXCLUSIVE LOCKS, which locks the rows of every joined
+    # table (compiler.py). No per-statement no-wait exists (SQL0104), so nowait stays off.
+    has_select_for_update = True
+    has_select_for_update_skip_locked = True
+    has_select_for_update_of = True
+    select_for_update_of_column = True
+    supports_select_for_update_with_limit = True
     # LISTAGG(DISTINCT x, ',') (probes listagg, phase6_flags).
     supports_aggregate_distinct_multiple_argument = True
     supports_bit_aggregations = False
@@ -525,6 +549,24 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         },
         # assertIn("RETURNING ...", sql). The other tests of the module read the returned
         # values, and pass.
+        REASON_READERS_WAIT_FOR_ROW_LOCKS: {
+            "select_for_update.tests.SelectForUpdateTests.test_block",
+        },
+        REASON_JOIN_LOCKED_WITHOUT_FOR_UPDATE: {
+            f"select_for_update.tests.SelectForUpdateTests.test_for_update_sql_{name}"
+            for name in (
+                "generated_of",
+                "model_inheritance_generated_of",
+                "model_inheritance_nested_ptr_generated_of",
+                "model_inheritance_ptr_generated_of",
+                "model_proxy_generated_of",
+                "multilevel_model_inheritance_ptr_generated_of",
+                "related_model_inheritance_generated_of",
+            )
+        },
+        REASON_FOR_UPDATE_TEXT: {
+            "select_for_update.tests.SelectForUpdateTests.test_for_update_after_from",
+        },
         REASON_FINAL_TABLE_NOT_RETURNING: {
             "queries.test_db_returning.ReturningValuesTests.test_insert_returning",
             "queries.test_db_returning.ReturningValuesTests.test_insert_returning_multiple",

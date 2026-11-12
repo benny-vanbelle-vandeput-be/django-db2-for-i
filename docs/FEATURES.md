@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**66 flags enabled on Django 6.1.**
+**71 flags enabled on Django 6.1.**
 
-## Enabled (66)
+## Enabled (71)
 
 On in at least one supported Django version.
 
@@ -33,6 +33,9 @@ On in at least one supported Django version.
 | `has_json_object_function` | JSON objects can be built in SQL (`JSONObject`). | ✅ | ✅ | ✅ |
 | `has_native_boolean_field` | `BooleanField` is a native `BOOLEAN` column (IBM i 7.5). | – | – | ✅ |
 | `has_real_datatype` | The database has a single-precision `REAL` type besides `DOUBLE`. | ✅ | ✅ | ✅ |
+| `has_select_for_update` | `select_for_update()` locks the selected rows. | ✅ | ✅ | ✅ |
+| `has_select_for_update_of` | `select_for_update(of=...)` locks rows of the named tables only. | ✅ | ✅ | ✅ |
+| `has_select_for_update_skip_locked` | `select_for_update(skip_locked=True)` skips locked rows. | ✅ | ✅ | ✅ |
 | `ignores_table_name_case` | Table names that differ only in case are the same table (names are uppercase). | ✅ | ✅ | ✅ |
 | `ignores_unnecessary_order_by_in_subqueries` | Django may leave an `ORDER BY` in a subquery; the database accepts and ignores it. | ✅ | ✅ | ✅ |
 | `implied_column_null` | Columns are nullable unless `NOT NULL` is written; no bare `NULL` keyword in DDL. | ✅ | ✅ | ✅ |
@@ -41,6 +44,7 @@ On in at least one supported Django version.
 | `pattern_lookup_needs_param_pattern` | `contains`, `startswith` and friends are written with `LIKE` patterns. | – | – | ✅ |
 | `requires_compound_order_by_subquery` | An ordered `union()` / `intersection()` / `difference()` is wrapped in a subquery to order it. | ✅ | ✅ | ✅ |
 | `requires_literal_defaults` | Column defaults in DDL are written as literals, not parameters. | ✅ | ✅ | ✅ |
+| `select_for_update_of_column` | `select_for_update(of=...)` is written with column names, not table names. | ✅ | ✅ | ✅ |
 | `supports_aggregate_distinct_multiple_argument` | `StringAgg(..., distinct=True)` with a delimiter (`distinct` with several arguments). | – | ✅ | ✅ |
 | `supports_aggregate_order_by_clause` | `StringAgg(..., order_by=...)` and other ordered aggregates. | – | ✅ | ✅ |
 | `supports_any_value` | The `AnyValue` aggregate (one value of a column per group). | – | ✅ | ✅ |
@@ -68,6 +72,7 @@ On in at least one supported Django version.
 | `supports_partially_nullable_unique_constraints` | Multi-column unique constraints where some columns are NULL. | ✅ | ✅ | ✅ |
 | `supports_regex_backreferencing` | `regex` / `iregex` lookups support backreferences (ICU regular expressions). | ✅ | ✅ | ✅ |
 | `supports_select_difference` | `QuerySet.difference()` (`EXCEPT`). | ✅ | ✅ | ✅ |
+| `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | ✅ | ✅ | ✅ |
 | `supports_select_intersection` | `QuerySet.intersection()` (`INTERSECT`). | ✅ | ✅ | ✅ |
 | `supports_select_union` | `QuerySet.union()` (`UNION` / `UNION ALL`). | ✅ | ✅ | ✅ |
 | `supports_sequence_reset` | `sqlsequencereset` and `TransactionTestCase.reset_sequences` restart identity values. | ✅ | ✅ | ✅ |
@@ -145,17 +150,12 @@ Off on purpose, with the reason.
 | `supports_uuid7_function` | The `UUID7()` database function (Django 6.1+). | – | – | ❌ | Db2 for i has no function that generates a time-ordered UUID (not verified on IBM i). |
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
 
-## Planned (6)
+## Planned (1)
 
 Off for now; planned for the phase shown.
 
 | Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Phase |
 |---|---|---|---|---|---|
-| `has_select_for_update` | `select_for_update()` locks the selected rows. | 🗓️ | 🗓️ | 🗓️ | phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237) |
-| `has_select_for_update_of` | `select_for_update(of=...)` locks rows of the named tables only. | 🗓️ | 🗓️ | 🗓️ | phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237) |
-| `has_select_for_update_skip_locked` | `select_for_update(skip_locked=True)` skips locked rows. | 🗓️ | 🗓️ | 🗓️ | phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237) |
-| `select_for_update_of_column` | `select_for_update(of=...)` is written with column names, not table names. | 🗓️ | 🗓️ | 🗓️ | phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237) |
-| `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | 🗓️ | 🗓️ | 🗓️ | phase 7 (`FOR UPDATE ... WITH RS`, verified with two jobs: probe `lib_select_for_update`, #237) |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | 🗓️ | 🗓️ | 🗓️ | phase 7 (a second connection to the same test library; PUB400 allows up to three for such tests since #236) |
 
 ## Not applicable (17)

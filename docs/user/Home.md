@@ -14,7 +14,7 @@ DATABASES = {"default": {"ENGINE": "django_db2_for_i", ...}}
 > returning inserts and `bulk_create()` with conflict handling, window
 > functions, `JSONField`, the database functions and, on Django 6.1, DB-level
 > `on_delete`. Features are enabled one at a time as Django's test suite proves
-> them; `select_for_update()` is not available yet. What differs from other
+> them; `select_for_update()` works without `nowait`. What differs from other
 > databases is in [Known limitations](Known-Limitations.md). Settings and
 > behaviour may still change between beta releases.
 

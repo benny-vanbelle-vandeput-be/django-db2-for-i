@@ -129,6 +129,25 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
     def max_name_length(self) -> int:
         return self.connection.capabilities.max_name_length
 
+    def for_update_sql(self, nowait=False, skip_locked=False, of=(), no_key=False):
+        """``FOR UPDATE [OF <columns>] WITH RS [SKIP LOCKED DATA]``: ``WITH RS`` keeps
+        the row locks until the transaction ends, where a plain ``FOR UPDATE`` under
+        ``*CS`` keeps none once the rows are fetched (probe lib_select_for_update).
+        ``OF`` takes unqualified column names (a qualified one is SQL0104); Django
+        passes them qualified. ``nowait`` never arrives (has_select_for_update_nowait
+        is off, Django refuses it first); ``no_key`` is PostgreSQL's."""
+        columns = ", ".join(column.rsplit(".", 1)[-1] for column in of)
+        return "FOR UPDATE{} WITH RS{}".format(
+            f" OF {columns}" if columns else "", " SKIP LOCKED DATA" if skip_locked else ""
+        )
+
+    def for_update_join_sql(self, skip_locked=False):
+        """The row locks of a query with a join, which cannot take ``FOR UPDATE``
+        (SQL0511): ``WITH RS USE AND KEEP EXCLUSIVE LOCKS`` locks the rows of every
+        joined table until the transaction ends (probes select_for_update,
+        lib_select_for_update)."""
+        return "WITH RS USE AND KEEP EXCLUSIVE LOCKS" + (" SKIP LOCKED DATA" if skip_locked else "")
+
     def quote_name(self, name: str) -> str:
         if name.startswith('"') and name.endswith('"'):
             return name  # Already quoted.
