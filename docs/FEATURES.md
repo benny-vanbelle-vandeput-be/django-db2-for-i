@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**71 flags enabled on Django 6.1.**
+**72 flags enabled on Django 6.1.**
 
-## Enabled (71)
+## Enabled (72)
 
 On in at least one supported Django version.
 
@@ -84,6 +84,7 @@ On in at least one supported Django version.
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
 | `supports_update_conflicts` | `bulk_create(update_conflicts=True)` (upsert). | ✅ | ✅ | ✅ |
 | `supports_update_conflicts_with_target` | `bulk_create(update_conflicts=True, unique_fields=...)`: an upsert on named columns. | ✅ | ✅ | ✅ |
+| `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ✅ | ✅ | ✅ |
 | `truncates_names` | Names longer than the database allows are shortened with a hash, the same way everywhere. | ✅ | ✅ | ✅ |
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
@@ -149,14 +150,6 @@ Off on purpose, with the reason.
 | `supports_uuid4_function_in_default` | `db_default=UUID4()` (Django 6.1+). | – | – | ❌ | There is no `UUID4()` database function (`supports_uuid4_function`). |
 | `supports_uuid7_function` | The `UUID7()` database function (Django 6.1+). | – | – | ❌ | Db2 for i has no function that generates a time-ordered UUID (not verified on IBM i). |
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
-
-## Planned (1)
-
-Off for now; planned for the phase shown.
-
-| Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Phase |
-|---|---|---|---|---|---|
-| `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | 🗓️ | 🗓️ | 🗓️ | phase 7 (a second connection to the same test library; PUB400 allows up to three for such tests since #236) |
 
 ## Not applicable (17)
 

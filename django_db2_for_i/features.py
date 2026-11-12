@@ -131,8 +131,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_forward_references = False
     # Django's %s placeholders are converted to ?; dict params are refused.
     supports_paramstyle_pyformat = False
-    # PUB400 limits connections per client.
-    test_db_allows_multiple_connections = False
+    # A second connection works on the same test library (phase 7, answer 6).
+    # PUB400 allows up to three connections for lock and concurrency tests
+    # (#236); a Django test that needs more is skipped with that reason (none
+    # in the supported modules so far: basic and transactions use one or two).
+    test_db_allows_multiple_connections = True
     # DDL is not parameterized: defaults are written as literals.
     requires_literal_defaults = True
     # Columns are nullable unless NOT NULL is given; no bare NULL keyword.

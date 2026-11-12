@@ -127,7 +127,7 @@
     "supports_update_conflicts": true,
     "supports_update_conflicts_with_target": true,
     "supports_virtual_generated_columns": false,
-    "test_db_allows_multiple_connections": false,
+    "test_db_allows_multiple_connections": true,
     "truncates_names": true,
     "update_can_self_select": true,
     "uses_savepoints": true

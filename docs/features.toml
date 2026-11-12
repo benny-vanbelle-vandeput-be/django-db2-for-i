@@ -76,6 +76,7 @@ supports_transactions.description = "Transactions with commit and rollback (on j
 supports_tuple_lookups.description = "Lookups on several columns at once (composite keys, multi-column relations)."
 supports_update_conflicts.description = "`bulk_create(update_conflicts=True)` (upsert)."
 supports_update_conflicts_with_target.description = "`bulk_create(update_conflicts=True, unique_fields=...)`: an upsert on named columns."
+test_db_allows_multiple_connections.description = "The test database may be used by several connections at once."
 truncates_names.description = "Names longer than the database allows are shortened with a hash, the same way everywhere."
 update_can_self_select.description = "An update whose filter has a subquery on the same table runs as one statement."
 uses_savepoints.description = "Nested `atomic()` blocks use savepoints."
@@ -137,8 +138,6 @@ supports_uuid4_function_in_default.description = "`db_default=UUID4()` (Django 6
 supports_uuid4_function_in_default.off = "There is no `UUID4()` database function (`supports_uuid4_function`)."
 supports_uuid7_function.description = "The `UUID7()` database function (Django 6.1+)."
 supports_uuid7_function.off = "Db2 for i has no function that generates a time-ordered UUID (not verified on IBM i)."
-test_db_allows_multiple_connections.description = "The test database may be used by several connections at once."
-test_db_allows_multiple_connections.planned = "phase 7 (a second connection to the same test library; PUB400 allows up to three for such tests since #236)"
 
 # Decided in phase 4 (docs/phases/phase-4.md): off, with the reason.
 can_create_inline_fk.description = "Foreign keys are created inline in `CREATE TABLE`."

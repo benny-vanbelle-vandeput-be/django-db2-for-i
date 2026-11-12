@@ -1,0 +1,1 @@
+`test_db_allows_multiple_connections`: Django's tests may open a second connection to the test library (phase 7, answer 6). PUB400's rule allows up to three for lock and concurrency tests; no test in the supported modules needs more (`basic.test_concurrent_delete_with_save` and `transactions.test_atomic_prevents_queries_in_broken_transaction_after_client_close` now run and pass).
