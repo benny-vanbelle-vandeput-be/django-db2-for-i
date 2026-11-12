@@ -2693,6 +2693,21 @@ control. Result: [phase7_flags.json](../probes/results/phase7_flags.json).
 - For the backend branch: `Chr` and `Ord` through these forms for the Basic
   Multilingual Plane, and a `NotSupportedError` or a Known Limitation above it.
 
+### `FOR UPDATE ... WITH RS` in QTEMP (`probes/qtemp_select_for_update.py`, phase 7)
+
+PUB400 (IBM i 7.5), 2026-11-12, QTEMP only. The forms the backend would write for
+`select_for_update()`:
+
+- **Every `FOR UPDATE ... WITH RS` form is SQL7008 in QTEMP** (the table has no
+  journal): `FOR UPDATE WITH RS`, with `SKIP LOCKED DATA`, with `OF V`, after `ORDER
+  BY ... OFFSET ... FETCH FIRST`, with a subquery in `WHERE`. SQL7008 comes at
+  execution, after the parser (a syntax error is SQL0104), but QTEMP cannot show more.
+  `FOR UPDATE WITH RS` and `FOR UPDATE OF V WITH RS` are verified in a journaled
+  library (`lib_select_for_update`, above); the combinations with `SKIP LOCKED DATA`
+  and `OFFSET` get own IBM i tests in the journaled test library (backend branch).
+- `WITH RS USE AND KEEP EXCLUSIVE LOCKS`, also `... SKIP LOCKED DATA` and with a join,
+  is accepted in QTEMP.
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

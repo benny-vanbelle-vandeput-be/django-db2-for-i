@@ -1,6 +1,6 @@
 {
   "probe": "select_for_update",
-  "utc": "20261031T175314Z",
+  "utc": "20261112T105901Z",
   "host": "<HOST>",
   "ssl": true,
   "scope": "QTEMP only (tables gone with the job)",
@@ -410,6 +410,90 @@
     "sqlstate": "42000",
     "sqlcode": -104,
     "message": "SQL0104 - Token <END-OF-STATEMENT> was not valid. Valid tokens: DATA. (-104) (SQLExecDirectW)"
+  },
+  "WITH RS SKIP LOCKED DATA": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA FOR UPDATE WITH RS SKIP LOCKED DATA",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - P6LOCKA in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "OF a column, WITH RS": {
+    "sql": "SELECT I, V FROM QTEMP.P6LOCKA FOR UPDATE OF V WITH RS",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - P6LOCKA in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "OF a column, WITH RS SKIP LOCKED DATA": {
+    "sql": "SELECT I, V FROM QTEMP.P6LOCKA FOR UPDATE OF V WITH RS SKIP LOCKED DATA",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - P6LOCKA in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "ORDER BY, OFFSET, FETCH FIRST, WITH RS": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA ORDER BY I OFFSET 1 ROWS FETCH FIRST 1 ROWS ONLY FOR UPDATE WITH RS",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - P6LOCKA in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "a subquery in WHERE, WITH RS": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA WHERE I IN (SELECT I FROM QTEMP.P6LOCKB) FOR UPDATE WITH RS",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - P6LOCKA in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "a join, USE AND KEEP, SKIP LOCKED DATA": {
+    "sql": "SELECT A.I FROM QTEMP.P6LOCKA A JOIN QTEMP.P6LOCKB B ON A.I = B.I WITH RS USE AND KEEP EXCLUSIVE LOCKS SKIP LOCKED DATA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "USE AND KEEP, SKIP LOCKED DATA": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA WITH RS USE AND KEEP EXCLUSIVE LOCKS SKIP LOCKED DATA",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "I",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ]
+    ]
+  },
+  "a parameter marker, WITH RS": {
+    "sql": "SELECT I FROM QTEMP.P6LOCKA WHERE I = CAST(1 AS INTEGER) FOR UPDATE WITH RS",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - P6LOCKA in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
   },
   "WAIT FOR OUTCOME": {
     "sql": "SELECT I FROM QTEMP.P6LOCKA WAIT FOR OUTCOME",
