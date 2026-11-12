@@ -14,7 +14,7 @@ Usage (inside the "tests" container):
                     final_table_after_alter |
                     window | json_functions | json_errors | json_lookups | db_functions |
                     db_function_args | float_text | select_for_update |
-                    phase6_flags | own_jobs | system_names
+                    phase6_flags | own_jobs | system_names | bulk_lobs
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -33,6 +33,7 @@ import qtemp_add_column_default
 import qtemp_alter_column
 import qtemp_alter_table
 import qtemp_bulk
+import qtemp_bulk_lobs
 import qtemp_bulk_types
 import qtemp_catalog
 import qtemp_check_constraint_unjournaled
@@ -148,6 +149,7 @@ PROBES = {
     "phase6_flags": qtemp_phase6_flags,
     "own_jobs": qtemp_own_jobs,
     "system_names": qtemp_system_names,
+    "bulk_lobs": qtemp_bulk_lobs,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
