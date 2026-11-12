@@ -334,7 +334,8 @@ docker compose run --rm tests nox -s "replay(3.14-django6.1)"   # replay offline
 Releases are alpha releases on GitHub only (no PyPI). **Contributors and
 Claude never create release tags; the maintainer creates and signs them.**
 
-0. **Status run**, for every supported Django version (newest Python):
+0. **Status run**, for every supported Django version (with the newest Python
+   of that version: 3.15 for 6.1, 3.14 for 6.0 and 5.2):
    `bin/status-run` (all versions, one after another) or
    `bin/status-run --django <version>`. Per version, under the PUB400 lock,
    it checks that PUB400's database port answers (otherwise it stops at

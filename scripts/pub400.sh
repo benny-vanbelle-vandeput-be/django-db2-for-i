@@ -44,6 +44,35 @@ case $session in
 esac
 
 cd "$(dirname "$0")/.."
+# IBM i runs use the newest Python of their Django version (CLAUDE.md section 6;
+# 3.15 for 6.1, 3.14 for 6.0 and 5.2): the version is the first argument of
+# django_suite and status_run, and the optional first one of ibmi and smoke.
+force_python=
+case $session in
+    ibmi|smoke|django_suite|status_run)
+        force_python=$(python3 - "$session" "${1:-}" <<'PY'
+import ast
+import sys
+
+session, first = sys.argv[1], sys.argv[2]
+tree = ast.parse(open("noxfile.py").read())
+pythons = next(
+    ast.literal_eval(node.value)
+    for node in tree.body
+    if isinstance(node, ast.Assign)
+    and any(isinstance(t, ast.Name) and t.id == "DJANGO_PYTHONS" for t in node.targets)
+)
+if first in pythons:
+    django = first
+elif session in ("ibmi", "smoke") and not first[:1].isdigit():
+    django = list(pythons)[-1]
+else:
+    django = ""  # unknown: the session itself refuses it
+print(pythons[django][-1] if django else "")
+PY
+)
+        ;;
+esac
 # Read on the host: in a git worktree the container cannot read the repository.
 commit=$(git log -1 --format='%h %cs' 2>/dev/null || echo unknown)
 # The full commit and whether the tree is clean: a resumed own IBM i run must be on
@@ -67,7 +96,7 @@ export DB2I_NOX_ENVS
 set -- docker compose run --rm --name "$container" -e DB2I_BACKEND_COMMIT="$commit" \
     -e DB2I_RUN_COMMIT="$run_commit" -e DB2I_RUN_TREE="$run_tree" \
     -v "$state:/db2i-state" -e DB2I_TABLE_LIST=/db2i-state/created-objects.txt \
-    tests nox -s "$session" -- "$@"
+    tests nox ${force_python:+--force-python "$force_python"} -s "$session" -- "$@"
 if command -v caffeinate >/dev/null 2>&1; then
     set -- caffeinate -i -s "$@"
 fi

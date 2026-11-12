@@ -6,7 +6,8 @@
 
 ## Requirements
 
-- Python 3.12, 3.13 or 3.14
+- Python 3.12, 3.13 or 3.14; Python 3.15 with Django 6.1.3 or later only
+  (6.0 and 5.2 do not support it; pip installs a 6.1 release on 3.15)
 - Django 5.2 LTS (5.2.12 or later), 6.0 (6.0.3 or later) or 6.1; always use
   the latest security release of your Django version
 - [pyodbc](https://pypi.org/project/pyodbc/) 5.3 or later (installed

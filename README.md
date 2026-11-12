@@ -12,6 +12,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 ![Python 3.12 ✅](https://img.shields.io/badge/Python-3.12%20%E2%9C%85-brightgreen)
 ![Python 3.13 ✅](https://img.shields.io/badge/Python-3.13%20%E2%9C%85-brightgreen)
 ![Python 3.14 ✅](https://img.shields.io/badge/Python-3.14%20%E2%9C%85-brightgreen)
+![Python 3.15 ✅](https://img.shields.io/badge/Python-3.15%20%E2%9C%85-brightgreen)
 
 [![Django 5.2 ✅](https://img.shields.io/badge/Django-5.2%20%E2%9C%85-brightgreen)](docs/DJANGO_VERSIONS.md)
 [![Django 6.0 ✅](https://img.shields.io/badge/Django-6.0%20%E2%9C%85-brightgreen)](docs/DJANGO_VERSIONS.md)
@@ -33,10 +34,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3474 | 2 | 0 | 0 | 2026-11-12 06:54:20 UTC |
-| IBM i tests | 419 | 2 | 1 | 0 | 2026-11-11 21:27:29 UTC |
+| Offline tests | 3474 | 2 | 0 | 0 | 2026-11-12 07:31:07 UTC |
+| IBM i tests | 419 | 2 | 1 | 0 | 2026-11-12 07:59:45 UTC |
 | Django suite on IBM i | 2807 | 262 | 88 | 0 | 2026-11-10 01:59:29 UTC |
-| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-12 06:54:30 UTC |
+| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-12 07:31:57 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +48,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3475 | 1 | 0 | 0 | 2026-11-12 06:52:13 UTC |
+| Offline tests | 3475 | 1 | 0 | 0 | 2026-11-12 07:25:16 UTC |
 | IBM i tests | 414 | 3 | 1 | 0 | 2026-11-09 21:04:32 UTC |
 | Django suite on IBM i | 2698 | 218 | 89 | 0 | 2026-11-09 03:01:31 UTC |
-| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-12 06:52:24 UTC |
+| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-12 09:47:48 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +62,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3472 | 1 | 0 | 0 | 2026-11-12 06:49:43 UTC |
+| Offline tests | 3472 | 1 | 0 | 0 | 2026-11-12 08:03:17 UTC |
 | IBM i tests | 409 | 5 | 1 | 0 | 2026-11-08 22:09:10 UTC |
 | Django suite on IBM i | 2652 | 210 | 89 | 0 | 2026-11-07 20:27:31 UTC |
-| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-12 06:49:57 UTC |
+| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-12 08:03:57 UTC |
 
 ### About the tests
 
@@ -160,7 +161,8 @@ the IBM i Access ODBC Driver.
   [IBM i requirements](docs/user/IBM-i-Requirements.md).
 - **IBM i Access ODBC Driver** and unixODBC, see
   [ODBC driver setup](docs/user/ODBC-Driver-Setup.md).
-- **Python** 3.12, 3.13 or 3.14.
+- **Python** 3.12, 3.13 or 3.14; 3.15 with Django 6.1.3 or later (pip
+  picks it on 3.15).
 - **Django** 5.2 LTS (5.2.12 or later), 6.0 (6.0.3 or later) or 6.1; always
   use the latest security release of your Django version
   ([supported versions](docs/DJANGO_VERSIONS.md)).
@@ -271,7 +273,7 @@ changed), and never put credentials in the repository; `.env` stays local.
 
 | Service | Build target | Contents | Use |
 |---|---|---|---|
-| `tests` | `full` | uv, Python 3.12–3.14, nox, unixODBC, IBM i Access ODBC Driver | all test sets, probes |
+| `tests` | `full` | uv, Python 3.12–3.15, nox, unixODBC, IBM i Access ODBC Driver | all test sets, probes |
 | `offline` | `offline` | the same without the IBM driver | offline test sets, lint, CI |
 
 On Apple Silicon the `tests` service runs as `linux/amd64` under emulation:
