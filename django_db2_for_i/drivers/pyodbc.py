@@ -252,6 +252,7 @@ class Cursor(base.Cursor):
         self._raw = raw
         self._secrets = secrets
         self._connection = connection
+        self._closed = False
 
     def _run[T](self, func: Callable[..., T], *args: Any, parameterized: bool = False) -> T:
         try:
@@ -296,7 +297,15 @@ class Cursor(base.Cursor):
         return [tuple(row) for row in self._run(self._raw.fetchall)]
 
     def close(self) -> None:
-        self._run(self._raw.close)
+        """Closing a closed cursor does nothing, as in the DB-API drivers of
+        Django's other backends (pyodbc raises ProgrammingError; Django's
+        select_for_update tests close a cursor twice)."""
+        if self._closed:
+            return
+        try:
+            self._run(self._raw.close)
+        finally:
+            self._closed = True
 
 
 class Connection(base.Connection):
