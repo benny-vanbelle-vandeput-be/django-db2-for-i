@@ -410,6 +410,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_with_timezone_minus_no_offset",
             "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_func_with_timezone",
             "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_timezone_applied_before_truncation",
+            # datetimes() / the database's own conversion in another time zone.
+            "datetimes.tests.DateTimesTests.test_21432",
+            "timezones.tests.NewDatabaseTests.test_query_convert_timezones",
         },
         # str(qs.query).count("extract") with a year lookup against an expression.
         REASON_EXTRACT_IN_SQL: {

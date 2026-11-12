@@ -446,7 +446,9 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
         if value is None or hasattr(value, "resolve_expression"):
             return value
         if timezone.is_aware(value):
-            raise ValueError("Django does not support timezone-aware times.")
+            # The wording of Django's other backends ("<name> backend does not
+            # support ..."), which timezones.tests checks.
+            raise ValueError("Db2 for i backend does not support timezone-aware times.")
         return value.replace(microsecond=0)
 
     def get_db_converters(self, expression):
