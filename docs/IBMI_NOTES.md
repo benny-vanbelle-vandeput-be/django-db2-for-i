@@ -2780,6 +2780,25 @@ PUB400 (IBM i 7.5), 2026-11-12, QTEMP only: a table from `CREATE TABLE`, read wi
   `SYSTEM_TABLE_NAME`) are padded with blanks; a CL command needs them stripped
   (`CHGPF FILE(<lib> /<name>)` is CPD0104 "Expression not allowed").
 
+### A Decimal value with more digits than its DecimalField (`probes/qtemp_decimal_values.py`, #95)
+
+PUB400 (IBM i 7.5), 2026-11-12, read-only (`SYSIBM.SYSDUMMY1`). Result:
+[decimal_values.json](../probes/results/decimal_values.json).
+
+| Marker | Value | Result |
+|---|---|---|
+| `CAST(? AS DECIMAL(5, 2))` | `123.45` | ok |
+| the same | `123456.78` (more integer digits) | the driver refuses it: 22003 "Numeric value out of range" |
+| the same | `1.2345` (more decimals) | the driver refuses it: 22001 "right truncation" |
+| `CAST(? AS DECIMAL(9, 3))`, the value's own | `123456.789` | ok, exact |
+| `CAST(CAST(? AS DECIMAL(9, 3)) AS DECIMAL(5, 2))` | `123456.789` | **NULL**, no error |
+| `?` / `? + 0` | `123456.789` | SQL0418 / 22001 |
+| `CAST(? AS DECIMAL(63, 3))` | 63 digits | ok |
+
+- So a `Value(Decimal)` wider than its `DecimalField` is written with the value's own
+  `DECIMAL(p, s)` (expressions.py), as #78 does for strings: exact, as on Django's
+  other backends. Narrowing it in SQL would give NULL silently.
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

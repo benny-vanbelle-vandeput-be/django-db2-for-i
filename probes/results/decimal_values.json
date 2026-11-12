@@ -1,0 +1,114 @@
+{
+  "probe": "decimal_values",
+  "utc": "20261112T142146Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "read-only (SYSIBM.SYSDUMMY1)",
+  "fits DECIMAL(5, 2)": {
+    "sql": "SELECT CAST(? AS DECIMAL(5, 2)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 2
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('123.45')"
+      ]
+    ]
+  },
+  "more integer digits than DECIMAL(5, 2)": {
+    "sql": "SELECT CAST(? AS DECIMAL(5, 2)) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "22003",
+    "sqlcode": 30160,
+    "message": "Column 1: Numeric value out of range. (30160) (SQLExecDirectW)"
+  },
+  "more decimals than DECIMAL(5, 2)": {
+    "sql": "SELECT CAST(? AS DECIMAL(5, 2)) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "22001",
+    "sqlcode": 30126,
+    "message": "Column 1: Character data right truncation. (30126) (SQLExecDirectW)"
+  },
+  "both, DECIMAL(5, 2)": {
+    "sql": "SELECT CAST(? AS DECIMAL(5, 2)) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "22003",
+    "sqlcode": 30160,
+    "message": "Column 1: Numeric value out of range. (30160) (SQLExecDirectW)"
+  },
+  "its own DECIMAL(9, 3)": {
+    "sql": "SELECT CAST(? AS DECIMAL(9, 3)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 9,
+        "precision": 9,
+        "scale": 3
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('123456.789')"
+      ]
+    ]
+  },
+  "its own, then cast to DECIMAL(5, 2)": {
+    "sql": "SELECT CAST(CAST(? AS DECIMAL(9, 3)) AS DECIMAL(5, 2)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 2
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "an untyped marker": {
+    "sql": "SELECT ? FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -418,
+    "message": "SQL0418 - Use of parameter marker, NULL, or UNKNOWN not valid. (-418) (SQLPrepare)"
+  },
+  "an untyped marker, + 0": {
+    "sql": "SELECT ? + 0 FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "22001",
+    "sqlcode": 30126,
+    "message": "Column 1: Character data right truncation. (30126) (SQLExecDirectW)"
+  },
+  "63 digits, its own DECIMAL(63, 3)": {
+    "sql": "SELECT CAST(? AS DECIMAL(63, 3)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "Decimal",
+        "size": 63,
+        "precision": 63,
+        "scale": 3
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('111111111111111111111111111111111111111111111111111111111111.123')"
+      ]
+    ]
+  }
+}
