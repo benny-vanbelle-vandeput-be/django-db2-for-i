@@ -253,7 +253,8 @@ prs = [241]
 
 [[phases.steps]]
 step = "1: workflow polish, docs, the smoke set"
-status = "planned"
+status = "in progress"
+prs = [244, 245]
 
 [[phases.steps]]
 step = "2: Python 3.15 (#233)"
