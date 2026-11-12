@@ -1,0 +1,531 @@
+{
+  "probe": "phase7_flags",
+  "utc": "20261112T103616Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "group by pk: unique index on ID": {
+    "result": "ok"
+  },
+  "group by pk: other columns selected": {
+    "sql": "SELECT ID, NAME, COUNT(*) FROM QTEMP.P7FLAG GROUP BY ID ORDER BY ID",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -122,
+    "message": "SQL0122 - Column NAME or expression in SELECT list not valid. (-122) (SQLExecDirectW)"
+  },
+  "group by pk: the control (every column grouped)": {
+    "sql": "SELECT ID, NAME, COUNT(*) FROM QTEMP.P7FLAG GROUP BY ID, NAME ORDER BY ID",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NAME",
+        "type": "str",
+        "size": 20,
+        "precision": 20,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'Alpha'",
+        "1"
+      ],
+      [
+        "2",
+        "'alpha'",
+        "1"
+      ],
+      [
+        "3",
+        "'Beta'",
+        "1"
+      ]
+    ]
+  },
+  "greatest with NULL": {
+    "sql": "SELECT GREATEST(1, CAST(NULL AS INTEGER), 3) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "least with NULL": {
+    "sql": "SELECT LEAST(1, CAST(NULL AS INTEGER), 3) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "scalar MAX with NULL": {
+    "sql": "SELECT MAX(1, CAST(NULL AS INTEGER), 3) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "like: 'ABC' LIKE 'abc'": {
+    "sql": "SELECT CASE WHEN 'ABC' LIKE 'abc' THEN 1 ELSE 0 END FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "like: a column against a lowercase pattern": {
+    "sql": "SELECT COUNT(*) FROM QTEMP.P7FLAG WHERE NAME LIKE 'alpha%'",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "xor: in a predicate": {
+    "sql": "SELECT 1 FROM SYSIBM.SYSDUMMY1 WHERE (1 = 1) XOR (1 = 0)",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token XOR was not valid. Valid tokens: FOR USE SKIP WAIT WITH FETCH LIMIT ORDER UNION EXCEPT OFFSET. (-104) (S"
+  },
+  "xor: BOOLEAN values": {
+    "sql": "SELECT TRUE XOR FALSE FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword FALSE not expected. Valid tokens: , FROM INTO. (-199) (SQLExecDirectW)"
+  },
+  "uuid: GENERATE_UUID()": {
+    "sql": "SELECT GENERATE_UUID() FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 36,
+        "precision": 36,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'DC111784-6129-4A28-AA5F-838337E43F26'"
+      ]
+    ]
+  },
+  "uuid: GENERATE_UUID() version nibble": {
+    "sql": "SELECT SUBSTR(GENERATE_UUID(), 15, 1) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'4'"
+      ]
+    ]
+  },
+  "uuid: GENERATE_UUID_BINARY()": {
+    "sql": "SELECT HEX(GENERATE_UUID_BINARY()) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 32,
+        "precision": 32,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'049B3F85B94A462AACEB5A743BAF30C5'"
+      ]
+    ]
+  },
+  "uuid: GENERATE_UNIQUE()": {
+    "sql": "SELECT HEX(GENERATE_UNIQUE()) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 26,
+        "precision": 26,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'0785184116B0310A6459121001'"
+      ]
+    ]
+  },
+  "explain: EXPLAIN PLAN FOR": {
+    "sql": "EXPLAIN PLAN FOR SELECT 1 FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token EXPLAIN was not valid. Valid tokens: ( CL END GET SET TAG CALL DROP FREE HOLD LOCK OPEN WITH. (-104) (SQ"
+  },
+  "explain: EXPLAIN SELECT": {
+    "sql": "EXPLAIN SELECT 1 FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token EXPLAIN was not valid. Valid tokens: ( CL END GET SET TAG CALL DROP FREE HOLD LOCK OPEN WITH. (-104) (SQ"
+  },
+  "chr: CHR(65)": {
+    "sql": "SELECT CHR(65) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'A'"
+      ]
+    ]
+  },
+  "chr: CHR(233)": {
+    "sql": "SELECT CHR(233), HEX(CHR(233)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'\\x1a'",
+        "'3F'"
+      ]
+    ]
+  },
+  "chr: CHR(8364)": {
+    "sql": "SELECT CHR(8364), HEX(CHR(8364)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None",
+        "None"
+      ]
+    ]
+  },
+  "ascii: ASCII('é')": {
+    "sql": "SELECT ASCII(?) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "42S02",
+    "sqlcode": -204,
+    "message": "SQL0204 - ASCII in *LIBL type *N not found. (-204) (SQLPrepare)"
+  },
+  "ascii: ASCII('€')": {
+    "sql": "SELECT ASCII(?) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "42S02",
+    "sqlcode": -204,
+    "message": "SQL0204 - ASCII in *LIBL type *N not found. (-204) (SQLPrepare)"
+  },
+  "utf-16: UX'00E9'": {
+    "sql": "SELECT UX'00E9', HEX(UX'00E9') FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'é'",
+        "'00E9'"
+      ]
+    ]
+  },
+  "utf-16: UX'20AC'": {
+    "sql": "SELECT UX'20AC' FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'€'"
+      ]
+    ]
+  },
+  "utf-16: INTERPRET of BX'00E9' as GRAPHIC CCSID 1200": {
+    "sql": "SELECT INTERPRET(BX'00E9' AS GRAPHIC(1) CCSID 1200) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'é'"
+      ]
+    ]
+  },
+  "chr via INTERPRET: 233 as a parameter": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'é'"
+      ]
+    ]
+  },
+  "chr via INTERPRET: 8364 as a parameter": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'€'"
+      ]
+    ]
+  },
+  "chr via INTERPRET: 128512 (outside the BMP) as a parameter": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'\\uf600'"
+      ]
+    ]
+  },
+  "ord via HEX: 'é' as GRAPHIC CCSID 1200": {
+    "sql": "SELECT HEX(CAST(? AS GRAPHIC(1) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'00E9'"
+      ]
+    ]
+  },
+  "ord via INTERPRET: 'é' to an integer": {
+    "sql": "SELECT INTERPRET(BX'0000' CONCAT CAST(CAST(? AS GRAPHIC(1) CCSID 1200) AS BINARY(2)) AS INTEGER) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "233"
+      ]
+    ]
+  },
+  "ord via HEX and a lookup-free conversion: '€'": {
+    "sql": "SELECT HEX(CAST(? AS GRAPHIC(1) CCSID 1200)), INTERPRET(HEXTORAW('0000' CONCAT HEX(CAST(? AS GRAPHIC(1) CCSID 1200))) AS INTEGER) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'20AC'",
+        "8364"
+      ]
+    ]
+  },
+  "type: JSON column": {
+    "sql": "CREATE TABLE QTEMP.P7TYPE (J JSON)",
+    "result": "error",
+    "sqlstate": "42S02",
+    "sqlcode": -204,
+    "message": "SQL0204 - JSON in *LIBL type *SQLUDT not found. (-204) (SQLExecDirectW)"
+  },
+  "type: UUID column": {
+    "sql": "CREATE TABLE QTEMP.P7TYPE (U UUID)",
+    "result": "error",
+    "sqlstate": "42S02",
+    "sqlcode": -204,
+    "message": "SQL0204 - UUID in *LIBL type *SQLUDT not found. (-204) (SQLExecDirectW)"
+  },
+  "tablespace: CREATE TABLE ... IN": {
+    "sql": "CREATE TABLE QTEMP.P7TYPE (I INTEGER) IN USERSPACE1",
+    "result": "ok"
+  }
+}

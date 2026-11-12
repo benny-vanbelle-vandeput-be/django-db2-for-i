@@ -2601,6 +2601,98 @@ conflict on a unique key `K`; A merges `K = 1` and does not commit yet:
 - A real race still gives SQL0803 with `ignore_conflicts` (2 of 20 keys here), as
   IBM's documentation says: the retry of Known Limitations is needed.
 
+### System names (`probes/qtemp_system_names.py`, phase 7 section 6)
+
+PUB400 (IBM i 7.5), 2026-11-12, one connection, QTEMP only (tables and indexes gone
+with the job), without commitment control. Result:
+[system_names.json](../probes/results/system_names.json).
+
+| Statement | Result |
+|---|---|
+| `CREATE TABLE <long> FOR SYSTEM NAME <sys> (...)` | ok; `INSERT` by the SQL names, `SELECT` by the system names (table and column) both work |
+| `CREATE TABLE <short> FOR SYSTEM NAME <other>` (SQL name of at most 10 characters) | **SQL7029** "System name ... cannot be specified", also when both names are equal |
+| a system name that is already taken | SQL0601 (exists), also between a table and an index: both are `*FILE` objects |
+| a system name of 11 characters | SQL0107 (tables and columns) |
+| lowercase undelimited | ok, stored uppercase (`PSNLOWER`) |
+| delimited lowercase `"psnlower"` | ok, stored **with the quotes** (`"psnlower"`): to avoid |
+| starting with a digit / with `#@$` / with `_` | SQL0103 / SQL0113 / ok |
+| `<long> FOR COLUMN <sys> <type>` in `CREATE TABLE` | ok |
+| a **short** column name with another `FOR COLUMN` | ok (unlike tables) |
+| two columns with the same system name | SQL0612 (duplicate column name), also in `ADD COLUMN` |
+| `ALTER TABLE ... ADD COLUMN <long> FOR COLUMN <sys> <type>` | ok; the column reads by both names |
+| `ALTER TABLE ... RENAME COLUMN` | SQL0199 (no column rename on 7.5, as known) |
+| `CREATE INDEX <long> FOR SYSTEM NAME <sys> ON ...` | ok; without it the system name is generated (`PROBE00001`) |
+| `RENAME INDEX <long> TO <long> FOR SYSTEM NAME <sys>`, then `DROP INDEX <sys>` | ok, ok |
+| `RENAME TABLE <long> TO <long> FOR SYSTEM NAME <sys>` | ok; reads by the new system name |
+| `RENAME TABLE <long> TO <long>` without a system name | ok, **the old system name stays** |
+| `RENAME TABLE <long> TO <short>` | ok, the short name becomes the system name |
+
+- **For the backend (phase 7, options A and C):** write `FOR SYSTEM NAME` only for a
+  table or index whose SQL name is longer than 10 characters (option C needs no
+  clause: a short name *is* the system name); `FOR COLUMN` works for any column.
+  A system name must be a valid undelimited name (letters, digits, `_`, not starting
+  with a digit); check duplicates across tables *and* indexes of the library.
+  A rename without `FOR SYSTEM NAME` keeps the old system name, so a rename must
+  pass it again.
+- **The catalog views show nothing for QTEMP** (`QSYS2.SYSTABLES`, `SYSCOLUMNS`,
+  `SYSINDEXES` returned no rows); `QSYS2.OBJECT_STATISTICS('QTEMP', '*FILE')` does
+  (`OBJNAME`, `OBJLONGNAME`). Introspection of system names needs a journaled
+  library: an own IBM i test in the backend branch.
+
+### The LOB limit for 3 and 5 columns (`probes/qtemp_bulk_lobs.py`, phase 7 section 3)
+
+PUB400 (IBM i 7.5), 2026-11-12, one connection, QTEMP only, without commitment
+control. `NCLOB(1M)` columns next to an `INTEGER` key; each case doubles the rows from
+64, then bisects (6 steps). Result: [bulk_lobs.json](../probes/results/bulk_lobs.json).
+
+| LOB columns | Statement | Largest that worked | Smallest refused (PWS0001) |
+|---|---|---|---|
+| 1 | `INSERT` | 1,024 rows = 1,024 LOB markers | 1,040 |
+| 2 | `INSERT` | 512 rows = 1,024 | 520 rows = 1,040 |
+| 3 | `INSERT`, also `FINAL TABLE`, also non-NULL values | 340 rows = 1,020 | 344 rows = 1,032 |
+| 5 | `INSERT`, also `FINAL TABLE` | 204 rows = 1,020 | 206 rows = 1,030 |
+
+- **The limit is about 1,024 LOB markers per statement, whatever the number of LOB
+  columns**, the same inside `FINAL TABLE` and with values. The backend allows 512
+  (`BULK_MAX_LOB_PARAMS`), half of it; up to about 1,000 would work (a decision for the
+  backend branch: the margin is the point of 512).
+- **`MERGE` on a QTEMP table is refused** (SQL7008, the table has no journal), so the
+  `MERGE` of `ignore_conflicts` / `update_conflicts` cannot be measured here; it needs
+  a journaled library (an own IBM i test in the backend branch).
+
+### Flags off "not verified", and `CHR` / `ASCII` (`probes/qtemp_phase7_flags.py`)
+
+PUB400 (IBM i 7.5), 2026-11-12, one connection, QTEMP only, without commitment
+control. Result: [phase7_flags.json](../probes/results/phase7_flags.json).
+
+| Flag | Probe | Result | Verdict |
+|---|---|---|---|
+| `allows_group_by_selected_pks` | `GROUP BY ID` with `NAME` selected, a unique index on `ID` (a `PRIMARY KEY` needs a journal) | SQL0122 | stays off |
+| `greatest_least_ignores_nulls` | `GREATEST(1, NULL, 3)`, `LEAST`, scalar `MAX` | NULL | stays off |
+| `has_case_insensitive_like` | `'ABC' LIKE 'abc'`; `NAME LIKE 'alpha%'` | 0; 1 of `Alpha` / `alpha` | stays off |
+| `has_native_json_field` | a `JSON` column | SQL0204 (no such type) | stays off |
+| `has_native_uuid_field` | a `UUID` column | SQL0204 (no such type) | stays off |
+| `supports_explaining_query_execution` | `EXPLAIN PLAN FOR ...`, `EXPLAIN SELECT ...` | SQL0104 | stays off |
+| `supports_logical_xor` | `XOR` in a predicate; `TRUE XOR FALSE` | SQL0104; SQL0199 | stays off |
+| `supports_tablespaces` | `CREATE TABLE ... IN USERSPACE1` | **accepted** (no such tablespace on IBM i) | stays off: Django's tablespace options would be accepted and mean nothing |
+| `supports_uuid4_function` | `GENERATE_UUID()` | **a UUID with version nibble 4**; `GENERATE_UUID_BINARY()` 16 bytes | **candidate** for the backend branch |
+| `supports_uuid7_function` | (no time-ordered UUID function) | `GENERATE_UNIQUE()` is 13 bytes, not a UUID | stays off |
+
+`CHR` / `ASCII` (Django's `Chr` / `Ord`):
+
+- `CHR(65)` is `A`; `CHR(233)` gives the substitute character (`X'3F'`); `CHR(8364)`
+  NULL. `ASCII(?)` with a parameter: SQL0204 (no function for an untyped marker).
+- **UTF-16 works for both directions:**
+  - `Chr`: `INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200)`
+    gives `é` for 233 and `€` for 8364; above `U+FFFF` (128512) it gives the wrong
+    character (`U+F600`): a surrogate pair would be needed.
+  - `Ord`: `INTERPRET(BX'0000' CONCAT CAST(CAST(? AS GRAPHIC(1) CCSID 1200) AS
+    BINARY(2)) AS INTEGER)` gives 233 for `é`; `HEX(... GRAPHIC ... CCSID 1200)`
+    gives `20AC` for `€`.
+  - `UX'00E9'` literals work too.
+- For the backend branch: `Chr` and `Ord` through these forms for the Basic
+  Multilingual Plane, and a `NotSupportedError` or a Known Limitation above it.
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one
