@@ -361,8 +361,14 @@ runs in Python, as on the other databases. Violations raise `IntegrityError`
 - **`DB_SET_DEFAULT` cannot delete the default's own parent.** Deleting the
   row the default points to would set the children to a key that no longer
   exists, so Db2 for i refuses the delete (SQL0532, an `IntegrityError`).
-- **Database-level `on_delete` between libraries with different journals**
-  has not been tested (both tables were in one library).
+- **Database-level `on_delete` between libraries with different journals**:
+  `DB_CASCADE` and `DB_SET_NULL` need the parent and the child table in the
+  same journal. Db2 for i accepts the foreign key, but every delete of a
+  parent row then fails with **SQL7008** ("not valid for operation"). Keep
+  both models in one library (or libraries journaled to one journal), or use
+  Django's own `CASCADE` / `SET_NULL`, which the database only checks
+  (those work across journals). `DB_SET_DEFAULT` was not tested; it changes
+  the child row too, so expect the same.
 
 ## Check constraints with a LIKE pattern from a column
 

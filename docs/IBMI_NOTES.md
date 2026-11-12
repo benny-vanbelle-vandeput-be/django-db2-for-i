@@ -2399,10 +2399,41 @@ Result: `probes/results/lib_on_delete.json`. Two parents (1, 2), a child of each
 
 - `UPDATE_RULE` is `NO ACTION` in every case.
 - All of it works inside a transaction, read back before the `ROLLBACK`.
-- **Open:** foreign keys between tables in **different journals**. Both tables here share the library's
-  `QSQJRN`, so this probe cannot answer that.
+- Foreign keys between tables in **different journals**: see the next section (`lib_fk_across_journals`).
 - **Not tested:** DDL after these deletes in one transaction (SQL0910 would be expected, as for other pending
   row changes; each case rolled back first).
+
+### Foreign keys across two journals (`probes/lib_fk_across_journals.py`)
+
+2026-11-12, PUB400 (IBM i 7.5), approved on
+[#249](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/249#issuecomment-6828621622).
+Parent table `DJDB2I_XJP` in the default library, child table `DJDB2I_XJC` in the
+`other` library, each journaled to its own library's `QSQJRN` (read from
+`QSYS2.JOURNALED_OBJECTS`). Both on the cleanup list, dropped at the end (child first,
+`RESTRICT`); `bin/ibmi-cleanup` afterwards: nothing left. Result:
+`probes/results/lib_fk_across_journals.json`. Two parents (1, 2), a child of each, delete
+parent 2, read both tables, `ROLLBACK` (CMT=1).
+
+| `ON DELETE` | `ADD CONSTRAINT` | Delete parent 2 | `SYSREFCST.DELETE_RULE` |
+|---|---|---|---|
+| `NO ACTION` | ok | SQL0532, nothing deleted | `NO ACTION` |
+| `RESTRICT` | ok | SQL0532, nothing deleted | `RESTRICT` |
+| `CASCADE` | ok | **SQL7008** "DJDB2I_XJP ... not valid for operation", nothing deleted | `CASCADE` |
+| `SET NULL` | ok | **SQL7008**, nothing deleted | `SET NULL` |
+
+- **A foreign key whose delete rule changes the child (`CASCADE`, `SET NULL`) needs both
+  tables in the same journal.** Db2 for i accepts the constraint, but every delete of a
+  parent row then fails with SQL7008 (`HY000`), also a delete that matches no child. The
+  same rules in one journal work (`lib_on_delete`, above). `SET DEFAULT` was not run
+  (by the same reasoning it changes the child too).
+- `NO ACTION` and `RESTRICT` work across journals: they only check, as in one journal.
+- The `CASCADE` round that was meant to `COMMIT` hit the same SQL7008, so its
+  clean-up delete of the parents failed too and rows 1 and 2 stayed committed; the
+  `SET NULL` round's parent inserts then got SQL0803 (duplicate key). Its result is the
+  same: the delete of parent 2 fails with SQL7008. Both tables were dropped at the end.
+- So Django's `DB_CASCADE` / `DB_SET_NULL` (6.1+) between models whose tables are in
+  libraries with different journals fail on every delete of the parent; Django's own
+  `CASCADE` (in Python, the database rule `NO ACTION`) is not affected.
 
 ### CHECK ... IS JSON on an NCLOB (`probes/lib_json_check.py`)
 

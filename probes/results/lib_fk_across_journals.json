@@ -1,0 +1,589 @@
+{
+  "probe": "lib_fk_across_journals",
+  "utc": "20261112T160222Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "approved": "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/249#issuecomment-6828621622",
+  "approved_by": "benny-vanbelle-vandeput-be",
+  "journals": {
+    "<DEFAULT_LIBRARY>.DJDB2I_XJP": [
+      {
+        "JOURNAL_LIBRARY": "<DEFAULT_LIBRARY>",
+        "JOURNAL_NAME": "QSQJRN"
+      }
+    ],
+    "<OTHER_LIBRARY>.DJDB2I_XJC": [
+      {
+        "JOURNAL_LIBRARY": "<OTHER_LIBRARY>",
+        "JOURNAL_NAME": "QSQJRN"
+      }
+    ]
+  },
+  "cases": {
+    "NO ACTION": {
+      "ddl": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) ON DELETE NO ACTION",
+      "ok": true,
+      "catalog": [
+        {
+          "CONSTRAINT_SCHEMA": "<OTHER_LIBRARY>",
+          "CONSTRAINT_NAME": "DJDB2I_XJC_FK",
+          "UNIQUE_CONSTRAINT_SCHEMA": "<DEFAULT_LIBRARY>",
+          "DELETE_RULE": "NO ACTION"
+        }
+      ],
+      "rolled back": {
+        "ends with": "ROLLBACK",
+        "inserts": {
+          "parent 1": "ok",
+          "parent 2": "ok",
+          "child 10": "ok",
+          "child 20": "ok"
+        },
+        "delete": "-532",
+        "delete message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0532 - Delete prevented by referential constraint DJDB2I_XJC_FK in <OTHER_LIBRARY>. (-532) (SQLExecDirectW)",
+        "parents after": [
+          {
+            "ID": 1
+          },
+          {
+            "ID": 2
+          }
+        ],
+        "children after": [
+          {
+            "ID": 10,
+            "P_ID": 1
+          },
+          {
+            "ID": 20,
+            "P_ID": 2
+          }
+        ],
+        "rollback": "ok"
+      },
+      "dropped": true
+    },
+    "RESTRICT": {
+      "ddl": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) ON DELETE RESTRICT",
+      "ok": true,
+      "catalog": [
+        {
+          "CONSTRAINT_SCHEMA": "<OTHER_LIBRARY>",
+          "CONSTRAINT_NAME": "DJDB2I_XJC_FK",
+          "UNIQUE_CONSTRAINT_SCHEMA": "<DEFAULT_LIBRARY>",
+          "DELETE_RULE": "RESTRICT"
+        }
+      ],
+      "rolled back": {
+        "ends with": "ROLLBACK",
+        "inserts": {
+          "parent 1": "ok",
+          "parent 2": "ok",
+          "child 10": "ok",
+          "child 20": "ok"
+        },
+        "delete": "-532",
+        "delete message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0532 - Delete prevented by referential constraint DJDB2I_XJC_FK in <OTHER_LIBRARY>. (-532) (SQLExecDirectW)",
+        "parents after": [
+          {
+            "ID": 1
+          },
+          {
+            "ID": 2
+          }
+        ],
+        "children after": [
+          {
+            "ID": 10,
+            "P_ID": 1
+          },
+          {
+            "ID": 20,
+            "P_ID": 2
+          }
+        ],
+        "rollback": "ok"
+      },
+      "dropped": true
+    },
+    "CASCADE": {
+      "ddl": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) ON DELETE CASCADE",
+      "ok": true,
+      "catalog": [
+        {
+          "CONSTRAINT_SCHEMA": "<OTHER_LIBRARY>",
+          "CONSTRAINT_NAME": "DJDB2I_XJC_FK",
+          "UNIQUE_CONSTRAINT_SCHEMA": "<DEFAULT_LIBRARY>",
+          "DELETE_RULE": "CASCADE"
+        }
+      ],
+      "rolled back": {
+        "ends with": "ROLLBACK",
+        "inserts": {
+          "parent 1": "ok",
+          "parent 2": "ok",
+          "child 10": "ok",
+          "child 20": "ok"
+        },
+        "delete": "-7008",
+        "delete message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL7008 - DJDB2I_XJP in <DEFAULT_LIBRARY> not valid for operation. (-7008) (SQLExecDirectW)",
+        "parents after": [
+          {
+            "ID": 1
+          },
+          {
+            "ID": 2
+          }
+        ],
+        "children after": [
+          {
+            "ID": 10,
+            "P_ID": 1
+          },
+          {
+            "ID": 20,
+            "P_ID": 2
+          }
+        ],
+        "rollback": "ok"
+      },
+      "committed": {
+        "ends with": "COMMIT",
+        "inserts": {
+          "parent 1": "ok",
+          "parent 2": "ok",
+          "child 10": "ok",
+          "child 20": "ok"
+        },
+        "delete": "-7008",
+        "delete message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL7008 - DJDB2I_XJP in <DEFAULT_LIBRARY> not valid for operation. (-7008) (SQLExecDirectW)",
+        "parents after": [
+          {
+            "ID": 1
+          },
+          {
+            "ID": 2
+          }
+        ],
+        "children after": [
+          {
+            "ID": 10,
+            "P_ID": 1
+          },
+          {
+            "ID": 20,
+            "P_ID": 2
+          }
+        ],
+        "commit": "ok",
+        "after commit, children": [
+          {
+            "ID": 10,
+            "P_ID": 1
+          },
+          {
+            "ID": 20,
+            "P_ID": 2
+          }
+        ],
+        "empty again": [
+          "ok",
+          "-7008"
+        ],
+        "rollback": "ok"
+      },
+      "dropped": true
+    },
+    "SET NULL": {
+      "ddl": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) ON DELETE SET NULL",
+      "ok": true,
+      "catalog": [
+        {
+          "CONSTRAINT_SCHEMA": "<OTHER_LIBRARY>",
+          "CONSTRAINT_NAME": "DJDB2I_XJC_FK",
+          "UNIQUE_CONSTRAINT_SCHEMA": "<DEFAULT_LIBRARY>",
+          "DELETE_RULE": "SET NULL"
+        }
+      ],
+      "rolled back": {
+        "ends with": "ROLLBACK",
+        "inserts": {
+          "parent 1": "-803",
+          "parent 2": "-803",
+          "child 10": "ok",
+          "child 20": "ok"
+        },
+        "delete": "-7008",
+        "delete message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL7008 - DJDB2I_XJP in <DEFAULT_LIBRARY> not valid for operation. (-7008) (SQLExecDirectW)",
+        "parents after": [
+          {
+            "ID": 1
+          },
+          {
+            "ID": 2
+          }
+        ],
+        "children after": [
+          {
+            "ID": 10,
+            "P_ID": 1
+          },
+          {
+            "ID": 20,
+            "P_ID": 2
+          }
+        ],
+        "rollback": "ok"
+      },
+      "dropped": true
+    }
+  },
+  "cleanup": {
+    "<OTHER_LIBRARY>.DJDB2I_XJC": true,
+    "<DEFAULT_LIBRARY>.DJDB2I_XJP": true
+  },
+  "left": [],
+  "statements": [
+    {
+      "label": "create <DEFAULT_LIBRARY>.DJDB2I_XJP",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_XJP (ID INTEGER NOT NULL PRIMARY KEY)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "create <OTHER_LIBRARY>.DJDB2I_XJC",
+      "sql": "CREATE TABLE <OTHER_LIBRARY>.DJDB2I_XJC (ID INTEGER NOT NULL PRIMARY KEY, P_ID INTEGER)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "add NO ACTION",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) ON DELETE NO ACTION",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "parent 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) VALUES (?)",
+      "params": [
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "parent 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) VALUES (?)",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 10 of 1",
+      "sql": "INSERT INTO <OTHER_LIBRARY>.DJDB2I_XJC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        10,
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 20 of 2",
+      "sql": "INSERT INTO <OTHER_LIBRARY>.DJDB2I_XJC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        20,
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "delete parent 2",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_XJP WHERE ID = ?",
+      "params": [
+        2
+      ],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0532 - Delete prevented by referential constraint DJDB2I_XJC_FK in <OTHER_LIBRARY>. (-532) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop NO ACTION",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC DROP CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "add RESTRICT",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) ON DELETE RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "parent 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) VALUES (?)",
+      "params": [
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "parent 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) VALUES (?)",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 10 of 1",
+      "sql": "INSERT INTO <OTHER_LIBRARY>.DJDB2I_XJC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        10,
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 20 of 2",
+      "sql": "INSERT INTO <OTHER_LIBRARY>.DJDB2I_XJC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        20,
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "delete parent 2",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_XJP WHERE ID = ?",
+      "params": [
+        2
+      ],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0532 - Delete prevented by referential constraint DJDB2I_XJC_FK in <OTHER_LIBRARY>. (-532) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop RESTRICT",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC DROP CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "add CASCADE",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) ON DELETE CASCADE",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "parent 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) VALUES (?)",
+      "params": [
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "parent 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) VALUES (?)",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 10 of 1",
+      "sql": "INSERT INTO <OTHER_LIBRARY>.DJDB2I_XJC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        10,
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 20 of 2",
+      "sql": "INSERT INTO <OTHER_LIBRARY>.DJDB2I_XJC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        20,
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "delete parent 2",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_XJP WHERE ID = ?",
+      "params": [
+        2
+      ],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL7008 - DJDB2I_XJP in <DEFAULT_LIBRARY> not valid for operation. (-7008) (SQLExecDirectW)"
+    },
+    {
+      "label": "parent 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) VALUES (?)",
+      "params": [
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "parent 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) VALUES (?)",
+      "params": [
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 10 of 1",
+      "sql": "INSERT INTO <OTHER_LIBRARY>.DJDB2I_XJC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        10,
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 20 of 2",
+      "sql": "INSERT INTO <OTHER_LIBRARY>.DJDB2I_XJC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        20,
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "delete parent 2",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_XJP WHERE ID = ?",
+      "params": [
+        2
+      ],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL7008 - DJDB2I_XJP in <DEFAULT_LIBRARY> not valid for operation. (-7008) (SQLExecDirectW)"
+    },
+    {
+      "label": "delete children",
+      "sql": "DELETE FROM <OTHER_LIBRARY>.DJDB2I_XJC",
+      "params": [],
+      "ok": true,
+      "rowcount": 2
+    },
+    {
+      "label": "delete parents",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_XJP",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL7008 - DJDB2I_XJP in <DEFAULT_LIBRARY> not valid for operation. (-7008) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop CASCADE",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC DROP CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "add SET NULL",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC ADD CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK FOREIGN KEY (P_ID) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) ON DELETE SET NULL",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "parent 1",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) VALUES (?)",
+      "params": [
+        1
+      ],
+      "ok": false,
+      "sqlstate": "23000",
+      "message": "[23000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+    },
+    {
+      "label": "parent 2",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_XJP (ID) VALUES (?)",
+      "params": [
+        2
+      ],
+      "ok": false,
+      "sqlstate": "23000",
+      "message": "[23000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+    },
+    {
+      "label": "child 10 of 1",
+      "sql": "INSERT INTO <OTHER_LIBRARY>.DJDB2I_XJC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        10,
+        1
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "child 20 of 2",
+      "sql": "INSERT INTO <OTHER_LIBRARY>.DJDB2I_XJC (ID, P_ID) VALUES (?, ?)",
+      "params": [
+        20,
+        2
+      ],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "delete parent 2",
+      "sql": "DELETE FROM <DEFAULT_LIBRARY>.DJDB2I_XJP WHERE ID = ?",
+      "params": [
+        2
+      ],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL7008 - DJDB2I_XJP in <DEFAULT_LIBRARY> not valid for operation. (-7008) (SQLExecDirectW)"
+    },
+    {
+      "label": "drop SET NULL",
+      "sql": "ALTER TABLE <OTHER_LIBRARY>.DJDB2I_XJC DROP CONSTRAINT <OTHER_LIBRARY>.DJDB2I_XJC_FK",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJDB2I_XJC",
+      "sql": "DROP TABLE <OTHER_LIBRARY>.DJDB2I_XJC RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJDB2I_XJP",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJDB2I_XJP RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    }
+  ]
+}
