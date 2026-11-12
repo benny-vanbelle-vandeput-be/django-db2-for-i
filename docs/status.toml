@@ -262,11 +262,13 @@ prs = [244, 245, 246]
 
 [[phases.steps]]
 step = "2: Python 3.15 (#233)"
-status = "planned"
+status = "done"
+prs = [247]
 
 [[phases.steps]]
 step = "3: QTEMP probes (flags, CHR / ASCII, system names, the LOB limit)"
-status = "planned"
+status = "done"
+prs = [248]
 
 [[phases.steps]]
 step = "4: lib_ probes: foreign keys across the two journals; #124"

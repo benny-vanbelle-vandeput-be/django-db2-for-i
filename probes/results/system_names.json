@@ -1,0 +1,466 @@
+{
+  "probe": "system_names",
+  "utc": "20261112T103517Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables and indexes gone with the job)",
+  "table: create long name FOR SYSTEM NAME": {
+    "result": "ok"
+  },
+  "table: insert by SQL names": {
+    "result": "ok"
+  },
+  "table: select by system names": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "LONGCOL",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "2"
+      ]
+    ]
+  },
+  "table: select the long column by SQL name": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "LONG_COLUMN_NAME",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "table: short SQL name with another system name": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7029,
+    "message": "SQL7029 - System name PSNSH2 cannot be specified. (-7029) (SQLExecDirectW)"
+  },
+  "table: short SQL name equal to its system name": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7029,
+    "message": "SQL7029 - System name PSNSAME cannot be specified. (-7029) (SQLExecDirectW)"
+  },
+  "table: system name already taken": {
+    "result": "error",
+    "sqlstate": "42S01",
+    "sqlcode": -601,
+    "message": "SQL0601 - PSNTAB in QTEMP type *FILE already exists. (-601) (SQLExecDirectW)"
+  },
+  "table: long name whose generated system name would clash": {
+    "result": "ok"
+  },
+  "table: system name 11 characters": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -107,
+    "message": "SQL0107 - PSNELEVEN01 too long. Maximum 10 characters. (-107) (SQLExecDirectW)"
+  },
+  "table: system name lowercase, undelimited": {
+    "result": "ok"
+  },
+  "table: system name lowercase, undelimited: as stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJNAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'PSNLOWER'"
+      ]
+    ]
+  },
+  "table: system name delimited lowercase": {
+    "result": "ok"
+  },
+  "table: system name delimited lowercase: as stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJNAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'\"psnlower\"'"
+      ]
+    ]
+  },
+  "table: system name starts with a digit": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -103,
+    "message": "SQL0103 - Numeric constant 1PSN not valid. (-103) (SQLExecDirectW)"
+  },
+  "table: system name with an underscore": {
+    "result": "ok"
+  },
+  "table: system name with an underscore: as stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJNAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'PSN_US'"
+      ]
+    ]
+  },
+  "table: system name with #, @ and $": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -113,
+    "message": "SQL0113 - Name PSN#@$ not allowed. (-113) (SQLExecDirectW)"
+  },
+  "column: two columns with the same system name": {
+    "result": "error",
+    "sqlstate": "42S21",
+    "sqlcode": -612,
+    "message": "SQL0612 - SAMECOL is a duplicate column name. (-612) (SQLExecDirectW)"
+  },
+  "column: system name of 11 characters": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -107,
+    "message": "SQL0107 - ELEVENCHARS too long. Maximum 10 characters. (-107) (SQLExecDirectW)"
+  },
+  "column: short column name with another FOR COLUMN": {
+    "result": "ok"
+  },
+  "column: long name without FOR COLUMN (generated system name)": {
+    "result": "ok"
+  },
+  "column: generated system names": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "COLUMN_NAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "SYSTEM_COLUMN_NAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "column: ALTER TABLE ADD COLUMN with FOR COLUMN": {
+    "result": "ok"
+  },
+  "column: ALTER TABLE ADD COLUMN, system name taken": {
+    "result": "error",
+    "sqlstate": "42S21",
+    "sqlcode": -612,
+    "message": "SQL0612 - ADDEDCOL is a duplicate column name. (-612) (SQLExecDirectW)"
+  },
+  "column: select the added column by both names": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ADDED_LONG_COLUMN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "ADDEDCOL",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None",
+        "None"
+      ]
+    ]
+  },
+  "column: RENAME COLUMN (expected refused on 7.5)": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -199,
+    "message": "SQL0199 - Keyword RENAME not expected. Valid tokens: ADD LOG NOT SET DATA DROP ALTER CHECK APPEND ATTACH DETACH. (-199) "
+  },
+  "index: create long name FOR SYSTEM NAME": {
+    "result": "ok"
+  },
+  "index: create without FOR SYSTEM NAME (generated)": {
+    "result": "ok"
+  },
+  "index: generated system name": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJNAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "OBJLONGNAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'PROBE00001'",
+        "'PROBE_SYSTEM_NAMES_GEN_INDEX'"
+      ]
+    ]
+  },
+  "index: system name taken by a table": {
+    "result": "error",
+    "sqlstate": "42S01",
+    "sqlcode": -601,
+    "message": "SQL0601 - PSNTAB in QTEMP type *FILE already exists. (-601) (SQLExecDirectW)"
+  },
+  "index: RENAME INDEX ... FOR SYSTEM NAME": {
+    "result": "ok"
+  },
+  "index: drop by system name": {
+    "result": "ok"
+  },
+  "catalog: SYSTABLES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "TABLE_NAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "SYSTEM_TABLE_NAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "catalog: SYSCOLUMNS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "TABLE_NAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "COLUMN_NAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "SYSTEM_COLUMN_NAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "catalog: SYSINDEXES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "INDEX_NAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "SYSTEM_INDEX_NAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TABLE_NAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "catalog: OBJECT_STATISTICS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJNAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "OBJLONGNAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "OBJATTRIBUTE",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'PSNTAB'",
+        "'PROBE_SYSTEM_NAMES_TABLE'",
+        "'PF'"
+      ]
+    ]
+  },
+  "rename: RENAME TABLE ... TO long FOR SYSTEM NAME": {
+    "result": "ok"
+  },
+  "rename: select by the new system name": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "LONGCOL",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "2"
+      ]
+    ]
+  },
+  "rename: RENAME TABLE ... TO long (no system name): what it becomes": {
+    "result": "ok"
+  },
+  "rename: system name after a rename without one": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJNAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "OBJLONGNAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'PSNREN'",
+        "'PROBE_SYSTEM_NAMES_TABLE_AGAIN'"
+      ]
+    ]
+  },
+  "rename: RENAME TABLE ... TO short SQL name equal to a new system name": {
+    "result": "ok"
+  },
+  "rename: names after a rename to a short name": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJNAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "OBJLONGNAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'PSNBACK'",
+        "'PSNBACK'"
+      ]
+    ]
+  }
+}

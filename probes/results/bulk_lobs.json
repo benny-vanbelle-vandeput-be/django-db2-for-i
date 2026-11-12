@@ -1,0 +1,157 @@
+{
+  "probe": "bulk_lobs",
+  "utc": "20261112T104023Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (tables gone with the job)",
+  "1 NCLOB, INSERT": {
+    "largest_ok_rows": 1024,
+    "largest_ok_lob_markers": 1024,
+    "smallest_refused_rows": 1040,
+    "smallest_refused_lob_markers": 1040,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 2080,
+      "lob_markers": 1040
+    },
+    "connection_usable_after": true
+  },
+  "2 NCLOB, INSERT": {
+    "largest_ok_rows": 512,
+    "largest_ok_lob_markers": 1024,
+    "smallest_refused_rows": 520,
+    "smallest_refused_lob_markers": 1040,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1560,
+      "lob_markers": 1040
+    },
+    "connection_usable_after": true
+  },
+  "3 NCLOB, INSERT": {
+    "largest_ok_rows": 340,
+    "largest_ok_lob_markers": 1020,
+    "smallest_refused_rows": 344,
+    "smallest_refused_lob_markers": 1032,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1376,
+      "lob_markers": 1032
+    },
+    "connection_usable_after": true
+  },
+  "5 NCLOB, INSERT": {
+    "largest_ok_rows": 204,
+    "largest_ok_lob_markers": 1020,
+    "smallest_refused_rows": 206,
+    "smallest_refused_lob_markers": 1030,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1236,
+      "lob_markers": 1030
+    },
+    "connection_usable_after": true
+  },
+  "3 NCLOB, FINAL TABLE": {
+    "largest_ok_rows": 340,
+    "largest_ok_lob_markers": 1020,
+    "smallest_refused_rows": 344,
+    "smallest_refused_lob_markers": 1032,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1376,
+      "lob_markers": 1032
+    },
+    "connection_usable_after": true
+  },
+  "5 NCLOB, FINAL TABLE": {
+    "largest_ok_rows": 204,
+    "largest_ok_lob_markers": 1020,
+    "smallest_refused_rows": 206,
+    "smallest_refused_lob_markers": 1030,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1236,
+      "lob_markers": 1030
+    },
+    "connection_usable_after": true
+  },
+  "1 NCLOB, MERGE": {
+    "largest_ok_rows": 0,
+    "largest_ok_lob_markers": 0,
+    "smallest_refused_rows": 1,
+    "smallest_refused_lob_markers": 1,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -7008,
+      "message": "SQL7008 - PBLKL in QTEMP not valid for operation. (-7008) (SQLExecDirectW)",
+      "markers": 2,
+      "lob_markers": 1
+    },
+    "connection_usable_after": true
+  },
+  "3 NCLOB, MERGE": {
+    "largest_ok_rows": 0,
+    "largest_ok_lob_markers": 0,
+    "smallest_refused_rows": 1,
+    "smallest_refused_lob_markers": 3,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -7008,
+      "message": "SQL7008 - PBLKL in QTEMP not valid for operation. (-7008) (SQLExecDirectW)",
+      "markers": 4,
+      "lob_markers": 3
+    },
+    "connection_usable_after": true
+  },
+  "5 NCLOB, MERGE": {
+    "largest_ok_rows": 0,
+    "largest_ok_lob_markers": 0,
+    "smallest_refused_rows": 1,
+    "smallest_refused_lob_markers": 5,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": -7008,
+      "message": "SQL7008 - PBLKL in QTEMP not valid for operation. (-7008) (SQLExecDirectW)",
+      "markers": 6,
+      "lob_markers": 5
+    },
+    "connection_usable_after": true
+  },
+  "3 NCLOB, INSERT, non-NULL values": {
+    "largest_ok_rows": 340,
+    "largest_ok_lob_markers": 1020,
+    "smallest_refused_rows": 344,
+    "smallest_refused_lob_markers": 1032,
+    "refusal": {
+      "result": "error",
+      "sqlstate": "HY000",
+      "sqlcode": 19188,
+      "message": "PWS0001 - Function did not complete successfully. (19188) (SQLPrepare)",
+      "markers": 1376,
+      "lob_markers": 1032
+    },
+    "connection_usable_after": true
+  }
+}
