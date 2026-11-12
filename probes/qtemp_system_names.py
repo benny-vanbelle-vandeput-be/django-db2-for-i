@@ -19,8 +19,8 @@ form before the backend writes it, and what Db2 for i does with conflicts:
 
 Writes only to QTEMP (tables and indexes that disappear with the job); reads
 nothing outside it but the catalog views, filtered to QTEMP. Without commitment
-control (CMT=0): QTEMP tables have no journal. Each statement's outcome is
-recorded with its SQLSTATE and SQLCODE.
+control (CMT=0): QTEMP tables have no journal, so no constraints either
+(SQL7008). Each statement's outcome is recorded with its SQLSTATE and SQLCODE.
 
 Usage (inside the "tests" container):
     nox -s probe -- system_names
@@ -124,7 +124,7 @@ def _tables(conn, results) -> None:
             _execute(
                 conn,
                 f"CREATE TABLE QTEMP.{TABLE} FOR SYSTEM NAME {TABLE_SYS}"
-                " (ID INTEGER NOT NULL PRIMARY KEY, LONG_COLUMN_NAME FOR COLUMN LONGCOL INTEGER)",
+                " (ID INTEGER NOT NULL, LONG_COLUMN_NAME FOR COLUMN LONGCOL INTEGER)",
             ),
         )["result"]
         == "ok"
