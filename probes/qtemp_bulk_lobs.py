@@ -56,7 +56,13 @@ CASES: tuple[tuple[str, int, str, Any], ...] = (
 
 def _statement(rows: int, lobs: int, form: str) -> str:
     columns = ["K"] + [f"L{i}" for i in range(lobs)]
-    row = "(" + ", ".join(["?"] * len(columns)) + ")"
+    if form == "merge":
+        # Typed markers, as the backend writes them: VALUES in a MERGE source
+        # refuses untyped ones (SQL0584).
+        markers = ["CAST(? AS INTEGER)"] + ["CAST(? AS NCLOB(1M))"] * lobs
+    else:
+        markers = ["?"] * len(columns)
+    row = "(" + ", ".join(markers) + ")"
     values = ", ".join([row] * rows)
     names = ", ".join(columns)
     if form == "merge":

@@ -152,11 +152,16 @@ TYPES: tuple[tuple[str, str], ...] = (
 def run(settings: Settings, conn) -> dict[str, Any]:
     results: dict[str, Any] = {"scope": "QTEMP only (tables gone with the job)"}
     _execute(conn, f"DROP TABLE {TABLE}")
-    created = _execute(
-        conn, f"CREATE TABLE {TABLE} (ID INTEGER NOT NULL PRIMARY KEY, NAME NVARCHAR(20))"
-    )
+    # QTEMP has no journal, so no PRIMARY KEY constraint (SQL7008): a unique
+    # index on ID stands in for it in the GROUP BY case.
+    created = _execute(conn, f"CREATE TABLE {TABLE} (ID INTEGER NOT NULL, NAME NVARCHAR(20))")
     if created["result"] != "ok":
         return _step(results, "create", created) and results
+    _step(
+        results,
+        "group by pk: unique index on ID",
+        _execute(conn, f"CREATE UNIQUE INDEX {TABLE}I ON {TABLE} (ID)"),
+    )
     for row in ((1, "Alpha"), (2, "alpha"), (3, "Beta")):
         _execute(conn, f"INSERT INTO {TABLE} VALUES (?, ?)", list(row))
     for key, sql, params in CASES:
