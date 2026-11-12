@@ -451,6 +451,14 @@ def value_cast_type(
         return string_type(utf16_length(value) if value is not None else 0)
     if isinstance(output_field, DecimalField) and output_field.max_digits is None:
         return decimal_type(Decimal(value)) if value is not None else "DECIMAL(31, 0)"
+    if isinstance(output_field, DecimalField) and value is not None:
+        # More digits than the field: the driver refuses the marker (22003 / 22001),
+        # and a narrowing CAST in SQL gives NULL (probe decimal_values, #95). Its own
+        # DECIMAL(p, s) keeps it exact, as Django's other backends do.
+        precision, scale = decimal_digits(Decimal(value))
+        places = output_field.decimal_places or 0
+        if scale > places or precision - scale > output_field.max_digits - places:
+            return decimal_type(Decimal(value))
     if not explicit and type(output_field) is IntegerField and isinstance(value, int):
         if INTEGER_RANGE[0] <= value <= INTEGER_RANGE[1]:
             return "INTEGER"

@@ -462,3 +462,20 @@ def test_case_results_that_are_bare_nulls_get_the_case_type() -> None:
         assert "'null'" not in sql
     mixed = Case(When(pk=1, then=Value(1)), default=Value(None), output_field=IntegerField())
     assert cast_of(mixed).endswith("THEN CAST(%s AS INTEGER) ELSE NULL END")
+
+
+@pytest.mark.parametrize(
+    ("value", "cast"),
+    [
+        (Decimal("123.45"), "DECIMAL(5, 2)"),  # fits: the field's type
+        (Decimal("1.5"), "DECIMAL(5, 2)"),
+        (Decimal("123456.789"), "DECIMAL(9, 3)"),  # #95: its own type
+        (Decimal("1234.5"), "DECIMAL(5, 1)"),  # too many integer digits
+        (Decimal("1.2345"), "DECIMAL(5, 4)"),  # too many decimals
+    ],
+)
+def test_a_decimal_value_larger_than_its_field_keeps_its_digits(value, cast) -> None:
+    """#95: a narrower marker is refused by the driver (22003 / 22001) and a
+    narrowing CAST gives NULL (probe decimal_values): never rounded or cut."""
+    field = DecimalField(max_digits=5, decimal_places=2)
+    assert cast_of(Value(value, output_field=field)) == f"CAST(%s AS {cast})"

@@ -721,3 +721,18 @@ def test_json_field_saved_read_and_filtered(live, empty) -> None:
         .order_by("data__meta__ok")
     )
     assert [(g["data__meta__ok"], g["count"]) for g in grouped] == [(False, 1), (True, 1)]
+
+
+def test_a_decimal_value_wider_than_its_field_comes_back_exact(live, empty) -> None:
+    """#95: Value(Decimal) with more digits than its DecimalField keeps its own
+    DECIMAL(p, s); the field's would be refused by the driver (probe decimal_values)."""
+    from decimal import Decimal
+
+    from django.db.models import DecimalField, Value
+
+    Author.objects.create(name="a")
+    value = Decimal("123456.789")
+    annotated = Author.objects.annotate(
+        x=Value(value, output_field=DecimalField(max_digits=5, decimal_places=2))
+    )
+    assert annotated.values_list("x", flat=True).get() == value

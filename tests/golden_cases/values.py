@@ -113,6 +113,17 @@ CASES: tuple[Case, ...] = (
         annotate(lambda: Value("2001::1", output_field=GenericIPAddressField())),
         (AUTHOR,),
     ),
+    # A Decimal with more digits than its DecimalField keeps its own type (#95).
+    Case(
+        "values/decimal_wider_than_field",
+        "query",
+        annotate(
+            lambda: Value(
+                Decimal("123456.789"), output_field=DecimalField(max_digits=5, decimal_places=2)
+            )
+        ),
+        (AUTHOR,),
+    ),
     # bytes (BinaryField): VARBINARY of the value's length (#82).
     Case("values/bytes", "query", annotate(lambda: Value(b"one")), (AUTHOR,)),
     # A None operand gets the other operand's type (#82): F("id") + None.
