@@ -12,6 +12,8 @@ sql_flush(); the feature flag itself stays off until Django's test suite
 backs it.
 """
 
+from pathlib import Path
+
 import pytest
 from django.core.management.color import no_style
 from django.db import connection, connections
@@ -19,6 +21,23 @@ from django.db import connection, connections
 from tests.ibmi.connection_guard import replace_if_unusable
 from tests.ibmi.marked_library import install_guard, marked_library
 from tests.ibmi.testapp_tables import MODELS, TABLES
+
+SMOKE_LIST = Path(__file__).with_name("smoke.txt")
+
+
+def smoke_ids(path: Path = SMOKE_LIST) -> set[str]:
+    """The node ids of the smoke set (comments and blank lines left out)."""
+    lines = (line.strip() for line in path.read_text().splitlines())
+    return {line for line in lines if line and not line.startswith("#")}
+
+
+def pytest_collection_modifyitems(config, items) -> None:
+    """Mark the smoke set (nox -s smoke runs -m "ibmi and smoke"); a parametrized
+    test belongs to it with all its parameters."""
+    ids = smoke_ids()
+    for item in items:
+        if item.nodeid.split("[", 1)[0] in ids:
+            item.add_marker(pytest.mark.smoke)
 
 
 @pytest.fixture(scope="session", autouse=True)

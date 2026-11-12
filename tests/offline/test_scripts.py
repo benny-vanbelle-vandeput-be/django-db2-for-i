@@ -165,7 +165,7 @@ def test_pub400_script_accepts_only_pub400_sessions_and_keeps_the_mac_awake() ->
     assert result.returncode == 2
     assert "usage:" in result.stderr
     text = script.read_text()
-    assert "ibmi|django_suite|status_run|probe|probe_*|ibmi_cleanup) ;;" in text
+    assert "ibmi|smoke|django_suite|status_run|probe|probe_*|ibmi_cleanup) ;;" in text
     assert "caffeinate -i -s" in text
     runtests = (script.parent / "django_suite.sh").read_text()
     assert 'python3 "$(dirname "$0")/run_django_tests.py" --check-only "$@"' in runtests

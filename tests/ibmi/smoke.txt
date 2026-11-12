@@ -1,0 +1,41 @@
+# The smoke set (phase 7, section 7): about 30 own IBM i tests of the most common
+# patterns, minutes instead of the full tier's hours, to check an IBM i after installing.
+# One connection, no system changes, no second library. nox -s smoke / bin/ibmi-test --smoke.
+# One node id per line; an offline test checks that each exists (tests/offline/test_smoke.py).
+tests/ibmi/test_connection.py::test_select_one
+tests/ibmi/test_connection.py::test_session_state
+tests/ibmi/test_connection.py::test_capabilities_detected
+tests/ibmi/test_connection.py::test_pagination_sql_runs
+tests/ibmi/test_connection.py::test_long_strings_arrive_intact
+tests/ibmi/test_connection.py::test_non_ascii_statement_text
+tests/ibmi/test_connection.py::test_journal_check_passes_on_the_test_library
+tests/ibmi/test_queries.py::test_pagination
+tests/ibmi/test_queries.py::test_union
+tests/ibmi/test_queries.py::test_extract_values
+tests/ibmi/test_queries.py::test_truncation
+tests/ibmi/test_queries.py::test_operators
+tests/ibmi/test_queries.py::test_uuid_values
+tests/ibmi/test_queries.py::test_iterator_in_a_transaction
+tests/ibmi/test_queries.py::test_update_through_a_join
+tests/ibmi/test_queries.py::test_json_field_saved_read_and_filtered
+tests/ibmi/test_queries.py::test_check_constraint_violations_raise_integrity_error
+tests/ibmi/test_inserts.py::test_create_reads_the_key_from_the_insert
+tests/ibmi/test_inserts.py::test_insert_in_a_transaction_is_rolled_back
+tests/ibmi/test_inserts.py::test_duplicate_key_raises_integrity_error
+tests/ibmi/test_inserts.py::test_bulk_create_sets_the_keys_in_input_order
+tests/ibmi/test_inserts.py::test_bulk_create_ignore_conflicts
+tests/ibmi/test_inserts.py::test_bulk_create_update_conflicts
+tests/ibmi/test_schema.py::test_table_list
+tests/ibmi/test_schema.py::test_field_types
+tests/ibmi/test_schema.py::test_values_round_trip
+tests/ibmi/test_schema.py::test_add_not_null_field_with_python_default
+tests/ibmi/test_schema.py::test_failed_migration_leaves_nothing_behind
+tests/ibmi/test_lookups.py::test_iexact_with_non_ascii_letters
+tests/ibmi/test_functions.py::test_window_functions_over_model_instances
+tests/ibmi/test_functions.py::test_cast_to_a_decimal_rounds
+tests/ibmi/test_aggregates.py::test_avg_keeps_fractions
+tests/ibmi/test_aggregates.py::test_string_agg
+tests/ibmi/test_foreign_keys.py::test_insert_child_without_parent
+tests/ibmi/test_foreign_keys.py::test_delete_referenced_parent
+tests/ibmi/test_durations.py::test_duration_values_round_trip
+tests/ibmi/test_ordering.py::test_nulls_order_largest

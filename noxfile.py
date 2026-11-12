@@ -246,6 +246,27 @@ def ibmi(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
+def smoke(session: nox.Session) -> None:
+    """The smoke set: about 30 own IBM i tests (tests/ibmi/smoke.txt) in minutes, to
+    check an IBM i after installing. A clean test library, one connection; it writes
+    no results summary (TEST_STATUS counts the full tier only).
+
+    Another supported Django version as the first argument: nox -s smoke -- 6.0
+    """
+    django, args = django_argument(session)
+    install(session, django, "test")
+    session.run(
+        "pytest",
+        "-m",
+        "ibmi and smoke",
+        "--ds=tests.django_settings.settings_ibmi",
+        "--tb=short",
+        "--create-db",
+        *args,
+    )
+
+
+@nox.session(python=NEWEST_PYTHON)
 def django_suite(session: nox.Session) -> None:
     """Tier 3 on a shared system: Django's runtests.py for named modules (scripts/django_suite.sh).
 

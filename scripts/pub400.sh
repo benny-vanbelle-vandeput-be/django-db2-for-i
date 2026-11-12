@@ -36,7 +36,7 @@ fi
 session=$1
 shift
 case $session in
-    ibmi|django_suite|status_run|probe|probe_*|ibmi_cleanup) ;;
+    ibmi|smoke|django_suite|status_run|probe|probe_*|ibmi_cleanup) ;;
     *)
         echo "refused: $session does not connect to PUB400; run: docker compose run --rm tests nox -s $session" >&2
         exit 2
