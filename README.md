@@ -12,6 +12,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 ![Python 3.12 ✅](https://img.shields.io/badge/Python-3.12%20%E2%9C%85-brightgreen)
 ![Python 3.13 ✅](https://img.shields.io/badge/Python-3.13%20%E2%9C%85-brightgreen)
 ![Python 3.14 ✅](https://img.shields.io/badge/Python-3.14%20%E2%9C%85-brightgreen)
+![Python 3.15 ✅](https://img.shields.io/badge/Python-3.15%20%E2%9C%85-brightgreen)
 
 [![Django 5.2 ✅](https://img.shields.io/badge/Django-5.2%20%E2%9C%85-brightgreen)](docs/DJANGO_VERSIONS.md)
 [![Django 6.0 ✅](https://img.shields.io/badge/Django-6.0%20%E2%9C%85-brightgreen)](docs/DJANGO_VERSIONS.md)
@@ -33,10 +34,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3474 | 2 | 0 | 0 | 2026-11-12 06:54:20 UTC |
-| IBM i tests | 419 | 2 | 1 | 0 | 2026-11-11 21:27:29 UTC |
+| Offline tests | 3474 | 2 | 0 | 0 | 2026-11-12 07:31:07 UTC |
+| IBM i tests | 419 | 2 | 1 | 0 | 2026-11-12 07:59:45 UTC |
 | Django suite on IBM i | 2807 | 262 | 88 | 0 | 2026-11-10 01:59:29 UTC |
-| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-12 06:54:30 UTC |
+| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-12 07:31:57 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +48,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3475 | 1 | 0 | 0 | 2026-11-12 06:52:13 UTC |
+| Offline tests | 3475 | 1 | 0 | 0 | 2026-11-12 07:25:16 UTC |
 | IBM i tests | 414 | 3 | 1 | 0 | 2026-11-09 21:04:32 UTC |
 | Django suite on IBM i | 2698 | 218 | 89 | 0 | 2026-11-09 03:01:31 UTC |
-| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-12 06:52:24 UTC |
+| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-12 09:47:48 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +62,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3472 | 1 | 0 | 0 | 2026-11-12 06:49:43 UTC |
+| Offline tests | 3472 | 1 | 0 | 0 | 2026-11-12 08:03:17 UTC |
 | IBM i tests | 409 | 5 | 1 | 0 | 2026-11-08 22:09:10 UTC |
 | Django suite on IBM i | 2652 | 210 | 89 | 0 | 2026-11-07 20:27:31 UTC |
-| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-12 06:49:57 UTC |
+| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-12 08:03:57 UTC |
 
 ### About the tests
 
