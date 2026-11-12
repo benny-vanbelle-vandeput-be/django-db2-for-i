@@ -33,10 +33,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3461 | 2 | 0 | 0 | 2026-11-11 22:28:37 UTC |
+| Offline tests | 3474 | 2 | 0 | 0 | 2026-11-12 06:54:20 UTC |
 | IBM i tests | 419 | 2 | 1 | 0 | 2026-11-11 21:27:29 UTC |
 | Django suite on IBM i | 2807 | 262 | 88 | 0 | 2026-11-10 01:59:29 UTC |
-| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-11 22:28:52 UTC |
+| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-12 06:54:30 UTC |
 
 ### Django 6.0 ✅
 
@@ -47,10 +47,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3462 | 1 | 0 | 0 | 2026-11-11 22:25:41 UTC |
+| Offline tests | 3475 | 1 | 0 | 0 | 2026-11-12 06:52:13 UTC |
 | IBM i tests | 414 | 3 | 1 | 0 | 2026-11-09 21:04:32 UTC |
 | Django suite on IBM i | 2698 | 218 | 89 | 0 | 2026-11-09 03:01:31 UTC |
-| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-11 22:25:58 UTC |
+| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-12 06:52:24 UTC |
 
 ### Django 5.2 ✅
 
@@ -61,10 +61,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3459 | 1 | 0 | 0 | 2026-11-11 22:23:06 UTC |
+| Offline tests | 3472 | 1 | 0 | 0 | 2026-11-12 06:49:43 UTC |
 | IBM i tests | 409 | 5 | 1 | 0 | 2026-11-08 22:09:10 UTC |
 | Django suite on IBM i | 2652 | 210 | 89 | 0 | 2026-11-07 20:27:31 UTC |
-| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-11 22:23:19 UTC |
+| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-12 06:49:57 UTC |
 
 ### About the tests
 
@@ -99,7 +99,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (66 enabled on Django 6.1) �
 | Step | State | Pull requests |
 |---|---|---|
 | 0: the LOCK TABLE fix (#162) | done | [#241](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/241) |
-| 1: workflow polish, docs, the smoke set | in progress | [#244](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/244), [#245](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/245) |
+| 1: workflow polish, docs, the smoke set | done | [#244](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/244), [#245](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/245), [#246](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/246) |
 | 2: Python 3.15 (#233) | planned |  |
 | 3: QTEMP probes (flags, CHR / ASCII, system names, the LOB limit) | planned |  |
 | 4: lib_ probes: foreign keys across the two journals; #124 | planned |  |
