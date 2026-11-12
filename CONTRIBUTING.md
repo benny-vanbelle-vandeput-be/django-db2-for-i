@@ -112,7 +112,10 @@ time; PUB400 is the name of the system, never of a test set.
 
 Each run of the nox sessions writes its counts to
 `test-results/<django>/sets/` (`--results-summary`); `nox -s test_status`
-turns them, with the Django test logs, into README's "Test status".
+turns them, with the Django test logs, into README's "Test status". Only a
+whole run writes them: a run of chosen tests (paths or ids, `-k`,
+`--deselect`, `--last-failed`) says so and leaves the last whole run's counts
+alone (#251).
 
 ## Branches, commits and `main`
 

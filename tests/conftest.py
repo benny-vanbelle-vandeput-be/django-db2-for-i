@@ -116,10 +116,32 @@ def pytest_configure(config: pytest.Config) -> None:
         raise pytest.UsageError("--update-corpus must not be used in CI")
 
 
+def narrowed(config: pytest.Config) -> str | None:
+    """Why this run covers only part of its test set (test paths or ids, ``-k``,
+    ``--deselect``, ``--last-failed``), or None for a whole run. A partial run
+    must not write the set's counts: they would replace the whole run's in the
+    status pages (#251)."""
+    if config.args_source == pytest.Config.ArgsSource.ARGS:
+        return "tests named on the command line"
+    if config.option.keyword:
+        return "-k"
+    if config.getoption("deselect", None):
+        return "--deselect"
+    if config.getoption("lf", False) or config.getoption("failedfirst", False):
+        return "--last-failed / --failed-first"
+    return None
+
+
 def pytest_terminal_summary(terminalreporter, exitstatus, config: pytest.Config) -> None:
     from tests.golden import UNVERIFIED, all_golden_paths, read
 
     summary = config.getoption("--results-summary")
+    if summary and (reason := narrowed(config)):
+        terminalreporter.write_line(
+            f"results summary not written: a partial run ({reason}); "
+            "only a whole run counts for the status pages"
+        )
+        summary = None
     # The replay tests (nox -s replay, marker "replay") are counted per corpus
     # entry, not per pytest test (#202 renamed the marker from "corpus").
     if "replay" in (config.option.markexpr or ""):
