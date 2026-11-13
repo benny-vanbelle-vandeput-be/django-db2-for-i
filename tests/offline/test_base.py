@@ -90,24 +90,49 @@ def test_executemany_without_rows_does_nothing() -> None:
     assert raw.calls == []
 
 
-@pytest.mark.parametrize("method", ["execute", "executemany"])
-def test_dict_params_are_not_supported(method: str) -> None:
+def test_execute_with_dict_params_converts() -> None:
+    raw = RecordingCursor()
+    FormatStyleCursor(raw).execute(
+        "SELECT '100%%' FROM T WHERE A = %(a)s AND B = %(b)s OR C = %(a)s", {"b": 2, "a": 1}
+    )
+    assert raw.calls == [
+        ("execute", "SELECT '100%' FROM T WHERE A = ? AND B = ? OR C = ?", [1, 2, 1])
+    ]
+
+
+def test_executemany_with_dict_params_converts() -> None:
+    raw = RecordingCursor()
+    rows = iter([{"a": 1, "b": 2}, {"b": 4, "a": 3}])
+    FormatStyleCursor(raw).executemany("INSERT INTO T VALUES (%(a)s, %(b)s)", rows)
+    assert raw.calls == [("executemany", "INSERT INTO T VALUES (?, ?)", [[1, 2], [3, 4]])]
+
+
+def test_dict_params_with_a_missing_name() -> None:
     cursor = FormatStyleCursor(RecordingCursor())
-    params = {"a": 1}
-    with pytest.raises(Database.NotSupportedError, match="pyformat"):
-        if method == "execute":
-            cursor.execute("SELECT %(a)s", params)
-        else:
-            cursor.executemany("SELECT %(a)s", [params])
+    with pytest.raises(Database.ProgrammingError, match=r"%\(b\)s"):
+        cursor.execute("SELECT %(a)s, %(b)s", {"a": 1})
 
 
-def test_dict_params_become_django_not_supported_error() -> None:
+def test_dict_params_with_a_plain_placeholder() -> None:
+    cursor = FormatStyleCursor(RecordingCursor())
+    with pytest.raises(Database.ProgrammingError, match="cannot be mixed"):
+        cursor.execute("SELECT %(a)s, %s", {"a": 1})
+
+
+def test_dict_params_become_django_programming_error() -> None:
     cursor = FormatStyleCursor(RecordingCursor())
     with (
-        pytest.raises(django.db.NotSupportedError, match="pyformat"),
+        pytest.raises(django.db.ProgrammingError, match="cannot be mixed"),
         connection.wrap_database_errors,
     ):
-        cursor.execute("SELECT %(a)s", {"a": 1})
+        cursor.execute("SELECT %(a)s, %s", {"a": 1})
+
+
+def test_last_executed_query_with_dict_params() -> None:
+    sql = "INSERT INTO T (A, B) VALUES (%(root)s, %(root2)s)"
+    assert connection.ops.last_executed_query(None, sql, {"root": 2, "root2": "x'y"}) == (
+        "INSERT INTO T (A, B) VALUES (2, 'x''y')"
+    )
 
 
 @pytest.mark.parametrize(
@@ -232,7 +257,7 @@ def test_features() -> None:
     assert features.uses_savepoints is True
     assert features.can_release_savepoints is True
     assert features.supports_timezones is False
-    assert features.supports_paramstyle_pyformat is False
+    assert features.supports_paramstyle_pyformat is True
     assert features.has_native_boolean_field is True
     assert features.minimum_database_version == (7, 5)
 

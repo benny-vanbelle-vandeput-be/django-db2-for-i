@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**73 flags enabled on Django 6.1.**
+**74 flags enabled on Django 6.1.**
 
-## Enabled (73)
+## Enabled (74)
 
 On in at least one supported Django version.
 
@@ -67,6 +67,7 @@ On in at least one supported Django version.
 | `supports_on_delete_db_default` | `on_delete=DB_SET_DEFAULT` (Django 6.1+). | – | – | ✅ |
 | `supports_on_delete_db_null` | `on_delete=DB_SET_NULL` (Django 6.1+). | – | – | ✅ |
 | `supports_over_clause` | Window functions (`Window`, `OVER (...)`). | ✅ | ✅ | ✅ |
+| `supports_paramstyle_pyformat` | Raw SQL may use `%(name)s` parameters with a dict. | ✅ | ✅ | ✅ |
 | `supports_parentheses_in_compound` | Parts of a compound query may have their own `ORDER BY` / slice. | ✅ | ✅ | ✅ |
 | `supports_partial_indexes` | Indexes and unique constraints with a `condition`. | ✅ | ✅ | ✅ |
 | `supports_partially_nullable_unique_constraints` | Multi-column unique constraints where some columns are NULL. | ✅ | ✅ | ✅ |
@@ -90,7 +91,7 @@ On in at least one supported Django version.
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (54)
+## Intentionally off (53)
 
 Off on purpose, with the reason.
 
@@ -140,7 +141,6 @@ Off on purpose, with the reason.
 | `supports_non_deterministic_collations` | Non-deterministic (for example case-insensitive) collations in `db_collation`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `supports_nulls_distinct_unique_constraints` | `UniqueConstraint(nulls_distinct=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `NULLS DISTINCT` / `NULLS NOT DISTINCT` on an index or a constraint (SQL0199, probe `qtemp_unique_nulls`, IBMI_NOTES). |
 | `supports_order_by_nulls_modifier` | `NULLS FIRST` / `NULLS LAST` in `ORDER BY` (`F('x').asc(nulls_first=True)`). | ❌ | ❌ | ❌ | Db2 for i rejects `NULLS FIRST` / `NULLS LAST` (SQL0199, probe queries); Django's `ORDER BY x IS NOT NULL, x` emulation is used. |
-| `supports_paramstyle_pyformat` | Raw SQL may use `%(name)s` parameters with a dict. | ❌ | ❌ | ❌ | The driver takes positional `?` markers only. |
 | `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | ❌ | ❌ | ❌ | Db2 for i's JSON functions cannot read a root scalar (NULL; probe `json_functions`); it is stored and read back, but key lookups on it give nothing. |
 | `supports_stored_generated_columns` | `GeneratedField(db_persist=True)`, stored generated columns. | ❌ | ❌ | ❌ | `GENERATED ALWAYS AS` takes only special registers (`USER`, ...), `DATA CHANGE OPERATION`, row change timestamps and identities, no expression over other columns (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `supports_tablespaces` | `db_tablespace` on models, fields and indexes. | ❌ | ❌ | ❌ | IBM i has no tablespaces: storage is single-level. `CREATE TABLE ... IN <name>` is accepted and means nothing (probe `phase7_flags`). |

@@ -736,3 +736,25 @@ def test_a_decimal_value_wider_than_its_field_comes_back_exact(live, empty) -> N
         x=Value(value, output_field=DecimalField(max_digits=5, decimal_places=2))
     )
     assert annotated.values_list("x", flat=True).get() == value
+
+
+def test_raw_sql_with_named_parameters(live, empty) -> None:
+    """%(name)s placeholders with a dict (supports_paramstyle_pyformat): a cursor,
+    executemany and Model.objects.raw(), a name used twice, a literal %%."""
+    table = live.ops.quote_name(Author._meta.db_table)
+    name = live.ops.quote_name("name")
+    with live.cursor() as cursor:
+        cursor.executemany(
+            f"INSERT INTO {table} ({name}) VALUES (%(name)s)",
+            [{"name": "Ann 100%"}, {"name": "Bob"}, {"name": "Cy"}],
+        )
+        cursor.execute(
+            f"SELECT {name} FROM {table} WHERE {name} = %(a)s OR {name} = %(b)s "
+            f"OR {name} LIKE '%%100%%' AND {name} <> %(b)s ORDER BY {name}",
+            {"b": "Bob", "a": "Cy"},
+        )
+        assert [row[0] for row in cursor.fetchall()] == ["Ann 100%", "Bob", "Cy"]
+    authors = Author.objects.raw(
+        f"SELECT * FROM {table} WHERE {name} = %(first)s", params={"first": "Bob"}
+    )
+    assert [author.name for author in authors] == ["Bob"]

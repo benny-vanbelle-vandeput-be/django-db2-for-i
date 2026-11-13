@@ -96,7 +96,7 @@
     "supports_nulls_distinct_unique_constraints": false,
     "supports_order_by_nulls_modifier": false,
     "supports_over_clause": true,
-    "supports_paramstyle_pyformat": false,
+    "supports_paramstyle_pyformat": true,
     "supports_parentheses_in_compound": true,
     "supports_partial_indexes": true,
     "supports_partially_nullable_unique_constraints": true,

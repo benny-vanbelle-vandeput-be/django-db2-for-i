@@ -125,8 +125,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     has_zoneinfo_database = False
     # Constraints are checked per statement; nothing is deferrable.
     supports_forward_references = False
-    # Django's %s placeholders are converted to ?; dict params are refused.
-    supports_paramstyle_pyformat = False
+    # Django's %s placeholders, and %(name)s with a dict, are converted to ?
+    # (base.FormatStyleCursor).
+    supports_paramstyle_pyformat = True
     # A second connection works on the same test library (phase 7, answer 6).
     # PUB400 allows up to three connections for lock and concurrency tests
     # (#236); a Django test that needs more is skipped with that reason (none

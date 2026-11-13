@@ -125,7 +125,6 @@ supports_logical_xor.off = "Db2 for i has no logical `XOR` operator (SQL0104, SQ
 supports_order_by_nulls_modifier.description = "`NULLS FIRST` / `NULLS LAST` in `ORDER BY` (`F('x').asc(nulls_first=True)`)."
 supports_order_by_nulls_modifier.off = "Db2 for i rejects `NULLS FIRST` / `NULLS LAST` (SQL0199, probe queries); Django's `ORDER BY x IS NOT NULL, x` emulation is used."
 supports_paramstyle_pyformat.description = "Raw SQL may use `%(name)s` parameters with a dict."
-supports_paramstyle_pyformat.off = "The driver takes positional `?` markers only."
 supports_tablespaces.description = "`db_tablespace` on models, fields and indexes."
 supports_tablespaces.off = "IBM i has no tablespaces: storage is single-level. `CREATE TABLE ... IN <name>` is accepted and means nothing (probe `phase7_flags`)."
 supports_timezones.description = "Datetimes are stored with their time zone."

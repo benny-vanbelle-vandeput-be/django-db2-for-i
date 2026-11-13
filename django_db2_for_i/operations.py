@@ -34,7 +34,7 @@ import datetime as dt
 import logging
 import uuid
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
@@ -276,10 +276,14 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
         """
         if params is None:
             return sql  # sent as is: a % in it is a literal %
-        if not isinstance(params, (list, tuple)):
+        if isinstance(params, Mapping):
+            values = {name: _logged_literal(value) for name, value in params.items()}
+        elif isinstance(params, (list, tuple)):
+            values = tuple(_logged_literal(value) for value in params)
+        else:
             return super().last_executed_query(cursor, sql, params)
         try:
-            return sql % tuple(_logged_literal(value) for value in params)
+            return sql % values
         except (TypeError, ValueError):
             return super().last_executed_query(cursor, sql, params)
 
