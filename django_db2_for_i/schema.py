@@ -27,6 +27,7 @@ import math
 import re
 from decimal import Decimal
 
+from django.core.exceptions import ImproperlyConfigured
 from django.db import (
     DatabaseError,
     DataError,
@@ -37,7 +38,7 @@ from django.db import (
 )
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
-from . import inquiry
+from . import fields, inquiry
 from .expressions import NVARCHAR_MAX
 
 
@@ -633,7 +634,62 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             value = db_default.output_field.get_db_prep_save(value, self.connection)
         return self._column_default_sql(field) % self.prepare_default(value), []
 
+    # --- IBM i system names of tables and indexes (fields.py, #253) -------------
+    # "<name> FOR SYSTEM NAME <SYS>" right after the quoted SQL name, in CREATE TABLE
+    # and CREATE INDEX (probe qtemp_system_names). Only for an SQL name longer than
+    # the system name limit: a shorter name is its own system name (SQL7029).
+
+    def _system_name_clause(self, sql_name: str, system: str, what: str) -> str:
+        if not system or system == sql_name.upper():
+            return ""
+        if len(sql_name) <= self.connection.capabilities.max_system_name_length:
+            raise ImproperlyConfigured(
+                f"The {what} {sql_name!r} is its own IBM i system name; Db2 for i refuses "
+                f"another one ({system!r}, SQL7029)."
+            )
+        return f" FOR SYSTEM NAME {system}"
+
+    def table_sql(self, model):
+        sql, params = super().table_sql(model)
+        table = model._meta.db_table
+        clause = self._system_name_clause(table, fields.table_system_name(model), "table")
+        if clause:
+            quoted = self.quote_name(table)
+            sql = sql.replace(f"{quoted} (", f"{quoted}{clause} (", 1)
+        return sql, params
+
+    def _with_index_system_name(self, statement, index):
+        clause = self._system_name_clause(index.name, fields.index_system_name(index), "index")
+        if clause and statement is not None:
+            statement.template = statement.template.replace("%(name)s", f"%(name)s{clause}", 1)
+        return statement
+
+    def add_index(self, model, index):
+        if index.contains_expressions and not self.connection.features.supports_expression_indexes:
+            return None
+        statement = self._with_index_system_name(index.create_sql(model, self), index)
+        self.execute(statement, params=None)
+
+    def _model_indexes_sql(self, model):
+        output = super()._model_indexes_sql(model)
+        named = {
+            self.quote_name(index.name): index
+            for index in model._meta.indexes
+            if fields.index_system_name(index)
+        }
+        for statement in output if named else ():
+            index = named.get(str(getattr(statement, "parts", {}).get("name", "")))
+            if index is not None:
+                self._with_index_system_name(statement, index)
+        return output
+
     def _iter_column_sql(self, column_db_type, params, model, field, *args, **kwargs):
+        # The column's IBM i system name (fields.py, #253): "<column> FOR COLUMN
+        # <system name> <type> ...", in CREATE TABLE and ADD COLUMN alike (probe
+        # qtemp_system_names). None for a column whose name already is it.
+        system = fields.system_name(field)
+        if system and system != field.column.upper():
+            yield f"FOR COLUMN {system}"
         for part in super()._iter_column_sql(column_db_type, params, model, field, *args, **kwargs):
             # db_default=None: no default, rather than DEFAULT NULL (which a
             # NOT NULL column would reject).

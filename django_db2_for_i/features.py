@@ -66,10 +66,6 @@ REASON_TRUNC_NULL_ZONEINFO = (
     "before Django 6.1, Trunc of a NULL datetime with USE_TZ raises ValueError when "
     "has_zoneinfo_database is off; 6.1 lets the backend keep the NULL"
 )
-REASON_SINGLE_BYTE_CHR = (
-    "CHR and ASCII on Db2 for i work on single-byte characters; a non-ASCII character gives a "
-    "substitute character (probes db_functions, db_function_args)"
-)
 
 REASON_NO_JSON_CHECK = (
     "Db2 for i refuses CHECK (C IS JSON) on an NCLOB (SQL0546, probe lib_json_check), so "
@@ -86,6 +82,20 @@ REASON_JSON_IN_CHECK_OR_INDEX = (
 REASON_JSON_KEY_DOUBLE_QUOTE = (
     "a Db2 for i JSON path cannot hold a key with a double quote in any form (probe "
     "json_lookups); the backend raises NotSupportedError"
+)
+REASON_READERS_WAIT_FOR_ROW_LOCKS = (
+    "under *CS a plain read of a row that another job locked with select_for_update() waits "
+    "for the lock (the table's record wait, 60 s by default) and then fails with SQL0913; "
+    "PostgreSQL readers do not wait (probes lib_select_for_update, record_wait)"
+)
+REASON_JOIN_LOCKED_WITHOUT_FOR_UPDATE = (
+    "a query with a join cannot take FOR UPDATE (SQL0511): its row locks are written WITH RS "
+    "USE AND KEEP EXCLUSIVE LOCKS, which locks every joined table, so the SQL has no "
+    "FOR UPDATE OF"
+)
+REASON_FOR_UPDATE_TEXT = (
+    "the test looks for FOR UPDATE right before WHERE (for_update_after_from, SQL Server's "
+    "form); Db2 for i writes FOR UPDATE ... WITH RS at the end"
 )
 
 
@@ -117,8 +127,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_forward_references = False
     # Django's %s placeholders are converted to ?; dict params are refused.
     supports_paramstyle_pyformat = False
-    # PUB400 limits connections per client.
-    test_db_allows_multiple_connections = False
+    # A second connection works on the same test library (phase 7, answer 6).
+    # PUB400 allows up to three connections for lock and concurrency tests
+    # (#236); a Django test that needs more is skipped with that reason (none
+    # in the supported modules so far: basic and transactions use one or two).
+    test_db_allows_multiple_connections = True
     # DDL is not parameterized: defaults are written as literals.
     requires_literal_defaults = True
     # Columns are nullable unless NOT NULL is given; no bare NULL keyword.
@@ -176,7 +189,17 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # compound_parts).
     supports_parentheses_in_compound = True
     supports_slicing_ordering_in_compound = True
-    supports_select_for_update_with_limit = False
+    # select_for_update(): FOR UPDATE [OF <columns>] WITH RS [SKIP LOCKED DATA]. Under
+    # *CS a plain FOR UPDATE locks nothing once Django has fetched the rows; WITH RS
+    # keeps the row locks until the transaction ends (lib_select_for_update, #237).
+    # A query with a join cannot take FOR UPDATE (SQL0511): it is written
+    # WITH RS USE AND KEEP EXCLUSIVE LOCKS, which locks the rows of every joined
+    # table (compiler.py). No per-statement no-wait exists (SQL0104), so nowait stays off.
+    has_select_for_update = True
+    has_select_for_update_skip_locked = True
+    has_select_for_update_of = True
+    select_for_update_of_column = True
+    supports_select_for_update_with_limit = True
     # LISTAGG(DISTINCT x, ',') (probes listagg, phase6_flags).
     supports_aggregate_distinct_multiple_argument = True
     supports_bit_aggregations = False
@@ -313,6 +336,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "PositiveSmallIntegerField": "SmallIntegerField",
         }
 
+    # UUID4(): LOWER(REPLACE(GENERATE_UUID(), '-', '')), where the server has
+    # GENERATE_UUID() (probe phase7_flags: version 4). db_default=UUID4() stays off.
+    @cached_property
+    def supports_uuid4_function(self) -> bool:
+        return self.connection.capabilities.has_generate_uuid
+
     # JSON: an NCLOB with Db2 for i's JSON functions (expressions.py, probes
     # json_functions, json_lookups), where the server has them.
     @cached_property
@@ -383,6 +412,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_with_timezone_minus_no_offset",
             "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_func_with_timezone",
             "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_timezone_applied_before_truncation",
+            # datetimes() / the database's own conversion in another time zone.
+            "datetimes.tests.DateTimesTests.test_21432",
+            "timezones.tests.NewDatabaseTests.test_query_convert_timezones",
         },
         # str(qs.query).count("extract") with a year lookup against an expression.
         REASON_EXTRACT_IN_SQL: {
@@ -396,11 +428,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         REASON_TRUNC_KIND_REFUSED: {
             "db_functions.datetime.test_extract_trunc.DateFunctionTests.test_trunc_lookup_name_sql_injection",
             "db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_lookup_name_sql_injection",
-        },
-        # Chr(ord("É")) and Ord on "Élena".
-        REASON_SINGLE_BYTE_CHR: {
-            "db_functions.text.test_chr.ChrTests.test_non_ascii",
-            "db_functions.text.test_ord.OrdTests.test_basic",
         },
         # sequence_reset_sql() inside TestCase's transaction: the restart waits
         # for a commit that never comes (operations.py, SQL0910).
@@ -525,6 +552,24 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         },
         # assertIn("RETURNING ...", sql). The other tests of the module read the returned
         # values, and pass.
+        REASON_READERS_WAIT_FOR_ROW_LOCKS: {
+            "select_for_update.tests.SelectForUpdateTests.test_block",
+        },
+        REASON_JOIN_LOCKED_WITHOUT_FOR_UPDATE: {
+            f"select_for_update.tests.SelectForUpdateTests.test_for_update_sql_{name}"
+            for name in (
+                "generated_of",
+                "model_inheritance_generated_of",
+                "model_inheritance_nested_ptr_generated_of",
+                "model_inheritance_ptr_generated_of",
+                "model_proxy_generated_of",
+                "multilevel_model_inheritance_ptr_generated_of",
+                "related_model_inheritance_generated_of",
+            )
+        },
+        REASON_FOR_UPDATE_TEXT: {
+            "select_for_update.tests.SelectForUpdateTests.test_for_update_after_from",
+        },
         REASON_FINAL_TABLE_NOT_RETURNING: {
             "queries.test_db_returning.ReturningValuesTests.test_insert_returning",
             "queries.test_db_returning.ReturningValuesTests.test_insert_returning_multiple",

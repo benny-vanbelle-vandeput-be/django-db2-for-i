@@ -20,8 +20,9 @@ def _fresh_cache():
     capabilities.clear_cache()
 
 
-def no_probes(sql: str) -> bool:
-    raise AssertionError(f"unexpected probe: {sql}")
+def probes_pass(sql: str) -> bool:
+    """Every targeted probe succeeds: a server at the level the profile assumes."""
+    return True
 
 
 # --- Profiles --------------------------------------------------------------------
@@ -36,6 +37,7 @@ def test_profile_7_5() -> None:
         has_offset_fetch=True,
         has_json_functions=True,
         can_suppress_inquiry_messages=True,
+        has_generate_uuid=True,
         max_name_length=128,
         max_system_name_length=10,
     )
@@ -109,14 +111,14 @@ def test_profile_for_release_below_minimum(release: tuple[int, int]) -> None:
 
 
 def test_detect_7_5() -> None:
-    caps = capabilities.detect("07.05.0015", no_probes)
+    caps = capabilities.detect("07.05.0015", probes_pass)
     assert caps == capabilities.from_profile("7.5")
     assert caps.source == "detected 07.05.0015 (profile 7.5)"
 
 
 def test_detect_newer_release_warns(caplog: pytest.LogCaptureFixture) -> None:
     with caplog.at_level("WARNING", logger="django_db2_for_i"):
-        caps = capabilities.detect("07.06.0000", no_probes)
+        caps = capabilities.detect("07.06.0000", probes_pass)
     assert caps.release == (7, 6)
     assert caps.has_boolean_type is True
     assert "IBM i 7.6 has no capability profile yet; using profile 7.5" in caplog.text
@@ -124,13 +126,13 @@ def test_detect_newer_release_warns(caplog: pytest.LogCaptureFixture) -> None:
 
 def test_detect_known_release_does_not_warn(caplog: pytest.LogCaptureFixture) -> None:
     with caplog.at_level("WARNING", logger="django_db2_for_i"):
-        capabilities.detect("07.05.0015", no_probes)
+        capabilities.detect("07.05.0015", probes_pass)
     assert caplog.text == ""
 
 
 def test_detect_unsupported_release() -> None:
     with pytest.raises(CapabilityError, match=re.escape("IBM i 7.4 is not supported")):
-        capabilities.detect("07.04.0000", no_probes)
+        capabilities.detect("07.04.0000", probes_pass)
 
 
 def test_detect_runs_targeted_probes(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -170,12 +172,12 @@ def test_detect_caches_per_server(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_detect_overrides_after_cache() -> None:
-    capabilities.detect("07.05.0015", no_probes, cache_key="h")
-    caps = capabilities.detect("07.05.0015", no_probes, {"has_boolean_type": False}, "h")
+    capabilities.detect("07.05.0015", probes_pass, cache_key="h")
+    caps = capabilities.detect("07.05.0015", probes_pass, {"has_boolean_type": False}, "h")
     assert caps.has_boolean_type is False
     assert caps.source == "detected 07.05.0015 (profile 7.5), overrides: has_boolean_type"
     # The cached detection itself is unchanged.
-    assert capabilities.detect("07.05.0015", no_probes, cache_key="h").has_boolean_type
+    assert capabilities.detect("07.05.0015", probes_pass, cache_key="h").has_boolean_type
 
 
 # --- OPTIONS -----------------------------------------------------------------------
@@ -218,3 +220,12 @@ def test_config_overrides_only() -> None:
 def test_config_invalid(value, message: str) -> None:
     with pytest.raises(CapabilityError, match=message):
         CapabilityConfig.from_option(value).build()
+
+
+def test_generate_uuid_is_detected_by_calling_it() -> None:
+    """GENERATE_UUID() came with a Db2 PTF Group (7.5 level 8): detected at connect."""
+    (probe,) = [p for p in capabilities.TARGETED_PROBES if p.capability == "has_generate_uuid"]
+    assert probe.sql == "VALUES GENERATE_UUID()"
+    caps = capabilities.detect("07.05.0015", lambda sql: "GENERATE_UUID" not in sql)
+    assert caps.has_generate_uuid is False
+    assert capabilities.detect("07.05.0015", lambda sql: True).has_generate_uuid is True

@@ -1,7 +1,9 @@
 """Database functions where Db2 for i differs from Django's SQL (no server needed)."""
 
+import dataclasses
+
 import pytest
-from django.db import NotSupportedError
+from django.db import NotSupportedError, connection, connections
 from django.db.models import F, Value
 from django.db.models.functions import (
     MD5,
@@ -21,6 +23,7 @@ from django.db.models.functions import (
     RPad,
 )
 
+from django_db2_for_i import compat
 from tests.testapp.models import Author, Book
 
 
@@ -158,3 +161,39 @@ def test_percent_rank_and_cume_dist_are_doubles() -> None:
         )
     rank = select_of(Book.objects.annotate(x=Window(Rank(), order_by=order)).values("x"))[0]
     assert rank == 'RANK() OVER (ORDER BY "TESTAPP_BOOK"."PAGES" ASC)'
+
+
+uuid4_only = pytest.mark.skipif(compat.UUID4 is None, reason="UUID4() is new in Django 6.1")
+
+
+@pytest.fixture
+def generate_uuid(request):
+    """The capability has_generate_uuid on or off for this test (the profile has it on)."""
+    wrapper = connections["default"]
+    original = wrapper.capabilities
+    wrapper._capabilities = dataclasses.replace(original, has_generate_uuid=request.param)
+    wrapper.features.__dict__.pop("supports_uuid4_function", None)
+    try:
+        yield request.param
+    finally:
+        wrapper._capabilities = original
+        wrapper.features.__dict__.pop("supports_uuid4_function", None)
+
+
+@uuid4_only
+@pytest.mark.parametrize("generate_uuid", [True], indirect=True)
+def test_uuid4_is_generate_uuid_as_32_lowercase_digits(generate_uuid) -> None:
+    assert connection.features.supports_uuid4_function is True
+    sql, params = select_of(Author.objects.annotate(x=compat.UUID4()).values("x"))
+    assert (sql, params) == ("LOWER(REPLACE(GENERATE_UUID(), '-', ''))", ())
+
+
+@uuid4_only
+@pytest.mark.parametrize("generate_uuid", [False], indirect=True)
+def test_uuid4_without_generate_uuid_raises(generate_uuid) -> None:
+    assert connection.features.supports_uuid4_function is False
+    queryset = Author.objects.annotate(x=compat.UUID4()).values("x")
+    with pytest.raises(
+        NotSupportedError, match=r"not supported on this database backend\..*SF99950"
+    ):
+        select_of(queryset)

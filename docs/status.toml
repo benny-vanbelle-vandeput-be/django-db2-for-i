@@ -277,7 +277,7 @@ prs = [250]
 
 [[phases.steps]]
 step = "5: the backend branch (select_for_update, multiple connections, system names, #82, #95, more modules)"
-status = "planned"
+status = "in progress"
 
 [[phases.steps]]
 step = "6: the final cycle on 6.1, 6.0 and 5.2"
@@ -395,6 +395,54 @@ labels = [
 ]
 note = "split into labels Q1–Q5 because of its size"
 
+[[modules]]
+module = "select_for_update"
+status = "done"
+
+[[modules]]
+module = "annotations"
+status = "done"
+
+[[modules]]
+module = "expressions_case"
+status = "done"
+
+[[modules]]
+module = "delete"
+status = "done"
+
+[[modules]]
+module = "update"
+status = "done"
+
+[[modules]]
+module = "select_related"
+status = "done"
+
+[[modules]]
+module = "prefetch_related"
+status = "done"
+
+[[modules]]
+module = "many_to_many"
+status = "done"
+
+[[modules]]
+module = "get_or_create"
+status = "done"
+
+[[modules]]
+module = "dates"
+status = "done"
+
+[[modules]]
+module = "datetimes"
+status = "done"
+
+[[modules]]
+module = "timezones"
+status = "done"
+
 [[tracks]]
 text = "Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82))."
 
@@ -404,5 +452,3 @@ text = "Development runs on the shared PUB400 system; a dedicated IBM i is neede
 [[tracks]]
 text = "The LOB limit of a multi-row statement is measured for 1 and 2 LOB columns only (about 1,024 markers); with 3 and 5 own IBM i tests show that the batches work and that 1,080 or 1,100 markers are refused, not where the limit lies; a QTEMP probe in phase 7 ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#returning-bulk-inserts-indexes-unique-nulls-cursors-phase-5-step-0))."
 
-[[tracks]]
-text = "`select_for_update()` is off until phase 7: verified with two jobs on PUB400 (`lib_select_for_update`, #237), it needs `FOR UPDATE ... WITH RS`; `nowait` stays off ([phase 7](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/phases/phase-7.md))."

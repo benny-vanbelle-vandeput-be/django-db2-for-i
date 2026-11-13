@@ -30,12 +30,110 @@ DATABASES = {
 | `login_timeout` | `10` | Seconds to wait for the connection. |
 | `driver` | `"pyodbc"` | Driver implementation; `pyodbc` is the only one. |
 | `driver_attributes` | `{}` | Extra ODBC connection keywords, e.g. `{"XDYNAMIC": "1"}`. Keywords the backend sets itself (credentials, `DBQ`, `SSL`, `CMT`, `UNICODESQL`, `CCSID`) cannot be overridden. |
-| `capabilities` | detected | What the server can do; detected from the server version on connect. A profile name (`"7.5"`) or a mapping with `"profile"` and single overrides. Mainly for tests without a server. |
+| `capabilities` | detected | What the server can do; detected from the server version on connect. A profile name (`"7.5"`) or a mapping with `"profile"` and single overrides. Mainly for tests without a server. One capability is checked with a statement at the first connection to a server: `has_generate_uuid` (`GENERATE_UUID()`, for `UUID4()`; IBM i 7.5 Db2 PTF Group SF99950 level 8). The `"7.5"` profile assumes it; on an older PTF Group with a configured profile, add `"has_generate_uuid": False`. |
 | `suppress_inquiry_messages` | `True` | While a migration or schema editor removes or alters a field, the job does not send inquiry message CPA32B2, so `DROP COLUMN`, narrowing column changes and `SET NOT NULL` work without a system reply list entry; a narrowing change that would truncate or round a value is refused first. `False` keeps CPA32B2 for migrations too. See [IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data). |
 | `inquiry_message_reply` | not set | `"*SYSRPYL"`, `"*DFT"` or `"*RQD"`: the IBM i job's inquiry message reply (`INQMSGRPY`) for the whole connection. The fallback where `suppress_inquiry_messages` cannot be used (`OVERRIDE_QAQQINI` not allowed or failing). With `"*SYSRPYL"` (plus a system reply list entry) CPA32B2 is answered outside migrations too, or with `suppress_inquiry_messages` set to `False`, see [IBM i requirements](IBM-i-Requirements.md#alter-table-that-may-lose-data). The value the job had is read at connect and restored at close. Not set: the backend never changes the job attribute. |
 
 Unknown option names raise `ImproperlyConfigured`, so typos do not go
 unnoticed.
+
+## IBM i system names
+
+Every table and column on IBM i has, next to its SQL name, a **system name** of at
+most 10 characters: the name RPG and CL programs, `DSPFD` and most IBM i tools
+use. A name of at most 10 characters (letters, digits, `_`) is its own system
+name. For a longer one, IBM i makes one up (`DELIVERY_ADDRESS` becomes
+something like `DELIV00001`), unless you set it.
+
+**Columns:** give the field type the mixin from `django_db2_for_i.fields` and
+pass `db_system_name`:
+
+```python
+from django.db import models
+from django_db2_for_i.fields import SystemNameMixin, with_system_name
+
+
+class AddressField(SystemNameMixin, models.CharField):
+    pass
+
+
+SystemNameIntegerField = with_system_name(models.IntegerField, __name__)
+
+
+class Customer(models.Model):
+    delivery_address = AddressField(max_length=100, db_system_name="DLVADDR")
+    amount = SystemNameIntegerField(db_system_name="QTY")
+```
+
+- The backend writes `"DELIVERY_ADDRESS" FOR COLUMN DLVADDR ...` in
+  `CREATE TABLE` and `ALTER TABLE ... ADD COLUMN`. The name is kept in
+  migrations (`deconstruct()`), so define the field type in a module of your
+  own, at module level.
+- A system name has at most 10 characters: letters, digits or `_`, starting
+  with a letter; it is stored in upper case. Any field with a `db_system_name`
+  attribute counts, also a mixin of your own.
+- Plain Django fields get no system name from the backend, as before.
+- The checks (`manage.py check --database default`, `migrate`) report an
+  invalid name (`django_db2_for_i.E001`) and two columns of one table with the
+  same system name (`django_db2_for_i.E002`); a short column name counts as
+  its own system name.
+- Changing `db_system_name` of an existing column gives an `AlterField`
+  migration that changes nothing in the database: Db2 for i has no statement
+  to rename a column (see
+  [Known limitations](Known-Limitations.md#renaming-a-column)).
+
+**Tables:** add `"django_db2_for_i"` to `INSTALLED_APPS` (anywhere in the list)
+and set `db_system_name` in the model's `Meta`:
+
+```python
+INSTALLED_APPS = [
+    ...,
+    "django_db2_for_i",  # Meta.db_system_name
+]
+
+
+class Customer(models.Model):
+    class Meta:
+        db_table = "customer_addresses"
+        db_system_name = "CUSTADDR"
+```
+
+- The backend writes `CREATE TABLE "CUSTOMER_ADDRESSES" FOR SYSTEM NAME CUSTADDR (...)`;
+  `CreateModel` migrations keep the option.
+- Only for a `db_table` longer than 10 characters: a shorter name is its own
+  system name, and Db2 for i refuses another one (SQL7029).
+- Renaming the table (`AlterModelTable`) keeps the system name. Changing only
+  `db_system_name` later is not picked up by `makemigrations` (see
+  [Known limitations](Known-Limitations.md#changing-the-system-name-of-a-table)).
+
+**Indexes:** declare the index in `Meta.indexes` with
+`django_db2_for_i.indexes.SystemNameIndex`:
+
+```python
+from django_db2_for_i.indexes import SystemNameIndex
+
+
+class Customer(models.Model):
+    city = models.CharField(max_length=50)
+
+    class Meta:
+        indexes = [
+            SystemNameIndex(fields=["city"], name="customer_city_idx", db_system_name="CUSTCITY"),
+        ]
+```
+
+- The backend writes `CREATE INDEX "CUSTOMER_CITY_IDX" FOR SYSTEM NAME CUSTCITY ON ...`;
+  the name is kept in migrations, and changing it gives a migration that
+  creates the index again. Any index with a `db_system_name` attribute
+  counts, also a subclass of your own.
+- Indexes Django names itself (`db_index=True`, foreign keys, `unique=True`)
+  keep the system name IBM i makes up; declare the index in `Meta.indexes` to
+  choose it. Unique and other constraints are not `*FILE` objects and have no
+  system name.
+- The checks report an invalid name or one for a name of at most 10
+  characters (`django_db2_for_i.E003`), and two tables or indexes with the
+  same system name (`django_db2_for_i.E004`): both are `*FILE` objects in
+  one library, so Db2 for i would refuse the second (SQL0601).
 
 ## Connection defaults
 

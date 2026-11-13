@@ -142,7 +142,7 @@ Open tracks:
 > statement, also with conflict handling (a `MERGE`). Nullable unique
 > constraints and partial and expression indexes work, and so do window
 > functions, `JSONField`, the database functions and, on Django 6.1, DB-level
-> `on_delete`. `select_for_update()` is not available yet. Not for
+> `on_delete`; `select_for_update()` works without `nowait`. Not for
 > production use; APIs and settings may change between beta releases.
 
 ## What it is

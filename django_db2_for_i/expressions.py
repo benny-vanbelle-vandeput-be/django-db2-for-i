@@ -132,6 +132,11 @@ Where Db2 for i differs from Django's default SQL (probe ``db_functions``):
 - ``Length``: ``LENGTH`` counts UTF-16 code units (an emoji is 2);
   ``CHARACTER_LENGTH`` counts characters.
 - ``Log(a, b)``: Db2 for i's ``LOG`` takes one argument, so ``LN(b) / LN(a)``.
+- ``Chr`` and ``Ord``: Db2 for i's ``CHR`` and ``ASCII`` work on single bytes, so
+  both go through UTF-16 (CCSID 1200): ``Chr`` builds the code unit, or above U+FFFF
+  the surrogate pair, and interprets it as ``GRAPHIC``; ``Ord`` reads the first two
+  code units (a ``CAST`` to ``VARGRAPHIC(2)``, which also works for an ``NCLOB``) and
+  combines a surrogate pair (probe ``qtemp_supplementary_chars``).
 - ``Concat``: ``CONCAT`` takes two arguments (Django's ``ConcatPair`` gives it
   two) and is NULL when either is; Django's ``Concat`` treats NULL as empty
   text, so each argument that can be NULL (all but a non-NULL ``Value`` and an
@@ -216,6 +221,7 @@ from django.db.models.expressions import (
     Case,
     Col,
     Combinable,
+    CombinedExpression,
     DurationExpression,
     Exists,
     Expression,
@@ -256,6 +262,7 @@ from django.db.models.functions import (
     SHA512,
     ATan2,
     Cast,
+    Chr,
     Coalesce,
     ConcatPair,
     CumeDist,
@@ -267,6 +274,7 @@ from django.db.models.functions import (
     Log,
     LPad,
     NthValue,
+    Ord,
     PercentRank,
     Repeat,
     Reverse,
@@ -286,7 +294,7 @@ from django.db.models.lookups import (
 from django.db.models.sql.query import Query
 from django.db.models.sql.where import WhereNode
 
-from .compat import DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON, JSONIn, StringAgg
+from .compat import DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON, UUID4, JSONIn, StringAgg
 
 SMALLINT_RANGE = (-(2**15), 2**15 - 1)
 INTEGER_RANGE = (-(2**31), 2**31 - 1)
@@ -296,12 +304,16 @@ DECIMAL_MAX_PRECISION = 63
 # Largest NVARCHAR(n) a cast accepts with a value of that length (probe
 # string_limits: NVARCHAR(16382) and up fail with SQL0901).
 NVARCHAR_MAX = 16370
+# VARBINARY takes 1 to 32,740 bytes (IBM's SQL reference for 7.5; a longer bytes
+# Value is cast to BLOB).
+VARBINARY_MAX = 32740
 STRING_BUCKETS = (32, 256, 1024, 4000, NVARCHAR_MAX)
 
 SUPPORTED_TYPES = frozenset(
     {
         "CharField",
         "TextField",
+        "BinaryField",
         "BooleanField",
         "SmallIntegerField",
         "IntegerField",
@@ -436,11 +448,24 @@ def value_cast_type(
             # with CWB0111; probe long_string_params), so its own bucket.
             return string_type(utf16_length(value))
         return f"NVARCHAR({max_length})"
+    if internal == "BinaryField":
+        # VARBINARY up to its limit, a BLOB above it; the length of the value
+        # (an empty one as 1, VARBINARY(0) does not exist).
+        length = max(len(value) if value is not None else 1, 1)
+        return f"VARBINARY({length})" if length <= VARBINARY_MAX else f"BLOB({length})"
     if internal == "JSONField":
         # The JSON text (JSONField.get_db_prep_value), as for a TextField.
         return string_type(utf16_length(value) if value is not None else 0)
     if isinstance(output_field, DecimalField) and output_field.max_digits is None:
         return decimal_type(Decimal(value)) if value is not None else "DECIMAL(31, 0)"
+    if isinstance(output_field, DecimalField) and value is not None:
+        # More digits than the field: the driver refuses the marker (22003 / 22001),
+        # and a narrowing CAST in SQL gives NULL (probe decimal_values, #95). Its own
+        # DECIMAL(p, s) keeps it exact, as Django's other backends do.
+        precision, scale = decimal_digits(Decimal(value))
+        places = output_field.decimal_places or 0
+        if scale > places or precision - scale > output_field.max_digits - places:
+            return decimal_type(Decimal(value))
     if not explicit and type(output_field) is IntegerField and isinstance(value, int):
         if INTEGER_RANGE[0] <= value <= INTEGER_RANGE[1]:
             return "INTEGER"
@@ -530,6 +555,43 @@ def case_as_db2_for_i(self, compiler, connection, **extra_context):
 
 
 Case.as_db2_for_i = case_as_db2_for_i
+
+
+BITWISE_CONNECTORS = frozenset(
+    {
+        Combinable.BITAND,
+        Combinable.BITOR,
+        Combinable.BITXOR,
+        Combinable.BITLEFTSHIFT,
+        Combinable.BITRIGHTSHIFT,
+    }
+)
+
+
+def combined_as_db2_for_i(self, compiler, connection, **extra_context):
+    """``F("rating") + None``: Django writes the None as a bare NULL, which Db2
+    for i refuses as an operand (SQL0206, #82). It gets the type of the other
+    operand, or of the whole expression. Subclasses (TemporalSubtraction, ...)
+    keep their own SQL; only their operands change. Bitwise operators type a
+    NULL themselves (operations.combine_expression: BIGINT)."""
+    if self.connector in BITWISE_CONNECTORS:
+        return self.as_sql(compiler, connection, **extra_context)
+    lhs, rhs = self.get_source_expressions()
+    operands, changed = [], False
+    for operand, other in ((lhs, rhs), (rhs, lhs)):
+        if _is_untyped_null(operand):
+            field = other._output_field_or_none or self._output_field_or_none
+            if field is not None:
+                operand, changed = TypedNull(field), True
+        operands.append(operand)
+    if not changed:
+        return self.as_sql(compiler, connection, **extra_context)
+    clone = self.copy()
+    clone.set_source_expressions(operands)
+    return clone.as_sql(compiler, connection, **extra_context)
+
+
+CombinedExpression.as_db2_for_i = combined_as_db2_for_i
 
 # --- Predicates as operands ---------------------------------------------------------------
 
@@ -946,6 +1008,71 @@ def log_as_db2_for_i(self, compiler, connection, **extra_context):
 
 
 Log.as_db2_for_i = log_as_db2_for_i
+
+
+# UTF-16 code units: a high surrogate is 0xD800-0xDBFF, a low one 0xDC00-0xDFFF.
+_HIGH_SURROGATE, _LOW_SURROGATE, _SUPPLEMENTARY = 0xD800, 0xDC00, 0x10000
+
+
+def _code_unit_hex(number: str) -> str:
+    """The 4 hex digits of a code unit given as an INTEGER expression."""
+    return f"RIGHT(HEX({number}), 4)"
+
+
+def chr_as_db2_for_i(self, compiler, connection, **extra_context):
+    (expression,) = self.get_source_expressions()
+    sql, params = compiler.compile(expression)
+    code = f"CAST({sql} AS INTEGER)"
+    unit = f"INTERPRET(HEXTORAW({_code_unit_hex(code)}) AS GRAPHIC(1) CCSID 1200)"
+    high = _code_unit_hex(f"{_HIGH_SURROGATE} + ({code} - {_SUPPLEMENTARY}) / 1024")
+    low = _code_unit_hex(f"{_LOW_SURROGATE} + MOD({code} - {_SUPPLEMENTARY}, 1024)")
+    pair = f"INTERPRET(HEXTORAW({high} CONCAT {low}) AS GRAPHIC(2) CCSID 1200)"
+    return (
+        f"CASE WHEN {code} < {_SUPPLEMENTARY} "
+        f"THEN CAST({unit} AS VARGRAPHIC(2) CCSID 1200) "
+        f"ELSE CAST({pair} AS VARGRAPHIC(2) CCSID 1200) END"
+    ), tuple(params) * 4
+
+
+Chr.as_db2_for_i = chr_as_db2_for_i
+
+
+def ord_as_db2_for_i(self, compiler, connection, **extra_context):
+    (expression,) = self.get_source_expressions()
+    sql, params = compiler.compile(expression)
+    first_two = f"HEX(CAST({sql} AS VARGRAPHIC(2) CCSID 1200))"
+
+    def unit(position: int) -> str:
+        digits = f"SUBSTR({first_two}, {position}, 4)"
+        return f"INTERPRET(HEXTORAW('0000' CONCAT {digits}) AS INTEGER)"
+
+    first, second = unit(1), unit(5)
+    return (
+        f"CASE WHEN LENGTH({sql}) = 0 THEN 0 "
+        f"WHEN {first} BETWEEN {_HIGH_SURROGATE} AND {_LOW_SURROGATE - 1} "
+        f"THEN ({first} - {_HIGH_SURROGATE}) * 1024 + ({second} - {_LOW_SURROGATE}) "
+        f"+ {_SUPPLEMENTARY} "
+        f"ELSE {first} END"
+    ), tuple(params) * 5
+
+
+Ord.as_db2_for_i = ord_as_db2_for_i
+
+
+def uuid4_as_db2_for_i(self, compiler, connection, **extra_context):
+    """GENERATE_UUID() gives a version 4 UUID with hyphens (probe phase7_flags); a
+    UUIDField is CHAR(32) of lowercase hex digits, as Django writes uuid.hex."""
+    if not connection.features.supports_uuid4_function:
+        # Django's own message first (db_functions.test_uuid checks it).
+        raise NotSupportedError(
+            "UUID4 is not supported on this database backend. It needs GENERATE_UUID(): "
+            "IBM i 7.5 with Db2 PTF Group SF99950 level 8."
+        )
+    return "LOWER(REPLACE(GENERATE_UUID(), '-', ''))", ()
+
+
+if UUID4 is not None:
+    UUID4.as_db2_for_i = uuid4_as_db2_for_i
 
 
 def concat_pair_as_db2_for_i(self, compiler, connection, **extra_context):

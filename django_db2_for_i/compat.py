@@ -38,6 +38,12 @@ if django.VERSION >= (6, 1):
 else:
     JSONIn = None
 
+# The UUID4() database function is new in Django 6.1.
+if django.VERSION >= (6, 1):
+    from django.db.models.functions import UUID4
+else:
+    UUID4 = None
+
 # Expected failures of features.py that pass on this Django version only
 # (docs/DECISIONS.md, "The first per-version expected-failure list"). None
 # since CPA32B2 is suppressed in migrations: the two schema tests that narrowed

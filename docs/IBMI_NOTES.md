@@ -2690,6 +2690,15 @@ with the job), without commitment control. Result:
   with a digit); check duplicates across tables *and* indexes of the library.
   A rename without `FOR SYSTEM NAME` keeps the old system name, so a rename must
   pass it again.
+- **The backend's forms** (rerun 2026-11-13 for tables and indexes, #253): `CREATE
+  TABLE QTEMP."<long>" FOR SYSTEM NAME <sys> (...)` and `CREATE [UNIQUE] INDEX
+  QTEMP."<long>" FOR SYSTEM NAME <sys> ON ...` with quoted SQL names: ok, each index
+  its own `*FILE` object (`OBJATTRIBUTE` `LF`, the table `PF`); `DROP INDEX` by the
+  quoted SQL name: ok; `RENAME TABLE` to another quoted name keeps the system name.
+  Constraints in `CREATE TABLE` are SQL7008 in QTEMP (no journal) and need the
+  qualifier like the table (SQL5051 without it), so whether a unique constraint is a
+  `*FILE` object was checked in the journaled test library instead
+  (`tests/ibmi/test_system_names.py`): it is not; only the table and its indexes are.
 - **The catalog views show nothing for QTEMP** (`QSYS2.SYSTABLES`, `SYSCOLUMNS`,
   `SYSINDEXES` returned no rows); `QSYS2.OBJECT_STATISTICS('QTEMP', '*FILE')` does
   (`OBJNAME`, `OBJLONGNAME`). Introspection of system names needs a journaled
@@ -2748,6 +2757,46 @@ control. Result: [phase7_flags.json](../probes/results/phase7_flags.json).
   - `UX'00E9'` literals work too.
 - For the backend branch: `Chr` and `Ord` through these forms for the Basic
   Multilingual Plane, and a `NotSupportedError` or a Known Limitation above it.
+- **`GENERATE_UUID()` depends on the Db2 PTF Group level** (#252): new in IBM i 7.5
+  TR5 / 7.4 TR11, delivered with the Db2 PTF Groups SF99950 level 8 (7.5) and SF99704
+  level 29 (7.4). Sources: IBM, [Db2 for i functional
+  enhancements](https://www.ibm.com/support/pages/db2-i-functional-enhancements) and
+  [GENERATE_UUID and GENERATE_UUID_BINARY scalar
+  functions](https://www.ibm.com/support/pages/generateuuid-and-generateuuidbinary-scalar-functions);
+  [rpgpgm.com, 2025-01-29](https://www.rpgpgm.com/2025/01/new-sql-scalar-functions-to-generate.html).
+  PUB400's PTF Group level cannot be read by a normal user; the function is there. So
+  the backend checks it at connect (`VALUES GENERATE_UUID()`, capability
+  `has_generate_uuid`, cached per server); `UUID4()` is
+  `LOWER(REPLACE(GENERATE_UUID(), '-', ''))`, the 32 lowercase hex digits of a
+  `UUIDField` (`CHAR(32)`).
+
+### `Chr` and `Ord` above U+FFFF (`probes/qtemp_supplementary_chars.py`, #252)
+
+PUB400 (IBM i 7.5), 2026-11-13, one connection, QTEMP only (one table, gone with the
+job), without commitment control. Result:
+[supplementary_chars.json](../probes/results/supplementary_chars.json). Every value
+compared with Python's `chr()` / `ord()`: code points 65, 233, 8364, U+FFFD, U+10000,
+U+1F600, U+10FFFF; strings `A`, `é`, `€`, an emoji, emoji + `x`, `x` + emoji,
+U+10FFFF, `''` and NULL; as parameters, as `NVARCHAR` and as `NCLOB` column values.
+
+- **`Chr` works for every code point** with a surrogate pair above U+FFFF:
+  `CASE WHEN cp < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(cp), 4)) AS GRAPHIC(1)
+  CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296
+  + (cp - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(cp - 65536, 1024)), 4)) AS
+  GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END`: all match, parameters and
+  columns, and equal the stored `NVARCHAR`. The `GRAPHIC(1)` form alone gives the wrong
+  character above U+FFFF (U+1F600 becomes U+F600).
+- One `INTERPRET(... AS VARGRAPHIC(2) CCSID 1200)` of 2 or 4 bytes: SQL0420 ("Value
+  for cast argument not valid"), for every code point; hence the `CASE`.
+- **`Ord` works for every string** through the first two code units:
+  `HEX(CAST(s AS VARGRAPHIC(2) CCSID 1200))`, each half `INTERPRET(HEXTORAW('0000'
+  CONCAT ...) AS INTEGER)`, a high surrogate (55296-56319) combined with the next unit;
+  `''` gives 0, NULL gives NULL.
+- **On an `NCLOB`, `SUBSTR(t, 1, 2)` and `LEFT(t, 2)` pad with blanks** (`'A'` becomes
+  `'A '`, an emoji `'<pair> '`), and `SUBSTR(t, 1, 1)` of an emoji, or a `CAST` of
+  `SUBSTR(t, 1, 2)` of `x` + emoji, is NULL (it splits the pair); `SUBSTRING(...,
+  CODEUNITS16)` is SQL0104. The `CAST` of the whole value to `VARGRAPHIC(2)` keeps
+  exactly the first two code units, without an error for a longer value.
 
 ### `FOR UPDATE ... WITH RS` in QTEMP (`probes/qtemp_select_for_update.py`, phase 7)
 
@@ -2779,6 +2828,25 @@ PUB400 (IBM i 7.5), 2026-11-12, QTEMP only: a table from `CREATE TABLE`, read wi
 - The system names that `QSYS2.SYSTABLES` returns (`SYSTEM_TABLE_SCHEMA`,
   `SYSTEM_TABLE_NAME`) are padded with blanks; a CL command needs them stripped
   (`CHGPF FILE(<lib> /<name>)` is CPD0104 "Expression not allowed").
+
+### A Decimal value with more digits than its DecimalField (`probes/qtemp_decimal_values.py`, #95)
+
+PUB400 (IBM i 7.5), 2026-11-12, read-only (`SYSIBM.SYSDUMMY1`). Result:
+[decimal_values.json](../probes/results/decimal_values.json).
+
+| Marker | Value | Result |
+|---|---|---|
+| `CAST(? AS DECIMAL(5, 2))` | `123.45` | ok |
+| the same | `123456.78` (more integer digits) | the driver refuses it: 22003 "Numeric value out of range" |
+| the same | `1.2345` (more decimals) | the driver refuses it: 22001 "right truncation" |
+| `CAST(? AS DECIMAL(9, 3))`, the value's own | `123456.789` | ok, exact |
+| `CAST(CAST(? AS DECIMAL(9, 3)) AS DECIMAL(5, 2))` | `123456.789` | **NULL**, no error |
+| `?` / `? + 0` | `123456.789` | SQL0418 / 22001 |
+| `CAST(? AS DECIMAL(63, 3))` | 63 digits | ok |
+
+- So a `Value(Decimal)` wider than its `DecimalField` is written with the value's own
+  `DECIMAL(p, s)` (expressions.py), as #78 does for strings: exact, as on Django's
+  other backends. Narrowing it in SQL would give NULL silently.
 
 ## String encoding investigation (`nox -s probe_encoding`)
 

@@ -440,6 +440,21 @@ The same holds for unique and check constraints. An index with an unqualified
 name does not fail, but lands in the `NAME` library, not in its table's
 library (verified on PUB400, probe `lib_other_library`).
 
+## Changing the system name of a table
+
+`makemigrations` does not notice a change of `Meta.db_system_name` alone:
+Django's `AlterModelOptions` covers a fixed list of options. A table keeps the
+system name it was created with (also when it is renamed). To change it, run
+the statement yourself, for example in a `RunSQL` migration:
+
+```sql
+RENAME TABLE "CUSTOMER_ADDRESSES" TO "CUSTOMER_ADDRESSES" FOR SYSTEM NAME CUSTADR2
+```
+
+An index is different: `SystemNameIndex` keeps `db_system_name` in its
+migration arguments, so a change gives a migration that drops the index and
+creates it again with the new system name.
+
 ## Strings longer than 1M characters are refused
 
 String parameters longer than **1,048,576 UTF-16 units** (1M; an emoji
@@ -666,6 +681,26 @@ Values that fit the old size keep working, and nothing is cut off. **Restart you
 workers after a migration that widens a column**, or close their connections. A
 migration on the same connection is handled by the backend.
 
+## select_for_update()
+
+`select_for_update()` locks the selected rows until the transaction ends
+(`FOR UPDATE ... WITH RS`; a plain `FOR UPDATE` under `*CS` would keep no lock
+once Django has fetched the rows). `skip_locked=True` (`SKIP LOCKED DATA`),
+`of=(...)` and sliced querysets work. What differs:
+
+- **Another job's plain read of a locked row waits too.** Under `*CS` a
+  `SELECT` without `select_for_update()` waits for the row, up to the table's
+  record wait (60 seconds for tables Django creates), and then fails with
+  `OperationalError` (SQL0913). On PostgreSQL such a read does not wait. A
+  shorter wait for one table: `CHGPF FILE(<library>/<system name>) WAITRCD(<seconds>)`.
+- **`nowait=True` is not available** (`NotSupportedError`): Db2 for i has no
+  per-statement no-wait.
+- **A query with a join locks the rows of every joined table.** Db2 for i
+  refuses `FOR UPDATE` with a join (SQL0511), so the backend writes
+  `WITH RS USE AND KEEP EXCLUSIVE LOCKS` for it: `select_related()`,
+  multi-table inheritance and proxy models of them lock the related rows as
+  well, and `of=(...)` cannot narrow that down.
+
 ## Not available on Db2 for i
 
 Db2 for i has no equivalent for these Django features, so they stay off
@@ -698,15 +733,11 @@ Db2 for i has no equivalent for these Django features, so they stay off
   has no `EXCLUDE` in a window frame (Django's `exclusion=`), and a `RANGE`
   frame with a fixed distance works on numbers only: over a date or timestamp
   it is refused (SQL0182). Window functions work otherwise.
-- **`Chr` and `Ord` beyond ASCII.** Db2 for i's `CHR` and `ASCII` work on
-  single-byte characters: `Chr(233)` and `Ord("é")` give a substitute
-  character (code 26), not `é` or 233. Values up to 127 work.
 
 Django's system checks report the first three when a model uses them.
 
 ## Features not available yet
 
 The backend is in early development; these are switched off for now and
-enabled one at a time: `select_for_update`,
-and creating test schemas (tests
+enabled one at a time: creating test schemas (tests
 run in an existing library, see [Configuration](Configuration.md#test-database-test)).

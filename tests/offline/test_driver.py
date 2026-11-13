@@ -675,3 +675,23 @@ def test_ints_beyond_64_bits_are_bound_as_decimals() -> None:
     ]
     unchanged = (1, "x", None)
     assert bindable_params(unchanged) is unchanged
+
+
+class ClosingRawCursor:
+    """pyodbc's cursor: closing it twice raises ProgrammingError."""
+
+    def __init__(self) -> None:
+        self.closed = 0
+
+    def close(self) -> None:
+        if self.closed:
+            raise pyodbc.ProgrammingError("Attempt to use a closed cursor.")
+        self.closed += 1
+
+
+def test_closing_a_cursor_twice_does_nothing() -> None:
+    raw = ClosingRawCursor()
+    cursor = pyodbc_driver.Cursor(raw, (), connection=None)
+    cursor.close()
+    cursor.close()
+    assert raw.closed == 1

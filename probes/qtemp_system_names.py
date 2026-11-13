@@ -62,11 +62,15 @@ OBJECTS = (
     "PROBE_SYSTEM_NAMES_BAD",
     "PROBE_SYSTEM_NAMES_COLS",
     "PSNCOLS",
+    "PSN_QUOTED_LONG_TABLE",
+    "PSN_QUOTED_LONG_TABLE2",
+    "PSNQT",
 )
+QUOTED_INDEXES = ("PSN_QUOTED_LONG_INDEX", "PSNQI", "PSN_QUOTED_UNIQUE_INDEX", "PSNQU")
 
 
 def _cleanup(conn) -> None:
-    for name in (INDEX, INDEX_SYS, INDEX_RENAMED, INDEX_RENAMED_SYS):
+    for name in (INDEX, INDEX_SYS, INDEX_RENAMED, INDEX_RENAMED_SYS, *QUOTED_INDEXES):
         _execute(conn, f"DROP INDEX QTEMP.{name}")
     for name in OBJECTS:
         _execute(conn, f"DROP TABLE QTEMP.{name}")
@@ -372,11 +376,83 @@ def _renames(conn, results) -> None:
     _execute(conn, "DROP TABLE QTEMP.PSNBACK")
 
 
+def _objects(conn, results, key: str) -> None:
+    """The *FILE objects of the quoted table: does a constraint make one?"""
+    _step(
+        results,
+        key,
+        _query(
+            conn,
+            "SELECT OBJNAME, OBJLONGNAME, OBJATTRIBUTE"
+            " FROM TABLE(QSYS2.OBJECT_STATISTICS('QTEMP', '*FILE')) X"
+            " WHERE OBJLONGNAME LIKE 'PSN_QUOTED%' OR OBJNAME LIKE 'PSNQ%' ORDER BY OBJNAME",
+        ),
+    )
+
+
+def _backend_forms(conn, results) -> None:
+    """The forms the backend writes: quoted SQL names; constraints and *FILE objects."""
+    table = 'QTEMP."PSN_QUOTED_LONG_TABLE"'
+    _step(
+        results,
+        "backend: CREATE TABLE quoted FOR SYSTEM NAME, with UNIQUE and PRIMARY KEY",
+        _execute(
+            conn,
+            f'CREATE TABLE {table} FOR SYSTEM NAME PSNQT ("ID" INTEGER NOT NULL,'
+            ' "NAME" VARCHAR(10), "CODE" VARCHAR(10),'
+            ' CONSTRAINT QTEMP."PSN_QUOTED_LONG_TABLE_PK" PRIMARY KEY ("ID"),'
+            ' CONSTRAINT QTEMP."PSN_QUOTED_LONG_TABLE_NAME_UNIQ" UNIQUE ("NAME"))',
+        ),
+    )
+    # Constraints need a journal; QTEMP has none (SQL7008). Without them:
+    _step(
+        results,
+        "backend: CREATE TABLE quoted FOR SYSTEM NAME",
+        _execute(
+            conn,
+            f'CREATE TABLE {table} FOR SYSTEM NAME PSNQT ("ID" INTEGER NOT NULL,'
+            ' "NAME" VARCHAR(10), "CODE" VARCHAR(10))',
+        ),
+    )
+    _objects(conn, results, "backend: *FILE objects after CREATE TABLE")
+    _step(
+        results,
+        "backend: CREATE INDEX quoted FOR SYSTEM NAME",
+        _execute(
+            conn,
+            'CREATE INDEX QTEMP."PSN_QUOTED_LONG_INDEX" FOR SYSTEM NAME PSNQI'
+            f' ON {table} ("NAME" DESC)',
+        ),
+    )
+    _step(
+        results,
+        "backend: CREATE UNIQUE INDEX quoted FOR SYSTEM NAME",
+        _execute(
+            conn,
+            'CREATE UNIQUE INDEX QTEMP."PSN_QUOTED_UNIQUE_INDEX" FOR SYSTEM NAME PSNQU'
+            f' ON {table} ("CODE", "ID")',
+        ),
+    )
+    _objects(conn, results, "backend: *FILE objects after the indexes")
+    _step(
+        results,
+        "backend: DROP INDEX by the SQL name",
+        _execute(conn, 'DROP INDEX QTEMP."PSN_QUOTED_LONG_INDEX"'),
+    )
+    _step(
+        results,
+        "backend: RENAME TABLE quoted, keeping the system name",
+        _execute(conn, f'RENAME TABLE {table} TO "PSN_QUOTED_LONG_TABLE2"'),
+    )
+    _objects(conn, results, "backend: *FILE objects after RENAME TABLE")
+    _execute(conn, 'RENAME TABLE QTEMP."PSN_QUOTED_LONG_TABLE2" TO "PSN_QUOTED_LONG_TABLE"')
+
+
 def run(settings: Settings, conn) -> dict[str, Any]:
     results: dict[str, Any] = {"scope": "QTEMP only (tables and indexes gone with the job)"}
     _cleanup(conn)
     try:
-        for part in (_tables, _columns, _indexes):
+        for part in (_tables, _columns, _indexes, _backend_forms):
             print(f" -- {part.__name__.strip('_')}")
             part(conn, results)
         print(" -- catalog")
