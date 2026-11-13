@@ -24,6 +24,7 @@ DATABASES = {"default": {"ENGINE": "django_db2_for_i", ...}}
 - [Upgrading](Upgrading.md): what changes between beta releases
 - [ODBC driver setup](ODBC-Driver-Setup.md)
 - [Configuration](Configuration.md): `DATABASES` and `OPTIONS`
+- [Names and libraries](Names-and-Libraries.md): IBM i system names, tables in another library
 - [IBM i requirements](IBM-i-Requirements.md): journaling, authorities
 - [Known limitations](Known-Limitations.md)
 - [Troubleshooting](Troubleshooting.md): errors by SQLCODE

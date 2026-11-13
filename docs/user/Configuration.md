@@ -39,6 +39,8 @@ unnoticed.
 
 ## IBM i system names
 
+A guide with a full example: [Names and libraries](Names-and-Libraries.md).
+
 Every table and column on IBM i has, next to its SQL name, a **system name** of at
 most 10 characters: the name RPG and CL programs, `DSPFD` and most IBM i tools
 use. A name of at most 10 characters (letters, digits, `_`) is its own system
@@ -136,6 +138,8 @@ class Customer(models.Model):
   one library, so Db2 for i would refuse the second (SQL0601).
 
 ## Tables in another library
+
+A guide with a full example: [Names and libraries](Names-and-Libraries.md#tables-in-another-library).
 
 A model's table is in the library given as `NAME`, unless the model names
 another one. Two ways, with the same result:
