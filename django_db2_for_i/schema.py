@@ -37,6 +37,8 @@ from django.db import (
     models,
 )
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
+from django.db.backends.ddl_references import Reference, Statement
+from django.db.backends.utils import split_identifier
 
 from . import fields, inquiry
 from .expressions import NVARCHAR_MAX
@@ -101,6 +103,46 @@ def default_literal(value) -> str:
     raise NotSupportedError(
         f"No DEFAULT literal rule for {type(value).__name__} values ({value!r})."
     )
+
+
+def split_table(db_table: str) -> tuple[str, str]:
+    """``("LIB", "ORDERS")`` for ``'LIB"."ORDERS'`` (a table in another library, #124:
+    Django's form of a qualified name), ``("", "ORDERS")`` for a plain name."""
+    if '"."' not in db_table:
+        return "", db_table
+    return split_identifier(db_table)
+
+
+class QualifiedName(Reference):
+    """The name of a constraint or index, qualified with its table's library.
+
+    Db2 for i puts an unqualified name into the current schema (``NAME``): a
+    constraint on a table in another library then fails with SQL5051, an index
+    lands in the wrong library (probes lib_other_library, qtemp_qualified_names).
+    Wraps Django's name reference, so a deferred statement still follows renames.
+    """
+
+    def __init__(self, library: str, name, quote_name):
+        self.library, self.name, self.quote_name = library, name, quote_name
+
+    def references_table(self, table):
+        return hasattr(self.name, "references_table") and self.name.references_table(table)
+
+    def references_column(self, table, column):
+        return hasattr(self.name, "references_column") and self.name.references_column(
+            table, column
+        )
+
+    def rename_table_references(self, old_table, new_table):
+        if hasattr(self.name, "rename_table_references"):
+            self.name.rename_table_references(old_table, new_table)
+
+    def rename_column_references(self, table, old_column, new_column):
+        if hasattr(self.name, "rename_column_references"):
+            self.name.rename_column_references(table, old_column, new_column)
+
+    def __str__(self):
+        return f"{self.quote_name(self.library)}.{self.name}"
 
 
 # Which base types ALTER COLUMN ... SET DATA TYPE converts in place (probe
@@ -650,9 +692,16 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         return f" FOR SYSTEM NAME {system}"
 
     def table_sql(self, model):
-        sql, params = super().table_sql(model)
+        # Named constraints inside CREATE TABLE take the table's library too
+        # (_check_sql(), _unique_sql()).
+        self._inline_library = self._library(model)
+        try:
+            sql, params = super().table_sql(model)
+        finally:
+            self._inline_library = ""
         table = model._meta.db_table
-        clause = self._system_name_clause(table, fields.table_system_name(model), "table")
+        name = split_table(table)[1]
+        clause = self._system_name_clause(name, fields.table_system_name(model), "table")
         if clause:
             quoted = self.quote_name(table)
             sql = sql.replace(f"{quoted} (", f"{quoted}{clause} (", 1)
@@ -678,10 +727,94 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             if fields.index_system_name(index)
         }
         for statement in output if named else ():
-            index = named.get(str(getattr(statement, "parts", {}).get("name", "")))
+            name = getattr(statement, "parts", {}).get("name", "")
+            if isinstance(name, QualifiedName):
+                name = name.name
+            index = named.get(str(name))
             if index is not None:
                 self._with_index_system_name(statement, index)
         return output
+
+    # --- A table in another library than NAME (#124) ----------------------------
+    # db_table = 'LIB"."TABLE' (or Meta.db_library, fields.py). The name of every
+    # constraint and index on such a table is qualified with LIB: unqualified,
+    # Db2 for i puts it into the current schema (NAME), and a constraint then
+    # fails with SQL5051, also inside CREATE TABLE, while an index lands in NAME
+    # (probes lib_other_library, qtemp_qualified_names). The new name of RENAME
+    # INDEX and RENAME TABLE stays unqualified (qualified: SQL0104).
+
+    _inline_library = ""
+
+    def _library(self, model) -> str:
+        return split_table(model._meta.db_table)[0]
+
+    def _qualified(self, model, statement, part="name"):
+        library = self._library(model)
+        if (
+            library
+            and isinstance(statement, Statement)
+            and part in statement.parts
+            and not isinstance(statement.parts[part], QualifiedName)
+        ):
+            statement.parts[part] = QualifiedName(library, statement.parts[part], self.quote_name)
+        return statement
+
+    def _inline_constraint(self, library: str, sql):
+        prefix = "CONSTRAINT "
+        if library and isinstance(sql, str) and sql.startswith(prefix):
+            return f"{prefix}{self.quote_name(library)}.{sql[len(prefix) :]}"
+        return sql
+
+    def _unique_sql(self, model, *args, **kwargs):
+        return self._inline_constraint(
+            self._library(model), super()._unique_sql(model, *args, **kwargs)
+        )
+
+    def _check_sql(self, name, check):
+        return self._inline_constraint(self._inline_library, super()._check_sql(name, check))
+
+    def _create_index_sql(self, model, *args, **kwargs):
+        return self._qualified(model, super()._create_index_sql(model, *args, **kwargs))
+
+    def _create_unique_sql(self, model, *args, **kwargs):
+        return self._qualified(model, super()._create_unique_sql(model, *args, **kwargs))
+
+    def _create_fk_sql(self, model, *args, **kwargs):
+        return self._qualified(model, super()._create_fk_sql(model, *args, **kwargs))
+
+    def _create_check_sql(self, model, *args, **kwargs):
+        return self._qualified(model, super()._create_check_sql(model, *args, **kwargs))
+
+    def _create_primary_key_sql(self, model, *args, **kwargs):
+        return self._qualified(model, super()._create_primary_key_sql(model, *args, **kwargs))
+
+    def _delete_constraint_sql(self, template, model, name):
+        return self._qualified(model, super()._delete_constraint_sql(template, model, name))
+
+    def _delete_index_sql(self, model, *args, **kwargs):
+        return self._qualified(model, super()._delete_index_sql(model, *args, **kwargs))
+
+    def _rename_index_sql(self, model, old_name, new_name):
+        statement = super()._rename_index_sql(model, old_name, new_name)
+        return self._qualified(model, statement, part="old_name")
+
+    def alter_db_table(self, model, old_db_table, new_db_table):
+        old_library, _ = split_table(old_db_table)
+        new_library, new_name = split_table(new_db_table)
+        if old_library.upper() != new_library.upper():
+            raise NotSupportedError(
+                f"Cannot move the table {old_db_table!r} to {new_db_table!r}: RENAME TABLE "
+                "on Db2 for i keeps a table in its library."
+            )
+        if not new_library:
+            return super().alter_db_table(model, old_db_table, new_db_table)
+        # The new name unqualified (qtemp_qualified_names).
+        unqualified = self.quote_name(new_name).replace("%", "%%")
+        self.sql_rename_table = f"RENAME TABLE %(old_table)s TO {unqualified}"
+        try:
+            return super().alter_db_table(model, old_db_table, new_db_table)
+        finally:
+            del self.sql_rename_table
 
     def _iter_column_sql(self, column_db_type, params, model, field, *args, **kwargs):
         # The column's IBM i system name (fields.py, #253): "<column> FOR COLUMN

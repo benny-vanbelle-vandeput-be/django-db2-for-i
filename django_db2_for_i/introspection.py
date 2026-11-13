@@ -4,7 +4,8 @@ Implemented in phase 1 (minimal: what migrate, flush and test database
 creation need); completed in phase 4.
 
 All queries are limited to the connection's ``CURRENT SCHEMA`` (the
-database's NAME). Catalog names are uppercase; ``identifier_converter``
+database's NAME), except for a table named with its library
+(``'LIB"."TABLE'``, #124): then that library. Catalog names are uppercase; ``identifier_converter``
 returns them in lowercase, Django's form (see operations.quote_name).
 """
 
@@ -16,6 +17,7 @@ from django.db.backends.base.introspection import FieldInfo as BaseFieldInfo
 from django.db.models import Index
 
 from django_db2_for_i import compat
+from django_db2_for_i.schema import split_table
 
 # QSYS2.SYSKEYS.ORDERING (column text: "A-Ascending, D-Descending", probe 25).
 ORDERS = {"A": "ASC", "D": "DESC"}
@@ -98,6 +100,20 @@ INDEXES_SQL = (
     "ORDER BY I.INDEX_NAME, K.ORDINAL_POSITION"
 )
 
+
+def _in_library(sql: str, table_name: str) -> tuple[str, list[str]]:
+    """``sql`` and the parameters of each of its ``TABLE_SCHEMA = CURRENT SCHEMA AND
+    TABLE_NAME = %s`` conditions, for ``table_name``: ``[TABLE]`` for a plain name;
+    for ``'LIB"."TABLE'`` (#124) the condition takes the library, ``[LIB, TABLE]``."""
+    library, table = split_table(table_name)
+    if not library:
+        return sql, [table.upper()]
+    return sql.replace("TABLE_SCHEMA = CURRENT SCHEMA", "TABLE_SCHEMA = %s"), [
+        library.upper(),
+        table.upper(),
+    ]
+
+
 # get_table_description() rows: Django's fields plus whether the column is an
 # identity (get_field_type() turns it into an AutoField), as on PostgreSQL.
 FieldInfo = namedtuple("FieldInfo", [*BaseFieldInfo._fields, "is_autofield"])
@@ -177,12 +193,14 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         ManyToManyField).
         """
         cursor.execute(
-            "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, LENGTH, "
-            "NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT, IS_IDENTITY "
-            "FROM QSYS2.SYSCOLUMNS "
-            "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s "
-            "ORDER BY ORDINAL_POSITION",
-            [table_name.upper()],
+            *_in_library(
+                "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, LENGTH, "
+                "NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT, IS_IDENTITY "
+                "FROM QSYS2.SYSCOLUMNS "
+                "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s "
+                "ORDER BY ORDINAL_POSITION",
+                table_name,
+            )
         )
         rows = cursor.fetchall()
         if not rows:
@@ -216,9 +234,11 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
     def get_sequences(self, cursor, table_name: str, table_fields=()) -> list[dict]:
         """Identity columns of ``table_name``."""
         cursor.execute(
-            "SELECT COLUMN_NAME FROM QSYS2.SYSCOLUMNS "
-            "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s AND IS_IDENTITY = 'YES'",
-            [table_name.upper()],
+            *_in_library(
+                "SELECT COLUMN_NAME FROM QSYS2.SYSCOLUMNS "
+                "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s AND IS_IDENTITY = 'YES'",
+                table_name,
+            )
         )
         return [
             {"table": table_name, "column": self.identifier_converter(column.rstrip())}
@@ -232,7 +252,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         whose keys are Db2's values: CASCADE, SET NULL and SET DEFAULT as
         SYSREFCST shows them (probe lib_on_delete), NO ACTION for the foreign
         keys the backend writes without a DB-level on_delete."""
-        cursor.execute(RELATIONS_SQL, [table_name.upper()])
+        cursor.execute(*_in_library(RELATIONS_SQL, table_name))
         return {
             self.identifier_converter(column.rstrip()): compat.relation(
                 self.identifier_converter(target_column.rstrip()),
@@ -244,9 +264,9 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
 
     def get_constraints(self, cursor, table_name: str) -> dict[str, dict]:
         """Primary keys, unique, foreign key and check constraints, and indexes."""
-        table = table_name.upper()
         constraints: dict[str, dict] = {}
-        cursor.execute(CONSTRAINTS_SQL, [table, table])
+        sql, params = _in_library(CONSTRAINTS_SQL, table_name)
+        cursor.execute(sql, params + params)  # the two halves of the UNION
         for name, kind, column, _position, enforced in cursor.fetchall():
             kind = kind.rstrip()
             entry = constraints.setdefault(
@@ -264,7 +284,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
                 entry["columns"].append(self.identifier_converter(column.rstrip()))
             if enforced.rstrip() != "Y":
                 entry["enforced"] = False  # a foreign key Db2 for i no longer enforces
-        cursor.execute(FOREIGN_KEYS_SQL, [table])
+        cursor.execute(*_in_library(FOREIGN_KEYS_SQL, table_name))
         for name, target_table, target_column in cursor.fetchall():
             entry = constraints.get(self.identifier_converter(name.rstrip()))
             if entry is not None and entry["foreign_key"] is None:
@@ -272,7 +292,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
                     self.identifier_converter(target_table.rstrip()),
                     self.identifier_converter(target_column.rstrip()),
                 )
-        cursor.execute(INDEXES_SQL, [table])
+        cursor.execute(*_in_library(INDEXES_SQL, table_name))
         for name, unique, column, ordering in cursor.fetchall():
             entry = constraints.setdefault(
                 self.identifier_converter(name.rstrip()),

@@ -2460,6 +2460,33 @@ found no `DJDB2I_OL*` object in either library. No data rows. Result:
   introspection of the table's library (and `bin/ibmi-cleanup`) would not find it.
 - `DROP CONSTRAINT <other>.<name>` works with the qualified name.
 
+### Named constraints in CREATE TABLE, RENAME INDEX / TABLE outside the current schema (`probes/qtemp_qualified_names.py`, #124)
+
+2026-11-13, PUB400 (IBM i 7.5), QTEMP only (current schema: the default library). The
+three forms `lib_other_library` did not try, with a QTEMP table standing in for a table
+in another library. QTEMP takes no constraints (SQL7008), but Db2 for i checks the
+name's qualifier first, so SQL5051 means "the name went to the current schema" and
+SQL7008 "the name was accepted for QTEMP". Result:
+`probes/results/qualified_names.json`.
+
+| Statement | Result |
+|---|---|
+| `CREATE TABLE QTEMP.T (..., CONSTRAINT C UNIQUE (N))` | **SQL5051** "Qualifier <default> not same as name QTEMP" |
+| `CREATE TABLE QTEMP.T (..., CONSTRAINT QTEMP.C UNIQUE (N))` | SQL7008 (the name is accepted) |
+| the same with `CHECK (N > 0)` | SQL5051 unqualified, SQL7008 qualified |
+| `RENAME INDEX QTEMP.I1 TO I2` | ok |
+| `RENAME INDEX QTEMP.I2 TO QTEMP.I3` | **SQL0104** "Token . was not valid" |
+| `RENAME TABLE QTEMP.T TO T2` | ok |
+| `RENAME TABLE QTEMP.T2 TO QTEMP.T3` | **SQL0104** |
+
+- So a named constraint inside `CREATE TABLE` does not take its table's schema: it
+  needs the qualifier, as `ALTER TABLE ... ADD CONSTRAINT` does.
+- The new name of `RENAME INDEX` and `RENAME TABLE` must be unqualified: the object
+  stays in its library. A rename cannot move a table to another library.
+- A slip of the probe: the failed second `RENAME INDEX` left the index named `PQNI2`,
+  so its `DROP INDEX QTEMP.PQNI3` found nothing (SQL0204); QTEMP dropped it with the
+  job. The last check found no `PQN%` table, index or constraint in the current schema.
+
 ### CHECK ... IS JSON on an NCLOB (`probes/lib_json_check.py`)
 
 2026-11-02, PUB400 (IBM i 7.5), in the journaled default library, approved on

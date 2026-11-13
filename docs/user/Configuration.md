@@ -135,6 +135,42 @@ class Customer(models.Model):
   same system name (`django_db2_for_i.E004`): both are `*FILE` objects in
   one library, so Db2 for i would refuse the second (SQL0601).
 
+## Tables in another library
+
+A model's table is in the library given as `NAME`, unless the model names
+another one. Two ways, with the same result:
+
+```python
+class Order(models.Model):
+    class Meta:
+        db_table = 'SALES"."orders'  # Django's form of a qualified name
+
+
+class Invoice(models.Model):
+    class Meta:
+        db_library = "SALES"  # needs "django_db2_for_i" in INSTALLED_APPS
+        db_table = "invoices"  # optional: Django's default name otherwise
+```
+
+- `Meta.db_library` is the clearer spelling: when the model class is ready,
+  the backend turns it into `db_table = 'SALES"."invoices'`. It needs
+  `"django_db2_for_i"` in `INSTALLED_APPS`, as `Meta.db_system_name` does.
+  The check `django_db2_for_i.E005` reports a library name that is not
+  valid, and a model that names two different libraries (`db_library` and a
+  `db_table` with another library).
+- The backend qualifies the name of every constraint and index on such a
+  table with its library: unqualified, Db2 for i would put the name into
+  the `NAME` library and refuse a constraint (SQL5051) or create the index
+  in the wrong library.
+- Queries, migrations and introspection of the table (Django's
+  `get_constraints()` and friends) use the library. The connection's current
+  schema stays `NAME`.
+- The library must exist and be journaled (a `QSQJRN` journal), as the
+  `NAME` library: tables in it need commitment control too.
+
+What this does not cover is in
+[Known limitations](Known-Limitations.md#tables-in-another-library).
+
 ## Connection defaults
 
 The backend connects with these IBM i Access ODBC keywords:

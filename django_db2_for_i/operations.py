@@ -47,7 +47,7 @@ from django.utils.duration import duration_microseconds
 
 from .compat import Before60OperationsMixin
 from .expressions import DAY_MICROSECONDS, NVARCHAR_MAX
-from .schema import LOB_TYPES, base_type, default_literal
+from .schema import LOB_TYPES, base_type, default_literal, split_table
 
 logger = logging.getLogger("django_db2_for_i")
 
@@ -151,6 +151,11 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
     def quote_name(self, name: str) -> str:
         if name.startswith('"') and name.endswith('"'):
             return name  # Already quoted.
+        library, table = split_table(name)
+        if library:
+            # A table in another library (#124): db_table = 'LIB"."TABLE', Django's
+            # form of a qualified name (django.db.backends.utils.split_identifier).
+            return f"{self.quote_name(library)}.{self.quote_name(table)}"
         name = truncate_name(name, self.max_name_length()).upper()
         return '"{}"'.format(name.replace('"', '""'))
 
