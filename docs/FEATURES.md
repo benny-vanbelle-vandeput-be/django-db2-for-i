@@ -97,7 +97,7 @@ Off on purpose, with the reason.
 | Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Reason |
 |---|---|---|---|---|---|
 | `allows_group_by_select_index` | `GROUP BY 1`: grouping by the position of a selected column. | ❌ | ❌ | ❌ | Db2 for i rejects a position in `GROUP BY` (SQL0122, probe queries); Django groups by the expressions. |
-| `allows_group_by_selected_pks` | Grouping by a model's primary key alone also groups by its other selected columns. | ❌ | ❌ | ❌ | Db2 for i needs every selected column that is not aggregated in `GROUP BY` (not verified on IBM i). |
+| `allows_group_by_selected_pks` | Grouping by a model's primary key alone also groups by its other selected columns. | ❌ | ❌ | ❌ | Db2 for i needs every selected column that is not aggregated in `GROUP BY` (SQL0122 with a unique index on the grouped column, probe `phase7_flags`; a primary key needs a journal, so QTEMP could not try one). |
 | `allows_multiple_constraints_on_same_fields` | Several constraints on the same columns. | ❌ | ❌ | ❌ | A second unique constraint on the same columns is refused (SQL0541, probe `lib_constraints`, IBMI_NOTES). |
 | `atomic_transactions` | An error inside a transaction aborts the whole transaction. | ❌ | ❌ | ❌ | Db2 for i keeps the transaction usable after a failed statement (unlike PostgreSQL). |
 | `can_clone_databases` | The test database can be cloned for parallel test runs (`--parallel`). | ❌ | ❌ | ❌ | Tests run with `--parallel=1` in pre-existing libraries; a clone would need a library per process. |
@@ -106,11 +106,11 @@ Off on purpose, with the reason.
 | `can_introspect_json_field` | Introspection recognizes a `JSONField` column. | ❌ | ❌ | ❌ | Db2 for i refuses `CHECK (C IS JSON)` on an `NCLOB` (SQL0546, probe `lib_json_check`), so a JSON column cannot be recognized. |
 | `can_introspect_materialized_views` | `inspectdb --include-views` also finds materialized views. | ❌ | ❌ | ❌ | The flag only enables Django's test, which writes `CREATE MATERIALIZED VIEW`: Db2 for i rejects it (SQL0104; its materialized query tables are `CREATE TABLE ... AS (...) MAINTAINED BY USER`, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `can_return_rows_from_update` | Saving an existing object reads back database-computed fields from the same `UPDATE` (Django 6.0+). | – | ❌ | ❌ | `FINAL TABLE` takes only an `INSERT` (SQL0199 for `UPDATE`, probe `qtemp_returning`, IBMI_NOTES); fields are read back with a second query. |
-| `greatest_least_ignores_nulls` | `Greatest()` / `Least()` skip NULL arguments instead of returning NULL. | ❌ | ❌ | ❌ | On Db2 for i `GREATEST` / `LEAST` return NULL when an argument is NULL (not verified on IBM i). |
-| `has_case_insensitive_like` | `LIKE` matches regardless of case (`'a' LIKE 'A'`). | ❌ | ❌ | ❌ | Db2 for i compares `LIKE` patterns exactly (not verified on IBM i); `icontains` and friends use `UPPER()`. |
+| `greatest_least_ignores_nulls` | `Greatest()` / `Least()` skip NULL arguments instead of returning NULL. | ❌ | ❌ | ❌ | On Db2 for i `GREATEST` / `LEAST` return NULL when an argument is NULL (probe `phase7_flags`). |
+| `has_case_insensitive_like` | `LIKE` matches regardless of case (`'a' LIKE 'A'`). | ❌ | ❌ | ❌ | Db2 for i compares `LIKE` patterns exactly (`'ABC' LIKE 'abc'` is false, probe `phase7_flags`); `icontains` and friends use `UPPER()`. |
 | `has_native_duration_field` | `DurationField` is a native interval column. | ❌ | ❌ | ❌ | A `DurationField` is stored as a `BIGINT` of microseconds (probe durations). |
-| `has_native_json_field` | `JSONField` is a native JSON column type. | ❌ | ❌ | ❌ | Db2 for i 7.5 has no JSON column type; JSON is stored as text (not verified on IBM i). |
-| `has_native_uuid_field` | `UUIDField` is a native UUID column. | ❌ | ❌ | ❌ | A `UUIDField` is stored as `CHAR(32)` (probe column types); Db2 for i has no UUID type (not verified on IBM i). |
+| `has_native_json_field` | `JSONField` is a native JSON column type. | ❌ | ❌ | ❌ | Db2 for i 7.5 has no JSON column type (SQL0204, probe `phase7_flags`); JSON is stored as text. |
+| `has_native_uuid_field` | `UUIDField` is a native UUID column. | ❌ | ❌ | ❌ | A `UUIDField` is stored as `CHAR(32)` (probe column types); Db2 for i has no UUID type (SQL0204, probe `phase7_flags`). |
 | `has_select_for_update_nowait` | `select_for_update(nowait=True)` fails instead of waiting for a lock. | ❌ | ❌ | ❌ | Db2 for i has no per-statement no-wait: `NOWAIT`, `WAIT 0` and `SET CURRENT LOCK TIMEOUT` are SQL0104 (probes `select_for_update`, `lib_select_for_update`). |
 | `has_zoneinfo_database` | The database has its own time zone database. | ❌ | ❌ | ❌ | Db2 for i has no time zone names; conversions happen in Python. |
 | `order_by_nulls_first` | NULL sorts first in ascending order. | ❌ | ❌ | ❌ | Db2 for i sorts NULL as the largest value: last in ascending order (probe queries). |
@@ -128,14 +128,14 @@ Off on purpose, with the reason.
 | `supports_date_lookup_using_string` | Lookups such as `__startswith` with a string on a date or datetime column. | ❌ | ❌ | ❌ | Db2 for i rejects `LIKE` on a `TIMESTAMP` column (SQL0414, probe queries), as MySQL does. |
 | `supports_default_in_bit_aggregations` | Bit aggregates with a `default` (Django 6.1+). | – | – | ❌ | There are no bit aggregates (`supports_bit_aggregations`). |
 | `supports_deferrable_unique_constraints` | `UniqueConstraint(deferrable=...)`. | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
-| `supports_explaining_query_execution` | `QuerySet.explain()`. | ❌ | ❌ | ❌ | Db2 for i has no `EXPLAIN` statement that returns a plan; plans come from Visual Explain and the database monitor (not verified on IBM i). |
-| `supports_expression_defaults` | `db_default` can be an expression, not only a constant. | ❌ | ❌ | ❌ | A column `DEFAULT` on Db2 for i takes only a constant or a special register. |
+| `supports_explaining_query_execution` | `QuerySet.explain()`. | ❌ | ❌ | ❌ | Db2 for i has no `EXPLAIN` statement (SQL0104, probe `phase7_flags`); plans come from Visual Explain and the database monitor. |
+| `supports_expression_defaults` | `db_default` can be an expression, not only a constant. | ❌ | ❌ | ❌ | A column `DEFAULT` on Db2 for i takes only a constant or a special register: `1 + 1` and `CURRENT_TIMESTAMP + 1 DAY` are SQL0104, a function SQL0574 (probe `flag_review`). |
 | `supports_forward_references` | Rows may reference rows inserted later in the same transaction (deferred constraints). | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `supports_frame_exclusion` | Window frames with `exclusion` (`EXCLUDE ...`). | ❌ | ❌ | ❌ | Db2 for i refuses `EXCLUDE` in a window frame (SQL0104, probe `window`). |
 | `supports_index_on_text_field` | Indexes on `TextField` columns. | ❌ | ❌ | ❌ | Db2 for i cannot index an `NCLOB` or `BLOB` column; `db_index` on a `TextField` or `BinaryField` creates no index (decision 2026-10-26). |
 | `supports_json_field_contains` | `JSONField` `contains` / `contained_by` lookups. | ❌ | ❌ | ❌ | Db2 for i has no JSON containment function, and path filters returned false where they should match (probe `json_functions`). |
 | `supports_json_negative_indexing` | `JSONField` key transforms with a negative array index (Django 6.0+). | – | ❌ | ❌ | Db2 for i gives NULL for `$.d[-1]`, without an error (probe `json_functions`). |
-| `supports_logical_xor` | `Q(...) ^ Q(...)` is written with a native `XOR` operator. | ❌ | ❌ | ❌ | Db2 for i has no logical `XOR` operator; Django's emulation is used (not verified on IBM i). |
+| `supports_logical_xor` | `Q(...) ^ Q(...)` is written with a native `XOR` operator. | ❌ | ❌ | ❌ | Db2 for i has no logical `XOR` operator (SQL0104, SQL0199, probe `phase7_flags`); Django's emulation is used. |
 | `supports_no_precision_decimalfield` | `DecimalField` without `max_digits` and `decimal_places` (Django 6.1+). | – | – | ❌ | `DECIMAL` needs a precision, and `DECFLOAT` has different semantics: `1E+300` as a `Decimal` is refused at bind, a 35th digit is rounded without an error (probes `later_flags`, `phase6_flags`, IBMI_NOTES). |
 | `supports_non_deterministic_collations` | Non-deterministic (for example case-insensitive) collations in `db_collation`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `supports_nulls_distinct_unique_constraints` | `UniqueConstraint(nulls_distinct=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `NULLS DISTINCT` / `NULLS NOT DISTINCT` on an index or a constraint (SQL0199, probe `qtemp_unique_nulls`, IBMI_NOTES). |
@@ -143,12 +143,12 @@ Off on purpose, with the reason.
 | `supports_paramstyle_pyformat` | Raw SQL may use `%(name)s` parameters with a dict. | ❌ | ❌ | ❌ | The driver takes positional `?` markers only. |
 | `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | ❌ | ❌ | ❌ | Db2 for i's JSON functions cannot read a root scalar (NULL; probe `json_functions`); it is stored and read back, but key lookups on it give nothing. |
 | `supports_stored_generated_columns` | `GeneratedField(db_persist=True)`, stored generated columns. | ❌ | ❌ | ❌ | `GENERATED ALWAYS AS` takes only special registers (`USER`, ...), `DATA CHANGE OPERATION`, row change timestamps and identities, no expression over other columns (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
-| `supports_tablespaces` | `db_tablespace` on models, fields and indexes. | ❌ | ❌ | ❌ | IBM i has no tablespaces: storage is single-level (not verified on IBM i). |
+| `supports_tablespaces` | `db_tablespace` on models, fields and indexes. | ❌ | ❌ | ❌ | IBM i has no tablespaces: storage is single-level. `CREATE TABLE ... IN <name>` is accepted and means nothing (probe `phase7_flags`). |
 | `supports_timezones` | Datetimes are stored with their time zone. | ❌ | ❌ | ❌ | Db2 for i has no `TIMESTAMP WITH TIME ZONE`; datetimes are stored in UTC without zone. |
 | `supports_tuple_comparison_against_subquery` | Composite fields compared with `>`, `<` against a subquery. | – | ❌ | ❌ | Db2 for i rejects row-value comparisons with a subquery (SQL0115). |
 | `supports_unlimited_charfield` | `CharField` without `max_length`. | ❌ | ❌ | ❌ | `NVARCHAR` and `VARCHAR` need a length (SQL0104, SQL0604, probe `qtemp_later_flags`, IBMI_NOTES); the unbounded type, `NCLOB`, is `TextField`. |
-| `supports_uuid4_function_in_default` | `db_default=UUID4()` (Django 6.1+). | – | – | ❌ | Off by decision (#252): `GENERATE_UUID()` depends on the server's Db2 PTF Group level, and as a column default it is not verified on IBM i. |
-| `supports_uuid7_function` | The `UUID7()` database function (Django 6.1+). | – | – | ❌ | Db2 for i has no function that generates a time-ordered UUID (not verified on IBM i). |
+| `supports_uuid4_function_in_default` | `db_default=UUID4()` (Django 6.1+). | – | – | ❌ | A column `DEFAULT` takes no function: `GENERATE_UUID()` and the `UUID4()` form are SQL0574 (probe `flag_review`). |
+| `supports_uuid7_function` | The `UUID7()` database function (Django 6.1+). | – | – | ❌ | Db2 for i has no function that generates a time-ordered UUID (`GENERATE_UNIQUE()` is 13 bytes, probe `phase7_flags`). |
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
 
 ## Not applicable (17)

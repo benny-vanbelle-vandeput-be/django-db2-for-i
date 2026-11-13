@@ -2797,6 +2797,37 @@ control. Result: [phase7_flags.json](../probes/results/phase7_flags.json).
   `LOWER(REPLACE(GENERATE_UUID(), '-', ''))`, the 32 lowercase hex digits of a
   `UUIDField` (`CHAR(32)`).
 
+### Date lookups as text and expression defaults (`probes/qtemp_flag_review.py`)
+
+PUB400 (IBM i 7.5), 2026-11-13, one connection, QTEMP only (tables gone with the
+job), without commitment control. A review of the flags that are off, for the ones no
+probe had answered. Result: [flag_review.json](../probes/results/flag_review.json).
+
+**`supports_date_lookup_using_string`** (Django filters a `DateTimeField` with
+`__startswith="2005"`; PostgreSQL compares `column::text`):
+
+- `LIKE` on the `TIMESTAMP` column itself is SQL0414, as before.
+- Text forms: `CHAR(T)` and `CAST(T AS VARCHAR(32))` give the IBM form
+  `2005-07-28-12.30.05.123456`; `VARCHAR_FORMAT(T, 'YYYY-MM-DD HH24:MI:SS.FF6')`
+  gives `2005-07-28 12:30:05.123456`. For a `DATE`, `CHAR(D)`, `CHAR(D, ISO)`, the
+  `CAST` and `VARCHAR_FORMAT` all give `2005-07-28`; for a `TIME`, `CHAR(TM)`,
+  `CHAR(TM, JIS)` and the `CAST` give `12:30:05` (`VARCHAR_FORMAT` of a `TIME`:
+  HY000).
+- **A timestamp text form matched nothing with an untyped `?` pattern**: `... LIKE ?`
+  with `2005%` counted 0 for both timestamp forms, while the date and time forms
+  counted 1. The same pattern as a literal, a `CAST(? AS VARCHAR(40))` or
+  `NVARCHAR(40)`, or the value cast to `NVARCHAR(32)` all counted 1, and `= ?` with
+  the full text matched. The value's bytes are plain EBCDIC digits (`F2F0F0F5`), 26
+  characters. So the backend would write
+  `CAST(VARCHAR_FORMAT(<col>, 'YYYY-MM-DD HH24:MI:SS.FF6') AS NVARCHAR(32))`.
+  Why the untyped marker fails is not known.
+
+**`supports_expression_defaults`, `supports_uuid4_function_in_default`:** a column
+`DEFAULT` takes no expression. `CURRENT_TIMESTAMP` alone works (the control);
+`CURRENT_TIMESTAMP + 1 DAY`, `1 + 1` and `(1 + 1)` are SQL0104; `UPPER('x')`,
+`GENERATE_UUID()` and `LOWER(REPLACE(GENERATE_UUID(), '-', ''))` are SQL0574. Both
+flags stay off.
+
 ### `Chr` and `Ord` above U+FFFF (`probes/qtemp_supplementary_chars.py`, #252)
 
 PUB400 (IBM i 7.5), 2026-11-13, one connection, QTEMP only (one table, gone with the

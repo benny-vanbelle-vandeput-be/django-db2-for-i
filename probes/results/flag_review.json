@@ -1,0 +1,267 @@
+{
+  "probe": "flag_review",
+  "utc": "20261113T202114Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (PFRD* tables, gone with the job)",
+  "create table": {
+    "result": "ok"
+  },
+  "insert": {
+    "result": "ok"
+  },
+  "timestamp: CHAR": {
+    "rows": [
+      [
+        "2005-07-28-12.30.05.123456"
+      ],
+      [
+        "2006-01-02-00.00.00.000000"
+      ]
+    ]
+  },
+  "timestamp: CAST AS VARCHAR(32)": {
+    "rows": [
+      [
+        "2005-07-28-12.30.05.123456"
+      ],
+      [
+        "2006-01-02-00.00.00.000000"
+      ]
+    ]
+  },
+  "timestamp: VARCHAR_FORMAT ISO": {
+    "rows": [
+      [
+        "2005-07-28 12:30:05.123456"
+      ],
+      [
+        "2006-01-02 00:00:00.000000"
+      ]
+    ]
+  },
+  "date: CHAR": {
+    "rows": [
+      [
+        "2005-07-28"
+      ],
+      [
+        "2006-01-02"
+      ]
+    ]
+  },
+  "date: CHAR ISO": {
+    "rows": [
+      [
+        "2005-07-28"
+      ],
+      [
+        "2006-01-02"
+      ]
+    ]
+  },
+  "date: CAST AS VARCHAR(10)": {
+    "rows": [
+      [
+        "2005-07-28"
+      ],
+      [
+        "2006-01-02"
+      ]
+    ]
+  },
+  "date: VARCHAR_FORMAT": {
+    "rows": [
+      [
+        "2005-07-28"
+      ],
+      [
+        "2006-01-02"
+      ]
+    ]
+  },
+  "time: CHAR": {
+    "rows": [
+      [
+        "12:30:05"
+      ],
+      [
+        "00:00:00"
+      ]
+    ]
+  },
+  "time: CHAR JIS": {
+    "rows": [
+      [
+        "12:30:05"
+      ],
+      [
+        "00:00:00"
+      ]
+    ]
+  },
+  "time: CAST AS VARCHAR(8)": {
+    "rows": [
+      [
+        "12:30:05"
+      ],
+      [
+        "00:00:00"
+      ]
+    ]
+  },
+  "time: VARCHAR_FORMAT": {
+    "rows": [
+      [
+        "error",
+        "HY000"
+      ]
+    ]
+  },
+  "like: timestamp, VARCHAR_FORMAT": {
+    "rows": [
+      [
+        0
+      ]
+    ]
+  },
+  "like: timestamp, CAST AS VARCHAR": {
+    "rows": [
+      [
+        0
+      ]
+    ]
+  },
+  "like: date, VARCHAR_FORMAT": {
+    "rows": [
+      [
+        1
+      ]
+    ]
+  },
+  "like: date, CHAR ISO": {
+    "rows": [
+      [
+        1
+      ]
+    ]
+  },
+  "like: time, CHAR JIS": {
+    "rows": [
+      [
+        1
+      ]
+    ]
+  },
+  "ts2: literal pattern": {
+    "rows": [
+      [
+        1
+      ]
+    ]
+  },
+  "ts2: parameter cast to VARCHAR(40)": {
+    "rows": [
+      [
+        1
+      ]
+    ]
+  },
+  "ts2: parameter cast to NVARCHAR(40)": {
+    "rows": [
+      [
+        1
+      ]
+    ]
+  },
+  "ts2: value cast to NVARCHAR(32)": {
+    "rows": [
+      [
+        1
+      ]
+    ]
+  },
+  "ts2: CHAR(T) cast to NVARCHAR(32)": {
+    "rows": [
+      [
+        1
+      ]
+    ]
+  },
+  "ts2: = with a parameter": {
+    "rows": [
+      [
+        1
+      ]
+    ]
+  },
+  "ts2: length, HEX of the first 4 characters": {
+    "rows": [
+      [
+        26,
+        "F2F0F0F5",
+        "F2F0F0F5"
+      ],
+      [
+        26,
+        "F2F0F0F6",
+        "F2F0F0F6"
+      ]
+    ]
+  },
+  "like: timestamp column itself (expected SQL0414)": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -414,
+    "message": "SQL0414 - Operand not valid in LIKE predicate. (-414) (SQLPrepare)"
+  },
+  "default: CURRENT_TIMESTAMP (control)": {
+    "result": "ok",
+    "rows": [
+      [
+        1,
+        "2026-11-13 20:21:12.171648"
+      ],
+      [
+        2,
+        "2026-11-13 20:21:12.264505"
+      ]
+    ]
+  },
+  "default: CURRENT_TIMESTAMP + 1 DAY": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token + was not valid. Valid tokens: ) ,. (-104) (SQLExecDirectW)"
+  },
+  "default: 1 + 1": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token + was not valid. Valid tokens: ) ,. (-104) (SQLExecDirectW)"
+  },
+  "default: (1 + 1)": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ( was not valid. Valid tokens: + - ON DAY INF NAN OFF RID RRN CAST CHAR DATE DAYS HASH HOUR LEFT. (-104)"
+  },
+  "default: UPPER('x')": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -574,
+    "message": "SQL0574 - Column, sequence, or variable attribute is not valid. (-574) (SQLExecDirectW)"
+  },
+  "default: GENERATE_UUID()": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -574,
+    "message": "SQL0574 - Column, sequence, or variable attribute is not valid. (-574) (SQLExecDirectW)"
+  },
+  "default: LOWER(REPLACE(GENERATE_UUID(), '-', ''))": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -574,
+    "message": "SQL0574 - Column, sequence, or variable attribute is not valid. (-574) (SQLExecDirectW)"
+  }
+}
