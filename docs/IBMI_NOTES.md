@@ -2828,6 +2828,22 @@ probe had answered. Result: [flag_review.json](../probes/results/flag_review.jso
 `GENERATE_UUID()` and `LOWER(REPLACE(GENERATE_UUID(), '-', ''))` are SQL0574. Both
 flags stay off.
 
+### GROUP BY a primary key alone (`probes/lib_group_by_pk.py`, #258)
+
+PUB400 (IBM i 7.5), 2026-11-13, in the default (journaled test) library, approved on
+#258: two tables with a primary key, `DJDB2I_GBP` and `DJDB2I_GBC`, 2 and 3 rows,
+dropped at the end (nothing left). Result:
+[lib_group_by_pk.json](../probes/results/lib_group_by_pk.json).
+
+- `SELECT ID, NAME, SUM(N) ... GROUP BY ID` on the table with the primary key `ID`:
+  SQL0122 ("Column NAME or expression in SELECT list not valid").
+- The same with a `LEFT OUTER JOIN` to the child table, grouped by the parent's key:
+  SQL0122.
+- The control, `GROUP BY ID, NAME`: the expected rows.
+
+Db2 for i does not use the primary key's functional dependency, so
+`allows_group_by_selected_pks` stays off.
+
 ### `Chr` and `Ord` above U+FFFF (`probes/qtemp_supplementary_chars.py`, #252)
 
 PUB400 (IBM i 7.5), 2026-11-13, one connection, QTEMP only (one table, gone with the

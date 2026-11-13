@@ -99,7 +99,7 @@ Off on purpose, with the reason.
 | Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Reason |
 |---|---|---|---|---|---|
 | `allows_group_by_select_index` | `GROUP BY 1`: grouping by the position of a selected column. | ❌ | ❌ | ❌ | Db2 for i rejects a position in `GROUP BY` (SQL0122, probe queries); Django groups by the expressions. |
-| `allows_group_by_selected_pks` | Grouping by a model's primary key alone also groups by its other selected columns. | ❌ | ❌ | ❌ | Db2 for i needs every selected column that is not aggregated in `GROUP BY` (SQL0122 with a unique index on the grouped column, probe `phase7_flags`; a primary key needs a journal, so QTEMP could not try one). |
+| `allows_group_by_selected_pks` | Grouping by a model's primary key alone also groups by its other selected columns. | ❌ | ❌ | ❌ | Db2 for i needs every selected column that is not aggregated in `GROUP BY`, also when the table has a primary key (SQL0122, probe `lib_group_by_pk`; with a unique index, probe `phase7_flags`). |
 | `allows_multiple_constraints_on_same_fields` | Several constraints on the same columns. | ❌ | ❌ | ❌ | A second unique constraint on the same columns is refused (SQL0541, probe `lib_constraints`, IBMI_NOTES). |
 | `atomic_transactions` | An error inside a transaction aborts the whole transaction. | ❌ | ❌ | ❌ | Db2 for i keeps the transaction usable after a failed statement (unlike PostgreSQL). |
 | `can_clone_databases` | The test database can be cloned for parallel test runs (`--parallel`). | ❌ | ❌ | ❌ | Tests run with `--parallel=1` in pre-existing libraries; a clone would need a library per process. |

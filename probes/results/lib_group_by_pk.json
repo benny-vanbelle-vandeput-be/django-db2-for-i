@@ -1,0 +1,87 @@
+{
+  "probe": "lib_group_by_pk",
+  "utc": "20261113T210537Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "approved": "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/258#issuecomment-6864673390",
+  "approved_by": "benny-vanbelle-vandeput-be",
+  "cases": {
+    "one table: GROUP BY the key, NAME selected": {
+      "sql": "SELECT <DEFAULT_LIBRARY>.DJDB2I_GBP.ID, <DEFAULT_LIBRARY>.DJDB2I_GBP.NAME, SUM(<DEFAULT_LIBRARY>.DJDB2I_GBP.N) FROM <DEFAULT_LIBRARY>.DJDB2I_GBP GROUP BY <DEFAULT_LIBRARY>.DJDB2I_GBP.ID ORDER BY 1",
+      "result": "-122",
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0122 - Column NAME or expression in SELECT list not valid. (-122) (SQLExecDirectW)"
+    },
+    "join: GROUP BY the parent key, NAME selected": {
+      "sql": "SELECT <DEFAULT_LIBRARY>.DJDB2I_GBP.ID, <DEFAULT_LIBRARY>.DJDB2I_GBP.NAME, COUNT(<DEFAULT_LIBRARY>.DJDB2I_GBC.ID) FROM <DEFAULT_LIBRARY>.DJDB2I_GBP LEFT OUTER JOIN <DEFAULT_LIBRARY>.DJDB2I_GBC ON (<DEFAULT_LIBRARY>.DJDB2I_GBP.ID = <DEFAULT_LIBRARY>.DJDB2I_GBC.P_ID) GROUP BY <DEFAULT_LIBRARY>.DJDB2I_GBP.ID ORDER BY 1",
+      "result": "-122",
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0122 - Column NAME or expression in SELECT list not valid. (-122) (SQLExecDirectW)"
+    },
+    "control: every selected column in GROUP BY": {
+      "sql": "SELECT <DEFAULT_LIBRARY>.DJDB2I_GBP.ID, <DEFAULT_LIBRARY>.DJDB2I_GBP.NAME, COUNT(<DEFAULT_LIBRARY>.DJDB2I_GBC.ID) FROM <DEFAULT_LIBRARY>.DJDB2I_GBP LEFT OUTER JOIN <DEFAULT_LIBRARY>.DJDB2I_GBC ON (<DEFAULT_LIBRARY>.DJDB2I_GBP.ID = <DEFAULT_LIBRARY>.DJDB2I_GBC.P_ID) GROUP BY <DEFAULT_LIBRARY>.DJDB2I_GBP.ID, <DEFAULT_LIBRARY>.DJDB2I_GBP.NAME ORDER BY 1",
+      "result": "ok",
+      "rows": [
+        {
+          "ID": 1,
+          "NAME": "one",
+          "00003": 2
+        },
+        {
+          "ID": 2,
+          "NAME": "two",
+          "00003": 1
+        }
+      ]
+    }
+  },
+  "cleanup": {
+    "DJDB2I_GBC": true,
+    "DJDB2I_GBP": true
+  },
+  "left": [],
+  "statements": [
+    {
+      "label": "create DJDB2I_GBP",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_GBP (ID INTEGER NOT NULL PRIMARY KEY, NAME VARCHAR(10), N INTEGER)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "create DJDB2I_GBC",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_GBC (ID INTEGER NOT NULL PRIMARY KEY, P_ID INTEGER)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "rows",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_GBP VALUES (1, 'one', 10), (2, 'two', 20)",
+      "params": [],
+      "ok": true,
+      "rowcount": 2
+    },
+    {
+      "label": "rows",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_GBC VALUES (1, 1), (2, 1), (3, 2)",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "drop DJDB2I_GBC",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJDB2I_GBC RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJDB2I_GBP",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJDB2I_GBP RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    }
+  ]
+}
