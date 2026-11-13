@@ -361,8 +361,14 @@ runs in Python, as on the other databases. Violations raise `IntegrityError`
 - **`DB_SET_DEFAULT` cannot delete the default's own parent.** Deleting the
   row the default points to would set the children to a key that no longer
   exists, so Db2 for i refuses the delete (SQL0532, an `IntegrityError`).
-- **Database-level `on_delete` between libraries with different journals**
-  has not been tested (both tables were in one library).
+- **Database-level `on_delete` between libraries with different journals**:
+  `DB_CASCADE` and `DB_SET_NULL` need the parent and the child table in the
+  same journal. Db2 for i accepts the foreign key, but every delete of a
+  parent row then fails with **SQL7008** ("not valid for operation"). Keep
+  both models in one library (or libraries journaled to one journal), or use
+  Django's own `CASCADE` / `SET_NULL`, which the database only checks
+  (those work across journals). `DB_SET_DEFAULT` was not tested; it changes
+  the child row too, so expect the same.
 
 ## Check constraints with a LIKE pattern from a column
 
@@ -430,8 +436,9 @@ its table, so creating a constraint on a table in another library fails with
 `SQL5051 - Qualifier ... not same as name ...`. Models whose `db_table` points
 to another library are therefore **not supported yet**; planned, see
 [#124](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/124).
-(Verified for foreign key constraints; index names in another library have not
-been tested yet.)
+The same holds for unique and check constraints. An index with an unqualified
+name does not fail, but lands in the `NAME` library, not in its table's
+library (verified on PUB400, probe `lib_other_library`).
 
 ## Strings longer than 1M characters are refused
 

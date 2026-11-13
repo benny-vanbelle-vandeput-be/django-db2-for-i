@@ -272,7 +272,8 @@ prs = [248]
 
 [[phases.steps]]
 step = "4: lib_ probes: foreign keys across the two journals; #124"
-status = "planned"
+status = "done"
+prs = [250]
 
 [[phases.steps]]
 step = "5: the backend branch (select_for_update, multiple connections, system names, #82, #95, more modules)"
