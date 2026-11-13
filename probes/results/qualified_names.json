@@ -1,0 +1,83 @@
+{
+  "probe": "qualified_names",
+  "utc": "20261113T072606Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (PQN* tables and indexes, gone with the job)",
+  "create table, unqualified unique constraint": {
+    "sql": "CREATE TABLE QTEMP.PQNT (ID INTEGER NOT NULL, N INTEGER, CONSTRAINT PQNC UNIQUE (N))",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -5051,
+    "message": "SQL5051 - Qualifier <USER> not same as name QTEMP. (-5051) (SQLExecDirectW)"
+  },
+  "create table, qualified unique constraint": {
+    "sql": "CREATE TABLE QTEMP.PQNT (ID INTEGER NOT NULL, N INTEGER, CONSTRAINT QTEMP.PQNC UNIQUE (N))",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - PQNT in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "create table, unqualified check constraint": {
+    "sql": "CREATE TABLE QTEMP.PQNT (ID INTEGER NOT NULL, N INTEGER, CONSTRAINT PQNC CHECK (N > 0))",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -5051,
+    "message": "SQL5051 - Qualifier <USER> not same as name QTEMP. (-5051) (SQLExecDirectW)"
+  },
+  "create table, qualified check constraint": {
+    "sql": "CREATE TABLE QTEMP.PQNT (ID INTEGER NOT NULL, N INTEGER, CONSTRAINT QTEMP.PQNC CHECK (N > 0))",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - PQNT in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "create table, no constraint (control)": {
+    "sql": "CREATE TABLE QTEMP.PQNT (ID INTEGER NOT NULL, N INTEGER)",
+    "result": "ok"
+  },
+  "create index QTEMP.PQNI1": {
+    "sql": "CREATE INDEX QTEMP.PQNI1 ON QTEMP.PQNT (N)",
+    "result": "ok"
+  },
+  "rename index, new name unqualified": {
+    "sql": "RENAME INDEX QTEMP.PQNI1 TO PQNI2",
+    "result": "ok"
+  },
+  "rename index, new name qualified": {
+    "sql": "RENAME INDEX QTEMP.PQNI2 TO QTEMP.PQNI3",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token . was not valid. Valid tokens: <END-OF-STATEMENT>. (-104) (SQLExecDirectW)"
+  },
+  "drop index, qualified": {
+    "result": "error",
+    "sqlstate": "42S02",
+    "sqlcode": -204,
+    "message": "SQL0204 - PQNI3 in QTEMP type *FILE not found. (-204) (SQLExecDirectW)"
+  },
+  "after the drops: PQNI* in QTEMP or the current schema": {
+    "rows": [
+      [],
+      [],
+      []
+    ]
+  },
+  "rename table, new name unqualified": {
+    "sql": "RENAME TABLE QTEMP.PQNT TO PQNT2",
+    "result": "ok"
+  },
+  "rename table, new name qualified": {
+    "sql": "RENAME TABLE QTEMP.PQNT2 TO QTEMP.PQNT3",
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token . was not valid. Valid tokens: <END-OF-STATEMENT>. (-104) (SQLExecDirectW)"
+  },
+  "objects named PQN% in the current schema (expected none)": {
+    "tables": [],
+    "indexes": [],
+    "constraints": []
+  }
+}
