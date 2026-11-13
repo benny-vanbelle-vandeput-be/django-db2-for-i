@@ -1,0 +1,1318 @@
+{
+  "probe": "supplementary_chars",
+  "utc": "20261113T001023Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (QTEMP.PSUPCH, gone with the job)",
+  "chr bmp: parameter 0x41": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200), HEX(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'A'",
+        "'0041'"
+      ]
+    ],
+    "expected": "A",
+    "matches": true
+  },
+  "chr bmp: parameter 0xe9": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200), HEX(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'é'",
+        "'00E9'"
+      ]
+    ],
+    "expected": "é",
+    "matches": true
+  },
+  "chr bmp: parameter 0x20ac": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200), HEX(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'€'",
+        "'20AC'"
+      ]
+    ],
+    "expected": "€",
+    "matches": true
+  },
+  "chr bmp: parameter 0xfffd": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200), HEX(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'�'",
+        "'FFFD'"
+      ]
+    ],
+    "expected": "�",
+    "matches": true
+  },
+  "chr bmp: parameter 0x10000": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200), HEX(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'\\x00'",
+        "'0000'"
+      ]
+    ],
+    "expected": "𐀀",
+    "matches": false
+  },
+  "chr bmp: parameter 0x1f600": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200), HEX(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'\\uf600'",
+        "'F600'"
+      ]
+    ],
+    "expected": "😀",
+    "matches": false
+  },
+  "chr bmp: parameter 0x10ffff": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200), HEX(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 1,
+        "precision": 1,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4,
+        "precision": 4,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'\\uffff'",
+        "'FFFF'"
+      ]
+    ],
+    "expected": "􏿿",
+    "matches": false
+  },
+  "chr pair: parameter 0x10000": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200), HEX(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'𐀀'",
+        "'D800DC00'"
+      ]
+    ],
+    "expected": "𐀀",
+    "matches": true
+  },
+  "chr pair: parameter 0x1f600": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200), HEX(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'😀'",
+        "'D83DDE00'"
+      ]
+    ],
+    "expected": "😀",
+    "matches": true
+  },
+  "chr pair: parameter 0x10ffff": {
+    "sql": "SELECT INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200), HEX(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'\\U0010ffff'",
+        "'DBFFDFFF'"
+      ]
+    ],
+    "expected": "􏿿",
+    "matches": true
+  },
+  "chr case: parameter 0x41": {
+    "sql": "SELECT CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END, HEX(CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'A'",
+        "'0041'"
+      ]
+    ],
+    "expected": "A",
+    "matches": true
+  },
+  "chr case: parameter 0xe9": {
+    "sql": "SELECT CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END, HEX(CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'é'",
+        "'00E9'"
+      ]
+    ],
+    "expected": "é",
+    "matches": true
+  },
+  "chr case: parameter 0x20ac": {
+    "sql": "SELECT CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END, HEX(CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'€'",
+        "'20AC'"
+      ]
+    ],
+    "expected": "€",
+    "matches": true
+  },
+  "chr case: parameter 0xfffd": {
+    "sql": "SELECT CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END, HEX(CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'�'",
+        "'FFFD'"
+      ]
+    ],
+    "expected": "�",
+    "matches": true
+  },
+  "chr case: parameter 0x10000": {
+    "sql": "SELECT CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END, HEX(CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'𐀀'",
+        "'D800DC00'"
+      ]
+    ],
+    "expected": "𐀀",
+    "matches": true
+  },
+  "chr case: parameter 0x1f600": {
+    "sql": "SELECT CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END, HEX(CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'😀'",
+        "'D83DDE00'"
+      ]
+    ],
+    "expected": "😀",
+    "matches": true
+  },
+  "chr case: parameter 0x10ffff": {
+    "sql": "SELECT CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END, HEX(CASE WHEN CAST(? AS INTEGER) < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(CAST(? AS INTEGER)), 4)) AS GRAPHIC(1) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4)) AS GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END) FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'\\U0010ffff'",
+        "'DBFFDFFF'"
+      ]
+    ],
+    "expected": "􏿿",
+    "matches": true
+  },
+  "chr vargraphic: parameter 0x41": {
+    "sql": "SELECT INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200), HEX(INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -420,
+    "message": "SQL0420 - Value for cast argument not valid. (-420) (SQLExecDirectW)"
+  },
+  "chr vargraphic: parameter 0xe9": {
+    "sql": "SELECT INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200), HEX(INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -420,
+    "message": "SQL0420 - Value for cast argument not valid. (-420) (SQLExecDirectW)"
+  },
+  "chr vargraphic: parameter 0x20ac": {
+    "sql": "SELECT INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200), HEX(INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -420,
+    "message": "SQL0420 - Value for cast argument not valid. (-420) (SQLExecDirectW)"
+  },
+  "chr vargraphic: parameter 0xfffd": {
+    "sql": "SELECT INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200), HEX(INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -420,
+    "message": "SQL0420 - Value for cast argument not valid. (-420) (SQLExecDirectW)"
+  },
+  "chr vargraphic: parameter 0x10000": {
+    "sql": "SELECT INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200), HEX(INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -420,
+    "message": "SQL0420 - Value for cast argument not valid. (-420) (SQLExecDirectW)"
+  },
+  "chr vargraphic: parameter 0x1f600": {
+    "sql": "SELECT INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200), HEX(INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -420,
+    "message": "SQL0420 - Value for cast argument not valid. (-420) (SQLExecDirectW)"
+  },
+  "chr vargraphic: parameter 0x10ffff": {
+    "sql": "SELECT INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200), HEX(INTERPRET(HEXTORAW(CASE WHEN CAST(? AS INTEGER) < 65536 THEN RIGHT(HEX(CAST(? AS INTEGER)), 4) ELSE RIGHT(HEX(55296 + (CAST(? AS INTEGER) - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(CAST(? AS INTEGER) - 65536, 1024)), 4) END) AS VARGRAPHIC(2) CCSID 1200)) FROM SYSIBM.SYSDUMMY1",
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -420,
+    "message": "SQL0420 - Value for cast argument not valid. (-420) (SQLExecDirectW)"
+  },
+  "ord: parameter 'A'": {
+    "sql": "SELECT CASE WHEN LENGTH(CAST(? AS VARGRAPHIC(100) CCSID 1200)) = 0 THEN 0 WHEN INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) BETWEEN 55296 AND 56319 THEN (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) - 55296) * 1024 + (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 5, 4)) AS INTEGER) - 56320) + 65536 ELSE INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) END FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "65"
+      ]
+    ],
+    "expected": 65,
+    "matches": true
+  },
+  "ord: parameter 'é'": {
+    "sql": "SELECT CASE WHEN LENGTH(CAST(? AS VARGRAPHIC(100) CCSID 1200)) = 0 THEN 0 WHEN INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) BETWEEN 55296 AND 56319 THEN (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) - 55296) * 1024 + (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 5, 4)) AS INTEGER) - 56320) + 65536 ELSE INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) END FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "233"
+      ]
+    ],
+    "expected": 233,
+    "matches": true
+  },
+  "ord: parameter '€'": {
+    "sql": "SELECT CASE WHEN LENGTH(CAST(? AS VARGRAPHIC(100) CCSID 1200)) = 0 THEN 0 WHEN INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) BETWEEN 55296 AND 56319 THEN (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) - 55296) * 1024 + (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 5, 4)) AS INTEGER) - 56320) + 65536 ELSE INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) END FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "8364"
+      ]
+    ],
+    "expected": 8364,
+    "matches": true
+  },
+  "ord: parameter '😀'": {
+    "sql": "SELECT CASE WHEN LENGTH(CAST(? AS VARGRAPHIC(100) CCSID 1200)) = 0 THEN 0 WHEN INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) BETWEEN 55296 AND 56319 THEN (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) - 55296) * 1024 + (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 5, 4)) AS INTEGER) - 56320) + 65536 ELSE INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) END FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "128512"
+      ]
+    ],
+    "expected": 128512,
+    "matches": true
+  },
+  "ord: parameter '😀x'": {
+    "sql": "SELECT CASE WHEN LENGTH(CAST(? AS VARGRAPHIC(100) CCSID 1200)) = 0 THEN 0 WHEN INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) BETWEEN 55296 AND 56319 THEN (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) - 55296) * 1024 + (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 5, 4)) AS INTEGER) - 56320) + 65536 ELSE INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) END FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "128512"
+      ]
+    ],
+    "expected": 128512,
+    "matches": true
+  },
+  "ord: parameter 'x😀'": {
+    "sql": "SELECT CASE WHEN LENGTH(CAST(? AS VARGRAPHIC(100) CCSID 1200)) = 0 THEN 0 WHEN INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) BETWEEN 55296 AND 56319 THEN (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) - 55296) * 1024 + (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 5, 4)) AS INTEGER) - 56320) + 65536 ELSE INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) END FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "120"
+      ]
+    ],
+    "expected": 120,
+    "matches": true
+  },
+  "ord: parameter '\\U0010ffff'": {
+    "sql": "SELECT CASE WHEN LENGTH(CAST(? AS VARGRAPHIC(100) CCSID 1200)) = 0 THEN 0 WHEN INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) BETWEEN 55296 AND 56319 THEN (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) - 55296) * 1024 + (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 5, 4)) AS INTEGER) - 56320) + 65536 ELSE INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) END FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1114111"
+      ]
+    ],
+    "expected": 1114111,
+    "matches": true
+  },
+  "ord: parameter ''": {
+    "sql": "SELECT CASE WHEN LENGTH(CAST(? AS VARGRAPHIC(100) CCSID 1200)) = 0 THEN 0 WHEN INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) BETWEEN 55296 AND 56319 THEN (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) - 55296) * 1024 + (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 5, 4)) AS INTEGER) - 56320) + 65536 ELSE INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) END FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ],
+    "expected": 0,
+    "matches": true
+  },
+  "ord: parameter None": {
+    "sql": "SELECT CASE WHEN LENGTH(CAST(? AS VARGRAPHIC(100) CCSID 1200)) = 0 THEN 0 WHEN INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) BETWEEN 55296 AND 56319 THEN (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) - 55296) * 1024 + (INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 5, 4)) AS INTEGER) - 56320) + 65536 ELSE INTERPRET(HEXTORAW('0000' CONCAT SUBSTR(HEX(CAST(CAST(? AS VARGRAPHIC(100) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200)), 1, 4)) AS INTEGER) END FROM SYSIBM.SYSDUMMY1",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ],
+    "expected": null,
+    "matches": true
+  },
+  "create table": {
+    "result": "ok"
+  },
+  "chr case: column CP": {
+    "sql": "chr_case(CP)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "CP",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 2,
+        "precision": 2,
+        "scale": 0
+      },
+      {
+        "name": "00004",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0",
+        "65",
+        "'A'",
+        "'0041'"
+      ],
+      [
+        "1",
+        "233",
+        "'é'",
+        "'00E9'"
+      ],
+      [
+        "2",
+        "8364",
+        "'€'",
+        "'20AC'"
+      ],
+      [
+        "3",
+        "65533",
+        "'�'",
+        "'FFFD'"
+      ],
+      [
+        "4",
+        "65536",
+        "'𐀀'",
+        "'D800DC00'"
+      ],
+      [
+        "5",
+        "128512",
+        "'😀'",
+        "'D83DDE00'"
+      ],
+      [
+        "6",
+        "1114111",
+        "'\\U0010ffff'",
+        "'DBFFDFFF'"
+      ]
+    ],
+    "matches": true
+  },
+  "chr case: equal to the stored NVARCHAR": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "7"
+      ]
+    ]
+  },
+  "ord: column S": {
+    "sql": "ord_units(S)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "S",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0",
+        "'A'",
+        "65"
+      ],
+      [
+        "1",
+        "'é'",
+        "233"
+      ],
+      [
+        "2",
+        "'€'",
+        "8364"
+      ],
+      [
+        "3",
+        "'�'",
+        "65533"
+      ],
+      [
+        "4",
+        "'𐀀'",
+        "65536"
+      ],
+      [
+        "5",
+        "'😀'",
+        "128512"
+      ],
+      [
+        "6",
+        "'\\U0010ffff'",
+        "1114111"
+      ],
+      [
+        "100",
+        "'A'",
+        "65"
+      ],
+      [
+        "101",
+        "'é'",
+        "233"
+      ],
+      [
+        "102",
+        "'€'",
+        "8364"
+      ],
+      [
+        "103",
+        "'😀'",
+        "128512"
+      ],
+      [
+        "104",
+        "'😀x'",
+        "128512"
+      ],
+      [
+        "105",
+        "'x😀'",
+        "120"
+      ],
+      [
+        "106",
+        "'\\U0010ffff'",
+        "1114111"
+      ],
+      [
+        "107",
+        "''",
+        "0"
+      ]
+    ],
+    "matches": true
+  },
+  "ord: column T": {
+    "sql": "ord_units(T)",
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "T",
+        "type": "str",
+        "size": 1024,
+        "precision": 1024,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0",
+        "'A'",
+        "65"
+      ],
+      [
+        "1",
+        "'é'",
+        "233"
+      ],
+      [
+        "2",
+        "'€'",
+        "8364"
+      ],
+      [
+        "3",
+        "'�'",
+        "65533"
+      ],
+      [
+        "4",
+        "'𐀀'",
+        "65536"
+      ],
+      [
+        "5",
+        "'😀'",
+        "128512"
+      ],
+      [
+        "6",
+        "'\\U0010ffff'",
+        "1114111"
+      ],
+      [
+        "100",
+        "'A'",
+        "65"
+      ],
+      [
+        "101",
+        "'é'",
+        "233"
+      ],
+      [
+        "102",
+        "'€'",
+        "8364"
+      ],
+      [
+        "103",
+        "'😀'",
+        "128512"
+      ],
+      [
+        "104",
+        "'😀x'",
+        "128512"
+      ],
+      [
+        "105",
+        "'x😀'",
+        "120"
+      ],
+      [
+        "106",
+        "'\\U0010ffff'",
+        "1114111"
+      ],
+      [
+        "107",
+        "''",
+        "0"
+      ]
+    ],
+    "matches": true
+  },
+  "substr: column S": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "5",
+        "2",
+        "'D83DDE00'"
+      ],
+      [
+        "104",
+        "3",
+        "'D83DDE00'"
+      ],
+      [
+        "105",
+        "3",
+        "'0078D83D'"
+      ]
+    ]
+  },
+  "substr: column T": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 4096,
+        "precision": 4096,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "5",
+        "2",
+        "'D83DDE000020'"
+      ],
+      [
+        "104",
+        "3",
+        "'D83DDE000020'"
+      ],
+      [
+        "105",
+        "3",
+        "None"
+      ]
+    ]
+  },
+  "nclob: SUBSTRING CODEUNITS16": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token CODEUNITS16 was not valid. Valid tokens: OCTETS. (-104) (SQLExecDirectW)"
+  },
+  "nclob: SUBSTRING OCTETS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 16,
+        "precision": 16,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0",
+        "'0041002000200020'"
+      ],
+      [
+        "5",
+        "'D83DDE0000200020'"
+      ],
+      [
+        "104",
+        "'D83DDE0000780020'"
+      ],
+      [
+        "105",
+        "'0078D83DDE000020'"
+      ],
+      [
+        "107",
+        "'0020002000200020'"
+      ]
+    ]
+  },
+  "nclob: LEFT": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 16,
+        "precision": 16,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0",
+        "'00410020'"
+      ],
+      [
+        "5",
+        "'D83DDE000020'"
+      ],
+      [
+        "104",
+        "'D83DDE000078'"
+      ],
+      [
+        "105",
+        "'0078D83DDE00'"
+      ],
+      [
+        "107",
+        "'00200020'"
+      ]
+    ]
+  },
+  "nclob: SUBSTR 1": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 16,
+        "precision": 16,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0",
+        "'0041'"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "104",
+        "None"
+      ],
+      [
+        "105",
+        "'0078'"
+      ],
+      [
+        "107",
+        "'0020'"
+      ]
+    ]
+  },
+  "nclob: CAST VARGRAPHIC(2)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 16,
+        "precision": 16,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0",
+        "'0041'"
+      ],
+      [
+        "5",
+        "'D83DDE00'"
+      ],
+      [
+        "104",
+        "'D83DDE00'"
+      ],
+      [
+        "105",
+        "'0078D83D'"
+      ],
+      [
+        "107",
+        "''"
+      ]
+    ]
+  },
+  "nclob: CAST SUBSTR VARGRAPHIC": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 16,
+        "precision": 16,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0",
+        "'00410020'"
+      ],
+      [
+        "5",
+        "'D83DDE00'"
+      ],
+      [
+        "104",
+        "'D83DDE00'"
+      ],
+      [
+        "105",
+        "None"
+      ],
+      [
+        "107",
+        "'00200020'"
+      ]
+    ]
+  }
+}

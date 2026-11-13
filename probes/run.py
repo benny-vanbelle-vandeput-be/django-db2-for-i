@@ -15,7 +15,8 @@ Usage (inside the "tests" container):
                     window | json_functions | json_errors | json_lookups | db_functions |
                     db_function_args | float_text | select_for_update |
                     phase6_flags | own_jobs | system_names | bulk_lobs |
-                    phase7_flags | record_wait | decimal_values
+                    phase7_flags | record_wait | decimal_values |
+                    supplementary_chars
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -83,6 +84,7 @@ import qtemp_select_for_update
 import qtemp_selected_predicates
 import qtemp_session
 import qtemp_string_limits
+import qtemp_supplementary_chars
 import qtemp_system_info
 import qtemp_system_names
 import qtemp_transaction_start
@@ -157,6 +159,7 @@ PROBES = {
     "phase7_flags": qtemp_phase7_flags,
     "record_wait": qtemp_record_wait,
     "decimal_values": qtemp_decimal_values,
+    "supplementary_chars": qtemp_supplementary_chars,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 

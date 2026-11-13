@@ -2749,6 +2749,34 @@ control. Result: [phase7_flags.json](../probes/results/phase7_flags.json).
 - For the backend branch: `Chr` and `Ord` through these forms for the Basic
   Multilingual Plane, and a `NotSupportedError` or a Known Limitation above it.
 
+### `Chr` and `Ord` above U+FFFF (`probes/qtemp_supplementary_chars.py`, #252)
+
+PUB400 (IBM i 7.5), 2026-11-13, one connection, QTEMP only (one table, gone with the
+job), without commitment control. Result:
+[supplementary_chars.json](../probes/results/supplementary_chars.json). Every value
+compared with Python's `chr()` / `ord()`: code points 65, 233, 8364, U+FFFD, U+10000,
+U+1F600, U+10FFFF; strings `A`, `é`, `€`, an emoji, emoji + `x`, `x` + emoji,
+U+10FFFF, `''` and NULL; as parameters, as `NVARCHAR` and as `NCLOB` column values.
+
+- **`Chr` works for every code point** with a surrogate pair above U+FFFF:
+  `CASE WHEN cp < 65536 THEN CAST(INTERPRET(HEXTORAW(RIGHT(HEX(cp), 4)) AS GRAPHIC(1)
+  CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) ELSE CAST(INTERPRET(HEXTORAW(RIGHT(HEX(55296
+  + (cp - 65536) / 1024), 4) CONCAT RIGHT(HEX(56320 + MOD(cp - 65536, 1024)), 4)) AS
+  GRAPHIC(2) CCSID 1200) AS VARGRAPHIC(2) CCSID 1200) END`: all match, parameters and
+  columns, and equal the stored `NVARCHAR`. The `GRAPHIC(1)` form alone gives the wrong
+  character above U+FFFF (U+1F600 becomes U+F600).
+- One `INTERPRET(... AS VARGRAPHIC(2) CCSID 1200)` of 2 or 4 bytes: SQL0420 ("Value
+  for cast argument not valid"), for every code point; hence the `CASE`.
+- **`Ord` works for every string** through the first two code units:
+  `HEX(CAST(s AS VARGRAPHIC(2) CCSID 1200))`, each half `INTERPRET(HEXTORAW('0000'
+  CONCAT ...) AS INTEGER)`, a high surrogate (55296-56319) combined with the next unit;
+  `''` gives 0, NULL gives NULL.
+- **On an `NCLOB`, `SUBSTR(t, 1, 2)` and `LEFT(t, 2)` pad with blanks** (`'A'` becomes
+  `'A '`, an emoji `'<pair> '`), and `SUBSTR(t, 1, 1)` of an emoji, or a `CAST` of
+  `SUBSTR(t, 1, 2)` of `x` + emoji, is NULL (it splits the pair); `SUBSTRING(...,
+  CODEUNITS16)` is SQL0104. The `CAST` of the whole value to `VARGRAPHIC(2)` keeps
+  exactly the first two code units, without an error for a longer value.
+
 ### `FOR UPDATE ... WITH RS` in QTEMP (`probes/qtemp_select_for_update.py`, phase 7)
 
 PUB400 (IBM i 7.5), 2026-11-12, QTEMP only. The forms the backend would write for
