@@ -113,7 +113,6 @@ supports_bit_aggregations.off = "Db2 for i has no `BIT_AND` aggregate (SQL0204, 
 supports_comparing_boolean_expr.description = "Conditions can be compared or tested with `IS NULL` (`WHERE (price > 0) IS NOT NULL`)."
 supports_comparing_boolean_expr.off = "Db2 for i rejects a predicate as an operand (SQL0104, SQL0199, probe queries)."
 supports_date_lookup_using_string.description = "Lookups such as `__startswith` with a string on a date or datetime column."
-supports_date_lookup_using_string.off = "Db2 for i rejects `LIKE` on a `TIMESTAMP` column (SQL0414, probe queries), as MySQL does."
 supports_default_in_bit_aggregations.description = "Bit aggregates with a `default` (Django 6.1+)."
 supports_default_in_bit_aggregations.off = "There are no bit aggregates (`supports_bit_aggregations`)."
 supports_explaining_query_execution.description = "`QuerySet.explain()`."

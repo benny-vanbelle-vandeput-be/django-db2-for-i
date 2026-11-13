@@ -80,7 +80,7 @@
     "supports_comments_inline": false,
     "supports_comparing_boolean_expr": false,
     "supports_covering_indexes": false,
-    "supports_date_lookup_using_string": false,
+    "supports_date_lookup_using_string": true,
     "supports_default_in_bit_aggregations": false,
     "supports_default_in_lead_lag": true,
     "supports_default_keyword_in_bulk_insert": true,

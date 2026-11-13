@@ -169,7 +169,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     ignores_unnecessary_order_by_in_subqueries = True
     # REGEXP_LIKE (ICU) supports backreferences (probe queries).
     supports_regex_backreferencing = True
-    supports_date_lookup_using_string = False
+    # Text lookups on a date or time column compare its ISO text (operations.lookup_cast,
+    # probe flag_review).
+    supports_date_lookup_using_string = True
     supports_order_by_nulls_modifier = False
     # NULL sorts as the largest value: last ascending, first descending (probe
     # queries). order_by_nulls_first stays False (NULLs are not first ascending).

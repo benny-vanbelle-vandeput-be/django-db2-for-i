@@ -121,6 +121,21 @@ Django, with these IBM i specifics:
   found; CHECK constraints are not written into models (as on every
   database).
 
+## Text lookups on dates and times
+
+`__startswith`, `__contains`, `__endswith`, `__regex` and their case-insensitive
+forms work on a `DateTimeField`, `DateField` or `TimeField` with a string, for
+example `published__startswith="2005"`. Db2 for i does not take `LIKE` on a
+date or time column, so the backend compares the value as text:
+
+- a datetime as `2005-07-28 12:30:05.123456`: always six fractional digits,
+  and in the time zone the database stores (UTC with `USE_TZ = True`), not in
+  the current time zone. PostgreSQL leaves out zero fractions and adds the
+  offset;
+- a date as `2005-07-28`, a time as `12:30:05`.
+
+Such a filter cannot use an index on the column.
+
 ## Case-insensitive lookups do not use normal indexes
 
 `iexact`, `icontains`, `istartswith` and `iendswith` compare
