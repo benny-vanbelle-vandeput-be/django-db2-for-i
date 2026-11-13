@@ -206,6 +206,8 @@ DATABASES = {
 ```
 
 All settings and options: [Configuration](docs/user/Configuration.md).
+IBM i system names and tables in another library than `NAME`:
+[Names and libraries](docs/user/Names-and-Libraries.md).
 
 ## Known limitations
 
