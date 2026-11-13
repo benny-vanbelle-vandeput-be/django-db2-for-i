@@ -1,6 +1,6 @@
 {
   "probe": "system_names",
-  "utc": "20261112T103517Z",
+  "utc": "20261113T002415Z",
   "host": "<HOST>",
   "ssl": true,
   "scope": "QTEMP only (tables and indexes gone with the job)",
@@ -272,6 +272,141 @@
   "index: drop by system name": {
     "result": "ok"
   },
+  "backend: CREATE TABLE quoted FOR SYSTEM NAME, with UNIQUE and PRIMARY KEY": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - PSN_QUOTED_LONG_TABLE in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "backend: CREATE TABLE quoted FOR SYSTEM NAME": {
+    "result": "ok"
+  },
+  "backend: *FILE objects after CREATE TABLE": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJNAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "OBJLONGNAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "OBJATTRIBUTE",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'PSNQT'",
+        "'PSN_QUOTED_LONG_TABLE'",
+        "'PF'"
+      ]
+    ]
+  },
+  "backend: CREATE INDEX quoted FOR SYSTEM NAME": {
+    "result": "ok"
+  },
+  "backend: CREATE UNIQUE INDEX quoted FOR SYSTEM NAME": {
+    "result": "ok"
+  },
+  "backend: *FILE objects after the indexes": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJNAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "OBJLONGNAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "OBJATTRIBUTE",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'PSNQI'",
+        "'PSN_QUOTED_LONG_INDEX'",
+        "'LF'"
+      ],
+      [
+        "'PSNQT'",
+        "'PSN_QUOTED_LONG_TABLE'",
+        "'PF'"
+      ],
+      [
+        "'PSNQU'",
+        "'PSN_QUOTED_UNIQUE_INDEX'",
+        "'LF'"
+      ]
+    ]
+  },
+  "backend: DROP INDEX by the SQL name": {
+    "result": "ok"
+  },
+  "backend: RENAME TABLE quoted, keeping the system name": {
+    "result": "ok"
+  },
+  "backend: *FILE objects after RENAME TABLE": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJNAME",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "OBJLONGNAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "OBJATTRIBUTE",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'PSNQT'",
+        "'PSN_QUOTED_LONG_TABLE2'",
+        "'PF'"
+      ],
+      [
+        "'PSNQU'",
+        "'PSN_QUOTED_UNIQUE_INDEX'",
+        "'LF'"
+      ]
+    ]
+  },
   "catalog: SYSTABLES": {
     "result": "ok",
     "columns": [
@@ -372,6 +507,16 @@
       }
     ],
     "rows": [
+      [
+        "'PSNQT'",
+        "'PSN_QUOTED_LONG_TABLE'",
+        "'PF'"
+      ],
+      [
+        "'PSNQU'",
+        "'PSN_QUOTED_UNIQUE_INDEX'",
+        "'LF'"
+      ],
       [
         "'PSNTAB'",
         "'PROBE_SYSTEM_NAMES_TABLE'",

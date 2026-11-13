@@ -2690,6 +2690,15 @@ with the job), without commitment control. Result:
   with a digit); check duplicates across tables *and* indexes of the library.
   A rename without `FOR SYSTEM NAME` keeps the old system name, so a rename must
   pass it again.
+- **The backend's forms** (rerun 2026-11-13 for tables and indexes, #253): `CREATE
+  TABLE QTEMP."<long>" FOR SYSTEM NAME <sys> (...)` and `CREATE [UNIQUE] INDEX
+  QTEMP."<long>" FOR SYSTEM NAME <sys> ON ...` with quoted SQL names: ok, each index
+  its own `*FILE` object (`OBJATTRIBUTE` `LF`, the table `PF`); `DROP INDEX` by the
+  quoted SQL name: ok; `RENAME TABLE` to another quoted name keeps the system name.
+  Constraints in `CREATE TABLE` are SQL7008 in QTEMP (no journal) and need the
+  qualifier like the table (SQL5051 without it), so whether a unique constraint is a
+  `*FILE` object was checked in the journaled test library instead
+  (`tests/ibmi/test_system_names.py`): it is not; only the table and its indexes are.
 - **The catalog views show nothing for QTEMP** (`QSYS2.SYSTABLES`, `SYSCOLUMNS`,
   `SYSINDEXES` returned no rows); `QSYS2.OBJECT_STATISTICS('QTEMP', '*FILE')` does
   (`OBJNAME`, `OBJLONGNAME`). Introspection of system names needs a journaled
