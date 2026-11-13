@@ -427,18 +427,37 @@ The backend behaves the same on Django 5.2, 6.0 and 6.1, except:
 - Generated SQL differs in small ways between versions (Django 5.2 and 6.0
   leave subquery aliases unquoted, which Db2 for i reads the same way).
 
-## Tables must be in the library given as NAME
+## Tables in another library
 
-Unqualified constraint names (such as the names of foreign key constraints
-Django adds) resolve to the connection's current schema, which is the library
-given as `NAME`. Db2 for i requires a constraint to be in the same schema as
-its table, so creating a constraint on a table in another library fails with
-`SQL5051 - Qualifier ... not same as name ...`. Models whose `db_table` points
-to another library are therefore **not supported yet**; planned, see
-[#124](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/124).
-The same holds for unique and check constraints. An index with an unqualified
-name does not fail, but lands in the `NAME` library, not in its table's
-library (verified on PUB400, probe `lib_other_library`).
+A model can have its table in another library than `NAME`
+(`Meta.db_library`, or `db_table = 'LIB"."TABLE'`; see
+[Configuration](Configuration.md#tables-in-another-library)). The backend
+qualifies every constraint and index name on it with that library. What it
+does not do:
+
+- **A table cannot move to another library.** `RENAME TABLE` on Db2 for i
+  keeps a table in its library (the new name must be unqualified), so an
+  `AlterModelTable` from one library to another, or between `NAME` and
+  another library, is refused with `NotSupportedError`. Move the table
+  yourself (for example `CRTDUPOBJ`, or a new table and an `INSERT ...
+  SELECT`), then change the model.
+- **`makemigrations` does not notice a change of `Meta.db_library` alone**,
+  as with `Meta.db_system_name`: Django's `AlterModelOptions` covers a fixed
+  list of options. It would be a move between libraries anyway (above).
+- **Only the `NAME` library is listed** by `inspectdb` and
+  `introspection.get_table_list()`, and only `NAME` is emptied by `flush`
+  (and so by Django's `TransactionTestCase`) and checked for journaling by
+  check W001.
+- **Tests use the same library.** There is no test counterpart of another
+  library: Django's test database setup creates such a table in the library
+  the model names, and its safety checks and cleanup look only at
+  `TEST["NAME"]`. Run tests against a system where that library holds only
+  test data, or point the model at a test library in your test settings.
+- **`DB_CASCADE` / `DB_SET_NULL` across journals** fail on every delete (see
+  above): a foreign key between a table in `NAME` and one in another library
+  works with Django's own `CASCADE` / `SET_NULL`.
+- Constraints and indexes created before this support (unqualified, so in
+  `NAME` for an index) are not moved; drop and create them again.
 
 ## Changing the system name of a table
 

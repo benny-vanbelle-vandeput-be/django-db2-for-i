@@ -18,6 +18,9 @@
 - ``django_db2_for_i.E004``: two tables or indexes would get the same system name
   (an explicit one, or a short SQL name, which is its own); both are ``*FILE``
   objects of one library, so Db2 for i refuses the second (SQL0601).
+- ``django_db2_for_i.E005``: a model's ``Meta.db_library`` is not a valid library
+  name, or the model names a library twice (``db_library`` and a ``db_table`` of
+  the form ``'LIB"."TABLE'``; apps.py, #124).
 
 Both can be silenced with ``SILENCED_SYSTEM_CHECKS``; with W001 silenced the
 check does not query the server at all.
@@ -43,6 +46,7 @@ from django.db.backends.base.validation import BaseDatabaseValidation
 
 from . import fields as system_names
 from .creation import _SYSTEM_NAME
+from .schema import split_table
 
 W001 = "django_db2_for_i.W001"
 W002 = "django_db2_for_i.W002"
@@ -50,6 +54,7 @@ E001 = "django_db2_for_i.E001"
 E002 = "django_db2_for_i.E002"
 E003 = "django_db2_for_i.E003"
 E004 = "django_db2_for_i.E004"
+E005 = "django_db2_for_i.E005"
 
 JOURNAL_HINT = (
     "Create a QSQJRN journal in it, or journal the library with STRJRNLIB "
@@ -155,7 +160,8 @@ def _object_system_names(model, max_length: int) -> tuple[list, list]:
     """((system name, explicit, description, obj), ...) of the model's table and
     Meta indexes, and the E003 errors met on the way."""
     named, errors = [], []
-    objects = [("table", model._meta.db_table, model, system_names.table_system_name)]
+    library, table = split_table(model._meta.db_table)
+    objects = [("table", table, model, system_names.table_system_name)]
     objects += [
         (
             "index",
@@ -185,20 +191,49 @@ def _object_system_names(model, max_length: int) -> tuple[list, list]:
             )
             continue
         if explicit or own:
-            named.append((explicit or own, bool(explicit), f"{what} {sql_name!r}", obj))
+            # Tables and indexes of one library share the names (*FILE objects).
+            key = (library.upper(), explicit or own)
+            named.append((key, bool(explicit), f"{what} {sql_name!r}", obj))
     return named, errors
 
 
+def check_db_library(model) -> list[checks.CheckMessage]:
+    """E005 for one model's ``Meta.db_library`` (#124)."""
+    library = getattr(model._meta, "db_library", "") or ""
+    if not library:
+        return []
+    if not system_names.SYSTEM_NAME.fullmatch(library.strip().upper()):
+        message = (
+            f"db_library {library!r} is not a valid IBM i library name: at most 10 "
+            "characters, letters, digits or _, starting with a letter."
+        )
+    elif split_table(model._meta.db_table)[0].upper() != library.strip().upper():
+        message = (
+            f"The model names two libraries: db_library {library!r} and db_table "
+            f"{model._meta.db_table!r}."
+        )
+    else:
+        return []
+    return [
+        checks.Error(
+            message,
+            hint="Give the library once: Meta.db_library, or db_table = 'LIB\".\"TABLE'.",
+            obj=model,
+            id=E005,
+        )
+    ]
+
+
 def check_object_system_names(models, max_length: int = 10) -> list[checks.CheckMessage]:
-    """E003 / E004 for the tables and Meta indexes of ``models`` (#253)."""
+    """E003 / E004 / E005 for the tables and Meta indexes of ``models`` (#253, #124)."""
     issues, seen = [], {}
     for model in models:
         named, errors = _object_system_names(model, max_length)
-        issues += errors
-        for name, explicit, description, obj in named:
-            other = seen.get(name)
+        issues += check_db_library(model) + errors
+        for (library, name), explicit, description, obj in named:
+            other = seen.get((library, name))
             if other is None:
-                seen[name] = (explicit, description)
+                seen[(library, name)] = (explicit, description)
             elif explicit or other[0]:
                 issues.append(
                     checks.Error(

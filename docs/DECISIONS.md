@@ -1816,3 +1816,27 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
 - **Side effect:** in a transaction that took the lock, the SQL `COMMIT` closes the
   connection's open cursors (Known Limitations).
 
+
+## 2026-11-13: A table in another library: Django's qualified db_table, with Meta.db_library on top (#124)
+
+- **Decision:** a model names another library with Django's own form of a qualified
+  name, `db_table = 'LIB"."TABLE'` (`django.db.backends.utils.split_identifier`), which
+  `quote_name()` turns into `"LIB"."TABLE"`. `Meta.db_library = "LIB"` (apps.py, with
+  `"django_db2_for_i"` in `INSTALLED_APPS`) is a clearer spelling that the backend turns
+  into the same `db_table` when the model class is ready (`class_prepared`), so there
+  is one code path. The schema editor qualifies the name of every constraint and index
+  on such a table with the library (a `Reference` around Django's name, so deferred
+  statements still follow renames; inside `CREATE TABLE` the named constraints too),
+  keeps the new name of `RENAME INDEX` / `RENAME TABLE` unqualified, and refuses a
+  move to another library. Introspection queries the table's library instead of
+  `CURRENT SCHEMA`; `get_table_list()` stays `NAME` only.
+- **Why:** the maintainer chose option 1 on #124 and asked whether a combination with
+  option 2 was possible; it is, without a second code path. Unqualified names go to the
+  current schema: SQL5051 for a constraint, an index in the wrong library (probes
+  `lib_other_library`, `qtemp_qualified_names`); a qualified new name of a rename is
+  SQL0104.
+- **Alternatives:** only `Meta.db_library` (option 2: specific to this backend, a model
+  with it does not work unchanged on another backend); qualifying names in
+  `quote_name()` itself (it does not know the table); a library per alias with a second
+  connection (Django's multi-database routing, which already works and is not this
+  question).
