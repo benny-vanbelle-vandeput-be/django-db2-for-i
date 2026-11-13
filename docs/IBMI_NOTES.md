@@ -2748,6 +2748,18 @@ control. Result: [phase7_flags.json](../probes/results/phase7_flags.json).
   - `UX'00E9'` literals work too.
 - For the backend branch: `Chr` and `Ord` through these forms for the Basic
   Multilingual Plane, and a `NotSupportedError` or a Known Limitation above it.
+- **`GENERATE_UUID()` depends on the Db2 PTF Group level** (#252): new in IBM i 7.5
+  TR5 / 7.4 TR11, delivered with the Db2 PTF Groups SF99950 level 8 (7.5) and SF99704
+  level 29 (7.4). Sources: IBM, [Db2 for i functional
+  enhancements](https://www.ibm.com/support/pages/db2-i-functional-enhancements) and
+  [GENERATE_UUID and GENERATE_UUID_BINARY scalar
+  functions](https://www.ibm.com/support/pages/generateuuid-and-generateuuidbinary-scalar-functions);
+  [rpgpgm.com, 2025-01-29](https://www.rpgpgm.com/2025/01/new-sql-scalar-functions-to-generate.html).
+  PUB400's PTF Group level cannot be read by a normal user; the function is there. So
+  the backend checks it at connect (`VALUES GENERATE_UUID()`, capability
+  `has_generate_uuid`, cached per server); `UUID4()` is
+  `LOWER(REPLACE(GENERATE_UUID(), '-', ''))`, the 32 lowercase hex digits of a
+  `UUIDField` (`CHAR(32)`).
 
 ### `Chr` and `Ord` above U+FFFF (`probes/qtemp_supplementary_chars.py`, #252)
 

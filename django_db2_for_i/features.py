@@ -336,6 +336,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "PositiveSmallIntegerField": "SmallIntegerField",
         }
 
+    # UUID4(): LOWER(REPLACE(GENERATE_UUID(), '-', '')), where the server has
+    # GENERATE_UUID() (probe phase7_flags: version 4). db_default=UUID4() stays off.
+    @cached_property
+    def supports_uuid4_function(self) -> bool:
+        return self.connection.capabilities.has_generate_uuid
+
     # JSON: an NCLOB with Db2 for i's JSON functions (expressions.py, probes
     # json_functions, json_lookups), where the server has them.
     @cached_property

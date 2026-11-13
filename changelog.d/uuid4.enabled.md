@@ -1,0 +1,1 @@
+`UUID4()` (Django 6.1) works where the server has `GENERATE_UUID()` (IBM i 7.5 Db2 PTF Group SF99950 level 8): checked at the first connection, capability `has_generate_uuid`. `db_default=UUID4()` stays off.

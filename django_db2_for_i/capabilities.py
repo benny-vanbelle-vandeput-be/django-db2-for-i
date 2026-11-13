@@ -53,6 +53,9 @@ class ServerCapabilities:
     # a job can skip inquiry message CPA32B2 for its own ALTER TABLE (7.5 and
     # 7.6 base; 7.4 needs SF99704 levels 4 and 7).
     can_suppress_inquiry_messages: bool
+    # GENERATE_UUID() (a random, version 4 UUID): IBM i 7.5 Db2 PTF Group SF99950
+    # level 8 / TR5, 7.4 SF99704 level 29 / TR11. Detected at connect (TARGETED_PROBES).
+    has_generate_uuid: bool
     # Longest SQL name for tables, columns, indexes and constraints.
     max_name_length: int
     # Longest system (object) name, e.g. for schemas/libraries.
@@ -74,7 +77,9 @@ CAPABILITY_FIELDS = {
 # Profiles per OS release. Values must be backed by evidence:
 # 7.5: probe `features` on PUB400 (IBM i 7.5, TR level not readable),
 #      2026-10-17; name lengths from SQLGetInfo and IBM i system names;
-#      can_suppress_inquiry_messages from probe `qaqqini_inquiry`, 2026-10-25.
+#      can_suppress_inquiry_messages from probe `qaqqini_inquiry`, 2026-10-25;
+#      has_generate_uuid from probe `phase7_flags`, 2026-11-12: the profile
+#      assumes Db2 PTF Group level 8 or later (detection checks it).
 PROFILES: Mapping[str, Mapping[str, Any]] = {
     "7.5": {
         "release": (7, 5),
@@ -83,6 +88,7 @@ PROFILES: Mapping[str, Mapping[str, Any]] = {
         "has_offset_fetch": True,
         "has_json_functions": True,
         "can_suppress_inquiry_messages": True,
+        "has_generate_uuid": True,
         "max_name_length": 128,
         "max_system_name_length": 10,
     },
@@ -98,9 +104,13 @@ class FeatureProbe:
 
 
 # Capabilities whose availability within a supported release depends on the
-# TR or Db2 PTF Group level. None so far: everything in the 7.5 profile is
-# available on 7.5 itself.
-TARGETED_PROBES: tuple[FeatureProbe, ...] = ()
+# TR or Db2 PTF Group level: one cheap statement each, at the first connection
+# to a server (cached per server).
+TARGETED_PROBES: tuple[FeatureProbe, ...] = (
+    # Calls the function itself rather than reading QSYS2.SYSROUTINES: it also
+    # covers the path and the user's authority to it.
+    FeatureProbe("has_generate_uuid", "VALUES GENERATE_UUID()"),
+)
 
 _VERSION = re.compile(r"^\s*(\d{1,2})\.(\d{1,2})\.(\d+)\s*$")
 

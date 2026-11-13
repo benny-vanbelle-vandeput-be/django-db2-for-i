@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**72 flags enabled on Django 6.1.**
+**73 flags enabled on Django 6.1.**
 
-## Enabled (72)
+## Enabled (73)
 
 On in at least one supported Django version.
 
@@ -84,12 +84,13 @@ On in at least one supported Django version.
 | `supports_tuple_lookups` | Lookups on several columns at once (composite keys, multi-column relations). | ✅ | ✅ | ✅ |
 | `supports_update_conflicts` | `bulk_create(update_conflicts=True)` (upsert). | ✅ | ✅ | ✅ |
 | `supports_update_conflicts_with_target` | `bulk_create(update_conflicts=True, unique_fields=...)`: an upsert on named columns. | ✅ | ✅ | ✅ |
+| `supports_uuid4_function` | The `UUID4()` database function (Django 6.1+), through `GENERATE_UUID()`; detected at connect, as it needs IBM i 7.5 Db2 PTF Group level 8. | – | – | ✅ |
 | `test_db_allows_multiple_connections` | The test database may be used by several connections at once. | ✅ | ✅ | ✅ |
 | `truncates_names` | Names longer than the database allows are shortened with a hash, the same way everywhere. | ✅ | ✅ | ✅ |
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (55)
+## Intentionally off (54)
 
 Off on purpose, with the reason.
 
@@ -146,8 +147,7 @@ Off on purpose, with the reason.
 | `supports_timezones` | Datetimes are stored with their time zone. | ❌ | ❌ | ❌ | Db2 for i has no `TIMESTAMP WITH TIME ZONE`; datetimes are stored in UTC without zone. |
 | `supports_tuple_comparison_against_subquery` | Composite fields compared with `>`, `<` against a subquery. | – | ❌ | ❌ | Db2 for i rejects row-value comparisons with a subquery (SQL0115). |
 | `supports_unlimited_charfield` | `CharField` without `max_length`. | ❌ | ❌ | ❌ | `NVARCHAR` and `VARCHAR` need a length (SQL0104, SQL0604, probe `qtemp_later_flags`, IBMI_NOTES); the unbounded type, `NCLOB`, is `TextField`. |
-| `supports_uuid4_function` | The `UUID4()` database function (Django 6.1+). | – | – | ❌ | Db2 for i has no function that generates a random UUID (not verified on IBM i). |
-| `supports_uuid4_function_in_default` | `db_default=UUID4()` (Django 6.1+). | – | – | ❌ | There is no `UUID4()` database function (`supports_uuid4_function`). |
+| `supports_uuid4_function_in_default` | `db_default=UUID4()` (Django 6.1+). | – | – | ❌ | Off by decision (#252): `GENERATE_UUID()` depends on the server's Db2 PTF Group level, and as a column default it is not verified on IBM i. |
 | `supports_uuid7_function` | The `UUID7()` database function (Django 6.1+). | – | – | ❌ | Db2 for i has no function that generates a time-ordered UUID (not verified on IBM i). |
 | `supports_virtual_generated_columns` | `GeneratedField(db_persist=False)`, virtual generated columns. | ❌ | ❌ | ❌ | Db2 for i has no generated columns over other columns, stored or virtual (SQL0104 also with `VIRTUAL`, probe `qtemp_later_flags`, IBMI_NOTES). |
 

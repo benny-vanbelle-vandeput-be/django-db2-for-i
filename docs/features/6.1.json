@@ -136,7 +136,7 @@
     "supports_unspecified_pk": false,
     "supports_update_conflicts": true,
     "supports_update_conflicts_with_target": true,
-    "supports_uuid4_function": false,
+    "supports_uuid4_function": true,
     "supports_uuid4_function_in_default": false,
     "supports_uuid7_function": false,
     "supports_uuid7_function_shift": false,

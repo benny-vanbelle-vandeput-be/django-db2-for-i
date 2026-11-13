@@ -32,7 +32,7 @@ from django.db.models.functions import (
 )
 
 from django_db2_for_i import compat
-from tests.testapp.models import Author, Book, Document
+from tests.testapp.models import Author, Book, Document, Tag
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")
 
@@ -88,6 +88,22 @@ def test_chr_and_ord_beyond_ascii(live, empty) -> None:
     back = Author.objects.exclude(name="").annotate(first=Chr(Ord("name"))).order_by("pk")
     assert [a.first for a in back] == [t[0] for t in texts if t]
     assert Author.objects.filter(name__startswith=Chr(Value(0x1F600))).count() == 1
+
+
+@pytest.mark.skipif(compat.UUID4 is None, reason="UUID4() is new in Django 6.1")
+def test_uuid4_fills_uuid_fields(live, empty) -> None:
+    """UUID4() through GENERATE_UUID(), detected at connect (probe phase7_flags):
+    version 4, distinct, and found again by the value Django reads back."""
+    assert live.features.supports_uuid4_function is True
+    for name in ("a", "b", "c"):
+        Tag.objects.create(label=name)
+    before = set(Tag.objects.values_list("id", flat=True))
+    Tag.objects.update(id=compat.UUID4())
+    tags = list(Tag.objects.all())
+    assert len({tag.id for tag in tags}) == 3
+    assert all(tag.id.version == 4 for tag in tags)
+    assert not before & {tag.id for tag in tags}
+    assert Tag.objects.get(id=tags[0].id).label == tags[0].label
 
 
 def test_functions_db2_for_i_lacks_raise(live, empty) -> None:

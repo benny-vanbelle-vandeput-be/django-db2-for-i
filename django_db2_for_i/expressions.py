@@ -294,7 +294,7 @@ from django.db.models.lookups import (
 from django.db.models.sql.query import Query
 from django.db.models.sql.where import WhereNode
 
-from .compat import DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON, JSONIn, StringAgg
+from .compat import DJANGO_CHECKS_TUPLE_SUBQUERY_COMPARISON, UUID4, JSONIn, StringAgg
 
 SMALLINT_RANGE = (-(2**15), 2**15 - 1)
 INTEGER_RANGE = (-(2**31), 2**31 - 1)
@@ -1057,6 +1057,22 @@ def ord_as_db2_for_i(self, compiler, connection, **extra_context):
 
 
 Ord.as_db2_for_i = ord_as_db2_for_i
+
+
+def uuid4_as_db2_for_i(self, compiler, connection, **extra_context):
+    """GENERATE_UUID() gives a version 4 UUID with hyphens (probe phase7_flags); a
+    UUIDField is CHAR(32) of lowercase hex digits, as Django writes uuid.hex."""
+    if not connection.features.supports_uuid4_function:
+        # Django's own message first (db_functions.test_uuid checks it).
+        raise NotSupportedError(
+            "UUID4 is not supported on this database backend. It needs GENERATE_UUID(): "
+            "IBM i 7.5 with Db2 PTF Group SF99950 level 8."
+        )
+    return "LOWER(REPLACE(GENERATE_UUID(), '-', ''))", ()
+
+
+if UUID4 is not None:
+    UUID4.as_db2_for_i = uuid4_as_db2_for_i
 
 
 def concat_pair_as_db2_for_i(self, compiler, connection, **extra_context):
