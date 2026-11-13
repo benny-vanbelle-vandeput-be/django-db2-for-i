@@ -2881,6 +2881,51 @@ migration (QTEMP copy of QAQQINI, discarded at the end), the job's inquiry messa
   `SYSCOLAUTH`, `SYSCONTROLS` (`COLUMN_NAME`, `CONTROL_TYPE`), `SYSVIEWDEP` (table
   level) and `SYSINDEXES`.
 
+### Renaming a column by copying it, with constraints (`probes/lib_column_copy.py`, #258)
+
+PUB400 (IBM i 7.5), 2026-11-13, in the default (journaled test) library, approved on
+#258: `DJDB2I_CCP` (`ID` primary key, `CODE VARCHAR(10) NOT NULL UNIQUE`, `N INTEGER
+CHECK (N >= 0)`, 3 rows) and `DJDB2I_CCC` (`P_CODE` references `CODE`, 2 rows), on
+the cleanup list, dropped at the end (nothing left). The backend's connection
+attributes, under commitment control, CPA32B2 suppressed for the job. Several runs on
+the same day refined the order; the published result is the last one:
+[lib_column_copy.json](../probes/results/lib_column_copy.json).
+
+- **`DROP COLUMN ... RESTRICT` does not protect a check constraint:** `DROP COLUMN
+  CODE RESTRICT` (unique, referenced) is SQL0196, but `DROP COLUMN N RESTRICT` went
+  through and took the check on `N` with it. The schema editor must handle checks
+  itself.
+- **Under commitment control, the copy cannot be a plain `UPDATE`:** after it, every
+  `ALTER TABLE` of the table is SQL0910 (pending change, as in "SQL0910 comes from
+  changed rows only"). **`UPDATE ... WITH NC`** (no commitment control for the
+  statement) works, and the copied values live only in the new column, which a
+  rollback removes.
+- **The first `UPDATE ... WITH NC` after DDL of a table is SQL0910 while another table
+  has a foreign key to it.** With the child's foreign key dropped first, it works; a
+  table with only an outgoing foreign key, and a table without DDL in the transaction,
+  are not affected:
+
+  | Before the copy, in the transaction | Copy WITH NC |
+  |---|---|
+  | `ADD COLUMN` (also `BEFORE`), parent with an incoming foreign key | SQL0910 |
+  | `DROP CHECK` and `ADD COLUMN`, in either order, same parent | SQL0910 |
+  | the child's foreign key dropped, then `ADD COLUMN` | ok |
+  | no DDL | ok |
+  | `ADD COLUMN` on the child (outgoing foreign key only), with or without dropping it | ok |
+
+  Once a foreign key to the table is back (or after more DDL), a second copy in the same
+  transaction is SQL0910 again.
+- **The order that works**, rolled back and committed: drop the incoming foreign key,
+  the unique and the check; `ADD COLUMN NEW_CODE ... BEFORE CODE`, `ADD COLUMN NEW_N
+  ... BEFORE N`; both copies `WITH NC`; then `SET NOT NULL`, the unique, the foreign key
+  (same names, rules from `SYSREFCST`), the check with the column name replaced in
+  `SYSCHKCST.CHECK_CLAUSE` (`N >= 0` became `"NEW_N" >= 0`), and `DROP COLUMN ...
+  RESTRICT` of both old columns. After `ROLLBACK` the tables, constraints and rows were
+  as before; after `COMMIT` the new columns had the old places, the constraints were on
+  them and were enforced (SQL0530, SQL0803, SQL0545).
+- `LABEL ON COLUMN ... IS` sets the column heading (`SYSCOLUMNS.COLUMN_HEADING`), not
+  `COLUMN_TEXT` (`LABEL ON COLUMN ... TEXT IS`); a copy needs both, and `LONG_COMMENT`.
+
 ### `Chr` and `Ord` above U+FFFF (`probes/qtemp_supplementary_chars.py`, #252)
 
 PUB400 (IBM i 7.5), 2026-11-13, one connection, QTEMP only (one table, gone with the
