@@ -1459,3 +1459,135 @@ def test_db_level_on_delete_deletes_and_sets_real_rows(live, db_on_delete_models
     with pytest.raises(IntegrityError), transaction.atomic():
         home.delete()
     assert child.objects.get().home_id == 1
+
+
+# --- Renaming a column by copying it (#258 F) -----------------------------------------
+
+COPY_TABLES = ("TESTAPP_COPYCHILD", "TESTAPP_COPYPARENT")
+
+
+@pytest.fixture
+def copy_models(live):
+    """CopyParent (a unique code, a checked amount, an indexed label) and CopyChild
+    (a foreign key to the code); with rows; dropped after the test, child first."""
+    from django.apps import apps
+
+    class CopyParent(models.Model):
+        code = models.CharField(max_length=10, unique=True)
+        amount = models.PositiveIntegerField(default=0)
+        label = models.CharField(max_length=20, db_index=True)
+
+        class Meta:
+            app_label = "testapp"
+
+    class CopyChild(models.Model):
+        parent = models.ForeignKey(CopyParent, models.CASCADE, to_field="code")
+
+        class Meta:
+            app_label = "testapp"
+
+    try:
+        with live.schema_editor() as editor:
+            editor.create_model(CopyParent)
+            editor.create_model(CopyChild)
+        a = CopyParent.objects.create(code="a", amount=1, label="one")
+        CopyParent.objects.create(code="b", amount=2, label="two")
+        CopyChild.objects.create(parent=a)
+        yield CopyParent, CopyChild
+    finally:
+        replace_if_unusable(live)
+        with live.cursor() as cursor:
+            for table in COPY_TABLES:
+                cursor.execute(
+                    "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = CURRENT SCHEMA "
+                    "AND TABLE_NAME = %s",
+                    [table],
+                )
+                if cursor.fetchone()[0]:
+                    cursor.execute(f'DROP TABLE "{table}"')
+        for name in ("copyparent", "copychild"):
+            apps.all_models["testapp"].pop(name, None)
+        apps.clear_cache()
+
+
+def _renamed(model, name: str, column: str):
+    field = _rebuilt(model, name, db_column=column)
+    return model._meta.get_field(name), field
+
+
+def _copy_columns(live) -> list[tuple]:
+    with live.cursor() as cursor:
+        cursor.execute(
+            "SELECT COLUMN_NAME, IS_NULLABLE FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA = "
+            "CURRENT SCHEMA AND TABLE_NAME = 'TESTAPP_COPYPARENT' ORDER BY ORDINAL_POSITION"
+        )
+        return [tuple(v.strip() for v in row) for row in cursor.fetchall()]
+
+
+def test_rename_columns_by_copying(live, copy_models) -> None:
+    """Two renames in one schema editor (a migration with two RenameFields): the
+    columns keep their places and values, the unique constraint, the check, the index
+    and the foreign key to the code are on the new columns and enforced, the old
+    columns are gone, and the record format warning names the table."""
+    from django.db import IntegrityError, transaction
+
+    from django_db2_for_i.schema import RecordFormatChanged
+
+    assert live.column_rename == "copy"
+    parent, _child = copy_models
+    code, ref = _renamed(parent, "code", "ref")
+    amount, total = _renamed(parent, "amount", "total")
+    with (
+        pytest.warns(RecordFormatChanged, match="TESTAPP_COPYPARENT|TESTA"),
+        live.schema_editor() as editor,
+    ):
+        editor.alter_field(parent, code, ref, strict=True)
+        editor.alter_field(parent, amount, total, strict=True)
+    assert _copy_columns(live) == [
+        ("ID", "N"),
+        ("REF", "N"),
+        ("TOTAL", "N"),
+        ("LABEL", "N"),
+    ]
+    with live.cursor() as cursor:
+        cursor.execute('SELECT "REF", "TOTAL", "LABEL" FROM "TESTAPP_COPYPARENT" ORDER BY "ID"')
+        assert [tuple(r) for r in cursor.fetchall()] == [("a", 1, "one"), ("b", 2, "two")]
+        constraints = live.introspection.get_constraints(cursor, "testapp_copyparent")
+        child_constraints = live.introspection.get_constraints(cursor, "testapp_copychild")
+    columns = {
+        tuple(info["columns"]): kind
+        for info in constraints.values()
+        for kind in ("unique", "check", "index")
+        if info[kind] and not info["primary_key"]
+    }
+    assert columns[("ref",)] == "unique" and columns[("total",)] == "check"
+    assert ("label",) in columns
+    assert [info["foreign_key"] for info in child_constraints.values() if info["foreign_key"]] == [
+        ("testapp_copyparent", "ref")
+    ]
+    for sql, params in (
+        (
+            'INSERT INTO "TESTAPP_COPYPARENT" ("REF", "TOTAL", "LABEL") VALUES (%s, %s, %s)',
+            ["a", 3, "x"],
+        ),
+        (
+            'INSERT INTO "TESTAPP_COPYPARENT" ("REF", "TOTAL", "LABEL") VALUES (%s, %s, %s)',
+            ["c", -1, "x"],
+        ),
+        ('INSERT INTO "TESTAPP_COPYCHILD" ("PARENT_ID") VALUES (%s)', ["zz"]),
+    ):
+        with pytest.raises(IntegrityError), transaction.atomic(), live.cursor() as cursor:
+            cursor.execute(sql, params)
+
+
+def test_a_rolled_back_copy_leaves_the_table_as_it_was(live, copy_models) -> None:
+    from django.db import transaction
+
+    parent, _child = copy_models
+    code, ref = _renamed(parent, "code", "ref")
+    before = _copy_columns(live)
+    with pytest.raises(RuntimeError), transaction.atomic():
+        with live.schema_editor(atomic=False) as editor:
+            editor.alter_field(parent, code, ref, strict=True)
+        raise RuntimeError("roll back")
+    assert _copy_columns(live) == before

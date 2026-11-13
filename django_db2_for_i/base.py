@@ -52,6 +52,7 @@ from django.utils.functional import cached_property
 
 from . import capabilities as caps
 from . import (
+    column_copy,
     compat,
     expressions,  # noqa: F401  (registers as_db2_for_i() methods)
     inquiry,
@@ -76,6 +77,7 @@ OPTION_NAMES = frozenset(
         "capabilities",
         inquiry.OPTION,
         inquiry.SUPPRESS_OPTION,
+        column_copy.OPTION,
     }
 )
 
@@ -340,6 +342,18 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if not isinstance(value, bool):
             raise ImproperlyConfigured(
                 f"OPTIONS['{inquiry.SUPPRESS_OPTION}']: use True or False, not {value!r}."
+            )
+        return value
+
+    @cached_property
+    def column_rename(self) -> str:
+        """OPTIONS['column_rename'], validated: "refuse" (not set) or "copy"
+        (column_copy.py)."""
+        value = self.options.get(column_copy.OPTION, column_copy.REFUSE)
+        if value not in column_copy.VALUES:
+            raise ImproperlyConfigured(
+                f"OPTIONS['{column_copy.OPTION}']: use "
+                f"{' or '.join(repr(v) for v in column_copy.VALUES)}, not {value!r}."
             )
         return value
 

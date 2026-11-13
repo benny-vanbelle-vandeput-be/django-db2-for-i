@@ -597,3 +597,18 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     django_test_expected_failures: set[str] = (
         set().union(*expected_failures.values()) - compat.PASSING_ON_THIS_VERSION
     )
+
+    def __init__(self, connection):
+        super().__init__(connection)
+        if getattr(connection, "column_rename", None) == "copy":
+            # OPTIONS["column_rename"] = "copy" (column_copy.py): the tests that
+            # rename a column run (only on this connection's features).
+            self.django_test_expected_failures = (
+                type(self).django_test_expected_failures
+                - self.expected_failures[REASON_NO_COLUMN_RENAME]
+            )
+            self.django_test_skips = {
+                reason: tests
+                for reason, tests in type(self).django_test_skips.items()
+                if reason != REASON_NO_COLUMN_RENAME
+            }

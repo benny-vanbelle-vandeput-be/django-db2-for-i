@@ -14,7 +14,7 @@ from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django_db2_for_i import inquiry
 from django_db2_for_i.base import DatabaseWrapper
 from django_db2_for_i.drivers import base as driver_base
-from django_db2_for_i.schema import narrowing_check
+from django_db2_for_i.schema import DatabaseSchemaEditor, narrowing_check
 from tests.testapp.models import Defaults
 
 # --- narrowing_check() ---------------------------------------------------------------
@@ -325,6 +325,8 @@ def executed(monkeypatch):
         statements.append(str(sql))
 
     monkeypatch.setattr(BaseDatabaseSchemaEditor, "execute", execute)
+    # The record format warning reads the table's system name: not part of these tests.
+    monkeypatch.setattr(DatabaseSchemaEditor, "_warn_record_formats", lambda self: None)
     return statements
 
 

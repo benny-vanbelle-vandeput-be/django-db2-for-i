@@ -1847,3 +1847,33 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   `quote_name()` itself (it does not know the table); a library per alias with a second
   connection (Django's multi-database routing, which already works and is not this
   question).
+
+
+## 2026-11-13: Renaming a column by copying it, opt-in; a warning for changed record formats (#258)
+
+- **Decision (project owner, #258 and the session):** amends "No table rebuild for
+  column renames and incompatible type changes" (2026-10-26). With
+  `OPTIONS["column_rename"] = "copy"` (opt-in, the owner's choice; default `"refuse"`)
+  the schema editor renames a column by copying it in the same table
+  (`column_copy.py`): checks first, then every foreign key to the table and the
+  constraints and indexes on the column dropped, `ADD COLUMN ... BEFORE` the old
+  column, `UPDATE ... SET new = old WITH NC`, `NOT NULL`, default, identity restart,
+  constraints, indexes and labels again, and at the end of the schema editor the
+  foreign keys to the table again and `DROP COLUMN old RESTRICT`. The IBM i test
+  settings use it, so Django's rename tests run there.
+  Every migration that changes a table's record format (`ADD`, `DROP` or `ALTER
+  COLUMN`) warns once per table with its system name (`RecordFormatChanged`,
+  `django_db2_for_i.W003`); always on (the owner's choice), no list of programs.
+- **Why:** the table stays (journaling, triggers, authorities, the table's system
+  name, views and foreign keys of other tables), which was the reason against a table
+  rebuild; `BEFORE` keeps the column's place (the owner's suggestion). The order is
+  what the probes showed to work under commitment control: a plain `UPDATE` makes
+  every later `ALTER TABLE` of the table SQL0910, `WITH NC` does not, but only while
+  no foreign key references the table (probes `qtemp_column_copy`, `lib_column_copy`).
+  `DROP COLUMN ... RESTRICT` refuses an index or view still on the old column, but
+  not a check constraint, so the editor rebuilds checks itself.
+- **Alternatives:** a table rebuild (rejected on 2026-10-26); the copy by default
+  (the owner chose opt-in: the column's system name changes and every row is
+  rewritten); the warning with the programs that use the table (`DSPPGMREF`, not
+  wanted).
+

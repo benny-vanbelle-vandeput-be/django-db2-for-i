@@ -37,7 +37,9 @@ def database(library_variable: str) -> dict:
         "HOST": env("DB2I_HOST"),
         "USER": env("DB2I_USER"),
         "PASSWORD": env("DB2I_PASSWORD"),
-        "OPTIONS": {"ssl": env("DB2I_SSL", "1") == "1"},
+        # column_rename: the opt-in column copy (#258 F) runs in the tests, so
+        # Django's rename tests run instead of being expected failures.
+        "OPTIONS": {"ssl": env("DB2I_SSL", "1") == "1", "column_rename": "copy"},
         "TEST": {
             "NAME": library,
             "CREATE_DB": False,
