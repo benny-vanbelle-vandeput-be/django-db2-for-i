@@ -1326,6 +1326,13 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   it. No Django backend sets it to False, PostgreSQL included, which also
   creates none of its own. Django's own index is there, so True matches what
   the tests check. The DDL is unchanged (the FK goldens did not change).
+- **Amended 2026-11-13 (project owner, #258 C):** `can_create_inline_fk = True`
+  for a column added later only: `AddField` of a foreign key writes the constraint
+  in its `ALTER TABLE ... ADD COLUMN` (`CONSTRAINT <name> REFERENCES ...`, with
+  Django's name and, for a table in another library, the library). `CREATE TABLE`
+  keeps separate statements (`sql_create_inline_fk` stays `None`), so tables that
+  reference each other still need no order. Verified with Django's `schema` tests
+  and the goldens on IBM i.
 
 ## 2026-10-21: supports_comments only if Unicode text works
 - **Decision (project owner):** `COMMENT ON ... IS UX'...'` (the Unicode

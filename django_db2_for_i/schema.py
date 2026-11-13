@@ -40,7 +40,7 @@ from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.backends.ddl_references import Reference, Statement
 from django.db.backends.utils import split_identifier
 
-from . import fields, inquiry
+from . import compat, fields, inquiry
 from .expressions import NVARCHAR_MAX
 
 
@@ -332,6 +332,11 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     # or a value narrowed (_refuse_changed_values()). Through _lock_table() only.
     sql_lock_table = "LOCK TABLE %(table)s IN EXCLUSIVE MODE"
     sql_rename_index = "RENAME INDEX %(old_name)s TO %(new_name)s"
+    # A foreign key column added by a migration gets its constraint in the same
+    # ALTER TABLE ... ADD COLUMN (can_create_inline_fk). CREATE TABLE keeps its
+    # foreign keys in separate statements (sql_create_inline_fk stays None), so
+    # tables that reference each other need no order.
+    sql_create_column_inline_fk = compat.SQL_CREATE_COLUMN_INLINE_FK
     # A UniqueConstraint with a condition or expressions is a unique index. A
     # plain unique index treats NULLs as equal; UNIQUE WHERE NOT NULL treats
     # them as distinct, as a UNIQUE constraint does and Django assumes, also

@@ -33,6 +33,10 @@ REASON_PENDING_ROW_CHANGES = (
     "the transaction (SQL0910)"
 )
 REASON_NO_COLUMN_RENAME = "Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6)"
+REASON_POSTGRESQL_LIKE_INDEXES = (
+    "the test counts PostgreSQL's deferred LIKE indexes; Db2 for i writes UNIQUE in the "
+    "ADD COLUMN and defers nothing"
+)
 REASON_TYPE_NOT_IN_PLACE = "Db2 for i cannot change this column type in place (SQL0190)"
 REASON_CHECK_LIKE_COLUMN_PATTERN = (
     "Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546)"
@@ -277,7 +281,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # Django's drop and re-add around a type change matters (IBMI_NOTES,
     # "Foreign keys through the schema editor"). Nothing is deferrable.
     supports_foreign_keys = True
-    can_create_inline_fk = False
+    # A new foreign key column gets its constraint in its ADD COLUMN
+    # (schema.sql_create_column_inline_fk); CREATE TABLE keeps separate statements.
+    can_create_inline_fk = True
     # A foreign key column ends up with an index: Db2 for i creates none for
     # the constraint, so the index is Django's own (decision 5, amended
     # 2026-10-25). Django reads this flag only in its tests.
@@ -572,6 +578,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         },
         REASON_FOR_UPDATE_TEXT: {
             "select_for_update.tests.SelectForUpdateTests.test_for_update_after_from",
+        },
+        # Since can_create_inline_fk (#258 C) the test runs.
+        REASON_POSTGRESQL_LIKE_INDEXES: {
+            "indexes.tests.SchemaIndexesTests.test_alter_field_unique_false_removes_deferred_sql",
         },
         REASON_FINAL_TABLE_NOT_RETURNING: {
             "queries.test_db_returning.ReturningValuesTests.test_insert_returning",

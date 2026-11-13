@@ -9,7 +9,7 @@
     "allows_multiple_constraints_on_same_fields": false,
     "atomic_transactions": false,
     "can_clone_databases": false,
-    "can_create_inline_fk": false,
+    "can_create_inline_fk": true,
     "can_defer_constraint_checks": false,
     "can_distinct_on_fields": false,
     "can_introspect_check_constraints": true,

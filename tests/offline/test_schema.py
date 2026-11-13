@@ -70,10 +70,11 @@ def test_delete_model() -> None:
 
 
 def test_foreign_keys_are_separate_statements() -> None:
-    """supports_foreign_keys on, can_create_inline_fk off (decision 4): the
-    foreign key is an ALTER TABLE ... ADD CONSTRAINT after the CREATE TABLE."""
+    """CREATE TABLE writes no foreign key (decision 4): it is an ALTER TABLE ...
+    ADD CONSTRAINT after it, so tables that reference each other need no order.
+    can_create_inline_fk covers only a column added later (#258 C)."""
     assert connection.features.supports_foreign_keys
-    assert not connection.features.can_create_inline_fk
+    assert connection.SchemaEditorClass.sql_create_inline_fk is None
     create, *rest = collect(("create_model", Book))
     assert "FOREIGN KEY" not in create and "REFERENCES" not in create
     assert sum("FOREIGN KEY" in statement for statement in rest) == 1

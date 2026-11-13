@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**75 flags enabled on Django 6.1.**
+**76 flags enabled on Django 6.1.**
 
-## Enabled (75)
+## Enabled (76)
 
 On in at least one supported Django version.
 
@@ -19,6 +19,7 @@ On in at least one supported Django version.
 | `allow_sliced_subqueries_with_in` | A sliced queryset (`qs[:n]`, also with an offset) can be used in `__in`. | ✅ | ✅ | ✅ |
 | `allows_auto_pk_0` | An `AutoField` primary key may be 0. | ✅ | ✅ | ✅ |
 | `allows_group_by_lob` | `TextField` and `BinaryField` columns can be grouped by. | ✅ | ✅ | ✅ |
+| `can_create_inline_fk` | A foreign key column added by a migration gets its constraint in the same `ALTER TABLE ... ADD COLUMN`. | ✅ | ✅ | ✅ |
 | `can_introspect_check_constraints` | `inspectdb` and introspection find CHECK constraints. | ✅ | ✅ | ✅ |
 | `can_introspect_default` | Introspection reads column defaults. | ✅ | ✅ | ✅ |
 | `can_introspect_foreign_keys` | Introspection finds foreign keys. | ✅ | ✅ | ✅ |
@@ -92,7 +93,7 @@ On in at least one supported Django version.
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (52)
+## Intentionally off (51)
 
 Off on purpose, with the reason.
 
@@ -103,7 +104,6 @@ Off on purpose, with the reason.
 | `allows_multiple_constraints_on_same_fields` | Several constraints on the same columns. | ❌ | ❌ | ❌ | A second unique constraint on the same columns is refused (SQL0541, probe `lib_constraints`, IBMI_NOTES). |
 | `atomic_transactions` | An error inside a transaction aborts the whole transaction. | ❌ | ❌ | ❌ | Db2 for i keeps the transaction usable after a failed statement (unlike PostgreSQL). |
 | `can_clone_databases` | The test database can be cloned for parallel test runs (`--parallel`). | ❌ | ❌ | ❌ | Tests run with `--parallel=1` in pre-existing libraries; a clone would need a library per process. |
-| `can_create_inline_fk` | Foreign keys are created inline in `CREATE TABLE`. | ❌ | ❌ | ❌ | Foreign keys are separate `ALTER TABLE ... ADD CONSTRAINT` statements, which also work for tables that reference each other. |
 | `can_defer_constraint_checks` | Constraint checks can be deferred to the end of the transaction. | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `can_introspect_json_field` | Introspection recognizes a `JSONField` column. | ❌ | ❌ | ❌ | Db2 for i refuses `CHECK (C IS JSON)` on an `NCLOB` (SQL0546, probe `lib_json_check`), so a JSON column cannot be recognized. |
 | `can_introspect_materialized_views` | `inspectdb --include-views` also finds materialized views. | ❌ | ❌ | ❌ | The flag only enables Django's test, which writes `CREATE MATERIALIZED VIEW`: Db2 for i rejects it (SQL0104; its materialized query tables are `CREATE TABLE ... AS (...) MAINTAINED BY USER`, probe `qtemp_later_flags`, IBMI_NOTES). |

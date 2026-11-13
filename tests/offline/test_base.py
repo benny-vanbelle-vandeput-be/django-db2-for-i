@@ -358,6 +358,7 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
         features.REASON_UNTYPED_RAW_SQL_PARAMETER,
         features.REASON_PENDING_ROW_CHANGES,
         features.REASON_NO_COLUMN_RENAME,
+        features.REASON_POSTGRESQL_LIKE_INDEXES,
         features.REASON_TYPE_NOT_IN_PLACE,
         features.REASON_CHECK_LIKE_COLUMN_PATTERN,
         features.REASON_FINAL_TABLE_NOT_RETURNING,
