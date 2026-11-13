@@ -25,7 +25,7 @@ USE_TZ = True
 # The database stores UTC (no DATABASES TIME_ZONE); date functions need the
 # same zone (DatabaseOperations._check_tzname).
 TIME_ZONE = "UTC"
-INSTALLED_APPS = ["tests.testapp"]
+INSTALLED_APPS = ["django_db2_for_i", "tests.testapp"]  # Meta.db_system_name (apps.py)
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 DATABASES = {

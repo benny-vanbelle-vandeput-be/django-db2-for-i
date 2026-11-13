@@ -7,6 +7,7 @@ from django.test.utils import isolate_apps
 
 from django_db2_for_i import validation
 from django_db2_for_i.fields import SystemNameMixin, normalize_system_name, with_system_name
+from django_db2_for_i.indexes import SystemNameIndex
 from tests.testapp.models import Author
 
 pytestmark = pytest.mark.offline
@@ -136,3 +137,157 @@ def test_changing_the_system_name_alters_nothing() -> None:
     with connection.schema_editor(collect_sql=True, atomic=False) as editor:
         editor.alter_field(Author, old, new)
     assert editor.collected_sql == []
+
+
+# --- Tables (Meta.db_system_name, apps.py) and indexes (indexes.py) ---------------
+
+
+def test_meta_db_system_name_is_an_accepted_option() -> None:
+    from django.db.migrations import state
+    from django.db.models import options
+
+    assert "db_system_name" in options.DEFAULT_NAMES
+    assert "db_system_name" in state.DEFAULT_NAMES
+
+
+@isolate_apps("tests.testapp")
+def test_create_table_writes_the_table_system_name() -> None:
+    class CustomerAddress(models.Model):
+        city = models.CharField(max_length=50)
+
+        class Meta:
+            app_label = "testapp"
+            db_table = "customer_addresses"
+            db_system_name = "custaddr"
+
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.create_model(CustomerAddress)
+    assert editor.collected_sql[0].startswith(
+        'CREATE TABLE "CUSTOMER_ADDRESSES" FOR SYSTEM NAME CUSTADDR ("ID" '
+    )
+
+
+@isolate_apps("tests.testapp")
+def test_migrations_keep_the_table_system_name() -> None:
+    from django.db.migrations.state import ModelState
+
+    class Invoice(models.Model):
+        class Meta:
+            app_label = "testapp"
+            db_table = "invoice_headers"
+            db_system_name = "INVHDR"
+
+    model_state = ModelState.from_model(Invoice)
+    assert model_state.options["db_system_name"] == "INVHDR"
+    rendered = model_state.render(Invoice._meta.apps.__class__())
+    assert rendered._meta.db_system_name == "INVHDR"
+
+
+@isolate_apps("tests.testapp")
+def test_a_short_table_name_refuses_another_system_name() -> None:
+    class Short(models.Model):
+        class Meta:
+            app_label = "testapp"
+            db_table = "shorttab"
+            db_system_name = "OTHER"
+
+    with (
+        pytest.raises(ImproperlyConfigured, match="SQL7029"),
+        connection.schema_editor(collect_sql=True, atomic=False) as editor,
+    ):
+        editor.create_model(Short)
+
+
+@isolate_apps("tests.testapp")
+def test_a_table_without_one_is_unchanged() -> None:
+    class Plain(models.Model):
+        class Meta:
+            app_label = "testapp"
+            db_table = "plain_long_table_name"
+
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.create_model(Plain)
+    assert editor.collected_sql[0].startswith('CREATE TABLE "PLAIN_LONG_TABLE_NAME" ("ID" ')
+
+
+def test_the_index_keeps_its_system_name_in_migrations() -> None:
+    index = SystemNameIndex(fields=["name"], name="author_name_idx", db_system_name="authnm")
+    path, _args, kwargs = index.deconstruct()
+    assert path == "django_db2_for_i.indexes.SystemNameIndex"
+    assert kwargs["db_system_name"] == "AUTHNM"
+    assert index.clone().db_system_name == "AUTHNM"
+    plain = SystemNameIndex(fields=["name"], name="author_name_idx")
+    assert "db_system_name" not in plain.deconstruct()[2]
+
+
+def test_add_index_writes_the_index_system_name() -> None:
+    index = SystemNameIndex(fields=["name"], name="author_name_idx", db_system_name="AUTHNM")
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.add_index(Author, index)
+    assert editor.collected_sql == [
+        'CREATE INDEX "AUTHOR_NAME_IDX" FOR SYSTEM NAME AUTHNM ON "TESTAPP_AUTHOR" ("NAME");'
+    ]
+
+
+def test_a_projects_own_index_with_the_attribute_works_too() -> None:
+    index = models.Index(fields=["name"], name="author_name_own")
+    index.db_system_name = "AUTHOWN"
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.add_index(Author, index)
+    assert "FOR SYSTEM NAME AUTHOWN ON" in editor.collected_sql[0]
+
+
+@isolate_apps("tests.testapp")
+def test_create_model_writes_the_meta_index_system_names() -> None:
+    class Customer(models.Model):
+        city = models.CharField(max_length=50)
+        zip_code = models.CharField(max_length=10, db_index=True)
+
+        class Meta:
+            app_label = "testapp"
+            indexes = (
+                SystemNameIndex(
+                    fields=["city"], name="customer_city_idx", db_system_name="CUSTCITY"
+                ),
+                models.Index(fields=["city", "zip_code"], name="customer_city_zip"),
+            )
+
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.create_model(Customer)
+    indexes = [sql for sql in editor.collected_sql if sql.startswith("CREATE INDEX")]
+    assert 'CREATE INDEX "CUSTOMER_CITY_IDX" FOR SYSTEM NAME CUSTCITY ON' in "\n".join(indexes)
+    others = [sql for sql in indexes if "CUSTOMER_CITY_IDX" not in sql]
+    assert len(others) == 2  # the plain Meta index and the db_index one
+    assert not any("FOR SYSTEM NAME" in sql for sql in others)
+
+
+@isolate_apps("tests.testapp")
+def test_the_table_and_index_checks() -> None:
+    class Order(models.Model):
+        class Meta:
+            app_label = "testapp"
+            db_table = "order_headers"
+            db_system_name = "ORDHDR"
+            indexes = (
+                SystemNameIndex(fields=["id"], name="order_id_index", db_system_name="ORDHDR"),
+                SystemNameIndex(fields=["id"], name="shortidx", db_system_name="OTHER"),
+            )
+
+    class OrderLine(models.Model):
+        class Meta:
+            app_label = "testapp"
+            db_table = "ordhdr"  # a short name is its own system name
+
+    class Bad(models.Model):
+        class Meta:
+            app_label = "testapp"
+            db_table = "bad_long_table_name"
+            db_system_name = "1BAD"
+
+    issues = validation.check_object_system_names([Order, OrderLine, Bad])
+    by_id = {}
+    for issue in issues:
+        by_id.setdefault(issue.id, []).append(issue.msg)
+    assert len(by_id[validation.E004]) == 2  # the index and the short table
+    assert any("'shortidx' is its own IBM i system name" in m for m in by_id[validation.E003])
+    assert any("'1BAD'" in m for m in by_id[validation.E003])

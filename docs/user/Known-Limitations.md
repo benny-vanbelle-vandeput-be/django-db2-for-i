@@ -440,6 +440,21 @@ The same holds for unique and check constraints. An index with an unqualified
 name does not fail, but lands in the `NAME` library, not in its table's
 library (verified on PUB400, probe `lib_other_library`).
 
+## Changing the system name of a table
+
+`makemigrations` does not notice a change of `Meta.db_system_name` alone:
+Django's `AlterModelOptions` covers a fixed list of options. A table keeps the
+system name it was created with (also when it is renamed). To change it, run
+the statement yourself, for example in a `RunSQL` migration:
+
+```sql
+RENAME TABLE "CUSTOMER_ADDRESSES" TO "CUSTOMER_ADDRESSES" FOR SYSTEM NAME CUSTADR2
+```
+
+An index is different: `SystemNameIndex` keeps `db_system_name` in its
+migration arguments, so a change gives a migration that drops the index and
+creates it again with the new system name.
+
 ## Strings longer than 1M characters are refused
 
 String parameters longer than **1,048,576 UTF-16 units** (1M; an emoji

@@ -82,7 +82,58 @@ class Customer(models.Model):
   to rename a column (see
   [Known limitations](Known-Limitations.md#renaming-a-column)).
 
-System names for tables and indexes: not yet (#253).
+**Tables:** add `"django_db2_for_i"` to `INSTALLED_APPS` (anywhere in the list)
+and set `db_system_name` in the model's `Meta`:
+
+```python
+INSTALLED_APPS = [
+    ...,
+    "django_db2_for_i",  # Meta.db_system_name
+]
+
+
+class Customer(models.Model):
+    class Meta:
+        db_table = "customer_addresses"
+        db_system_name = "CUSTADDR"
+```
+
+- The backend writes `CREATE TABLE "CUSTOMER_ADDRESSES" FOR SYSTEM NAME CUSTADDR (...)`;
+  `CreateModel` migrations keep the option.
+- Only for a `db_table` longer than 10 characters: a shorter name is its own
+  system name, and Db2 for i refuses another one (SQL7029).
+- Renaming the table (`AlterModelTable`) keeps the system name. Changing only
+  `db_system_name` later is not picked up by `makemigrations` (see
+  [Known limitations](Known-Limitations.md#changing-the-system-name-of-a-table)).
+
+**Indexes:** declare the index in `Meta.indexes` with
+`django_db2_for_i.indexes.SystemNameIndex`:
+
+```python
+from django_db2_for_i.indexes import SystemNameIndex
+
+
+class Customer(models.Model):
+    city = models.CharField(max_length=50)
+
+    class Meta:
+        indexes = [
+            SystemNameIndex(fields=["city"], name="customer_city_idx", db_system_name="CUSTCITY"),
+        ]
+```
+
+- The backend writes `CREATE INDEX "CUSTOMER_CITY_IDX" FOR SYSTEM NAME CUSTCITY ON ...`;
+  the name is kept in migrations, and changing it gives a migration that
+  creates the index again. Any index with a `db_system_name` attribute
+  counts, also a subclass of your own.
+- Indexes Django names itself (`db_index=True`, foreign keys, `unique=True`)
+  keep the system name IBM i makes up; declare the index in `Meta.indexes` to
+  choose it. Unique and other constraints are not `*FILE` objects and have no
+  system name.
+- The checks report an invalid name or one for a name of at most 10
+  characters (`django_db2_for_i.E003`), and two tables or indexes with the
+  same system name (`django_db2_for_i.E004`): both are `*FILE` objects in
+  one library, so Db2 for i would refuse the second (SQL0601).
 
 ## Connection defaults
 

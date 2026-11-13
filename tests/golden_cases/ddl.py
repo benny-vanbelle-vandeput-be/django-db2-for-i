@@ -24,6 +24,7 @@ from django.db.models import (
 from django.db.models.functions import Lower, Upper
 
 from django_db2_for_i.fields import with_system_name
+from django_db2_for_i.indexes import SystemNameIndex
 from tests.golden_cases.base import (
     ACCOUNT,
     AUTHOR,
@@ -391,6 +392,18 @@ CASES: tuple[Case, ...] = (
         "alter",
         _rename_table_and_back(Switch, "testapp_lightswitch"),
         (SWITCH,),
+    ),
+    # An index with an IBM i system name (indexes.py, #253): FOR SYSTEM NAME.
+    Case(
+        "ddl/add_index_system_name",
+        "alter",
+        _add_and_remove_index(
+            Book,
+            SystemNameIndex(
+                fields=["title"], name="testapp_book_title_sys", db_system_name="BOOKTTL"
+            ),
+        ),
+        (BOOK,),
     ),
     Case(
         "ddl/add_index_descending",

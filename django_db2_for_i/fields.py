@@ -20,6 +20,12 @@ The schema editor writes ``"DELIVERY_ADDRESS" FOR COLUMN DLVADDR NVARCHAR(100)``
 (probe ``qtemp_system_names``). It reads ``db_system_name`` from any field that has
 it, so a project's own mixin with the same attribute works too. A plain Django
 field gets no system name, as before.
+
+Tables get theirs from ``Meta.db_system_name`` (with ``"django_db2_for_i"`` in
+``INSTALLED_APPS``, apps.py), indexes from ``db_system_name`` on the index
+(indexes.py): ``CREATE TABLE "<name>" FOR SYSTEM NAME <SYS>``, ``CREATE INDEX
+"<name>" FOR SYSTEM NAME <SYS> ON ...``. Only an SQL name longer than 10 characters
+can get another system name (SQL7029 otherwise); a shorter one is its own.
 """
 
 from __future__ import annotations
@@ -52,6 +58,24 @@ def system_name(field: Any) -> str:
     """The column's system name, or "" when the field sets none."""
     name = getattr(field, "db_system_name", "") or ""
     return normalize_system_name(name, owner=str(field)) if name else ""
+
+
+def table_system_name(model: Any) -> str:
+    """The table's system name from ``Meta.db_system_name``, or "" (apps.py)."""
+    name = getattr(model._meta, "db_system_name", "") or ""
+    return normalize_system_name(name, owner=model._meta.label) if name else ""
+
+
+def index_system_name(index: Any) -> str:
+    """The index's system name (indexes.py, or any index with the attribute), or ""."""
+    name = getattr(index, "db_system_name", "") or ""
+    return normalize_system_name(name, owner=f"index {index.name}") if name else ""
+
+
+def own_system_name(sql_name: str) -> str:
+    """The system name an object gets without help: its SQL name, if that is one."""
+    upper = (sql_name or "").upper()
+    return upper if SYSTEM_NAME.fullmatch(upper) else ""
 
 
 class SystemNameMixin(models.Field):
