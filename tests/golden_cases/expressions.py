@@ -23,6 +23,7 @@ from django.db.models.functions import (
     SHA256,
     ATan2,
     Cast,
+    Chr,
     Coalesce,
     Concat,
     CumeDist,
@@ -31,6 +32,7 @@ from django.db.models.functions import (
     Log,
     LPad,
     NthValue,
+    Ord,
     Repeat,
 )
 from django.db.models.lookups import LessThan
@@ -87,6 +89,9 @@ CASES: tuple[Case, ...] = (
     # Database functions where Django's SQL does not work on Db2 for i
     # (expressions.py, probes db_functions, db_function_args).
     Case("expressions/function_length", "query", annotate(lambda: Length("name")), (AUTHOR,)),
+    # Through UTF-16, with surrogate pairs above U+FFFF (probe qtemp_supplementary_chars).
+    Case("expressions/function_chr", "query", annotate(lambda: Chr("id")), (AUTHOR,)),
+    Case("expressions/function_ord", "query", annotate(lambda: Ord("name")), (AUTHOR,)),
     Case(
         "expressions/function_concat",
         "query",

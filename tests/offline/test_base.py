@@ -341,7 +341,6 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
         features.REASON_TIME_ZONE_CONVERSION,
         features.REASON_EXTRACT_IN_SQL,
         features.REASON_TRUNC_KIND_REFUSED,
-        features.REASON_SINGLE_BYTE_CHR,
         features.REASON_NO_JSON_CHECK,
         features.REASON_JSON_KEY_ORDER_AS_TEXT,
         features.REASON_JSON_KEY_DOUBLE_QUOTE,

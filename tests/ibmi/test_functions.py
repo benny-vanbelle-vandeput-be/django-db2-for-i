@@ -20,10 +20,12 @@ from django.db.models.functions import (
     SHA512,
     ATan2,
     Cast,
+    Chr,
     Concat,
     Length,
     Log,
     LPad,
+    Ord,
     Repeat,
     Reverse,
     Upper,
@@ -70,6 +72,22 @@ def test_hash_of_a_long_text_field(live, empty) -> None:
     row = Document.objects.annotate(h=SHA256("text"), n=Length("text")).get(pk=document.pk)
     assert row.h == hashlib.sha256(text.encode()).hexdigest()
     assert row.n == 20_001
+
+
+def test_chr_and_ord_beyond_ascii(live, empty) -> None:
+    """Through UTF-16, with a surrogate pair above U+FFFF (probe qtemp_supplementary_chars):
+    on a CharField (NVARCHAR), a TextField (NCLOB), and back with Chr."""
+    texts = ["Élena", "😀 smile", "x😀", "plain", ""]
+    for text in texts:
+        Author.objects.create(name=text)
+        Document.objects.create(text=text)
+    authors = Author.objects.annotate(code=Ord("name")).order_by("pk")
+    assert [a.code for a in authors] == [ord(t[0]) if t else 0 for t in texts]
+    documents = Document.objects.annotate(code=Ord("text")).order_by("pk")
+    assert [d.code for d in documents] == [ord(t[0]) if t else 0 for t in texts]
+    back = Author.objects.exclude(name="").annotate(first=Chr(Ord("name"))).order_by("pk")
+    assert [a.first for a in back] == [t[0] for t in texts if t]
+    assert Author.objects.filter(name__startswith=Chr(Value(0x1F600))).count() == 1
 
 
 def test_functions_db2_for_i_lacks_raise(live, empty) -> None:

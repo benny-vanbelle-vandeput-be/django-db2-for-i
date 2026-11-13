@@ -718,9 +718,6 @@ Db2 for i has no equivalent for these Django features, so they stay off
   has no `EXCLUDE` in a window frame (Django's `exclusion=`), and a `RANGE`
   frame with a fixed distance works on numbers only: over a date or timestamp
   it is refused (SQL0182). Window functions work otherwise.
-- **`Chr` and `Ord` beyond ASCII.** Db2 for i's `CHR` and `ASCII` work on
-  single-byte characters: `Chr(233)` and `Ord("é")` give a substitute
-  character (code 26), not `é` or 233. Values up to 127 work.
 
 Django's system checks report the first three when a model uses them.
 
