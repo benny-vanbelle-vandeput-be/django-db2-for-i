@@ -284,6 +284,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # A new foreign key column gets its constraint in its ADD COLUMN
     # (schema.sql_create_column_inline_fk); CREATE TABLE keeps separate statements.
     can_create_inline_fk = True
+    # Several ALTER COLUMN clauses of one field change in one ALTER TABLE, side by
+    # side without commas (schema.AlterTableTemplate, probe 24).
+    supports_combined_alters = True
     # A foreign key column ends up with an index: Db2 for i creates none for
     # the constraint, so the index is Django's own (decision 5, amended
     # 2026-10-25). Django reads this flag only in its tests.

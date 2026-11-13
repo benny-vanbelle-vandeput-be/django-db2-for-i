@@ -141,7 +141,6 @@ can_create_inline_fk.description = "A foreign key column added by a migration ge
 can_defer_constraint_checks.description = "Constraint checks can be deferred to the end of the transaction."
 can_defer_constraint_checks.off = "Db2 for i checks constraints per statement; nothing is deferrable."
 supports_combined_alters.description = "Several column changes are written as one `ALTER TABLE` statement."
-supports_combined_alters.off = "Db2 for i takes several clauses in one `ALTER TABLE` only without commas; Django joins them with commas (probe 24)."
 supports_comments.description = "`db_comment` and `db_table_comment` are stored as column and table comments."
 supports_comments.off = "`COMMENT ON` takes no Unicode constant, so a comment would work or fail depending on its characters and the job CCSID (decision 2026-10-26)."
 supports_expression_defaults.description = "`db_default` can be an expression, not only a constant."

@@ -15,6 +15,7 @@ from django.db import NotSupportedError, connection, connections, models
 from django.db.models.functions import Now
 from django.test.utils import isolate_apps
 
+from django_db2_for_i.schema import CLAUSE, combine_clauses
 from tests.testapp.models import Article, Author, Book, Node, Tag
 
 
@@ -794,3 +795,55 @@ def test_long_names_are_truncated_and_pass_the_name_check() -> None:
     assert column[1:-1].startswith("F" * 100)
     assert column in create
     assert Wide.check(databases=["default"]) == []
+
+
+# --- Combined ALTER COLUMN clauses (supports_combined_alters, #258 D) -----------------
+
+
+def _alter(model, old_field, new_field) -> list[str]:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.alter_field(model, old_field, new_field, strict=True)
+    return [str(sql) for sql in editor.collected_sql]
+
+
+def test_type_and_null_change_in_one_alter_table() -> None:
+    """A wider type and NOT NULL: one ALTER TABLE, one ALTER COLUMN clause with both
+    alterations (a second ALTER COLUMN for the same column is SQL0612)."""
+    old = models.CharField(max_length=10, null=True)
+    old.set_attributes_from_name("name")
+    new = models.CharField(max_length=20)
+    new.set_attributes_from_name("name")
+    sql = _alter(Author, old, new)
+    assert sql == [
+        'ALTER TABLE "TESTAPP_AUTHOR" ALTER COLUMN "NAME" SET DATA TYPE NVARCHAR(20) SET NOT NULL;'
+    ]
+
+
+def test_a_single_clause_has_no_mark() -> None:
+    old = models.CharField(max_length=10)
+    old.set_attributes_from_name("name")
+    new = models.CharField(max_length=10, null=True)
+    new.set_attributes_from_name("name")
+    sql = _alter(Author, old, new)
+    assert sql == ['ALTER TABLE "TESTAPP_AUTHOR" ALTER COLUMN "NAME" DROP NOT NULL;']
+    assert not any(CLAUSE in statement for statement in sql)
+
+
+@pytest.mark.parametrize(
+    ("changes", "expected"),
+    [
+        ("plain", "plain"),
+        (f'{CLAUSE}ALTER COLUMN "A" SET NOT NULL', 'ALTER COLUMN "A" SET NOT NULL'),
+        (
+            f'{CLAUSE}ALTER COLUMN "A" SET DATA TYPE BIGINT, {CLAUSE}ALTER COLUMN "A" SET NOT NULL'
+            f", {CLAUSE}ALTER COLUMN \"A\" SET DEFAULT 'a, b'",
+            "ALTER COLUMN \"A\" SET DATA TYPE BIGINT SET NOT NULL SET DEFAULT 'a, b'",
+        ),
+        (
+            f'{CLAUSE}ALTER COLUMN "A" SET NOT NULL, {CLAUSE}ALTER COLUMN "B" DROP DEFAULT',
+            'ALTER COLUMN "A" SET NOT NULL ALTER COLUMN "B" DROP DEFAULT',
+        ),
+    ],
+)
+def test_combine_clauses(changes, expected) -> None:
+    assert combine_clauses(changes) == expected

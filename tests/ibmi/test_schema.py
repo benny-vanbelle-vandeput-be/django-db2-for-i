@@ -475,6 +475,28 @@ def test_a_repeated_insert_after_columns_grow(live, alter_model) -> None:
         assert _stripped(cursor.fetchall()) == [(long_text, big_number)]
 
 
+def test_type_and_null_change_in_one_statement(live, alter_model) -> None:
+    """A wider type and DROP NOT NULL in one ALTER COLUMN clause
+    (supports_combined_alters, #258 D); the rows keep their values."""
+    from django.test.utils import CaptureQueriesContext
+
+    model = alter_model
+    with live.cursor() as cursor:
+        cursor.execute('INSERT INTO "TESTAPP_ALTERFIELD" ("NUMBER") VALUES (7)')
+    number = _rebuilt(model, "number")
+    wide = _rebuilt(model, "number", models.BigIntegerField, null=True)
+    with CaptureQueriesContext(live) as queries, live.schema_editor() as editor:
+        editor.alter_field(model, number, wide, strict=True)
+    alters = [q["sql"] for q in queries.captured_queries if q["sql"].startswith("ALTER TABLE")]
+    assert alters == [
+        'ALTER TABLE "TESTAPP_ALTERFIELD" ALTER COLUMN "NUMBER" SET DATA TYPE BIGINT DROP NOT NULL'
+    ]
+    with live.cursor() as cursor:
+        cursor.execute('INSERT INTO "TESTAPP_ALTERFIELD" ("NUMBER") VALUES (NULL)')
+        cursor.execute('SELECT "NUMBER" FROM "TESTAPP_ALTERFIELD" ORDER BY "ID"')
+        assert [row[0] for row in cursor.fetchall()] == [7, None]
+
+
 def test_alter_field_and_back(live, alter_model) -> None:
     """A migration that widens columns, makes one nullable and changes a default,
     and its way back.

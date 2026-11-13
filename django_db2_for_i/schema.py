@@ -313,6 +313,43 @@ def _numeric_check(column, old, new, old_type, new_type):
     return None
 
 
+# Marks the start of an ALTER COLUMN clause (supports_combined_alters). Django joins
+# the clauses of one field change with ", ". Db2 for i takes several clauses in one
+# ALTER TABLE only side by side, without commas (probe 24), and one column only once:
+# a second ALTER COLUMN for it is SQL0612, while one ALTER COLUMN with several
+# alterations works (SET DATA TYPE ... SET NOT NULL SET DEFAULT ..., probe
+# column_copy). The ALTER TABLE template merges them so.
+CLAUSE = "\x1fdb2i-clause\x1f"
+_ALTER_COLUMN = re.compile(r'ALTER COLUMN ("(?:[^"]|"")+"|\S+) ')
+
+
+def combine_clauses(changes: str) -> str:
+    """Django's ", "-joined clauses of one field change as Db2 for i takes them."""
+    if CLAUSE not in changes:
+        return changes
+    pieces = changes.split(CLAUSE)
+    merged: list[list[str]] = []  # [column, text]
+    for index, piece in enumerate(pieces):
+        if index < len(pieces) - 1:
+            piece = piece.removesuffix(", ")
+        if not piece:
+            continue
+        match = _ALTER_COLUMN.match(piece)
+        if match and merged and merged[-1][0] == match.group(1):
+            merged[-1][1] += " " + piece[match.end() :]
+        else:
+            merged.append([match.group(1) if match else "", piece])
+    return " ".join(text for _column, text in merged)
+
+
+class AlterTableTemplate(str):
+    """``ALTER TABLE %(table)s %(changes)s`` that writes Django's combined clauses as
+    Db2 for i takes them (combine_clauses)."""
+
+    def __mod__(self, values):
+        return str.__mod__(self, {**values, "changes": combine_clauses(values["changes"])})
+
+
 class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     # The same DROP COLUMN on every supported Django version (Django 5.2 adds
     # CASCADE, 6.0+ does not): Db2 for i's default for dependent objects is not
@@ -322,7 +359,17 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     # Widening keeps the data, also with an index or identity on the column;
     # narrowing is cancelled by CPA32B2 (qtemp_alter_column, docs/IBMI_NOTES.md).
     # The NULL and DEFAULT templates of the base class are Db2 for i syntax.
-    sql_alter_column_type = "ALTER COLUMN %(column)s SET DATA TYPE %(type)s%(collation)s"
+    sql_alter_column_type = CLAUSE + "ALTER COLUMN %(column)s SET DATA TYPE %(type)s%(collation)s"
+    # Every clause of a field change is marked (CLAUSE), so the ALTER TABLE
+    # template can write several of them side by side (supports_combined_alters).
+    sql_alter_column = AlterTableTemplate(BaseDatabaseSchemaEditor.sql_alter_column)
+    sql_alter_column_null = CLAUSE + BaseDatabaseSchemaEditor.sql_alter_column_null
+    sql_alter_column_not_null = CLAUSE + BaseDatabaseSchemaEditor.sql_alter_column_not_null
+    sql_alter_column_default = CLAUSE + BaseDatabaseSchemaEditor.sql_alter_column_default
+    sql_alter_column_no_default = CLAUSE + BaseDatabaseSchemaEditor.sql_alter_column_no_default
+    sql_alter_column_no_default_null = (
+        CLAUSE + BaseDatabaseSchemaEditor.sql_alter_column_no_default_null
+    )
     # Db2 for i renames tables and indexes with RENAME, not ALTER ... RENAME TO
     # (SQL0199, probe 24). It has no statement to rename a column (see
     # _rename_field_sql()).
@@ -432,6 +479,9 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         """
         if not params:
             params = None
+        if isinstance(sql, str) and CLAUSE in sql:
+            # A clause template used outside the ALTER TABLE template.
+            sql = sql.replace(CLAUSE, "")
         is_alter = inquiry.is_alter_table(str(sql))
         if is_alter and self._field_changes and not self.collect_sql:
             self._suppression = self.connection.suppress_cpa32b2()
@@ -608,7 +658,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         column = self.quote_name(new_field.column)
         if old_auto and not new_auto:
             set_type = self.sql_alter_column % {"table": table, "changes": fragment[0]}
-            return (f"ALTER COLUMN {column} DROP IDENTITY", []), [
+            return (f"{CLAUSE}ALTER COLUMN {column} DROP IDENTITY", []), [
                 (set_type, fragment[1]),
                 *other_actions,
             ]

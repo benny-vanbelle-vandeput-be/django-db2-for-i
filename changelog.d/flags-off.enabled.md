@@ -8,3 +8,6 @@
   (`AddField`) gets its constraint in the same `ALTER TABLE ... ADD COLUMN`,
   with the name Django gives it. `CREATE TABLE` still adds foreign keys in
   separate statements.
+- `supports_combined_alters`: several changes to one column (for example
+  a wider type and `NOT NULL`) are one `ALTER TABLE` statement, with the
+  clauses side by side.

@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**76 flags enabled on Django 6.1.**
+**77 flags enabled on Django 6.1.**
 
-## Enabled (76)
+## Enabled (77)
 
 On in at least one supported Django version.
 
@@ -52,6 +52,7 @@ On in at least one supported Django version.
 | `supports_boolean_expr_in_select_clause` | Conditions such as `Exists()` or `Q()` can be selected and grouped by. | ✅ | ✅ | ✅ |
 | `supports_cast_with_precision` | `Cast()` to a type with a length or precision, e.g. `DecimalField(max_digits=...)`. | ✅ | ✅ | ✅ |
 | `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | ✅ | ✅ | ✅ |
+| `supports_combined_alters` | Several column changes are written as one `ALTER TABLE` statement. | ✅ | ✅ | ✅ |
 | `supports_date_lookup_using_string` | Lookups such as `__startswith` with a string on a date or datetime column. | ✅ | ✅ | ✅ |
 | `supports_default_in_lead_lag` | `Lead()` / `Lag()` with a `default`. | ✅ | ✅ | ✅ |
 | `supports_default_keyword_in_bulk_insert` | `bulk_create()` writes `DEFAULT` for fields with a `db_default`. | ✅ | ✅ | ✅ |
@@ -93,7 +94,7 @@ On in at least one supported Django version.
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (51)
+## Intentionally off (50)
 
 Off on purpose, with the reason.
 
@@ -122,7 +123,6 @@ Off on purpose, with the reason.
 | `supports_bit_aggregations` | The `BitAnd`, `BitOr` and `BitXor` aggregates (Django 6.1+). | – | – | ❌ | Db2 for i has no `BIT_AND` aggregate (SQL0204, probe queries). |
 | `supports_collation_on_charfield` | `CharField(db_collation=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104; with `CCSID 1200` SQL0683, probe `qtemp_later_flags`, IBMI_NOTES); sorting follows the job's sort sequence. |
 | `supports_collation_on_textfield` | `TextField(db_collation=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
-| `supports_combined_alters` | Several column changes are written as one `ALTER TABLE` statement. | ❌ | ❌ | ❌ | Db2 for i takes several clauses in one `ALTER TABLE` only without commas; Django joins them with commas (probe 24). |
 | `supports_comments` | `db_comment` and `db_table_comment` are stored as column and table comments. | ❌ | ❌ | ❌ | `COMMENT ON` takes no Unicode constant, so a comment would work or fail depending on its characters and the job CCSID (decision 2026-10-26). |
 | `supports_comments_inline` | Column comments are written in the `ADD COLUMN` statement itself. | ❌ | ❌ | ❌ | Column comments are off (`supports_comments`, decision 2026-10-26), so inline comments are too. |
 | `supports_comparing_boolean_expr` | Conditions can be compared or tested with `IS NULL` (`WHERE (price > 0) IS NOT NULL`). | ❌ | ❌ | ❌ | Db2 for i rejects a predicate as an operand (SQL0104, SQL0199, probe queries). |

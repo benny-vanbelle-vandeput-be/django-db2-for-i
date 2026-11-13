@@ -71,7 +71,7 @@
     "supports_collation_on_charfield": false,
     "supports_collation_on_textfield": false,
     "supports_column_check_constraints": true,
-    "supports_combined_alters": false,
+    "supports_combined_alters": true,
     "supports_comments": false,
     "supports_comments_inline": false,
     "supports_comparing_boolean_expr": false,
