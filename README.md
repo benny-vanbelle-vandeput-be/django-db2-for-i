@@ -34,10 +34,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3652 | 2 | 0 | 0 | 2026-11-14 17:35:13 UTC |
+| Offline tests | 3654 | 2 | 0 | 0 | 2026-11-14 18:50:34 UTC |
 | IBM i tests | 452 | 2 | 1 | 0 | 2026-11-14 17:20:04 UTC |
-| Django suite on IBM i | 3608 | 369 | 71 | 2 | 2026-11-14 16:51:11 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 20:38:34 UTC |
+| Django suite on IBM i | 3475 | 281 | 71 | 0 | 2026-11-14 16:51:11 UTC |
+| Replay tests | 6193 | 1 | 0 | 0 | 2026-11-14 18:52:45 UTC |
 
 ### Django 6.0 âœ…
 
@@ -48,10 +48,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3651 | 3 | 0 | 0 | 2026-11-14 17:29:06 UTC |
+| Offline tests | 3653 | 3 | 0 | 0 | 2026-11-14 18:44:20 UTC |
 | IBM i tests | 450 | 4 | 1 | 0 | 2026-11-14 14:25:17 UTC |
 | Django suite on IBM i | 3344 | 239 | 72 | 0 | 2026-11-14 13:56:23 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 20:09:10 UTC |
+| Replay tests | 6073 | 1 | 0 | 0 | 2026-11-14 18:45:07 UTC |
 
 ### Django 5.2 âœ…
 
@@ -62,10 +62,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3648 | 3 | 0 | 0 | 2026-11-14 17:24:30 UTC |
+| Offline tests | 3650 | 3 | 0 | 0 | 2026-11-14 18:39:55 UTC |
 | IBM i tests | 443 | 8 | 1 | 0 | 2026-11-14 11:32:06 UTC |
 | Django suite on IBM i | 3265 | 231 | 72 | 0 | 2026-11-14 11:03:41 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 20:05:43 UTC |
+| Replay tests | 5881 | 1 | 0 | 0 | 2026-11-14 18:40:38 UTC |
 
 ### About the tests
 
@@ -104,9 +104,9 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (77 enabled on Django 6.1) Â
 | 2: Python 3.15 (#233) | done | [#247](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/247) |
 | 3: QTEMP probes (flags, CHR / ASCII, system names, the LOB limit) | done | [#248](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/248) |
 | 4: lib_ probes: foreign keys across the two journals; #124 | done | [#250](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/250) |
-| 5: the backend branch (select_for_update, multiple connections, system names, #82, #95, more modules) | in progress |  |
-| 6: the final cycle on 6.1, 6.0 and 5.2 | planned |  |
-| 7: the status run and beta 4 | planned |  |
+| 5: the backend branch (select_for_update, multiple connections, system names, #82, #95, more modules) | done | [#252](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/252), [#255](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/255), [#259](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/259) |
+| 6: the final cycle on 6.1, 6.0 and 5.2 (one run with step 7's status run) | done |  |
+| 7: the status run and beta 4 | done | [#260](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/260) |
 
 | Phase | Content | Status |
 |---|---|---|
@@ -120,7 +120,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (77 enabled on Django 6.1) Â
 | [7](docs/phases/phase-7.md) | Polish and beta 4, then 1.0.0 | in progress |
 | [8](docs/phases/phase-8.md) | On a dedicated IBM i (starts when the system is available) | planned |
 
-Latest release: **`v0.1.0b3`** (2026-11-11): Phase 6: db functions, window functions, JSONField, DB-level on_delete (status runs on 5.2, 6.0 and 6.1, 29 runs each, 0 failed). ([CHANGELOG](CHANGELOG.md))
+Latest release: **`v0.1.0b4`** (2026-11-14): Phase 7: system names, tables in another library, select_for_update, Python 3.15, the flags Db2 for i supports, column rename by copying (opt-in) (status runs on 5.2, 6.0 and 6.1, 41 runs each, 0 failed). ([CHANGELOG](CHANGELOG.md))
 
 Open tracks:
 
@@ -173,7 +173,7 @@ Releases are published as
 from signed tags, not on PyPI. Install one from its tag:
 
 ```sh
-pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0b3"
+pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0b4"
 ```
 
 Details, and the first steps after installing (a journaled library, the

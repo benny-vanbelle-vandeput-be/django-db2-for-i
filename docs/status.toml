@@ -56,6 +56,11 @@ version = "6.2"
 state = "planned"
 
 [[releases]]
+tag = "v0.1.0b4"
+date = "2026-11-14"
+summary = "Phase 7: system names, tables in another library, select_for_update, Python 3.15, the flags Db2 for i supports, column rename by copying (opt-in) (status runs on 5.2, 6.0 and 6.1, 41 runs each, 0 failed)."
+
+[[releases]]
 tag = "v0.1.0b3"
 date = "2026-11-11"
 summary = "Phase 6: db functions, window functions, JSONField, DB-level on_delete (status runs on 5.2, 6.0 and 6.1, 29 runs each, 0 failed)."
@@ -277,15 +282,17 @@ prs = [250]
 
 [[phases.steps]]
 step = "5: the backend branch (select_for_update, multiple connections, system names, #82, #95, more modules)"
-status = "in progress"
+status = "done"
+prs = [252, 255, 259]
 
 [[phases.steps]]
-step = "6: the final cycle on 6.1, 6.0 and 5.2"
-status = "planned"
+step = "6: the final cycle on 6.1, 6.0 and 5.2 (one run with step 7's status run)"
+status = "done"
 
 [[phases.steps]]
 step = "7: the status run and beta 4"
-status = "planned"
+status = "done"
+prs = [260]
 
 [[phases]]
 phase = "8"

@@ -18,8 +18,24 @@ The full list of changes is in the
    `python manage.py migrate` as usual. Optional: run the smoke set against
    your IBM i ([Check your own IBM i](Installation.md#check-your-own-ibm-i)).
 
-## Next release (beta 4, not released yet)
+## 0.1.0b4 (2026-11-14)
 
+- **New warning in migrations: `RecordFormatChanged` (`django_db2_for_i.W003`).**
+  A migration that adds, drops, changes or copies a column warns once per
+  table: RPG and CL programs compiled over that table must be compiled
+  again. Nothing to change if no programs use your tables; otherwise see
+  [Known limitations](Known-Limitations.md#programs-over-a-changed-table).
+- **Renaming a column is possible, opt-in:** `OPTIONS["column_rename"] = "copy"`
+  ([Configuration](Configuration.md)). Without it a rename is refused, as
+  before.
+- **Migrations write slightly different SQL:** a foreign key column added
+  by `AddField` gets its constraint in the same `ALTER TABLE`, and several
+  changes to one column are one statement. Only `sqlmigrate` output
+  differs from earlier releases; the tables that result are the same.
+- **Removing a field also drops an index or view on its column** (newly
+  documented, not changed): Db2 for i's default is `CASCADE`. See
+  [Known limitations](Known-Limitations.md#removing-a-field-drops-what-depends-on-its-column).
+- `Chr` and `Ord` now work beyond ASCII.
 - **Fixed: a table stayed locked after some migrations.** In 0.1.0b3 and
   earlier, after a migration that adds a `NOT NULL` column without a default
   or narrows a column, other jobs could neither read nor write that table
