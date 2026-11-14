@@ -84,7 +84,9 @@ def entry(path: Path) -> str:
     if not name.isdigit():
         return text
     items = re.split(r"\n(?=- )", text)
-    return "\n".join(f"{item} (#{name})" for item in items)
+    # A fragment that names its own pull request already keeps it once (#239).
+    reference = f"(#{name})"
+    return "\n".join(item if item.endswith(reference) else f"{item} {reference}" for item in items)
 
 
 def render(paths: list[Path]) -> str:
