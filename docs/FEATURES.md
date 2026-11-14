@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**73 flags enabled on Django 6.1.**
+**77 flags enabled on Django 6.1.**
 
-## Enabled (73)
+## Enabled (77)
 
 On in at least one supported Django version.
 
@@ -19,6 +19,7 @@ On in at least one supported Django version.
 | `allow_sliced_subqueries_with_in` | A sliced queryset (`qs[:n]`, also with an offset) can be used in `__in`. | ✅ | ✅ | ✅ |
 | `allows_auto_pk_0` | An `AutoField` primary key may be 0. | ✅ | ✅ | ✅ |
 | `allows_group_by_lob` | `TextField` and `BinaryField` columns can be grouped by. | ✅ | ✅ | ✅ |
+| `can_create_inline_fk` | A foreign key column added by a migration gets its constraint in the same `ALTER TABLE ... ADD COLUMN`. | ✅ | ✅ | ✅ |
 | `can_introspect_check_constraints` | `inspectdb` and introspection find CHECK constraints. | ✅ | ✅ | ✅ |
 | `can_introspect_default` | Introspection reads column defaults. | ✅ | ✅ | ✅ |
 | `can_introspect_foreign_keys` | Introspection finds foreign keys. | ✅ | ✅ | ✅ |
@@ -51,6 +52,8 @@ On in at least one supported Django version.
 | `supports_boolean_expr_in_select_clause` | Conditions such as `Exists()` or `Q()` can be selected and grouped by. | ✅ | ✅ | ✅ |
 | `supports_cast_with_precision` | `Cast()` to a type with a length or precision, e.g. `DecimalField(max_digits=...)`. | ✅ | ✅ | ✅ |
 | `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | ✅ | ✅ | ✅ |
+| `supports_combined_alters` | Several column changes are written as one `ALTER TABLE` statement. | ✅ | ✅ | ✅ |
+| `supports_date_lookup_using_string` | Lookups such as `__startswith` with a string on a date or datetime column. | ✅ | ✅ | ✅ |
 | `supports_default_in_lead_lag` | `Lead()` / `Lag()` with a `default`. | ✅ | ✅ | ✅ |
 | `supports_default_keyword_in_bulk_insert` | `bulk_create()` writes `DEFAULT` for fields with a `db_default`. | ✅ | ✅ | ✅ |
 | `supports_default_keyword_in_insert` | An insert writes `DEFAULT` for fields with a `db_default`. | ✅ | ✅ | ✅ |
@@ -67,6 +70,7 @@ On in at least one supported Django version.
 | `supports_on_delete_db_default` | `on_delete=DB_SET_DEFAULT` (Django 6.1+). | – | – | ✅ |
 | `supports_on_delete_db_null` | `on_delete=DB_SET_NULL` (Django 6.1+). | – | – | ✅ |
 | `supports_over_clause` | Window functions (`Window`, `OVER (...)`). | ✅ | ✅ | ✅ |
+| `supports_paramstyle_pyformat` | Raw SQL may use `%(name)s` parameters with a dict. | ✅ | ✅ | ✅ |
 | `supports_parentheses_in_compound` | Parts of a compound query may have their own `ORDER BY` / slice. | ✅ | ✅ | ✅ |
 | `supports_partial_indexes` | Indexes and unique constraints with a `condition`. | ✅ | ✅ | ✅ |
 | `supports_partially_nullable_unique_constraints` | Multi-column unique constraints where some columns are NULL. | ✅ | ✅ | ✅ |
@@ -90,18 +94,17 @@ On in at least one supported Django version.
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (54)
+## Intentionally off (50)
 
 Off on purpose, with the reason.
 
 | Flag | Description | Django 5.2 | Django 6.0 | Django 6.1 | Reason |
 |---|---|---|---|---|---|
 | `allows_group_by_select_index` | `GROUP BY 1`: grouping by the position of a selected column. | ❌ | ❌ | ❌ | Db2 for i rejects a position in `GROUP BY` (SQL0122, probe queries); Django groups by the expressions. |
-| `allows_group_by_selected_pks` | Grouping by a model's primary key alone also groups by its other selected columns. | ❌ | ❌ | ❌ | Db2 for i needs every selected column that is not aggregated in `GROUP BY` (SQL0122 with a unique index on the grouped column, probe `phase7_flags`; a primary key needs a journal, so QTEMP could not try one). |
+| `allows_group_by_selected_pks` | Grouping by a model's primary key alone also groups by its other selected columns. | ❌ | ❌ | ❌ | Db2 for i needs every selected column that is not aggregated in `GROUP BY`, also when the table has a primary key (SQL0122, probe `lib_group_by_pk`; with a unique index, probe `phase7_flags`). |
 | `allows_multiple_constraints_on_same_fields` | Several constraints on the same columns. | ❌ | ❌ | ❌ | A second unique constraint on the same columns is refused (SQL0541, probe `lib_constraints`, IBMI_NOTES). |
 | `atomic_transactions` | An error inside a transaction aborts the whole transaction. | ❌ | ❌ | ❌ | Db2 for i keeps the transaction usable after a failed statement (unlike PostgreSQL). |
 | `can_clone_databases` | The test database can be cloned for parallel test runs (`--parallel`). | ❌ | ❌ | ❌ | Tests run with `--parallel=1` in pre-existing libraries; a clone would need a library per process. |
-| `can_create_inline_fk` | Foreign keys are created inline in `CREATE TABLE`. | ❌ | ❌ | ❌ | Foreign keys are separate `ALTER TABLE ... ADD CONSTRAINT` statements, which also work for tables that reference each other. |
 | `can_defer_constraint_checks` | Constraint checks can be deferred to the end of the transaction. | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `can_introspect_json_field` | Introspection recognizes a `JSONField` column. | ❌ | ❌ | ❌ | Db2 for i refuses `CHECK (C IS JSON)` on an `NCLOB` (SQL0546, probe `lib_json_check`), so a JSON column cannot be recognized. |
 | `can_introspect_materialized_views` | `inspectdb --include-views` also finds materialized views. | ❌ | ❌ | ❌ | The flag only enables Django's test, which writes `CREATE MATERIALIZED VIEW`: Db2 for i rejects it (SQL0104; its materialized query tables are `CREATE TABLE ... AS (...) MAINTAINED BY USER`, probe `qtemp_later_flags`, IBMI_NOTES). |
@@ -120,12 +123,10 @@ Off on purpose, with the reason.
 | `supports_bit_aggregations` | The `BitAnd`, `BitOr` and `BitXor` aggregates (Django 6.1+). | – | – | ❌ | Db2 for i has no `BIT_AND` aggregate (SQL0204, probe queries). |
 | `supports_collation_on_charfield` | `CharField(db_collation=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104; with `CCSID 1200` SQL0683, probe `qtemp_later_flags`, IBMI_NOTES); sorting follows the job's sort sequence. |
 | `supports_collation_on_textfield` | `TextField(db_collation=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
-| `supports_combined_alters` | Several column changes are written as one `ALTER TABLE` statement. | ❌ | ❌ | ❌ | Db2 for i takes several clauses in one `ALTER TABLE` only without commas; Django joins them with commas (probe 24). |
 | `supports_comments` | `db_comment` and `db_table_comment` are stored as column and table comments. | ❌ | ❌ | ❌ | `COMMENT ON` takes no Unicode constant, so a comment would work or fail depending on its characters and the job CCSID (decision 2026-10-26). |
 | `supports_comments_inline` | Column comments are written in the `ADD COLUMN` statement itself. | ❌ | ❌ | ❌ | Column comments are off (`supports_comments`, decision 2026-10-26), so inline comments are too. |
 | `supports_comparing_boolean_expr` | Conditions can be compared or tested with `IS NULL` (`WHERE (price > 0) IS NOT NULL`). | ❌ | ❌ | ❌ | Db2 for i rejects a predicate as an operand (SQL0104, SQL0199, probe queries). |
 | `supports_covering_indexes` | Indexes and unique constraints with `include` (covering indexes). | ❌ | ❌ | ❌ | Db2 for i takes no `INCLUDE` in `CREATE INDEX` (SQL0104, probe `qtemp_indexes`, IBMI_NOTES). |
-| `supports_date_lookup_using_string` | Lookups such as `__startswith` with a string on a date or datetime column. | ❌ | ❌ | ❌ | Db2 for i rejects `LIKE` on a `TIMESTAMP` column (SQL0414, probe queries), as MySQL does. |
 | `supports_default_in_bit_aggregations` | Bit aggregates with a `default` (Django 6.1+). | – | – | ❌ | There are no bit aggregates (`supports_bit_aggregations`). |
 | `supports_deferrable_unique_constraints` | `UniqueConstraint(deferrable=...)`. | ❌ | ❌ | ❌ | Db2 for i checks constraints per statement; nothing is deferrable. |
 | `supports_explaining_query_execution` | `QuerySet.explain()`. | ❌ | ❌ | ❌ | Db2 for i has no `EXPLAIN` statement (SQL0104, probe `phase7_flags`); plans come from Visual Explain and the database monitor. |
@@ -140,7 +141,6 @@ Off on purpose, with the reason.
 | `supports_non_deterministic_collations` | Non-deterministic (for example case-insensitive) collations in `db_collation`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `supports_nulls_distinct_unique_constraints` | `UniqueConstraint(nulls_distinct=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `NULLS DISTINCT` / `NULLS NOT DISTINCT` on an index or a constraint (SQL0199, probe `qtemp_unique_nulls`, IBMI_NOTES). |
 | `supports_order_by_nulls_modifier` | `NULLS FIRST` / `NULLS LAST` in `ORDER BY` (`F('x').asc(nulls_first=True)`). | ❌ | ❌ | ❌ | Db2 for i rejects `NULLS FIRST` / `NULLS LAST` (SQL0199, probe queries); Django's `ORDER BY x IS NOT NULL, x` emulation is used. |
-| `supports_paramstyle_pyformat` | Raw SQL may use `%(name)s` parameters with a dict. | ❌ | ❌ | ❌ | The driver takes positional `?` markers only. |
 | `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | ❌ | ❌ | ❌ | Db2 for i's JSON functions cannot read a root scalar (NULL; probe `json_functions`); it is stored and read back, but key lookups on it give nothing. |
 | `supports_stored_generated_columns` | `GeneratedField(db_persist=True)`, stored generated columns. | ❌ | ❌ | ❌ | `GENERATED ALWAYS AS` takes only special registers (`USER`, ...), `DATA CHANGE OPERATION`, row change timestamps and identities, no expression over other columns (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `supports_tablespaces` | `db_tablespace` on models, fields and indexes. | ❌ | ❌ | ❌ | IBM i has no tablespaces: storage is single-level. `CREATE TABLE ... IN <name>` is accepted and means nothing (probe `phase7_flags`). |

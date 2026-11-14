@@ -15,6 +15,7 @@ from django.db import NotSupportedError, connection, connections, models
 from django.db.models.functions import Now
 from django.test.utils import isolate_apps
 
+from django_db2_for_i.schema import CLAUSE, combine_clauses
 from tests.testapp.models import Article, Author, Book, Node, Tag
 
 
@@ -70,10 +71,11 @@ def test_delete_model() -> None:
 
 
 def test_foreign_keys_are_separate_statements() -> None:
-    """supports_foreign_keys on, can_create_inline_fk off (decision 4): the
-    foreign key is an ALTER TABLE ... ADD CONSTRAINT after the CREATE TABLE."""
+    """CREATE TABLE writes no foreign key (decision 4): it is an ALTER TABLE ...
+    ADD CONSTRAINT after it, so tables that reference each other need no order.
+    can_create_inline_fk covers only a column added later (#258 C)."""
     assert connection.features.supports_foreign_keys
-    assert not connection.features.can_create_inline_fk
+    assert connection.SchemaEditorClass.sql_create_inline_fk is None
     create, *rest = collect(("create_model", Book))
     assert "FOREIGN KEY" not in create and "REFERENCES" not in create
     assert sum("FOREIGN KEY" in statement for statement in rest) == 1
@@ -793,3 +795,55 @@ def test_long_names_are_truncated_and_pass_the_name_check() -> None:
     assert column[1:-1].startswith("F" * 100)
     assert column in create
     assert Wide.check(databases=["default"]) == []
+
+
+# --- Combined ALTER COLUMN clauses (supports_combined_alters, #258 D) -----------------
+
+
+def _alter(model, old_field, new_field) -> list[str]:
+    with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+        editor.alter_field(model, old_field, new_field, strict=True)
+    return [str(sql) for sql in editor.collected_sql]
+
+
+def test_type_and_null_change_in_one_alter_table() -> None:
+    """A wider type and NOT NULL: one ALTER TABLE, one ALTER COLUMN clause with both
+    alterations (a second ALTER COLUMN for the same column is SQL0612)."""
+    old = models.CharField(max_length=10, null=True)
+    old.set_attributes_from_name("name")
+    new = models.CharField(max_length=20)
+    new.set_attributes_from_name("name")
+    sql = _alter(Author, old, new)
+    assert sql == [
+        'ALTER TABLE "TESTAPP_AUTHOR" ALTER COLUMN "NAME" SET DATA TYPE NVARCHAR(20) SET NOT NULL;'
+    ]
+
+
+def test_a_single_clause_has_no_mark() -> None:
+    old = models.CharField(max_length=10)
+    old.set_attributes_from_name("name")
+    new = models.CharField(max_length=10, null=True)
+    new.set_attributes_from_name("name")
+    sql = _alter(Author, old, new)
+    assert sql == ['ALTER TABLE "TESTAPP_AUTHOR" ALTER COLUMN "NAME" DROP NOT NULL;']
+    assert not any(CLAUSE in statement for statement in sql)
+
+
+@pytest.mark.parametrize(
+    ("changes", "expected"),
+    [
+        ("plain", "plain"),
+        (f'{CLAUSE}ALTER COLUMN "A" SET NOT NULL', 'ALTER COLUMN "A" SET NOT NULL'),
+        (
+            f'{CLAUSE}ALTER COLUMN "A" SET DATA TYPE BIGINT, {CLAUSE}ALTER COLUMN "A" SET NOT NULL'
+            f", {CLAUSE}ALTER COLUMN \"A\" SET DEFAULT 'a, b'",
+            "ALTER COLUMN \"A\" SET DATA TYPE BIGINT SET NOT NULL SET DEFAULT 'a, b'",
+        ),
+        (
+            f'{CLAUSE}ALTER COLUMN "A" SET NOT NULL, {CLAUSE}ALTER COLUMN "B" DROP DEFAULT',
+            'ALTER COLUMN "A" SET NOT NULL ALTER COLUMN "B" DROP DEFAULT',
+        ),
+    ],
+)
+def test_combine_clauses(changes, expected) -> None:
+    assert combine_clauses(changes) == expected

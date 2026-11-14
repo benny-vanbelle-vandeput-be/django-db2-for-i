@@ -1,10 +1,11 @@
 """Foreign key DDL collected with schema_editor(collect_sql=True) (no server needed).
 
 ``supports_foreign_keys`` is off until Django's test suite backs it; these
-tests switch it on to check the DDL the schema editor would write. Foreign
-keys are separate ALTER TABLE ... ADD CONSTRAINT statements
-(``can_create_inline_fk`` stays off) without an ON DELETE clause: Django's
-on_delete runs in Python, and Db2 for i's default is NO ACTION.
+tests switch it on to check the DDL the schema editor would write. A column
+added with a foreign key gets its constraint in the ADD COLUMN itself
+(``can_create_inline_fk``), with Django's constraint name, without an ON DELETE
+clause: Django's on_delete runs in Python, and Db2 for i's default is NO
+ACTION.
 """
 
 import pytest
@@ -13,11 +14,11 @@ from django.db import connection, models
 from tests.testapp.models import Author, Tag
 
 ADD_COLUMN = 'ALTER TABLE "TESTAPP_TAG" ADD COLUMN "AUTHOR_ID" INTEGER;'
-ADD_CONSTRAINT = (
-    'ALTER TABLE "TESTAPP_TAG" ADD CONSTRAINT '
-    '"TESTAPP_TAG_AUTHOR_ID_C6F86C93_FK_TESTAPP_AUTHOR_ID" '
-    'FOREIGN KEY ("AUTHOR_ID") REFERENCES "TESTAPP_AUTHOR" ("ID");'
+INLINE = (
+    ' CONSTRAINT "TESTAPP_TAG_AUTHOR_ID_C6F86C93_FK_TESTAPP_AUTHOR_ID" '
+    'REFERENCES "TESTAPP_AUTHOR" ("ID");'
 )
+ADD_COLUMN_WITH_KEY = ADD_COLUMN.removesuffix(";") + INLINE
 CREATE_INDEX = 'CREATE INDEX "TESTAPP_TAG_AUTHOR_ID_C6F86C93" ON "TESTAPP_TAG" ("AUTHOR_ID");'
 
 
@@ -42,7 +43,7 @@ def add_field(model, field, name) -> list[str]:
 def test_python_on_delete_writes_the_same_constraint(on_delete) -> None:
     """Every Python-level on_delete gives the same NO ACTION constraint."""
     sql = add_field(Tag, models.ForeignKey(Author, on_delete, null=True), "author")
-    assert sql == [ADD_COLUMN, ADD_CONSTRAINT, CREATE_INDEX]
+    assert sql == [ADD_COLUMN_WITH_KEY, CREATE_INDEX]
     assert not any("ON DELETE" in statement or "RESTRICT" in statement for statement in sql)
 
 
@@ -56,14 +57,14 @@ def test_foreign_key_to_a_unique_field() -> None:
     """to_field: the key references the UNIQUE column, typed like it."""
     field = models.ForeignKey(Tag, models.CASCADE, null=True, to_field="label")
     sql = add_field(Author, field, "tag")
-    assert sql[0] == 'ALTER TABLE "TESTAPP_AUTHOR" ADD COLUMN "TAG_ID" NVARCHAR(50);'
-    assert sql[1].endswith('FOREIGN KEY ("TAG_ID") REFERENCES "TESTAPP_TAG" ("LABEL");')
+    assert sql[0].startswith('ALTER TABLE "TESTAPP_AUTHOR" ADD COLUMN "TAG_ID" NVARCHAR(50) ')
+    assert sql[0].endswith('REFERENCES "TESTAPP_TAG" ("LABEL");')
 
 
 def test_one_to_one_is_unique_without_an_extra_index() -> None:
     """OneToOneField: UNIQUE on the column, the constraint, no separate index."""
     sql = add_field(Tag, models.OneToOneField(Author, models.CASCADE, null=True), "author")
-    assert sql == [ADD_COLUMN.replace("INTEGER;", "INTEGER UNIQUE;"), ADD_CONSTRAINT]
+    assert sql == [ADD_COLUMN_WITH_KEY.replace("INTEGER ", "INTEGER UNIQUE ")]
 
 
 def test_foreign_keys_stay_off_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -71,3 +72,21 @@ def test_foreign_keys_stay_off_by_default(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(connection.features, "supports_foreign_keys", False)
     sql = add_field(Tag, models.ForeignKey(Author, models.CASCADE, null=True), "author")
     assert sql == [ADD_COLUMN, CREATE_INDEX]
+
+
+def test_a_column_in_another_library_qualifies_the_inline_constraint() -> None:
+    """A table in another library (#124): the constraint name gets the library."""
+    from django.test.utils import isolate_apps
+
+    with isolate_apps("tests.testapp"):
+
+        class Order(models.Model):
+            class Meta:
+                app_label = "testapp"
+                db_table = 'SALES"."orders'
+
+        sql = add_field(Order, models.ForeignKey(Author, models.CASCADE, null=True), "author")
+    assert sql[0].startswith(
+        'ALTER TABLE "SALES"."ORDERS" ADD COLUMN "AUTHOR_ID" INTEGER CONSTRAINT "SALES"."'
+    )
+    assert sql[0].endswith('REFERENCES "TESTAPP_AUTHOR" ("ID");')

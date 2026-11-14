@@ -1,0 +1,483 @@
+{
+  "probe": "column_copy",
+  "utc": "20261113T214821Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (PCC* objects, gone with the job)",
+  "inquiry message reply": "*RQD",
+  "suppress: CALL QSYS2.OVERRIDE_QAQQINI(1, '', '')": {
+    "result": "ok"
+  },
+  "suppress: CALL QSYS2.OVERRIDE_QAQQINI(2, 'SUPPRESS_INQUIRY_MESSAGES', '*YES')": {
+    "result": "ok"
+  },
+  "1. columns before": {
+    "columns": [
+      "ID",
+      "A",
+      "OLD_NAME",
+      "Z"
+    ]
+  },
+  "1. add column BEFORE, with a system name": {
+    "result": "ok"
+  },
+  "1. columns after add": {
+    "columns": [
+      "ID",
+      "A",
+      "NEW_LONG_NAME",
+      "OLD_NAME",
+      "Z"
+    ]
+  },
+  "2. copy": {
+    "result": "ok"
+  },
+  "2. NOT NULL and default in one ALTER TABLE": {
+    "result": "error",
+    "sqlstate": "42S21",
+    "sqlcode": -612,
+    "message": "SQL0612 - NEW_LONG_NAME is a duplicate column name. (-612) (SQLExecDirectW)"
+  },
+  "2. drop the old column RESTRICT": {
+    "result": "ok"
+  },
+  "2. columns and rows after": {
+    "columns": [
+      "ID",
+      "A",
+      "NEW_LONG_NAME",
+      "Z"
+    ],
+    "rows": [
+      [
+        1,
+        10,
+        "one",
+        100
+      ],
+      [
+        2,
+        20,
+        "two",
+        200
+      ],
+      [
+        3,
+        30,
+        "three",
+        300
+      ]
+    ],
+    "insert with the default": {
+      "result": "ok"
+    },
+    "the default row": [
+      [
+        null
+      ]
+    ]
+  },
+  "2b. same column: type and NOT NULL": {
+    "result": "ok",
+    "insert without the columns": {
+      "result": "error",
+      "sqlstate": "23000",
+      "sqlcode": -407,
+      "message": "SQL0407 - Null values not allowed in column or variable A. (-407) (SQLExecDirectW)"
+    },
+    "the row": []
+  },
+  "2b. same column: NOT NULL and default": {
+    "result": "ok",
+    "insert without the columns": {
+      "result": "ok"
+    },
+    "the row": [
+      [
+        9,
+        5,
+        "x",
+        null
+      ]
+    ]
+  },
+  "2b. same column: type and default": {
+    "result": "ok",
+    "insert without the columns": {
+      "result": "ok"
+    },
+    "the row": [
+      [
+        9,
+        6,
+        "x",
+        null
+      ]
+    ]
+  },
+  "2b. same column: type, NOT NULL and default": {
+    "result": "ok",
+    "insert without the columns": {
+      "result": "ok"
+    },
+    "the row": [
+      [
+        9,
+        7,
+        "x",
+        null
+      ]
+    ]
+  },
+  "2b. same column: type and DROP NOT NULL": {
+    "result": "ok",
+    "insert without the columns": {
+      "result": "ok"
+    },
+    "the row": [
+      [
+        9,
+        null,
+        "x",
+        null
+      ]
+    ]
+  },
+  "2b. same column: DROP DEFAULT and DROP NOT NULL": {
+    "result": "ok",
+    "insert without the columns": {
+      "result": "ok"
+    },
+    "the row": [
+      [
+        9,
+        null,
+        null,
+        null
+      ]
+    ]
+  },
+  "2b. same column: type and DROP DEFAULT": {
+    "result": "ok",
+    "insert without the columns": {
+      "result": "error",
+      "sqlstate": "23000",
+      "sqlcode": -407,
+      "message": "SQL0407 - Null values not allowed in column or variable OLD_NAME. (-407) (SQLExecDirectW)"
+    },
+    "the row": []
+  },
+  "2b. same column: two columns (control)": {
+    "result": "ok",
+    "insert without the columns": {
+      "result": "error",
+      "sqlstate": "23000",
+      "sqlcode": -407,
+      "message": "SQL0407 - Null values not allowed in column or variable A. (-407) (SQLExecDirectW)"
+    },
+    "the row": []
+  },
+  "3. drop identity of the old column": {
+    "result": "ok"
+  },
+  "3. add an identity column BEFORE": {
+    "result": "ok"
+  },
+  "3. values the new identity column got": {
+    "rows": [
+      [
+        1,
+        1,
+        10
+      ],
+      [
+        2,
+        3,
+        30
+      ]
+    ]
+  },
+  "3. copy": {
+    "result": "ok"
+  },
+  "3. restart": {
+    "result": "ok"
+  },
+  "3. drop the old column": {
+    "result": "ok"
+  },
+  "3. insert": {
+    "result": "ok"
+  },
+  "3. columns and rows after": {
+    "columns": [
+      "NEW_ID",
+      "V"
+    ],
+    "rows": [
+      [
+        1,
+        10
+      ],
+      [
+        3,
+        30
+      ],
+      [
+        4,
+        40
+      ]
+    ]
+  },
+  "4. drop column: index on the column": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -196,
+    "message": "SQL0196 - Column OLD_NAME in PCCT in QTEMP cannot be dropped or renamed. (-196) (SQLExecDirectW)",
+    "create": {
+      "result": "ok"
+    },
+    "columns after": [
+      "ID",
+      "A",
+      "OLD_NAME",
+      "Z"
+    ],
+    "index left": "error",
+    "view left": "error"
+  },
+  "4. drop column: index on another column (control)": {
+    "result": "ok",
+    "create": {
+      "result": "ok"
+    },
+    "columns after": [
+      "ID",
+      "A",
+      "Z"
+    ],
+    "index left": "error",
+    "view left": "error"
+  },
+  "4. drop column: view on the column": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -196,
+    "message": "SQL0196 - Column OLD_NAME in PCCT in QTEMP cannot be dropped or renamed. (-196) (SQLExecDirectW)",
+    "create": {
+      "result": "ok"
+    },
+    "columns after": [
+      "ID",
+      "A",
+      "OLD_NAME",
+      "Z"
+    ],
+    "index left": "error",
+    "view left": "ok"
+  },
+  "4. drop column: view on other columns (control)": {
+    "result": "ok",
+    "create": {
+      "result": "ok"
+    },
+    "columns after": [
+      "ID",
+      "A",
+      "Z"
+    ],
+    "index left": "error",
+    "view left": "ok"
+  },
+  "4. drop column: trigger reading the column": {
+    "result": "ok",
+    "create": {
+      "result": "error",
+      "sqlstate": "42000",
+      "sqlcode": -552,
+      "message": "SQL0552 - Not authorized to CREATE TRIGGER. (-552) (SQLExecDirectW)"
+    },
+    "columns after": [
+      "ID",
+      "A",
+      "Z"
+    ],
+    "index left": "error",
+    "view left": "error"
+  },
+  "4. drop column: index on the column, no keyword": {
+    "result": "ok",
+    "create": {
+      "result": "ok"
+    },
+    "columns after": [
+      "ID",
+      "A",
+      "Z"
+    ],
+    "index left": "error",
+    "view left": "error"
+  },
+  "4. drop column: view on the column, no keyword": {
+    "result": "ok",
+    "create": {
+      "result": "ok"
+    },
+    "columns after": [
+      "ID",
+      "A",
+      "Z"
+    ],
+    "index left": "error",
+    "view left": "error"
+  },
+  "discard the QAQQINI copy": {
+    "result": "ok"
+  },
+  "5. catalog columns of QSYS2.SYSCOLUMNS": {
+    "columns": [
+      "COLUMN_NAME",
+      "TABLE_NAME",
+      "TABLE_OWNER",
+      "ORDINAL_POSITION",
+      "DATA_TYPE",
+      "LENGTH",
+      "NUMERIC_SCALE",
+      "IS_NULLABLE",
+      "IS_UPDATABLE",
+      "LONG_COMMENT",
+      "HAS_DEFAULT",
+      "COLUMN_HEADING",
+      "STORAGE",
+      "NUMERIC_PRECISION",
+      "CCSID",
+      "TABLE_SCHEMA",
+      "COLUMN_DEFAULT",
+      "CHARACTER_MAXIMUM_LENGTH",
+      "CHARACTER_OCTET_LENGTH",
+      "NUMERIC_PRECISION_RADIX",
+      "DATETIME_PRECISION",
+      "COLUMN_TEXT",
+      "SYSTEM_COLUMN_NAME",
+      "SYSTEM_TABLE_NAME",
+      "SYSTEM_TABLE_SCHEMA",
+      "USER_DEFINED_TYPE_SCHEMA",
+      "USER_DEFINED_TYPE_NAME",
+      "IS_IDENTITY",
+      "IDENTITY_GENERATION",
+      "IDENTITY_START",
+      "IDENTITY_INCREMENT",
+      "IDENTITY_MINIMUM",
+      "IDENTITY_MAXIMUM",
+      "IDENTITY_CYCLE",
+      "IDENTITY_CACHE",
+      "IDENTITY_ORDER",
+      "COLUMN_EXPRESSION",
+      "HIDDEN",
+      "HAS_FLDPROC"
+    ]
+  },
+  "5. catalog columns of QSYS2.SYSTRIGCOL": {
+    "columns": [
+      "TRIGGER_SCHEMA",
+      "TRIGGER_NAME",
+      "TABLE_SCHEMA",
+      "TABLE_NAME",
+      "COLUMN_NAME",
+      "OBJECT_TYPE",
+      "SYSTEM_TRIGGER_SCHEMA",
+      "SYSTEM_TABLE_SCHEMA",
+      "SYSTEM_TABLE_NAME"
+    ]
+  },
+  "5. catalog columns of QSYS2.SYSCOLAUTH": {
+    "columns": [
+      "GRANTOR",
+      "GRANTEE",
+      "TABLE_SCHEMA",
+      "TABLE_NAME",
+      "COLUMN_NAME",
+      "PRIVILEGE_TYPE",
+      "IS_GRANTABLE",
+      "AUTHORIZATION_LIST",
+      "SYSTEM_TABLE_SCHEMA",
+      "SYSTEM_TABLE_NAME",
+      "SYSTEM_COLUMN_NAME"
+    ]
+  },
+  "5. catalog columns of QSYS2.SYSCONTROLS": {
+    "columns": [
+      "RCAC_SCHEMA",
+      "RCAC_NAME",
+      "RCAC_OWNER",
+      "TABLE_SCHEMA",
+      "TABLE_NAME",
+      "TBCORRELATION",
+      "COLUMN_NAME",
+      "SYSTEM_COLUMN_NAME",
+      "SYSTEM_TABLE_NAME",
+      "SYSTEM_TABLE_SCHEMA",
+      "CONTROL_TYPE",
+      "ENFORCED",
+      "IMPLICIT",
+      "ENABLE",
+      "CREATE_TIME",
+      "LAST_ALTERED",
+      "IASP_NUMBER",
+      "LABEL",
+      "LONG_COMMENT",
+      "RULETEXT"
+    ]
+  },
+  "5. catalog columns of QSYS2.SYSVIEWDEP": {
+    "columns": [
+      "VIEW_NAME",
+      "VIEW_OWNER",
+      "OBJECT_NAME",
+      "OBJECT_SCHEMA",
+      "OBJECT_TYPE",
+      "VIEW_SCHEMA",
+      "SYSTEM_VIEW_NAME",
+      "SYSTEM_VIEW_SCHEMA",
+      "SYSTEM_TABLE_NAME",
+      "SYSTEM_TABLE_SCHEMA",
+      "TABLE_NAME",
+      "TABLE_OWNER",
+      "TABLE_SCHEMA",
+      "TABLE_TYPE",
+      "IASP_NUMBER",
+      "PARM_SIGNATURE"
+    ]
+  },
+  "5. catalog columns of QSYS2.SYSINDEXES": {
+    "columns": [
+      "INDEX_NAME",
+      "INDEX_OWNER",
+      "TABLE_NAME",
+      "TABLE_OWNER",
+      "TABLE_SCHEMA",
+      "IS_UNIQUE",
+      "COLUMN_COUNT",
+      "INDEX_SCHEMA",
+      "SYSTEM_INDEX_NAME",
+      "SYSTEM_INDEX_SCHEMA",
+      "SYSTEM_TABLE_NAME",
+      "SYSTEM_TABLE_SCHEMA",
+      "LONG_COMMENT",
+      "IASP_NUMBER",
+      "INDEX_TEXT",
+      "IS_SPANNING_INDEX",
+      "INDEX_DEFINER",
+      "ROUNDING_MODE",
+      "INDEX_HAS_SEARCH_CONDITION",
+      "SEARCH_CONDITION_HAS_UDF",
+      "SEARCH_CONDITION",
+      "INDEX_HAS_INCLUDE_EXPRESSION",
+      "INCLUDE_EXPRESSION",
+      "CREATE_TIMESTAMP",
+      "RESTRICT_ON_DROP"
+    ]
+  }
+}

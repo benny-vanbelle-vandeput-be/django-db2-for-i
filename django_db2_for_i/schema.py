@@ -25,6 +25,7 @@ import contextlib
 import datetime
 import math
 import re
+import warnings
 from decimal import Decimal
 
 from django.core.exceptions import ImproperlyConfigured
@@ -40,7 +41,7 @@ from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.backends.ddl_references import Reference, Statement
 from django.db.backends.utils import split_identifier
 
-from . import fields, inquiry
+from . import column_copy, compat, fields, inquiry
 from .expressions import NVARCHAR_MAX
 
 
@@ -313,16 +314,94 @@ def _numeric_check(column, old, new, old_type, new_type):
     return None
 
 
+# Marks the start of an ALTER COLUMN clause (supports_combined_alters). Django joins
+# the clauses of one field change with ", ". Db2 for i takes several clauses in one
+# ALTER TABLE only side by side, without commas (probe 24), and one column only once:
+# a second ALTER COLUMN for it is SQL0612, while one ALTER COLUMN with several
+# alterations works (SET DATA TYPE ... SET NOT NULL SET DEFAULT ..., probe
+# column_copy). The ALTER TABLE template merges them so.
+CLAUSE = "\x1fdb2i-clause\x1f"
+_ALTER_COLUMN = re.compile(r'ALTER COLUMN ("(?:[^"]|"")+"|\S+) ')
+
+
+def combine_clauses(changes: str) -> str:
+    """Django's ", "-joined clauses of one field change as Db2 for i takes them."""
+    if CLAUSE not in changes:
+        return changes
+    pieces = changes.split(CLAUSE)
+    merged: list[list[str]] = []  # [column, text]
+    for index, piece in enumerate(pieces):
+        if index < len(pieces) - 1:
+            piece = piece.removesuffix(", ")
+        if not piece:
+            continue
+        match = _ALTER_COLUMN.match(piece)
+        if match and merged and merged[-1][0] == match.group(1):
+            merged[-1][1] += " " + piece[match.end() :]
+        else:
+            merged.append([match.group(1) if match else "", piece])
+    return " ".join(text for _column, text in merged)
+
+
+class AlterTableTemplate(str):
+    """``ALTER TABLE %(table)s %(changes)s`` that writes Django's combined clauses as
+    Db2 for i takes them (combine_clauses)."""
+
+    def __mod__(self, values):
+        return str.__mod__(self, {**values, "changes": combine_clauses(values["changes"])})
+
+
+class RecordFormatChanged(UserWarning):
+    """A migration changed the record format of a table (django_db2_for_i.W003)."""
+
+
+_IDENTIFIER = r'(?:"(?:[^"]|"")+"|[A-Za-z_$#@][\w$#@]*)'
+_ALTER_TABLE = re.compile(
+    rf"^\s*ALTER\s+TABLE\s+({_IDENTIFIER}(?:\.{_IDENTIFIER})?)\s+(.*)$",
+    re.IGNORECASE | re.DOTALL,
+)
+_FORMAT_CLAUSE = re.compile(r"\b(ADD|DROP|ALTER)\s+COLUMN\b", re.IGNORECASE)
+_CREATE_TABLE = re.compile(
+    rf"^\s*CREATE\s+TABLE\s+({_IDENTIFIER}(?:\.{_IDENTIFIER})?)", re.IGNORECASE
+)
+# The system names of a table, for the warning (the name RPG and CL programs use).
+SYSTEM_TABLE_NAME_SQL = (
+    "SELECT SYSTEM_TABLE_SCHEMA, SYSTEM_TABLE_NAME FROM QSYS2.SYSTABLES "
+    "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s"
+)
+
+
+def record_format_change(sql: str) -> tuple[str | None, str]:
+    """``(table, kinds)`` of a statement that changes a table's record format
+    (``ADD``, ``DROP`` or ``ALTER COLUMN``), or ``(None, "")``."""
+    match = _ALTER_TABLE.match(sql)
+    if not match:
+        return None, ""
+    kinds = sorted({f"{kind.upper()} COLUMN" for kind in _FORMAT_CLAUSE.findall(match.group(2))})
+    return (match.group(1), ", ".join(kinds)) if kinds else (None, "")
+
+
 class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     # The same DROP COLUMN on every supported Django version (Django 5.2 adds
-    # CASCADE, 6.0+ does not): Db2 for i's default for dependent objects is not
-    # known yet (probe 23, docs/IBMI_NOTES.md), so the SQL does not depend on it.
+    # CASCADE, 6.0+ does not). Db2 for i's default is CASCADE: an index or view
+    # on the column is dropped with it (probe qtemp_column_copy, Known
+    # Limitations).
     sql_delete_column = "ALTER TABLE %(table)s DROP COLUMN %(column)s"
     # Db2 for i knows only SET DATA TYPE, not Django's TYPE (SQL0199, probe 24).
     # Widening keeps the data, also with an index or identity on the column;
     # narrowing is cancelled by CPA32B2 (qtemp_alter_column, docs/IBMI_NOTES.md).
     # The NULL and DEFAULT templates of the base class are Db2 for i syntax.
-    sql_alter_column_type = "ALTER COLUMN %(column)s SET DATA TYPE %(type)s%(collation)s"
+    sql_alter_column_type = CLAUSE + "ALTER COLUMN %(column)s SET DATA TYPE %(type)s%(collation)s"
+    # Every clause of a field change is marked (CLAUSE), so the ALTER TABLE
+    # template can write several of them side by side (supports_combined_alters).
+    sql_alter_column = AlterTableTemplate(BaseDatabaseSchemaEditor.sql_alter_column)
+    sql_alter_column_null = CLAUSE + BaseDatabaseSchemaEditor.sql_alter_column_null
+    sql_alter_column_not_null = CLAUSE + BaseDatabaseSchemaEditor.sql_alter_column_not_null
+    sql_alter_column_default = CLAUSE + BaseDatabaseSchemaEditor.sql_alter_column_default
+    sql_alter_column_no_default = CLAUSE + BaseDatabaseSchemaEditor.sql_alter_column_no_default
+    sql_alter_column_no_default_null = (
+        CLAUSE + BaseDatabaseSchemaEditor.sql_alter_column_no_default_null
+    )
     # Db2 for i renames tables and indexes with RENAME, not ALTER ... RENAME TO
     # (SQL0199, probe 24). It has no statement to rename a column (see
     # _rename_field_sql()).
@@ -332,6 +411,11 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     # or a value narrowed (_refuse_changed_values()). Through _lock_table() only.
     sql_lock_table = "LOCK TABLE %(table)s IN EXCLUSIVE MODE"
     sql_rename_index = "RENAME INDEX %(old_name)s TO %(new_name)s"
+    # A foreign key column added by a migration gets its constraint in the same
+    # ALTER TABLE ... ADD COLUMN (can_create_inline_fk). CREATE TABLE keeps its
+    # foreign keys in separate statements (sql_create_inline_fk stays None), so
+    # tables that reference each other need no order.
+    sql_create_column_inline_fk = compat.SQL_CREATE_COLUMN_INLINE_FK
     # A UniqueConstraint with a condition or expressions is a unique index. A
     # plain unique index treats NULLs as equal; UNIQUE WHERE NOT NULL treats
     # them as distinct, as a UNIQUE constraint does and Django assumes, also
@@ -375,6 +459,8 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             self._leave(error)
             raise
         self._leave(exc_value)
+        if exc_value is None:
+            self._warn_record_formats()
         return result
 
     def _leave(self, error):
@@ -416,6 +502,72 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             self._field_changes -= 1
 
     def execute(self, sql, params=()):
+        if isinstance(sql, column_copy.Skip):
+            return None
+        if isinstance(sql, column_copy.DeferredFieldChange) and not self._field_changes:
+            # A deferred step of a column copy: a field change (CPA32B2 suppressed).
+            with self._field_change():
+                try:
+                    return self.execute(sql, params)
+                except DatabaseError as exc:
+                    explained = column_copy.explain_restrict(sql, exc)
+                    if explained is None:
+                        raise
+                    raise explained from exc
+        return self._execute(sql, params)
+
+    # Tables whose record format the editor changed ({quoted name: kinds}), and the
+    # tables it created (no program uses a new table yet): RecordFormatChanged.
+    _format_changes: dict | None = None
+    _created_tables: set | None = None
+
+    def _note_record_format(self, sql: str) -> None:
+        if self.collect_sql:
+            return
+        created = _CREATE_TABLE.match(sql)
+        if created:
+            self._created_tables = (self._created_tables or set()) | {created.group(1).upper()}
+            return
+        table, kinds = record_format_change(sql)
+        if table is None or table.upper() in (self._created_tables or set()):
+            return
+        changes = self._format_changes if self._format_changes is not None else {}
+        changes.setdefault(table.upper(), set()).update(kinds.split(", "))
+        self._format_changes = changes
+
+    def _warn_record_formats(self) -> None:
+        """django_db2_for_i.W003, once per table whose record format changed: RPG and
+        CL programs compiled over it get a level check (CPF4131) until they are
+        compiled again (#258)."""
+        changes, self._format_changes = self._format_changes or {}, None
+        self._created_tables = None
+        for table, kinds in sorted(changes.items()):
+            system = table
+            try:
+                from .introspection import _in_library  # introspection imports this module
+
+                bare = table.replace('"', "")
+                library, name = bare.split(".", 1) if "." in bare else ("", bare)
+                query, params = _in_library(
+                    SYSTEM_TABLE_NAME_SQL, f'{library}"."{name}' if library else name
+                )
+                with self.connection.cursor() as cursor:
+                    cursor.execute(query, params)
+                    row = cursor.fetchone()
+                if row:
+                    system = f"{str(row[0]).strip()}/{str(row[1]).strip()}"
+            except DatabaseError:
+                pass
+            warnings.warn(
+                RecordFormatChanged(
+                    f"django_db2_for_i.W003: the record format of {system} changed "
+                    f"({', '.join(sorted(kinds))}). RPG and CL programs compiled over it "
+                    "get a level check (CPF4131) until they are compiled again."
+                ),
+                stacklevel=2,
+            )
+
+    def _execute(self, sql, params=()):
         """Suppress CPA32B2 for the ALTER TABLE of a field change, and explain
         an ALTER TABLE that Db2 for i cancelled anyway (see inquiry.py).
 
@@ -427,11 +579,14 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         """
         if not params:
             params = None
+        if isinstance(sql, str) and CLAUSE in sql:
+            # A clause template used outside the ALTER TABLE template.
+            sql = sql.replace(CLAUSE, "")
         is_alter = inquiry.is_alter_table(str(sql))
         if is_alter and self._field_changes and not self.collect_sql:
             self._suppression = self.connection.suppress_cpa32b2()
         try:
-            return super().execute(sql, params)
+            result = super().execute(sql, params)
         except DatabaseError as exc:
             if is_alter and self._cancelled_by_inquiry(str(sql), exc):
                 active = self.connection._inquiry_reply_active
@@ -442,6 +597,8 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
                     inquiry.cancelled_ddl_message(active, suppression or inquiry.SUPPRESSION_FAILED)
                 ) from exc
             raise
+        self._note_record_format(str(sql))
+        return result
 
     def remove_field(self, model, field):
         with self._field_change():
@@ -603,7 +760,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         column = self.quote_name(new_field.column)
         if old_auto and not new_auto:
             set_type = self.sql_alter_column % {"table": table, "changes": fragment[0]}
-            return (f"ALTER COLUMN {column} DROP IDENTITY", []), [
+            return (f"{CLAUSE}ALTER COLUMN {column} DROP IDENTITY", []), [
                 (set_type, fragment[1]),
                 *other_actions,
             ]
@@ -618,11 +775,21 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         return fragment, other_actions
 
     def _rename_field_sql(self, table, old_field, new_field, new_type):
-        """Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6)."""
+        """Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6).
+
+        With ``OPTIONS["column_rename"] = "copy"`` the column is copied instead
+        (column_copy.py): the statements run here, Django's own rename statement is
+        skipped, and Django goes on with the new column (a type or NULL change of the
+        same AlterField included)."""
+        if self.connection.column_rename == column_copy.COPY:
+            old_type = old_field.db_parameters(connection=self.connection)["type"]
+            column_copy.run(self, table, old_field, new_field, old_type)
+            return column_copy.Skip()
         raise NotSupportedError(
             f"Db2 for i cannot rename column {old_field.column!r} of table {table!r} to "
             f"{new_field.column!r}: IBM i has no statement for it (SQL0199). Keep the "
-            f"column name with db_column={old_field.column!r} on the renamed field. See "
+            f"column name with db_column={old_field.column!r} on the renamed field, or "
+            'set OPTIONS["column_rename"] = "copy" to copy the column. See '
             '"Renaming a column" in docs/user/Known-Limitations.md.'
         )
 

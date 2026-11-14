@@ -4,9 +4,11 @@ The tests.testapp tables are created for this module and dropped again
 (``testapp_tables`` in conftest.py).
 """
 
+import datetime as dt
+
 import pytest
 
-from tests.testapp.models import Author
+from tests.testapp.models import Author, Book
 
 pytestmark = pytest.mark.usefixtures("testapp_tables")
 
@@ -300,3 +302,29 @@ def test_numeric_values_that_do_not_fit_the_column(live, empty) -> None:
     # More than 63 digits: a clear error, never truncated.
     with pytest.raises(NotSupportedError, match="at most 63"):
         list(measures.filter(amount=d(10**63)))
+
+
+def test_text_lookups_on_dates_and_times(live, empty) -> None:
+    """__startswith and friends with a string on a DateTimeField and a TimeField
+    (supports_date_lookup_using_string): the ISO text, in UTC with USE_TZ."""
+    author = Author.objects.create(name="Ann")
+    early = Book.objects.create(
+        author=author,
+        title="early",
+        published=dt.datetime(2005, 7, 28, 12, 30, 5, 123456, tzinfo=dt.UTC),
+        reading_time=dt.time(1, 30),
+    )
+    late = Book.objects.create(
+        author=author,
+        title="late",
+        published=dt.datetime(2006, 1, 2, tzinfo=dt.UTC),
+        reading_time=dt.time(12, 0),
+    )
+    Book.objects.create(author=author, title="none")
+    books = Book.objects.order_by("title")
+    assert list(books.filter(published__startswith="2005")) == [early]
+    assert list(books.filter(published__contains="-01-02 00:00")) == [late]
+    assert list(books.filter(published__endswith=".123456")) == [early]
+    assert list(books.filter(published__regex=r"^2006-\d\d-02")) == [late]
+    assert list(books.filter(reading_time__startswith="12:")) == [late]
+    assert list(books.filter(reading_time__icontains=":30:")) == [early]

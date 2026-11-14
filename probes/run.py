@@ -16,7 +16,8 @@ Usage (inside the "tests" container):
                     db_function_args | float_text | select_for_update |
                     phase6_flags | own_jobs | system_names | bulk_lobs |
                     phase7_flags | record_wait | decimal_values |
-                    supplementary_chars | qualified_names | flag_review
+                    supplementary_chars | qualified_names | flag_review |
+                    column_copy
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -39,6 +40,7 @@ import qtemp_bulk_lobs
 import qtemp_bulk_types
 import qtemp_catalog
 import qtemp_check_constraint_unjournaled
+import qtemp_column_copy
 import qtemp_compound_parts
 import qtemp_connect
 import qtemp_constraint_errors
@@ -164,6 +166,7 @@ PROBES = {
     "supplementary_chars": qtemp_supplementary_chars,
     "qualified_names": qtemp_qualified_names,
     "flag_review": qtemp_flag_review,
+    "column_copy": qtemp_column_copy,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 

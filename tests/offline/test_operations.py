@@ -383,6 +383,42 @@ def test_case_sensitive_lookups_leave_the_column_alone(lookup) -> None:
     assert ops.lookup_cast(lookup) == "%s"
 
 
+# --- Text lookups on dates and times (supports_date_lookup_using_string) --------------
+
+
+@pytest.mark.parametrize(
+    ("internal_type", "text"),
+    [
+        (
+            "DateTimeField",
+            "CAST(VARCHAR_FORMAT(%s, 'YYYY-MM-DD HH24:MI:SS.FF6') AS NVARCHAR(26))",
+        ),
+        ("DateField", "CAST(VARCHAR_FORMAT(%s, 'YYYY-MM-DD') AS NVARCHAR(10))"),
+        ("TimeField", "CAST(CHAR(%s, JIS) AS NVARCHAR(8))"),
+    ],
+)
+def test_date_and_time_columns_as_text(internal_type, text) -> None:
+    for lookup in ("contains", "startswith", "endswith", "regex"):
+        assert ops.lookup_cast(lookup, internal_type) == text
+    for lookup in ("iexact", "icontains", "istartswith", "iendswith"):
+        assert ops.lookup_cast(lookup, internal_type) == f"UPPER({text})"
+    for lookup in ("exact", "gt", "lte", "in", "range", "isnull"):
+        assert ops.lookup_cast(lookup, internal_type) == "%s"
+
+
+def test_text_lookup_on_a_datetime_column() -> None:
+    from tests.testapp.models import Book
+
+    sql, params = (
+        Book.objects.filter(published__startswith="2005").query.get_compiler("default").as_sql()
+    )
+    assert (
+        'CAST(VARCHAR_FORMAT("TESTAPP_BOOK"."PUBLISHED", \'YYYY-MM-DD HH24:MI:SS.FF6\') '
+        "AS NVARCHAR(26)) LIKE %s ESCAPE" in sql
+    )
+    assert params == ("2005%",)
+
+
 # --- Savepoints ------------------------------------------------------------------------
 
 

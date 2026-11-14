@@ -291,6 +291,38 @@ def test_fact_c_rename_tables_with_foreign_keys(live, fk_models) -> None:
                 editor.alter_db_table(parent, "testapp_fkparent2", "testapp_fkparent")
 
 
+def test_added_foreign_key_column_gets_its_constraint_inline(live, fk_models) -> None:
+    """AddField of a ForeignKey (can_create_inline_fk, #258 C): one ALTER TABLE ...
+    ADD COLUMN with the constraint, named as Django names it, and enforced."""
+    from django.db import models
+    from django.test.utils import CaptureQueriesContext
+
+    parent, child = fk_models
+    p = parent.objects.create(name="p")
+    field = models.ForeignKey(parent, models.PROTECT, null=True, related_name="+")
+    field.set_attributes_from_name("backup")
+    with CaptureQueriesContext(live) as queries, live.schema_editor() as editor:
+        editor.add_field(child, field)
+    statements = [q["sql"] for q in queries.captured_queries if "BACKUP_ID" in q["sql"]]
+    assert any("ADD COLUMN" in sql and "REFERENCES" in sql for sql in statements)
+    assert not any("ADD CONSTRAINT" in sql for sql in statements)
+    fks = _foreign_keys(live, "testapp_fkchild")
+    print(f"\nINLINE: foreign keys after AddField {fks}")
+    backup = [name for name, (columns, _) in fks.items() if columns == ("backup_id",)]
+    assert len(backup) == 1 and "_FK_TESTAPP_FKPARENT_ID" in backup[0].upper()
+    assert fks[backup[0]][1] == ("testapp_fkparent", "id")
+    with pytest.raises(IntegrityError, match="SQL0530"), live.cursor() as cursor:
+        cursor.execute(
+            'INSERT INTO "TESTAPP_FKCHILD" ("PARENT_ID", "NOTE", "BACKUP_ID") VALUES (%s, %s, %s)',
+            [p.pk, "x", 999],
+        )
+    with live.cursor() as cursor:
+        cursor.execute(
+            'INSERT INTO "TESTAPP_FKCHILD" ("PARENT_ID", "NOTE", "BACKUP_ID") VALUES (%s, %s, %s)',
+            [p.pk, "y", p.pk],
+        )
+
+
 def test_fact_d_foreign_key_to_plain_field(live, fk_models) -> None:
     """AlterField ForeignKey -> IntegerField: Django finds the foreign key by
     introspection and drops it; the values stay."""

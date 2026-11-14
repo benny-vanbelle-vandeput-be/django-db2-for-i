@@ -121,6 +121,21 @@ Django, with these IBM i specifics:
   found; CHECK constraints are not written into models (as on every
   database).
 
+## Text lookups on dates and times
+
+`__startswith`, `__contains`, `__endswith`, `__regex` and their case-insensitive
+forms work on a `DateTimeField`, `DateField` or `TimeField` with a string, for
+example `published__startswith="2005"`. Db2 for i does not take `LIKE` on a
+date or time column, so the backend compares the value as text:
+
+- a datetime as `2005-07-28 12:30:05.123456`: always six fractional digits,
+  and in the time zone the database stores (UTC with `USE_TZ = True`), not in
+  the current time zone. PostgreSQL leaves out zero fractions and adds the
+  offset;
+- a date as `2005-07-28`, a time as `12:30:05`.
+
+Such a filter cannot use an index on the column.
+
 ## Case-insensitive lookups do not use normal indexes
 
 `iexact`, `icontains`, `istartswith` and `iendswith` compare
@@ -404,13 +419,73 @@ section.
 Db2 for i has no statement to rename a column: IBM i 7.5 and 7.6 offer
 neither `ALTER TABLE ... RENAME COLUMN` nor another form (`SQL0199`; IBM
 idea [IBMI-I-1002](https://ibm-power-systems.ideas.ibm.com/ideas/IBMI-I-1002)
-is still open). A migration with `RenameField` that changes the column name,
-or an `AlterField` with a new `db_column`, raises `NotSupportedError`.
+is still open). By default, a migration with `RenameField` that changes the
+column name, or an `AlterField` with a new `db_column`, raises
+`NotSupportedError`. Two ways around it:
 
-Keep the column and rename only the field: give the renamed field the old
-column name, for example `full_name = models.CharField(..., db_column="name")`.
-Django then writes no SQL for the rename. Renaming tables (`RenameModel`,
-`AlterModelTable`) and indexes (`RenameIndex`) works.
+- **Keep the column** and rename only the field: give the renamed field the
+  old column name, for example `full_name = models.CharField(...,
+  db_column="name")`. Django then writes no SQL for the rename.
+- **Copy the column**: with `OPTIONS["column_rename"] = "copy"` (see
+  [Configuration](Configuration.md#options)) the backend adds a column with
+  the new name in the old one's place (`ADD COLUMN ... BEFORE`), copies the
+  values, rebuilds what was on the old column and drops it, all in the
+  migration's transaction.
+
+What the copy rebuilds, with the same names: `NOT NULL` and the default, an
+identity (numbering goes on after the largest value), the primary key,
+unique and check constraints, foreign keys from and to the column (and every
+other foreign key to the table, which has to be dropped during the copy),
+the indexes with the column as a key (with their system names and
+conditions), and the column heading, text and comment. The column keeps its
+place in the table.
+
+What the copy refuses, before any statement: a trigger, column mask or row
+permission that uses the column, column authorities (`GRANT ... ON
+COLUMN`), a field procedure, a hidden or generated column, an identity
+`GENERATED ALWAYS`, and an index with an expression key on the column.
+`DROP COLUMN ... RESTRICT` comes last, so a view or index Django did not
+rebuild stops the migration (SQL0196), which is then rolled back.
+
+What changes anyway:
+
+- the column's system name: the new column gets its own (from the field's
+  `db_system_name`, or one IBM i makes up for a long name);
+- every row is rewritten and journaled, under an exclusive lock: slow for a
+  large table;
+- the foreign keys to the table are not enforced between the copy and the end
+  of the migration (they are added again last);
+- the table's record format changes, as for any column change (see
+  [Programs over a changed table](#programs-over-a-changed-table)).
+
+Renaming tables (`RenameModel`, `AlterModelTable`) and indexes
+(`RenameIndex`) works without any of this.
+
+## Programs over a changed table
+
+A migration that adds, drops, changes or copies a column changes the table's
+record format. RPG and CL programs compiled over the table then end with a
+level check (CPF4131) until they are compiled again. The backend warns once
+per table at the end of such a migration (`RecordFormatChanged`,
+`django_db2_for_i.W003`), with the table's system name:
+
+```
+django_db2_for_i.W003: the record format of MYLIB/ORDERS changed (ADD COLUMN).
+RPG and CL programs compiled over it get a level check (CPF4131) until they
+are compiled again.
+```
+
+Tables the same migration created get no warning. A project without such
+programs can silence it with a warnings filter, for example
+`warnings.filterwarnings("ignore", category=RecordFormatChanged)` (from
+`django_db2_for_i.schema`).
+
+## Removing a field drops what depends on its column
+
+`RemoveField` writes `ALTER TABLE ... DROP COLUMN` without `RESTRICT` or
+`CASCADE`, and Db2 for i's default is `CASCADE`: an index or a view on the
+column is dropped with it, without an error (probe `qtemp_column_copy`).
+Check for views and indexes made outside Django before removing a field.
 
 ## Differences between the supported Django versions
 

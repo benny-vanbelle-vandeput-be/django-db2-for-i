@@ -33,6 +33,10 @@ REASON_PENDING_ROW_CHANGES = (
     "the transaction (SQL0910)"
 )
 REASON_NO_COLUMN_RENAME = "Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6)"
+REASON_POSTGRESQL_LIKE_INDEXES = (
+    "the test counts PostgreSQL's deferred LIKE indexes; Db2 for i writes UNIQUE in the "
+    "ADD COLUMN and defers nothing"
+)
 REASON_TYPE_NOT_IN_PLACE = "Db2 for i cannot change this column type in place (SQL0190)"
 REASON_CHECK_LIKE_COLUMN_PATTERN = (
     "Db2 for i rejects a CHECK condition with LIKE against a pattern built from a column (SQL0546)"
@@ -125,8 +129,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     has_zoneinfo_database = False
     # Constraints are checked per statement; nothing is deferrable.
     supports_forward_references = False
-    # Django's %s placeholders are converted to ?; dict params are refused.
-    supports_paramstyle_pyformat = False
+    # Django's %s placeholders, and %(name)s with a dict, are converted to ?
+    # (base.FormatStyleCursor).
+    supports_paramstyle_pyformat = True
     # A second connection works on the same test library (phase 7, answer 6).
     # PUB400 allows up to three connections for lock and concurrency tests
     # (#236); a Django test that needs more is skipped with that reason (none
@@ -168,7 +173,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     ignores_unnecessary_order_by_in_subqueries = True
     # REGEXP_LIKE (ICU) supports backreferences (probe queries).
     supports_regex_backreferencing = True
-    supports_date_lookup_using_string = False
+    # Text lookups on a date or time column compare its ISO text (operations.lookup_cast,
+    # probe flag_review).
+    supports_date_lookup_using_string = True
     supports_order_by_nulls_modifier = False
     # NULL sorts as the largest value: last ascending, first descending (probe
     # queries). order_by_nulls_first stays False (NULLs are not first ascending).
@@ -274,7 +281,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # Django's drop and re-add around a type change matters (IBMI_NOTES,
     # "Foreign keys through the schema editor"). Nothing is deferrable.
     supports_foreign_keys = True
-    can_create_inline_fk = False
+    # A new foreign key column gets its constraint in its ADD COLUMN
+    # (schema.sql_create_column_inline_fk); CREATE TABLE keeps separate statements.
+    can_create_inline_fk = True
+    # Several ALTER COLUMN clauses of one field change in one ALTER TABLE, side by
+    # side without commas (schema.AlterTableTemplate, probe 24).
+    supports_combined_alters = True
     # A foreign key column ends up with an index: Db2 for i creates none for
     # the constraint, so the index is Django's own (decision 5, amended
     # 2026-10-25). Django reads this flag only in its tests.
@@ -570,6 +582,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         REASON_FOR_UPDATE_TEXT: {
             "select_for_update.tests.SelectForUpdateTests.test_for_update_after_from",
         },
+        # Since can_create_inline_fk (#258 C) the test runs.
+        REASON_POSTGRESQL_LIKE_INDEXES: {
+            "indexes.tests.SchemaIndexesTests.test_alter_field_unique_false_removes_deferred_sql",
+        },
         REASON_FINAL_TABLE_NOT_RETURNING: {
             "queries.test_db_returning.ReturningValuesTests.test_insert_returning",
             "queries.test_db_returning.ReturningValuesTests.test_insert_returning_multiple",
@@ -581,3 +597,18 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     django_test_expected_failures: set[str] = (
         set().union(*expected_failures.values()) - compat.PASSING_ON_THIS_VERSION
     )
+
+    def __init__(self, connection):
+        super().__init__(connection)
+        if getattr(connection, "column_rename", None) == "copy":
+            # OPTIONS["column_rename"] = "copy" (column_copy.py): the tests that
+            # rename a column run (only on this connection's features).
+            self.django_test_expected_failures = (
+                type(self).django_test_expected_failures
+                - self.expected_failures[REASON_NO_COLUMN_RENAME]
+            )
+            self.django_test_skips = {
+                reason: tests
+                for reason, tests in type(self).django_test_skips.items()
+                if reason != REASON_NO_COLUMN_RENAME
+            }

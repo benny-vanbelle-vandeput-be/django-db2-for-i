@@ -88,6 +88,14 @@ class Before60OperationsMixin:
 
 # --- Before 6.1: Django 6.0 and 5.2 (delete when both are dropped) -------------------
 
+# The foreign key a new column gets inside its ADD COLUMN (can_create_inline_fk):
+# named as Django names the separate ADD CONSTRAINT, %(namespace)s is the table's
+# library when it is not NAME. Django 6.1 adds the DB-level on_delete clause.
+SQL_CREATE_COLUMN_INLINE_FK = (
+    "CONSTRAINT %(namespace)s%(name)s REFERENCES %(to_table)s (%(to_column)s)"
+    + ("%(on_delete_db)s" if django.VERSION >= (6, 1) else "")
+)
+
 # Django 6.1 prepares duration values through ops.adapt_durationfield_value();
 # before 6.1, DurationField.get_db_prep_value() converts them itself.
 DJANGO_CALLS_ADAPT_DURATIONFIELD_VALUE = django.VERSION >= (6, 1)

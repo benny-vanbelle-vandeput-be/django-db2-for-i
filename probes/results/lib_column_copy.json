@@ -1,0 +1,976 @@
+{
+  "probe": "lib_column_copy",
+  "utc": "20261113T220155Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "approved": "https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/258#issuecomment-6865729024",
+  "approved_by": "benny-vanbelle-vandeput-be",
+  "results": {
+    "start": {
+      "constraints": [
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001",
+          "CONSTRAINT_TYPE": "FOREIGN KEY",
+          "COLUMN_NAME": "P_CODE"
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_ID_00001",
+          "CONSTRAINT_TYPE": "PRIMARY KEY",
+          "COLUMN_NAME": "ID"
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001",
+          "CONSTRAINT_TYPE": "CHECK",
+          "COLUMN_NAME": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_ID_00001",
+          "CONSTRAINT_TYPE": "PRIMARY KEY",
+          "COLUMN_NAME": "ID"
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001",
+          "CONSTRAINT_TYPE": "UNIQUE",
+          "COLUMN_NAME": "CODE"
+        }
+      ],
+      "columns": [
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "ORDINAL_POSITION": 1,
+          "COLUMN_NAME": "ID",
+          "IS_NULLABLE": "N",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "ORDINAL_POSITION": 2,
+          "COLUMN_NAME": "P_CODE",
+          "IS_NULLABLE": "Y",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "ORDINAL_POSITION": 1,
+          "COLUMN_NAME": "ID",
+          "IS_NULLABLE": "N",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "ORDINAL_POSITION": 2,
+          "COLUMN_NAME": "CODE",
+          "IS_NULLABLE": "N",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "ORDINAL_POSITION": 3,
+          "COLUMN_NAME": "N",
+          "IS_NULLABLE": "Y",
+          "COLUMN_TEXT": null
+        }
+      ],
+      "rows": [
+        {
+          "ID": 1,
+          "CODE": "a",
+          "N": 1
+        },
+        {
+          "ID": 2,
+          "CODE": "b",
+          "N": 2
+        },
+        {
+          "ID": 3,
+          "CODE": "c",
+          "N": 3
+        }
+      ]
+    },
+    "0. first copy: ADD COLUMN, copy": {
+      "ddl": [
+        "ok"
+      ],
+      "copy": {
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET X = ID WITH NC",
+        "result": "-910",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0910 - Object DJDB2I_CCP in <DEFAULT_LIBRARY> type *FILE has a pending change. (-910) (SQLExecDirectW)"
+      }
+    },
+    "0. first copy: ADD COLUMN BEFORE, copy": {
+      "ddl": [
+        "ok"
+      ],
+      "copy": {
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET X = ID WITH NC",
+        "result": "-910",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0910 - Object DJDB2I_CCP in <DEFAULT_LIBRARY> type *FILE has a pending change. (-910) (SQLExecDirectW)"
+      }
+    },
+    "0. first copy: DROP CHECK, ADD COLUMN, copy": {
+      "ddl": [
+        "ok",
+        "ok"
+      ],
+      "copy": {
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET X = ID WITH NC",
+        "result": "-910",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0910 - Object DJDB2I_CCP in <DEFAULT_LIBRARY> type *FILE has a pending change. (-910) (SQLExecDirectW)"
+      }
+    },
+    "0. first copy: ADD COLUMN, DROP CHECK, copy": {
+      "ddl": [
+        "ok",
+        "ok"
+      ],
+      "copy": {
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET X = ID WITH NC",
+        "result": "-910",
+        "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0910 - Object DJDB2I_CCP in <DEFAULT_LIBRARY> type *FILE has a pending change. (-910) (SQLExecDirectW)"
+      }
+    },
+    "0. first copy: child DROP FOREIGN KEY, ADD COLUMN, copy": {
+      "ddl": [
+        "ok",
+        "ok"
+      ],
+      "copy": {
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET X = ID WITH NC",
+        "result": "ok"
+      }
+    },
+    "0. first copy: no DDL, copy into N": {
+      "ddl": [],
+      "copy": {
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET N = ID WITH NC",
+        "result": "ok"
+      }
+    },
+    "0. first copy: child (outgoing foreign key): ADD COLUMN, copy": {
+      "ddl": [
+        "ok"
+      ],
+      "copy": {
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCC SET X = ID WITH NC",
+        "result": "ok"
+      }
+    },
+    "0. first copy: child: DROP its FOREIGN KEY, ADD COLUMN, copy": {
+      "ddl": [
+        "ok",
+        "ok"
+      ],
+      "copy": {
+        "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCC SET X = ID WITH NC",
+        "result": "ok"
+      }
+    },
+    "a. drop CODE RESTRICT (unique, referenced)": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN CODE RESTRICT",
+      "result": "-196",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0196 - Column CODE in DJDB2I_CCP in <DEFAULT_LIBRARY> cannot be dropped or renamed. (-196) (SQLExecDirectW)"
+    },
+    "a. drop N RESTRICT (check)": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN N RESTRICT",
+      "result": "ok"
+    },
+    "b: catalog": {
+      "unique": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001",
+      "foreign key": {
+        "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001",
+        "UPDATE_RULE": "NO ACTION",
+        "DELETE_RULE": "NO ACTION"
+      },
+      "check": {
+        "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001",
+        "CHECK_CLAUSE": "N >= 0"
+      },
+      "check rewritten": "\"NEW_N\" >= 0",
+      "label": null
+    },
+    "b: drop the foreign key": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001\"",
+      "result": "ok"
+    },
+    "b: drop the unique": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001\"",
+      "result": "ok"
+    },
+    "b: drop the check": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001\"",
+      "result": "ok"
+    },
+    "b: add NEW_CODE before CODE": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN NEW_CODE VARCHAR(10) BEFORE CODE",
+      "result": "ok"
+    },
+    "b: add NEW_N before N": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN NEW_N INTEGER BEFORE N",
+      "result": "ok"
+    },
+    "b: copy CODE": {
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET NEW_CODE = CODE WITH NC",
+      "result": "ok"
+    },
+    "b: copy N": {
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET NEW_N = N WITH NC",
+      "result": "ok"
+    },
+    "b: NEW_CODE NOT NULL": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ALTER COLUMN NEW_CODE SET NOT NULL",
+      "result": "ok"
+    },
+    "b: the unique again": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001\" UNIQUE (NEW_CODE)",
+      "result": "ok"
+    },
+    "b: the foreign key again": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001\" FOREIGN KEY (P_CODE) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_CCP (NEW_CODE) ON DELETE NO ACTION ON UPDATE NO ACTION",
+      "result": "ok"
+    },
+    "b: the check again": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001\" CHECK (\"NEW_N\" >= 0)",
+      "result": "ok"
+    },
+    "b: the label again": {
+      "sql": "LABEL ON COLUMN <DEFAULT_LIBRARY>.DJDB2I_CCP.NEW_N IS 'None'",
+      "result": "ok"
+    },
+    "b: drop CODE": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN CODE RESTRICT",
+      "result": "ok"
+    },
+    "b: drop N": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN N RESTRICT",
+      "result": "ok"
+    },
+    "b. after ROLLBACK": {
+      "constraints": [
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001",
+          "CONSTRAINT_TYPE": "FOREIGN KEY",
+          "COLUMN_NAME": "P_CODE"
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_ID_00001",
+          "CONSTRAINT_TYPE": "PRIMARY KEY",
+          "COLUMN_NAME": "ID"
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001",
+          "CONSTRAINT_TYPE": "CHECK",
+          "COLUMN_NAME": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_ID_00001",
+          "CONSTRAINT_TYPE": "PRIMARY KEY",
+          "COLUMN_NAME": "ID"
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001",
+          "CONSTRAINT_TYPE": "UNIQUE",
+          "COLUMN_NAME": "CODE"
+        }
+      ],
+      "columns": [
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "ORDINAL_POSITION": 1,
+          "COLUMN_NAME": "ID",
+          "IS_NULLABLE": "N",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "ORDINAL_POSITION": 2,
+          "COLUMN_NAME": "P_CODE",
+          "IS_NULLABLE": "Y",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "ORDINAL_POSITION": 1,
+          "COLUMN_NAME": "ID",
+          "IS_NULLABLE": "N",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "ORDINAL_POSITION": 2,
+          "COLUMN_NAME": "CODE",
+          "IS_NULLABLE": "N",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "ORDINAL_POSITION": 3,
+          "COLUMN_NAME": "N",
+          "IS_NULLABLE": "Y",
+          "COLUMN_TEXT": null
+        }
+      ],
+      "rows": [
+        {
+          "ID": 1,
+          "CODE": "a",
+          "N": 1
+        },
+        {
+          "ID": 2,
+          "CODE": "b",
+          "N": 2
+        },
+        {
+          "ID": 3,
+          "CODE": "c",
+          "N": 3
+        }
+      ]
+    },
+    "c: catalog": {
+      "unique": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001",
+      "foreign key": {
+        "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001",
+        "UPDATE_RULE": "NO ACTION",
+        "DELETE_RULE": "NO ACTION"
+      },
+      "check": {
+        "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001",
+        "CHECK_CLAUSE": "N >= 0"
+      },
+      "check rewritten": "\"NEW_N\" >= 0",
+      "label": null
+    },
+    "c: drop the foreign key": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001\"",
+      "result": "ok"
+    },
+    "c: drop the unique": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001\"",
+      "result": "ok"
+    },
+    "c: drop the check": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001\"",
+      "result": "ok"
+    },
+    "c: add NEW_CODE before CODE": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN NEW_CODE VARCHAR(10) BEFORE CODE",
+      "result": "ok"
+    },
+    "c: add NEW_N before N": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN NEW_N INTEGER BEFORE N",
+      "result": "ok"
+    },
+    "c: copy CODE": {
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET NEW_CODE = CODE WITH NC",
+      "result": "ok"
+    },
+    "c: copy N": {
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET NEW_N = N WITH NC",
+      "result": "ok"
+    },
+    "c: NEW_CODE NOT NULL": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ALTER COLUMN NEW_CODE SET NOT NULL",
+      "result": "ok"
+    },
+    "c: the unique again": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001\" UNIQUE (NEW_CODE)",
+      "result": "ok"
+    },
+    "c: the foreign key again": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001\" FOREIGN KEY (P_CODE) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_CCP (NEW_CODE) ON DELETE NO ACTION ON UPDATE NO ACTION",
+      "result": "ok"
+    },
+    "c: the check again": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001\" CHECK (\"NEW_N\" >= 0)",
+      "result": "ok"
+    },
+    "c: the label again": {
+      "sql": "LABEL ON COLUMN <DEFAULT_LIBRARY>.DJDB2I_CCP.NEW_N IS 'None'",
+      "result": "ok"
+    },
+    "c: drop CODE": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN CODE RESTRICT",
+      "result": "ok"
+    },
+    "c: drop N": {
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN N RESTRICT",
+      "result": "ok"
+    },
+    "c. after COMMIT": {
+      "constraints": [
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001",
+          "CONSTRAINT_TYPE": "FOREIGN KEY",
+          "COLUMN_NAME": "P_CODE"
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_ID_00001",
+          "CONSTRAINT_TYPE": "PRIMARY KEY",
+          "COLUMN_NAME": "ID"
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001",
+          "CONSTRAINT_TYPE": "CHECK",
+          "COLUMN_NAME": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_ID_00001",
+          "CONSTRAINT_TYPE": "PRIMARY KEY",
+          "COLUMN_NAME": "ID"
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "CONSTRAINT_NAME": "Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001",
+          "CONSTRAINT_TYPE": "UNIQUE",
+          "COLUMN_NAME": "NEW_CODE"
+        }
+      ],
+      "columns": [
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "ORDINAL_POSITION": 1,
+          "COLUMN_NAME": "ID",
+          "IS_NULLABLE": "N",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCC",
+          "ORDINAL_POSITION": 2,
+          "COLUMN_NAME": "P_CODE",
+          "IS_NULLABLE": "Y",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "ORDINAL_POSITION": 1,
+          "COLUMN_NAME": "ID",
+          "IS_NULLABLE": "N",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "ORDINAL_POSITION": 2,
+          "COLUMN_NAME": "NEW_CODE",
+          "IS_NULLABLE": "N",
+          "COLUMN_TEXT": null
+        },
+        {
+          "TABLE_NAME": "DJDB2I_CCP",
+          "ORDINAL_POSITION": 3,
+          "COLUMN_NAME": "NEW_N",
+          "IS_NULLABLE": "Y",
+          "COLUMN_TEXT": null
+        }
+      ],
+      "rows": [
+        {
+          "ID": 1,
+          "NEW_CODE": "a",
+          "NEW_N": 1
+        },
+        {
+          "ID": 2,
+          "NEW_CODE": "b",
+          "NEW_N": 2
+        },
+        {
+          "ID": 3,
+          "NEW_CODE": "c",
+          "NEW_N": 3
+        }
+      ]
+    },
+    "c. child with a missing code (SQL0530?)": {
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_CCC VALUES (3, 'z')",
+      "result": "-530",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0530 - Operation not allowed by referential constraint Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001 in <DEFAULT_LIBRARY>. (-530) (SQLExecDirectW)"
+    },
+    "c. duplicate code (SQL0803?)": {
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_CCP VALUES (4, 'a', 4)",
+      "result": "-803",
+      "message": "[23000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+    },
+    "c. negative N (SQL0545?)": {
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_CCP VALUES (5, 'e', -1)",
+      "result": "-545",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0545 - INSERT, UPDATE, or MERGE not allowed by CHECK constraint. (-545) (SQLExecDirectW)"
+    },
+    "c. a good row": {
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_CCP VALUES (6, 'f', 6)",
+      "result": "ok"
+    }
+  },
+  "cleanup": {
+    "DJDB2I_CCC": "ok",
+    "DJDB2I_CCP": "ok"
+  },
+  "left": [],
+  "statements": [
+    {
+      "label": "create DJDB2I_CCP",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP (ID INTEGER NOT NULL PRIMARY KEY, CODE VARCHAR(10) NOT NULL UNIQUE, N INTEGER CHECK (N >= 0))",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "create DJDB2I_CCC",
+      "sql": "CREATE TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC (ID INTEGER NOT NULL PRIMARY KEY, P_CODE VARCHAR(10) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_CCP (CODE))",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "label N",
+      "sql": "LABEL ON COLUMN <DEFAULT_LIBRARY>.DJDB2I_CCP.N IS 'Amount'",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "rows",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_CCP VALUES (1, 'a', 1), (2, 'b', 2), (3, 'c', 3)",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "rows",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_CCC VALUES (1, 'a'), (2, 'c')",
+      "params": [],
+      "ok": true,
+      "rowcount": 2
+    },
+    {
+      "label": "suppress CPA32B2",
+      "sql": "CALL QSYS2.OVERRIDE_QAQQINI(1, '', '')",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "suppress CPA32B2",
+      "sql": "CALL QSYS2.OVERRIDE_QAQQINI(2, 'SUPPRESS_INQUIRY_MESSAGES', '*YES')",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "ADD COLUMN, copy",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN X INTEGER",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "ADD COLUMN, copy: copy",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET X = ID WITH NC",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0910 - Object DJDB2I_CCP in <DEFAULT_LIBRARY> type *FILE has a pending change. (-910) (SQLExecDirectW)"
+    },
+    {
+      "label": "ADD COLUMN BEFORE, copy",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN X INTEGER BEFORE CODE",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "ADD COLUMN BEFORE, copy: copy",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET X = ID WITH NC",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0910 - Object DJDB2I_CCP in <DEFAULT_LIBRARY> type *FILE has a pending change. (-910) (SQLExecDirectW)"
+    },
+    {
+      "label": "DROP CHECK, ADD COLUMN, copy",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001\"",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "DROP CHECK, ADD COLUMN, copy",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN X INTEGER",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "DROP CHECK, ADD COLUMN, copy: copy",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET X = ID WITH NC",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0910 - Object DJDB2I_CCP in <DEFAULT_LIBRARY> type *FILE has a pending change. (-910) (SQLExecDirectW)"
+    },
+    {
+      "label": "ADD COLUMN, DROP CHECK, copy",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN X INTEGER",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "ADD COLUMN, DROP CHECK, copy",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001\"",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "ADD COLUMN, DROP CHECK, copy: copy",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET X = ID WITH NC",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0910 - Object DJDB2I_CCP in <DEFAULT_LIBRARY> type *FILE has a pending change. (-910) (SQLExecDirectW)"
+    },
+    {
+      "label": "child DROP FOREIGN KEY, ADD COLUMN, copy",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001\"",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "child DROP FOREIGN KEY, ADD COLUMN, copy",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN X INTEGER",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "child DROP FOREIGN KEY, ADD COLUMN, copy: copy",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET X = ID WITH NC",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "no DDL, copy into N: copy",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET N = ID WITH NC",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "child (outgoing foreign key): ADD COLUMN, copy",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC ADD COLUMN X INTEGER",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "child (outgoing foreign key): ADD COLUMN, copy: copy",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCC SET X = ID WITH NC",
+      "params": [],
+      "ok": true,
+      "rowcount": 2
+    },
+    {
+      "label": "child: DROP its FOREIGN KEY, ADD COLUMN, copy",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001\"",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "child: DROP its FOREIGN KEY, ADD COLUMN, copy",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC ADD COLUMN X INTEGER",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "child: DROP its FOREIGN KEY, ADD COLUMN, copy: copy",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCC SET X = ID WITH NC",
+      "params": [],
+      "ok": true,
+      "rowcount": 2
+    },
+    {
+      "label": "a. drop CODE RESTRICT (unique, referenced)",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN CODE RESTRICT",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0196 - Column CODE in DJDB2I_CCP in <DEFAULT_LIBRARY> cannot be dropped or renamed. (-196) (SQLExecDirectW)"
+    },
+    {
+      "label": "a. drop N RESTRICT (check)",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN N RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: drop the foreign key",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001\"",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: drop the unique",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001\"",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: drop the check",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001\"",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: add NEW_CODE before CODE",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN NEW_CODE VARCHAR(10) BEFORE CODE",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: add NEW_N before N",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN NEW_N INTEGER BEFORE N",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: copy CODE",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET NEW_CODE = CODE WITH NC",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "b: copy N",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET NEW_N = N WITH NC",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "b: NEW_CODE NOT NULL",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ALTER COLUMN NEW_CODE SET NOT NULL",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: the unique again",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001\" UNIQUE (NEW_CODE)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: the foreign key again",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001\" FOREIGN KEY (P_CODE) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_CCP (NEW_CODE) ON DELETE NO ACTION ON UPDATE NO ACTION",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: the check again",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001\" CHECK (\"NEW_N\" >= 0)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: the label again",
+      "sql": "LABEL ON COLUMN <DEFAULT_LIBRARY>.DJDB2I_CCP.NEW_N IS 'None'",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: drop CODE",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN CODE RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "b: drop N",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN N RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: drop the foreign key",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001\"",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: drop the unique",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001\"",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: drop the check",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001\"",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: add NEW_CODE before CODE",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN NEW_CODE VARCHAR(10) BEFORE CODE",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: add NEW_N before N",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD COLUMN NEW_N INTEGER BEFORE N",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: copy CODE",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET NEW_CODE = CODE WITH NC",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "c: copy N",
+      "sql": "UPDATE <DEFAULT_LIBRARY>.DJDB2I_CCP SET NEW_N = N WITH NC",
+      "params": [],
+      "ok": true,
+      "rowcount": 3
+    },
+    {
+      "label": "c: NEW_CODE NOT NULL",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ALTER COLUMN NEW_CODE SET NOT NULL",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: the unique again",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_CODE_00001\" UNIQUE (NEW_CODE)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: the foreign key again",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001\" FOREIGN KEY (P_CODE) REFERENCES <DEFAULT_LIBRARY>.DJDB2I_CCP (NEW_CODE) ON DELETE NO ACTION ON UPDATE NO ACTION",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: the check again",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP ADD CONSTRAINT <DEFAULT_LIBRARY>.\"Q_<DEFAULT_LIBRARY>_DJDB2I_CCP_N_00001\" CHECK (\"NEW_N\" >= 0)",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: the label again",
+      "sql": "LABEL ON COLUMN <DEFAULT_LIBRARY>.DJDB2I_CCP.NEW_N IS 'None'",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: drop CODE",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN CODE RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c: drop N",
+      "sql": "ALTER TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP DROP COLUMN N RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "c. child with a missing code (SQL0530?)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_CCC VALUES (3, 'z')",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0530 - Operation not allowed by referential constraint Q_<DEFAULT_LIBRARY>_DJDB2I_CCC_P_CODE_00001 in <DEFAULT_LIBRARY>. (-530) (SQLExecDirectW)"
+    },
+    {
+      "label": "c. duplicate code (SQL0803?)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_CCP VALUES (4, 'a', 4)",
+      "params": [],
+      "ok": false,
+      "sqlstate": "23000",
+      "message": "[23000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+    },
+    {
+      "label": "c. negative N (SQL0545?)",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_CCP VALUES (5, 'e', -1)",
+      "params": [],
+      "ok": false,
+      "sqlstate": "HY000",
+      "message": "[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0545 - INSERT, UPDATE, or MERGE not allowed by CHECK constraint. (-545) (SQLExecDirectW)"
+    },
+    {
+      "label": "c. a good row",
+      "sql": "INSERT INTO <DEFAULT_LIBRARY>.DJDB2I_CCP VALUES (6, 'f', 6)",
+      "params": [],
+      "ok": true,
+      "rowcount": 1
+    },
+    {
+      "label": "discard the QAQQINI copy",
+      "sql": "CALL QSYS2.OVERRIDE_QAQQINI(3, '', '')",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJDB2I_CCC",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJDB2I_CCC RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    },
+    {
+      "label": "drop DJDB2I_CCP",
+      "sql": "DROP TABLE <DEFAULT_LIBRARY>.DJDB2I_CCP RESTRICT",
+      "params": [],
+      "ok": true,
+      "rowcount": 0
+    }
+  ]
+}

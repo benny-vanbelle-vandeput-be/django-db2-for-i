@@ -35,7 +35,9 @@ DATABASES = {
         "HOST": env("DB2I_HOST"),
         "USER": env("DB2I_USER"),
         "PASSWORD": env("DB2I_PASSWORD"),
-        "OPTIONS": {"ssl": env("DB2I_SSL", "1") == "1"},
+        # column_rename: the opt-in column copy (#258 F) runs in the tests, so
+        # Django's rename tests run instead of being expected failures.
+        "OPTIONS": {"ssl": env("DB2I_SSL", "1") == "1", "column_rename": "copy"},
         # PUB400 users cannot create schemas: tests run in the (journaled)
         # default library, guarded by the DJDB2I_TEST_MARKER table.
         "TEST": {"NAME": env("DB2I_DEFAULT_LIBRARY"), "CREATE_DB": False},

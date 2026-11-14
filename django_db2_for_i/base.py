@@ -52,6 +52,7 @@ from django.utils.functional import cached_property
 
 from . import capabilities as caps
 from . import (
+    column_copy,
     compat,
     expressions,  # noqa: F401  (registers as_db2_for_i() methods)
     inquiry,
@@ -76,6 +77,7 @@ OPTION_NAMES = frozenset(
         "capabilities",
         inquiry.OPTION,
         inquiry.SUPPRESS_OPTION,
+        column_copy.OPTION,
     }
 )
 
@@ -88,6 +90,41 @@ _FORMAT_MARKER = re.compile(r"%([s%])")
 def convert_placeholders(sql: str) -> str:
     """Convert Django's format-style SQL to the driver's qmark style."""
     return _FORMAT_MARKER.sub(lambda match: "?" if match.group(1) == "s" else "%", sql)
+
+
+# "%(name)s" -> "?", "%%" -> "%"; a plain "%s" next to named markers is refused.
+_PYFORMAT_MARKER = re.compile(r"%(?:\(([^)]*)\)s|([s%]))")
+
+
+def convert_pyformat(sql: str) -> tuple[str, list[str]]:
+    """Convert pyformat SQL (``%(name)s`` with a dict) to qmark style.
+
+    Returns the SQL and the parameter names in the order of their markers; a name
+    used twice gets two markers, as the driver binds by position.
+    """
+    names: list[str] = []
+
+    def replace(match: re.Match) -> str:
+        name, other = match.groups()
+        if name is not None:
+            names.append(name)
+            return "?"
+        if other == "%":
+            return "%"
+        raise Database.ProgrammingError(
+            "A %s placeholder cannot be mixed with %(name)s placeholders and dict parameters."
+        )
+
+    return _PYFORMAT_MARKER.sub(replace, sql), names
+
+
+def _named_values(params: Mapping[str, Any], names: list[str]) -> list[Any]:
+    try:
+        return [params[name] for name in names]
+    except KeyError as exc:
+        raise Database.ProgrammingError(
+            f"No value for the placeholder %({exc.args[0]})s in the parameters."
+        ) from None
 
 
 def strip_statement_end(sql: str) -> str:
@@ -103,7 +140,9 @@ class FormatStyleCursor:
 
     SQL is only converted when parameters are given: with ``params=None``
     Django sends SQL as is, so a literal ``%`` must not be touched. One
-    trailing ``;`` is always removed (strip_statement_end).
+    trailing ``;`` is always removed (strip_statement_end). Parameters given as
+    a dict go with ``%(name)s`` placeholders (pyformat), turned into ``?`` and a
+    list in the order of the placeholders.
     """
 
     def __init__(self, cursor: Database.Cursor):
@@ -113,24 +152,24 @@ class FormatStyleCursor:
         sql = strip_statement_end(sql)
         if params is None:
             self.cursor.execute(sql)
+        elif isinstance(params, Mapping):
+            sql, names = convert_pyformat(sql)
+            self.cursor.execute(sql, _named_values(params, names))
         else:
-            self.cursor.execute(convert_placeholders(sql), self._sequence(params))
+            self.cursor.execute(convert_placeholders(sql), params)
         return self
 
     def executemany(self, sql: str, param_list) -> FormatStyleCursor:
-        rows = [self._sequence(params) for params in param_list]
-        if rows:
-            self.cursor.executemany(convert_placeholders(strip_statement_end(sql)), rows)
+        rows = list(param_list)
+        if not rows:
+            return self
+        sql = strip_statement_end(sql)
+        if isinstance(rows[0], Mapping):
+            sql, names = convert_pyformat(sql)
+            self.cursor.executemany(sql, [_named_values(row, names) for row in rows])
+        else:
+            self.cursor.executemany(convert_placeholders(sql), rows)
         return self
-
-    @staticmethod
-    def _sequence(params: Any) -> Sequence[Any]:
-        if isinstance(params, Mapping):
-            raise Database.NotSupportedError(
-                "Db2 for i does not support pyformat parameters (dict params); "
-                "use a list with %s placeholders"
-            )
-        return params
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.cursor, name)
@@ -303,6 +342,18 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if not isinstance(value, bool):
             raise ImproperlyConfigured(
                 f"OPTIONS['{inquiry.SUPPRESS_OPTION}']: use True or False, not {value!r}."
+            )
+        return value
+
+    @cached_property
+    def column_rename(self) -> str:
+        """OPTIONS['column_rename'], validated: "refuse" (not set) or "copy"
+        (column_copy.py)."""
+        value = self.options.get(column_copy.OPTION, column_copy.REFUSE)
+        if value not in column_copy.VALUES:
+            raise ImproperlyConfigured(
+                f"OPTIONS['{column_copy.OPTION}']: use "
+                f"{' or '.join(repr(v) for v in column_copy.VALUES)}, not {value!r}."
             )
         return value
 

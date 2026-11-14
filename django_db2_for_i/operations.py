@@ -34,7 +34,7 @@ import datetime as dt
 import logging
 import uuid
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
@@ -238,13 +238,39 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
 
     _CASE_INSENSITIVE_LOOKUPS = frozenset({"iexact", "icontains", "istartswith", "iendswith"})
 
+    _TEXT_LOOKUPS = frozenset(
+        {
+            "iexact",
+            "contains",
+            "icontains",
+            "startswith",
+            "istartswith",
+            "endswith",
+            "iendswith",
+            "regex",
+            "iregex",
+        }
+    )
+    # A date or time column as text for the text lookups (supports_date_lookup_using_string),
+    # in the ISO form Python and PostgreSQL write. LIKE on the column itself is SQL0414, CHAR()
+    # gives the IBM form (2005-07-28-12.30.05.123456), and a timestamp text matches an untyped
+    # pattern marker only when it is NVARCHAR (probe flag_review, docs/IBMI_NOTES.md).
+    _AS_TEXT = {
+        "DateTimeField": "CAST(VARCHAR_FORMAT(%s, 'YYYY-MM-DD HH24:MI:SS.FF6') AS NVARCHAR(26))",
+        "DateField": "CAST(VARCHAR_FORMAT(%s, 'YYYY-MM-DD') AS NVARCHAR(10))",
+        "TimeField": "CAST(CHAR(%s, JIS) AS NVARCHAR(8))",
+    }
+
     def lookup_cast(self, lookup_type: str, internal_type: str | None = None) -> str:
+        cast = "%s"
+        if lookup_type in self._TEXT_LOOKUPS and internal_type in self._AS_TEXT:
+            cast = self._AS_TEXT[internal_type]
         # The operators uppercase the right-hand side (see base.operators);
         # the column must be uppercased too, or the comparison stays
         # case-sensitive.
         if lookup_type in self._CASE_INSENSITIVE_LOOKUPS:
-            return "UPPER(%s)"
-        return "%s"
+            return f"UPPER({cast})"
+        return cast
 
     def prep_for_iexact_query(self, x):
         """``iexact`` is ``UPPER(col) = UPPER(%s)``, not LIKE, so the value is compared
@@ -276,10 +302,14 @@ class DatabaseOperations(Before60OperationsMixin, BaseDatabaseOperations):
         """
         if params is None:
             return sql  # sent as is: a % in it is a literal %
-        if not isinstance(params, (list, tuple)):
+        if isinstance(params, Mapping):
+            values = {name: _logged_literal(value) for name, value in params.items()}
+        elif isinstance(params, (list, tuple)):
+            values = tuple(_logged_literal(value) for value in params)
+        else:
             return super().last_executed_query(cursor, sql, params)
         try:
-            return sql % tuple(_logged_literal(value) for value in params)
+            return sql % values
         except (TypeError, ValueError):
             return super().last_executed_query(cursor, sql, params)
 
