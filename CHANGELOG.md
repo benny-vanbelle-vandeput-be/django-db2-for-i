@@ -10,6 +10,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Changes since the last release are in [changelog.d/](changelog.d/), one
 fragment per pull request; they are assembled here at release time.
 
+## [0.1.0b4] - 2026-11-14
+
+### Added
+- Python 3.15 with Django 6.1 (6.1.3 or later; Django 6.0 and 5.2 do not support 3.15). An environment marker in the dependencies asks for Django 6.1.3 or later on Python 3.15 only; the minimum Django for everyone else is unchanged. Free-threaded Python (3.15t) is not supported. (#247)
+- IBM i system names for columns (#253): a field type with `django_db2_for_i.fields.SystemNameMixin` (or `with_system_name(models.CharField, __name__)`) takes `db_system_name="DLVADDR"`, which the schema editor writes as `FOR COLUMN DLVADDR` in `CREATE TABLE` and `ADD COLUMN`; it is kept in migrations. Any field with a `db_system_name` attribute counts. Plain fields are unchanged. (#252)
+- IBM i system names for tables and indexes (#253): with `"django_db2_for_i"` in `INSTALLED_APPS`, `Meta.db_system_name` gives the table its system name (`CREATE TABLE ... FOR SYSTEM NAME`); `django_db2_for_i.indexes.SystemNameIndex(..., db_system_name=...)` in `Meta.indexes` does the same for an index. Both are kept in migrations. (#252)
+- New system checks: `django_db2_for_i.E001` (an invalid column system name), `E002` (two columns of a table with the same system name), `E003` (an invalid table or index system name, or one for an SQL name of at most 10 characters) and `E004` (two tables or indexes with the same system name). See Configuration, "IBM i system names". (#252)
+- Tables in another library than `NAME` (#124): `db_table = 'LIB"."TABLE'` (Django's form of a qualified name), or `Meta.db_library = "LIB"` with `"django_db2_for_i"` in `INSTALLED_APPS`. The schema editor qualifies every constraint and index name on such a table with its library (also named constraints inside `CREATE TABLE`), keeps the new name of `RENAME INDEX` / `RENAME TABLE` unqualified, and introspection reads the table's library. Moving a table to another library is refused with `NotSupportedError`. See Configuration, "Tables in another library". (#255)
+- New system check `django_db2_for_i.E005`: an invalid `Meta.db_library`, or a model that names two different libraries. (#255)
+- `OPTIONS["column_rename"] = "copy"`: a migration that renames a column
+  copies it, since Db2 for i has no statement to rename one. The new column
+  takes the old one's place, the values are copied, and its constraints,
+  indexes, foreign keys and labels are rebuilt; the old column is dropped at
+  the end of the migration. Opt-in; without it a rename is refused as before. (#259)
+- A migration that adds, drops, changes or copies a column warns once per
+  table (`RecordFormatChanged`, `django_db2_for_i.W003`): RPG and CL programs
+  compiled over the table need to be compiled again. (#259)
+
+### Enabled features
+- `has_select_for_update`, `has_select_for_update_skip_locked`, `has_select_for_update_of`, `select_for_update_of_column`, `supports_select_for_update_with_limit`: `select_for_update()` locks the selected rows until the transaction ends, written `FOR UPDATE ... WITH RS` (a plain `FOR UPDATE` under `*CS` keeps no lock once the rows are fetched), with `skip_locked=True` (`SKIP LOCKED DATA`), `of=(...)` and on a slice. A query with a join is written `WITH RS USE AND KEEP EXCLUSIVE LOCKS`, which locks the rows of every joined table (Db2 for i refuses `FOR UPDATE` with a join). `nowait=True` stays unavailable. Another job's plain read of a locked row waits too and fails with SQL0913 after the table's record wait (Known Limitations). Django's `select_for_update` tests are a supported module. (#252)
+- `test_db_allows_multiple_connections`: Django's tests may open a second connection to the test library (phase 7, answer 6). PUB400's rule allows up to three for lock and concurrency tests; no test in the supported modules needs more (`basic.test_concurrent_delete_with_save` and `transactions.test_atomic_prevents_queries_in_broken_transaction_after_client_close` now run and pass). (#252)
+- `UUID4()` (Django 6.1) works where the server has `GENERATE_UUID()` (IBM i 7.5 Db2 PTF Group SF99950 level 8): checked at the first connection, capability `has_generate_uuid`. `db_default=UUID4()` stays off. (#252)
+- `supports_paramstyle_pyformat`: raw SQL may use `%(name)s` placeholders
+  with a dict of parameters (`cursor.execute()`, `executemany()`,
+  `Model.objects.raw()`), as on PostgreSQL. (#259)
+- `supports_date_lookup_using_string`: text lookups such as
+  `published__startswith="2005"` on date, datetime and time fields, which
+  compare the ISO text of the value. (#259)
+- `can_create_inline_fk`: a foreign key column added by a migration
+  (`AddField`) gets its constraint in the same `ALTER TABLE ... ADD COLUMN`,
+  with the name Django gives it. `CREATE TABLE` still adds foreign keys in
+  separate statements. (#259)
+- `supports_combined_alters`: several changes to one column (for example
+  a wider type and `NOT NULL`) are one `ALTER TABLE` statement, with the
+  clauses side by side. (#259)
+
+### Changed
+- Docs: the installation guide has first steps for a new project and a "Check your own IBM i" section (run the project's smoke set of 37 IBM i tests against your own system: what it needs, what it creates and cleans up, about 5 minutes); a new Upgrading page lists what can matter for an existing project in each beta. README no longer says that `DROP COLUMN` needs a system reply list entry (migrations do not since 0.1.0b1). (#246)
+- Saving a timezone-aware `time` raises `ValueError("Db2 for i backend does not support timezone-aware times.")`, worded as on Django's other backends (it said "Django does not ..."). (#252)
+- Contributors: a run of chosen tests (`bin/ibmi-test own <tests>`, `nox -s offline -- <file>`, `-k`, `--deselect`, `--last-failed`) no longer writes its counts to `test-results/<django>/sets/`, so it cannot replace the last whole run's counts in the status pages; it prints why instead. (#254)
+
+### Fixed
+- After a migration that adds a NOT NULL column without a default or narrows a column, the table no longer stays locked for other jobs until the connection closes. The problem exists in 0.1.0b3 and earlier: the IBM i Access ODBC Driver's commit and rollback keep a `LOCK TABLE` lock, so other jobs could neither read nor write the table (SQL0913) until the migrating connection closed. A transaction that took the lock now ends with the SQL statement `COMMIT` or `ROLLBACK`, which releases it (also inside an outer `atomic()`; if the `ROLLBACK` fails, the connection is closed); other transactions still use the driver's commit. Workaround for 0.1.0b3 and earlier: run migrations with `manage.py migrate` (its connection closes when it ends), or call `django.db.connection.close()` after `call_command("migrate")`. (#241)
+- Four queries that Db2 for i refused (#82): `F("x") + None` (the bare `NULL` operand now gets the other operand's type), an annotation of an empty subquery (`Subquery(qs.none())`, now a typed `NULL`), an always-true condition such as `~Q(pk__in=[])` selected together with an aggregate (now `TRUE`, as Django selects it elsewhere), and a `bytes` value for a `BinaryField` (now `VARBINARY(<length>)`, or `BLOB` above 32,740 bytes; it raised `NotSupportedError`). Django's `annotations` and `expressions_case` tests are supported modules now. (#252)
+- A `Value(Decimal(...))` with more digits than its `DecimalField` (`max_digits`, `decimal_places`) is sent with its own `DECIMAL(p, s)` and comes back exact, as on Django's other backends; the driver refused it ("Numeric value out of range" or "right truncation") (#95). (#252)
+- `Chr` and `Ord` work for every Unicode character, also above U+FFFF (through UTF-16 surrogate pairs); before, only ASCII worked. (#252)
+- Closing a cursor that is already closed does nothing, as with Django's other backends; it raised `ProgrammingError` ("Attempt to use a closed cursor"). (#252)
+
+### Known limitations
+- `bulk_create(ignore_conflicts=True)` (and `add()` / `set()` of a `ManyToManyField`) skips a row as soon as another job has inserted the same key, before that job commits; if it then rolls back, neither row is in the table. Verified with two jobs on IBM i 7.5, as are the SQL0803 / SQL0913 errors of a real race; Known Limitations now states results instead of IBM's documentation. (#239) (#239)
+- `DB_CASCADE` and `DB_SET_NULL` between tables in libraries with different journals: every delete of a parent row fails with SQL7008 (probe `lib_fk_across_journals`). Keep both tables in one journal, or use Django's own `CASCADE` / `SET_NULL`. (#250)
+- A model whose `db_table` is in another library than `NAME`: unique and check constraints fail like foreign keys (SQL5051), and an index lands in the `NAME` library (probe `lib_other_library`; support is planned in #124). (#250)
+- Removing a field (`DROP COLUMN` without a keyword) also drops an index or
+  view on its column: Db2 for i's default is `CASCADE`. (#259)
+
 ## [0.1.0b3] - 2026-11-11
 
 ### Added
@@ -659,7 +714,8 @@ The tag is not moved or recreated.
   escaped quotes in DEFAULT constants wrongly. Unsupported values raise
   `NotSupportedError`.
 
-[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b3...HEAD
+[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b4...HEAD
+[0.1.0b4]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b3...v0.1.0b4
 [0.1.0b3]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b2...v0.1.0b3
 [0.1.0b2]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b1...v0.1.0b2
 [0.1.0b1]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0a4...v0.1.0b1

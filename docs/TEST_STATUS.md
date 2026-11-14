@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3474 | 2 | 0 | 0 | 2026-11-12 07:31:07 UTC |
-| IBM i tests | 419 | 2 | 1 | 0 | 2026-11-12 07:59:45 UTC |
-| Django suite on IBM i | 2807 | 262 | 88 | 0 | 2026-11-10 01:59:29 UTC |
-| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-12 07:31:57 UTC |
+| Offline tests | 3652 | 2 | 0 | 0 | 2026-11-14 17:35:13 UTC |
+| IBM i tests | 452 | 2 | 1 | 0 | 2026-11-14 17:20:04 UTC |
+| Django suite on IBM i | 3608 | 369 | 71 | 2 | 2026-11-14 16:51:11 UTC |
+| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 20:38:34 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3475 | 1 | 0 | 0 | 2026-11-12 07:25:16 UTC |
-| IBM i tests | 414 | 3 | 1 | 0 | 2026-11-09 21:04:32 UTC |
-| Django suite on IBM i | 2698 | 218 | 89 | 0 | 2026-11-09 03:01:31 UTC |
-| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-12 09:47:48 UTC |
+| Offline tests | 3651 | 3 | 0 | 0 | 2026-11-14 17:29:06 UTC |
+| IBM i tests | 450 | 4 | 1 | 0 | 2026-11-14 14:25:17 UTC |
+| Django suite on IBM i | 3344 | 239 | 72 | 0 | 2026-11-14 13:56:23 UTC |
+| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 20:09:10 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3472 | 1 | 0 | 0 | 2026-11-12 08:03:17 UTC |
-| IBM i tests | 409 | 5 | 1 | 0 | 2026-11-08 22:09:10 UTC |
-| Django suite on IBM i | 2652 | 210 | 89 | 0 | 2026-11-07 20:27:31 UTC |
-| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-12 08:03:57 UTC |
+| Offline tests | 3648 | 3 | 0 | 0 | 2026-11-14 17:24:30 UTC |
+| IBM i tests | 443 | 8 | 1 | 0 | 2026-11-14 11:32:06 UTC |
+| Django suite on IBM i | 3265 | 231 | 72 | 0 | 2026-11-14 11:03:41 UTC |
+| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 20:05:43 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,10 +73,10 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-11-07 06:36:56 UTC to 2026-11-10 01:59:29 UTC
+- **Runs:** 2026-10-29 20:40:08 UTC to 2026-11-14 16:51:11 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
-- **Python:** 3.14.8
-- **Backend commits:** ecbec96 2026-11-07 (per module in the table)
+- **Python:** 3.14.8, 3.15.0
+- **Backend commits:** 457180a 2026-11-14, dd7f255 2026-10-29 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
@@ -85,69 +85,110 @@ The Django suite on IBM i per module and Django version.
 
 | Module | Django | Tests | Passed | Failures | Errors | Skipped | Expected failures | Unexpected successes | Result | Run | Backend commit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| aggregation | 5.2 | 140 | 140 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-07 07:00:26 UTC | ecbec96 2026-11-07 |
-| aggregation | 6.0 | 156 | 153 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-08 22:32:38 UTC | ecbec96 2026-11-07 |
-| aggregation | 6.1 | 168 | 154 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-09 21:05:19 UTC | ecbec96 2026-11-07 |
-| basic | 5.2 | 82 | 79 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-07 06:36:56 UTC | ecbec96 2026-11-07 |
-| basic | 6.0 | 74 | 71 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-08 22:10:23 UTC | ecbec96 2026-11-07 |
-| basic | 6.1 | 83 | 80 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-09 07:04:16 UTC | ecbec96 2026-11-07 |
-| bulk_create | 5.2 | 52 | 38 | 0 | 0 | 7 | 7 | 0 | OK | 2026-11-07 11:11:39 UTC | ecbec96 2026-11-07 |
-| bulk_create | 6.0 | 59 | 43 | 0 | 0 | 9 | 7 | 0 | OK | 2026-11-09 02:32:12 UTC | ecbec96 2026-11-07 |
-| bulk_create | 6.1 | 60 | 43 | 0 | 0 | 10 | 7 | 0 | OK | 2026-11-09 23:37:12 UTC | ecbec96 2026-11-07 |
-| constraints | 5.2 | 103 | 91 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-07 11:17:08 UTC | ecbec96 2026-11-07 |
-| constraints | 6.0 | 101 | 89 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-09 02:42:08 UTC | ecbec96 2026-11-07 |
-| constraints | 6.1 | 102 | 89 | 0 | 0 | 13 | 0 | 0 | OK | 2026-11-09 23:41:26 UTC | ecbec96 2026-11-07 |
-| db_functions | 5.2 | 363 | 319 | 0 | 0 | 26 | 18 | 0 | OK | 2026-11-07 11:25:45 UTC | ecbec96 2026-11-07 |
-| db_functions | 6.0 | 363 | 319 | 0 | 0 | 26 | 18 | 0 | OK | 2026-11-09 02:50:03 UTC | ecbec96 2026-11-07 |
-| db_functions | 6.1 | 371 | 322 | 0 | 0 | 31 | 18 | 0 | OK | 2026-11-09 23:44:35 UTC | ecbec96 2026-11-07 |
-| expressions | 5.2 | 208 | 204 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-07 07:07:01 UTC | ecbec96 2026-11-07 |
-| expressions | 6.0 | 212 | 208 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-08 22:38:26 UTC | ecbec96 2026-11-07 |
-| expressions | 6.1 | 213 | 209 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-09 21:07:43 UTC | ecbec96 2026-11-07 |
-| expressions_window | 5.2 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-07 11:34:18 UTC | ecbec96 2026-11-07 |
-| expressions_window | 6.0 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-09 02:57:09 UTC | ecbec96 2026-11-07 |
-| expressions_window | 6.1 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-09 23:50:19 UTC | ecbec96 2026-11-07 |
-| indexes | 5.2 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-07 11:20:23 UTC | ecbec96 2026-11-07 |
-| indexes | 6.0 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-09 02:45:08 UTC | ecbec96 2026-11-07 |
-| indexes | 6.1 | 31 | 11 | 0 | 0 | 19 | 1 | 0 | OK | 2026-11-09 23:42:31 UTC | ecbec96 2026-11-07 |
-| inspectdb | 5.2 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-07 11:03:57 UTC | ecbec96 2026-11-07 |
-| inspectdb | 6.0 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-09 02:26:15 UTC | ecbec96 2026-11-07 |
-| inspectdb | 6.1 | 31 | 19 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-09 23:33:34 UTC | ecbec96 2026-11-07 |
-| introspection | 5.2 | 21 | 20 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-07 10:54:39 UTC | ecbec96 2026-11-07 |
-| introspection | 6.0 | 21 | 20 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-09 02:13:25 UTC | ecbec96 2026-11-07 |
-| introspection | 6.1 | 24 | 23 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-09 23:25:18 UTC | ecbec96 2026-11-07 |
-| lookup | 5.2 | 100 | 91 | 0 | 0 | 7 | 2 | 0 | OK | 2026-11-07 06:55:11 UTC | ecbec96 2026-11-07 |
-| lookup | 6.0 | 100 | 93 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-08 22:27:15 UTC | ecbec96 2026-11-07 |
-| lookup | 6.1 | 148 | 141 | 0 | 0 | 5 | 2 | 0 | OK | 2026-11-09 07:19:20 UTC | ecbec96 2026-11-07 |
-| migrate_signals | 5.2 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-07 11:10:28 UTC | ecbec96 2026-11-07 |
-| migrate_signals | 6.0 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-09 02:31:16 UTC | ecbec96 2026-11-07 |
-| migrate_signals | 6.1 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-09 23:36:32 UTC | ecbec96 2026-11-07 |
-| migrations | 5.2 | 784 | 739 | 0 | 0 | 21 | 24 | 0 | OK | 2026-11-07 20:27:31 UTC | ecbec96 2026-11-07 |
-| migrations | 6.0 | 811 | 765 | 0 | 0 | 22 | 24 | 0 | OK | 2026-11-08 22:44:14 UTC | ecbec96 2026-11-07 |
-| migrations | 6.1 | 825 | 779 | 0 | 0 | 22 | 24 | 0 | OK | 2026-11-09 21:11:08 UTC | ecbec96 2026-11-07 |
-| model_fields | 5.2 | 97 | 82 | 0 | 0 | 11 | 4 | 0 | OK | 2026-11-07 11:36:03 UTC | ecbec96 2026-11-07 |
-| model_fields | 6.0 | 102 | 84 | 0 | 0 | 14 | 4 | 0 | OK | 2026-11-09 02:58:29 UTC | ecbec96 2026-11-07 |
-| model_fields | 6.1 | 129 | 88 | 0 | 0 | 37 | 4 | 0 | OK | 2026-11-09 23:51:22 UTC | ecbec96 2026-11-07 |
-| model_indexes | 5.2 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-07 11:24:31 UTC | ecbec96 2026-11-07 |
-| model_indexes | 6.0 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-09 02:49:03 UTC | ecbec96 2026-11-07 |
-| model_indexes | 6.1 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-09 23:44:01 UTC | ecbec96 2026-11-07 |
-| ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-07 06:52:15 UTC | ecbec96 2026-11-07 |
-| ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-08 22:24:05 UTC | ecbec96 2026-11-07 |
-| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-09 07:17:28 UTC | ecbec96 2026-11-07 |
-| queries | 5.2 | 493 | 473 | 0 | 0 | 14 | 6 | 0 | OK | 2026-11-07 11:39:36 UTC | ecbec96 2026-11-07 |
-| queries | 6.0 | 495 | 475 | 0 | 0 | 14 | 6 | 0 | OK | 2026-11-09 03:01:31 UTC | ecbec96 2026-11-07 |
-| queries | 6.1 | 506 | 487 | 0 | 0 | 14 | 5 | 0 | OK | 2026-11-09 23:53:54 UTC | ecbec96 2026-11-07 |
-| schema | 5.2 | 220 | 131 | 0 | 0 | 64 | 25 | 0 | OK | 2026-11-07 10:32:17 UTC | ecbec96 2026-11-07 |
-| schema | 6.0 | 222 | 132 | 0 | 0 | 65 | 25 | 0 | OK | 2026-11-09 01:49:48 UTC | ecbec96 2026-11-07 |
-| schema | 6.1 | 227 | 136 | 0 | 0 | 66 | 25 | 0 | OK | 2026-11-10 01:59:29 UTC | ecbec96 2026-11-07 |
-| transactions | 5.2 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-07 06:40:54 UTC | ecbec96 2026-11-07 |
-| transactions | 6.0 | 87 | 85 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-08 22:13:36 UTC | ecbec96 2026-11-07 |
-| transactions | 6.1 | 88 | 86 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-09 07:06:59 UTC | ecbec96 2026-11-07 |
+| aggregation | 5.2 | 140 | 140 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 08:49:21 UTC | 457180a 2026-11-14 |
+| aggregation | 6.0 | 156 | 153 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-14 11:41:54 UTC | 457180a 2026-11-14 |
+| aggregation | 6.1 | 168 | 154 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-14 14:34:50 UTC | 457180a 2026-11-14 |
+| annotations | 5.2 | 91 | 88 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-14 10:42:17 UTC | 457180a 2026-11-14 |
+| annotations | 6.0 | 92 | 89 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-14 13:36:02 UTC | 457180a 2026-11-14 |
+| annotations | 6.1 | 93 | 90 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-14 16:31:08 UTC | 457180a 2026-11-14 |
+| basic | 5.2 | 82 | 81 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 08:40:58 UTC | 457180a 2026-11-14 |
+| basic | 6.0 | 74 | 73 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 11:33:06 UTC | 457180a 2026-11-14 |
+| basic | 6.1 | 83 | 82 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 14:26:32 UTC | 457180a 2026-11-14 |
+| bulk_create | 5.2 | 52 | 38 | 0 | 0 | 7 | 7 | 0 | OK | 2026-11-14 10:07:03 UTC | 457180a 2026-11-14 |
+| bulk_create | 6.0 | 59 | 43 | 0 | 0 | 9 | 7 | 0 | OK | 2026-11-14 13:00:17 UTC | 457180a 2026-11-14 |
+| bulk_create | 6.1 | 60 | 43 | 0 | 0 | 10 | 7 | 0 | OK | 2026-11-14 15:55:00 UTC | 457180a 2026-11-14 |
+| bulk_create | 6.1 | 60 | 16 | 1 | 0 | 43 | 0 | 0 | FAILED | 2026-10-29 20:40:08 UTC | dd7f255 2026-10-29 |
+| constraints | 5.2 | 103 | 91 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-14 10:09:03 UTC | 457180a 2026-11-14 |
+| constraints | 6.0 | 101 | 89 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-14 13:03:18 UTC | 457180a 2026-11-14 |
+| constraints | 6.1 | 102 | 89 | 0 | 0 | 13 | 0 | 0 | OK | 2026-11-14 15:58:04 UTC | 457180a 2026-11-14 |
+| constraints | 6.1 | 102 | 83 | 0 | 0 | 19 | 0 | 0 | OK | 2026-10-29 20:45:29 UTC | dd7f255 2026-10-29 |
+| dates | 5.2 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 11:02:41 UTC | 457180a 2026-11-14 |
+| dates | 6.0 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:55:21 UTC | 457180a 2026-11-14 |
+| dates | 6.1 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:50:15 UTC | 457180a 2026-11-14 |
+| datetimes | 5.2 | 7 | 6 | 0 | 0 | 0 | 1 | 0 | OK | 2026-11-14 11:03:10 UTC | 457180a 2026-11-14 |
+| datetimes | 6.0 | 7 | 6 | 0 | 0 | 0 | 1 | 0 | OK | 2026-11-14 13:55:53 UTC | 457180a 2026-11-14 |
+| datetimes | 6.1 | 7 | 6 | 0 | 0 | 0 | 1 | 0 | OK | 2026-11-14 16:50:40 UTC | 457180a 2026-11-14 |
+| db_functions | 5.2 | 363 | 321 | 0 | 0 | 26 | 16 | 0 | OK | 2026-11-14 10:11:28 UTC | 457180a 2026-11-14 |
+| db_functions | 6.0 | 363 | 321 | 0 | 0 | 26 | 16 | 0 | OK | 2026-11-14 13:05:39 UTC | 457180a 2026-11-14 |
+| db_functions | 6.1 | 371 | 325 | 0 | 0 | 30 | 16 | 0 | OK | 2026-11-14 16:00:23 UTC | 457180a 2026-11-14 |
+| delete | 5.2 | 59 | 58 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 10:45:16 UTC | 457180a 2026-11-14 |
+| delete | 6.0 | 60 | 59 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:38:46 UTC | 457180a 2026-11-14 |
+| delete | 6.1 | 64 | 63 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:34:05 UTC | 457180a 2026-11-14 |
+| expressions | 5.2 | 208 | 204 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-14 08:50:53 UTC | 457180a 2026-11-14 |
+| expressions | 6.0 | 212 | 208 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-14 11:43:43 UTC | 457180a 2026-11-14 |
+| expressions | 6.1 | 213 | 209 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-14 14:36:34 UTC | 457180a 2026-11-14 |
+| expressions_case | 5.2 | 89 | 88 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 10:43:31 UTC | 457180a 2026-11-14 |
+| expressions_case | 6.0 | 89 | 88 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:37:10 UTC | 457180a 2026-11-14 |
+| expressions_case | 6.1 | 90 | 89 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:32:18 UTC | 457180a 2026-11-14 |
+| expressions_window | 5.2 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-14 10:16:06 UTC | 457180a 2026-11-14 |
+| expressions_window | 6.0 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-14 13:10:26 UTC | 457180a 2026-11-14 |
+| expressions_window | 6.1 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-14 16:05:10 UTC | 457180a 2026-11-14 |
+| get_or_create | 5.2 | 49 | 48 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 11:00:20 UTC | 457180a 2026-11-14 |
+| get_or_create | 6.0 | 49 | 48 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:52:55 UTC | 457180a 2026-11-14 |
+| get_or_create | 6.1 | 49 | 48 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:48:04 UTC | 457180a 2026-11-14 |
+| indexes | 5.2 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-14 10:10:00 UTC | 457180a 2026-11-14 |
+| indexes | 6.0 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-14 13:04:15 UTC | 457180a 2026-11-14 |
+| indexes | 6.1 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-14 15:59:00 UTC | 457180a 2026-11-14 |
+| indexes | 6.1 | 31 | 6 | 1 | 0 | 24 | 0 | 0 | FAILED | 2026-10-29 20:47:25 UTC | dd7f255 2026-10-29 |
+| inspectdb | 5.2 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-14 10:04:29 UTC | 457180a 2026-11-14 |
+| inspectdb | 6.0 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-14 12:57:52 UTC | 457180a 2026-11-14 |
+| inspectdb | 6.1 | 31 | 19 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-14 15:52:33 UTC | 457180a 2026-11-14 |
+| introspection | 5.2 | 21 | 20 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 10:02:01 UTC | 457180a 2026-11-14 |
+| introspection | 6.0 | 21 | 20 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 12:55:34 UTC | 457180a 2026-11-14 |
+| introspection | 6.1 | 24 | 23 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 15:49:28 UTC | 457180a 2026-11-14 |
+| lookup | 5.2 | 100 | 92 | 0 | 0 | 6 | 2 | 0 | OK | 2026-11-14 08:47:57 UTC | 457180a 2026-11-14 |
+| lookup | 6.0 | 100 | 94 | 0 | 0 | 4 | 2 | 0 | OK | 2026-11-14 11:40:25 UTC | 457180a 2026-11-14 |
+| lookup | 6.1 | 148 | 142 | 0 | 0 | 4 | 2 | 0 | OK | 2026-11-14 14:33:09 UTC | 457180a 2026-11-14 |
+| many_to_many | 5.2 | 39 | 38 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 10:59:05 UTC | 457180a 2026-11-14 |
+| many_to_many | 6.0 | 38 | 37 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:51:45 UTC | 457180a 2026-11-14 |
+| many_to_many | 6.1 | 42 | 41 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:46:56 UTC | 457180a 2026-11-14 |
+| migrate_signals | 5.2 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 10:06:30 UTC | 457180a 2026-11-14 |
+| migrate_signals | 6.0 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 12:59:47 UTC | 457180a 2026-11-14 |
+| migrate_signals | 6.1 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 15:54:33 UTC | 457180a 2026-11-14 |
+| migrations | 5.2 | 784 | 754 | 0 | 0 | 21 | 9 | 0 | OK | 2026-11-14 08:53:06 UTC | 457180a 2026-11-14 |
+| migrations | 6.0 | 811 | 780 | 0 | 0 | 22 | 9 | 0 | OK | 2026-11-14 11:46:19 UTC | 457180a 2026-11-14 |
+| migrations | 6.1 | 825 | 794 | 0 | 0 | 22 | 9 | 0 | OK | 2026-11-14 14:38:52 UTC | 457180a 2026-11-14 |
+| model_fields | 5.2 | 97 | 82 | 0 | 0 | 11 | 4 | 0 | OK | 2026-11-14 10:16:53 UTC | 457180a 2026-11-14 |
+| model_fields | 6.0 | 102 | 84 | 0 | 0 | 14 | 4 | 0 | OK | 2026-11-14 13:11:12 UTC | 457180a 2026-11-14 |
+| model_fields | 6.1 | 129 | 88 | 0 | 0 | 37 | 4 | 0 | OK | 2026-11-14 16:05:55 UTC | 457180a 2026-11-14 |
+| model_indexes | 5.2 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-14 10:11:03 UTC | 457180a 2026-11-14 |
+| model_indexes | 6.0 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-14 13:05:15 UTC | 457180a 2026-11-14 |
+| model_indexes | 6.1 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-14 15:59:57 UTC | 457180a 2026-11-14 |
+| model_indexes | 6.1 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-29 20:48:52 UTC | dd7f255 2026-10-29 |
+| ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 08:47:06 UTC | 457180a 2026-11-14 |
+| ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 11:39:32 UTC | 457180a 2026-11-14 |
+| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 14:32:21 UTC | 457180a 2026-11-14 |
+| prefetch_related | 5.2 | 121 | 120 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 10:54:57 UTC | 457180a 2026-11-14 |
+| prefetch_related | 6.0 | 130 | 129 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:47:50 UTC | 457180a 2026-11-14 |
+| prefetch_related | 6.1 | 135 | 134 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:42:56 UTC | 457180a 2026-11-14 |
+| queries | 5.2 | 493 | 473 | 0 | 0 | 14 | 6 | 0 | OK | 2026-11-14 10:18:34 UTC | 457180a 2026-11-14 |
+| queries | 6.0 | 495 | 475 | 0 | 0 | 14 | 6 | 0 | OK | 2026-11-14 13:12:58 UTC | 457180a 2026-11-14 |
+| queries | 6.1 | 506 | 487 | 0 | 0 | 14 | 5 | 0 | OK | 2026-11-14 16:07:39 UTC | 457180a 2026-11-14 |
+| schema | 5.2 | 220 | 148 | 0 | 0 | 59 | 13 | 0 | OK | 2026-11-14 09:48:47 UTC | 457180a 2026-11-14 |
+| schema | 6.0 | 222 | 149 | 0 | 0 | 60 | 13 | 0 | OK | 2026-11-14 12:42:45 UTC | 457180a 2026-11-14 |
+| schema | 6.1 | 227 | 154 | 0 | 0 | 60 | 13 | 0 | OK | 2026-11-14 15:35:42 UTC | 457180a 2026-11-14 |
+| select_for_update | 5.2 | 38 | 23 | 0 | 0 | 6 | 9 | 0 | OK | 2026-11-14 10:36:01 UTC | 457180a 2026-11-14 |
+| select_for_update | 6.0 | 38 | 23 | 0 | 0 | 6 | 9 | 0 | OK | 2026-11-14 13:29:53 UTC | 457180a 2026-11-14 |
+| select_for_update | 6.1 | 38 | 23 | 0 | 0 | 6 | 9 | 0 | OK | 2026-11-14 16:25:14 UTC | 457180a 2026-11-14 |
+| select_related | 5.2 | 20 | 20 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 10:54:12 UTC | 457180a 2026-11-14 |
+| select_related | 6.0 | 20 | 20 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 13:47:04 UTC | 457180a 2026-11-14 |
+| select_related | 6.1 | 25 | 25 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 16:42:14 UTC | 457180a 2026-11-14 |
+| timezones | 5.2 | 67 | 55 | 0 | 0 | 11 | 1 | 0 | OK | 2026-11-14 11:03:41 UTC | 457180a 2026-11-14 |
+| timezones | 6.0 | 86 | 74 | 0 | 0 | 11 | 1 | 0 | OK | 2026-11-14 13:56:23 UTC | 457180a 2026-11-14 |
+| timezones | 6.1 | 86 | 74 | 0 | 0 | 11 | 1 | 0 | OK | 2026-11-14 16:51:11 UTC | 457180a 2026-11-14 |
+| transactions | 5.2 | 87 | 86 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 08:42:15 UTC | 457180a 2026-11-14 |
+| transactions | 6.0 | 87 | 86 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 11:34:28 UTC | 457180a 2026-11-14 |
+| transactions | 6.1 | 88 | 87 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 14:27:52 UTC | 457180a 2026-11-14 |
+| update | 5.2 | 30 | 25 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-14 10:53:22 UTC | 457180a 2026-11-14 |
+| update | 6.0 | 34 | 29 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-14 13:46:19 UTC | 457180a 2026-11-14 |
+| update | 6.1 | 34 | 29 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-14 16:41:32 UTC | 457180a 2026-11-14 |
 
 ## Feature flags set to True by the backend
 
 - `allow_sliced_subqueries_with_in`
 - `allows_auto_pk_0`
 - `allows_group_by_lob`
+- `can_create_inline_fk`
 - `can_introspect_check_constraints`
 - `can_introspect_default`
 - `can_introspect_foreign_keys`
@@ -160,6 +201,9 @@ The Django suite on IBM i per module and Django version.
 - `delete_can_self_reference_subquery`
 - `has_bulk_insert`
 - `has_real_datatype`
+- `has_select_for_update`
+- `has_select_for_update_of`
+- `has_select_for_update_skip_locked`
 - `ignores_table_name_case`
 - `ignores_unnecessary_order_by_in_subqueries`
 - `implied_column_null`
@@ -168,12 +212,15 @@ The Django suite on IBM i per module and Django version.
 - `pattern_lookup_needs_param_pattern`
 - `requires_compound_order_by_subquery`
 - `requires_literal_defaults`
+- `select_for_update_of_column`
 - `supports_aggregate_distinct_multiple_argument`
 - `supports_aggregate_order_by_clause`
 - `supports_any_value`
 - `supports_boolean_expr_in_select_clause`
 - `supports_cast_with_precision`
 - `supports_column_check_constraints`
+- `supports_combined_alters`
+- `supports_date_lookup_using_string`
 - `supports_default_in_lead_lag`
 - `supports_default_keyword_in_bulk_insert`
 - `supports_default_keyword_in_insert`
@@ -189,11 +236,13 @@ The Django suite on IBM i per module and Django version.
 - `supports_on_delete_db_default`
 - `supports_on_delete_db_null`
 - `supports_over_clause`
+- `supports_paramstyle_pyformat`
 - `supports_parentheses_in_compound`
 - `supports_partial_indexes`
 - `supports_partially_nullable_unique_constraints`
 - `supports_regex_backreferencing`
 - `supports_select_difference`
+- `supports_select_for_update_with_limit`
 - `supports_select_intersection`
 - `supports_select_union`
 - `supports_sequence_reset`
@@ -205,6 +254,7 @@ The Django suite on IBM i per module and Django version.
 - `supports_tuple_lookups`
 - `supports_update_conflicts`
 - `supports_update_conflicts_with_target`
+- `test_db_allows_multiple_connections`
 - `truncates_names`
 - `update_can_self_select`
 - `uses_savepoints`
@@ -214,7 +264,6 @@ The Django suite on IBM i per module and Django version.
 
 | Reason | Expected failures | Skips |
 |---|---|---|
-| CHR and ASCII on Db2 for i work on single-byte characters; a non-ASCII character gives a substitute character (probes db_functions, db_function_args) | 2 | 0 |
 | Db2 for i TIME has no fractional seconds | 4 | 0 |
 | Db2 for i cannot change this column type in place (SQL0190) | 10 | 0 |
 | Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6) | 27 | 3 |
@@ -225,26 +274,23 @@ The Django suite on IBM i per module and Django version.
 | Db2 for i rejects an untyped NULL as an expression (SQL0206) | 1 | 0 |
 | a Db2 for i JSON path cannot hold a key with a double quote in any form (probe json_lookups); the backend raises NotSupportedError | 2 | 0 |
 | a bare %s in RawSQL or extra() is an untyped parameter marker, which Db2 for i rejects in the select list (SQL0418); cast it in the SQL | 3 | 0 |
+| a query with a join cannot take FOR UPDATE (SQL0511): its row locks are written WITH RS USE AND KEEP EXCLUSIVE LOCKS, which locks every joined table, so the SQL has no FOR UPDATE OF | 7 | 0 |
 | an unknown Trunc kind raises ValueError before any SQL is sent; the test accepts only a database error or no rows | 2 | 0 |
 | before Django 6.1, Trunc of a NULL datetime with USE_TZ raises ValueError when has_zoneinfo_database is off; 6.1 lets the backend keep the NULL | 0 | 0 |
 | bulk_create(update_conflicts=True) is a MERGE, which returns no rows (FINAL TABLE takes only INSERT): the objects get no primary keys | 7 | 0 |
-| converting datetimes to another time zone in SQL is not supported yet: Db2 for i has no time zone database; the backend raises NotSupportedError | 5 | 0 |
+| converting datetimes to another time zone in SQL is not supported yet: Db2 for i has no time zone database; the backend raises NotSupportedError | 7 | 0 |
 | identity restart deferred in TestCase (SQL0910) | 1 | 0 |
 | null=True to null=False with a default sets the NULLs (UPDATE) and then runs SET NOT NULL in the same transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910) | 7 | 0 |
 | ordering by a JSON key compares its JSON text, as on Oracle and MariaDB (JSON_QUERY; probe json_lookups) | 1 | 0 |
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
+| the test counts PostgreSQL's deferred LIKE indexes; Db2 for i writes UNIQUE in the ADD COLUMN and defers nothing | 1 | 0 |
 | the test counts the word EXTRACT in the SQL; Db2 for i writes YEAR(...) and the like | 6 | 0 |
+| the test looks for FOR UPDATE right before WHERE (for_update_after_from, SQL Server's form); Db2 for i writes FOR UPDATE ... WITH RS at the end | 1 | 0 |
 | the test looks for RETURNING in the SQL; Db2 for i returns columns with FINAL TABLE | 2 | 0 |
 | the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i | 1 | 0 |
+| under *CS a plain read of a row that another job locked with select_for_update() waits for the lock (the table's record wait, 60 s by default) and then fails with SQL0913; PostgreSQL readers do not wait (probes lib_select_for_update, record_wait) | 1 | 0 |
 
 The tests per reason, as `features.py` lists them on Django 6.1 (`compat.py` adjusts a few entries per Django version):
-
-<details><summary>CHR and ASCII on Db2 for i work on single-byte characters; a non-ASCII character gives a substitute character (probes db_functions, db_function_args) (2)</summary>
-
-- `db_functions.text.test_chr.ChrTests.test_non_ascii` (expected failure)
-- `db_functions.text.test_ord.OrdTests.test_basic` (expected failure)
-
-</details>
 
 <details><summary>Db2 for i TIME has no fractional seconds (4)</summary>
 
@@ -360,6 +406,18 @@ The tests per reason, as `features.py` lists them on Django 6.1 (`compat.py` adj
 
 </details>
 
+<details><summary>a query with a join cannot take FOR UPDATE (SQL0511): its row locks are written WITH RS USE AND KEEP EXCLUSIVE LOCKS, which locks every joined table, so the SQL has no FOR UPDATE OF (7)</summary>
+
+- `select_for_update.tests.SelectForUpdateTests.test_for_update_sql_generated_of` (expected failure)
+- `select_for_update.tests.SelectForUpdateTests.test_for_update_sql_model_inheritance_generated_of` (expected failure)
+- `select_for_update.tests.SelectForUpdateTests.test_for_update_sql_model_inheritance_nested_ptr_generated_of` (expected failure)
+- `select_for_update.tests.SelectForUpdateTests.test_for_update_sql_model_inheritance_ptr_generated_of` (expected failure)
+- `select_for_update.tests.SelectForUpdateTests.test_for_update_sql_model_proxy_generated_of` (expected failure)
+- `select_for_update.tests.SelectForUpdateTests.test_for_update_sql_multilevel_model_inheritance_ptr_generated_of` (expected failure)
+- `select_for_update.tests.SelectForUpdateTests.test_for_update_sql_related_model_inheritance_generated_of` (expected failure)
+
+</details>
+
 <details><summary>an unknown Trunc kind raises ValueError before any SQL is sent; the test accepts only a database error or no rows (2)</summary>
 
 - `db_functions.datetime.test_extract_trunc.DateFunctionTests.test_trunc_lookup_name_sql_injection` (expected failure)
@@ -379,13 +437,15 @@ The tests per reason, as `features.py` lists them on Django 6.1 (`compat.py` adj
 
 </details>
 
-<details><summary>converting datetimes to another time zone in SQL is not supported yet: Db2 for i has no time zone database; the backend raises NotSupportedError (5)</summary>
+<details><summary>converting datetimes to another time zone in SQL is not supported yet: Db2 for i has no time zone database; the backend raises NotSupportedError (7)</summary>
 
+- `datetimes.tests.DateTimesTests.test_21432` (expected failure)
 - `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_explicit_timezone_priority` (expected failure)
 - `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_with_timezone` (expected failure)
 - `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_func_with_timezone_minus_no_offset` (expected failure)
 - `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_func_with_timezone` (expected failure)
 - `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_trunc_timezone_applied_before_truncation` (expected failure)
+- `timezones.tests.NewDatabaseTests.test_query_convert_timezones` (expected failure)
 
 </details>
 
@@ -419,6 +479,12 @@ The tests per reason, as `features.py` lists them on Django 6.1 (`compat.py` adj
 
 </details>
 
+<details><summary>the test counts PostgreSQL's deferred LIKE indexes; Db2 for i writes UNIQUE in the ADD COLUMN and defers nothing (1)</summary>
+
+- `indexes.tests.SchemaIndexesTests.test_alter_field_unique_false_removes_deferred_sql` (expected failure)
+
+</details>
+
 <details><summary>the test counts the word EXTRACT in the SQL; Db2 for i writes YEAR(...) and the like (6)</summary>
 
 - `db_functions.datetime.test_extract_trunc.DateFunctionTests.test_extract_year_exact_lookup` (expected failure)
@@ -427,6 +493,12 @@ The tests per reason, as `features.py` lists them on Django 6.1 (`compat.py` adj
 - `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_exact_lookup` (expected failure)
 - `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_greaterthan_lookup` (expected failure)
 - `db_functions.datetime.test_extract_trunc.DateFunctionWithTimeZoneTests.test_extract_year_lessthan_lookup` (expected failure)
+
+</details>
+
+<details><summary>the test looks for FOR UPDATE right before WHERE (for_update_after_from, SQL Server's form); Db2 for i writes FOR UPDATE ... WITH RS at the end (1)</summary>
+
+- `select_for_update.tests.SelectForUpdateTests.test_for_update_after_from` (expected failure)
 
 </details>
 
@@ -443,6 +515,12 @@ The tests per reason, as `features.py` lists them on Django 6.1 (`compat.py` adj
 
 </details>
 
+<details><summary>under *CS a plain read of a row that another job locked with select_for_update() waits for the lock (the table's record wait, 60 s by default) and then fails with SQL0913; PostgreSQL readers do not wait (probes lib_select_for_update, record_wait) (1)</summary>
+
+- `select_for_update.tests.SelectForUpdateTests.test_block` (expected failure)
+
+</details>
+
 ## Golden files
 
-648 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
+669 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
