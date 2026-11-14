@@ -118,6 +118,12 @@ def test_render_groups_by_type_in_heading_order(tmp_path) -> None:
     )
 
 
+def test_render_adds_no_second_reference(tmp_path) -> None:
+    # 239.limitation.md ended with "(#239)" itself; the section said it twice.
+    paths = fragments(tmp_path, **{"239.limitation.md": "- One. (#239)\n- Two.\n"})
+    assert assemble.render(paths) == "### Known limitations\n- One. (#239)\n- Two. (#239)"
+
+
 def test_render_needs_fragments(tmp_path) -> None:
     with pytest.raises(assemble.FragmentError, match="no changelog fragments"):
         assemble.render(fragments(tmp_path))

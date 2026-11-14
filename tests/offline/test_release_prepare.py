@@ -257,3 +257,7 @@ def test_the_replay_session_gets_the_per_entry_summary() -> None:
     assert '"-m",\n        "replay",' in noxfile
     conftest = (ROOT / "tests" / "conftest.py").read_text()
     assert 'if "replay" in (config.option.markexpr or ""):' in conftest
+    # The set through testpaths: a path argument is a partial run, which
+    # writes no summary (#251), so the Replay tests row kept old counts.
+    assert '"testpaths=tests/corpus",' in noxfile
+    assert '"pytest",\n        "tests/corpus",' not in noxfile

@@ -194,7 +194,10 @@ def replay(session: nox.Session, django: str) -> None:
     session.install("-e", checkout)
     session.run(
         "pytest",
-        "tests/corpus",
+        # The whole set through testpaths, not as a path argument: a path on the
+        # command line is a partial run, which writes no results summary (#251).
+        "-o",
+        "testpaths=tests/corpus",
         "-m",
         "replay",
         "--ds=tests.django_settings.settings_corpus",
