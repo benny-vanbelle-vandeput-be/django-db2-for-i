@@ -297,6 +297,25 @@ def test_collect_ignores_logs_outside_the_run_set(tmp_path, capsys) -> None:
     assert "ignored (not in the run set): 6.1/pub400.log, 6.1/schema.log" in capsys.readouterr().err
 
 
+def test_collect_reads_only_django_version_directories(tmp_path) -> None:
+    # A copied baseline next to the version directories (its logs name a
+    # Django version in their header) is never a run of the status pages.
+    for directory in ("6.1", "phase5-baseline", "cleanup"):
+        (tmp_path / directory).mkdir()
+        (tmp_path / directory / "basic.log").write_text(OK_LOG)
+    (tmp_path / "phase5-baseline" / "labels").mkdir()
+    (tmp_path / "phase5-baseline" / "labels" / "q.a.log").write_text(
+        label_log("q.a", "a7ca5f8 2026-10-19", "OK")
+    )
+    assert [(r.module, r.django) for r in status.collect(tmp_path)] == [("basic", "6.1")]
+    assert status.collect_label_groups(LABEL_STATUS, tmp_path) == []
+
+
+def test_reasons_note_the_column_rename_option() -> None:
+    text = status.render([])
+    assert 'With `OPTIONS["column_rename"] = "copy"`' in text
+
+
 def test_render_without_runs() -> None:
     assert "No Django test modules have been run yet." in status.render([])
 
