@@ -34,10 +34,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3474 | 2 | 0 | 0 | 2026-11-12 07:31:07 UTC |
-| IBM i tests | 419 | 2 | 1 | 0 | 2026-11-12 07:59:45 UTC |
-| Django suite on IBM i | 2807 | 262 | 88 | 0 | 2026-11-10 01:59:29 UTC |
-| Replay tests | 3598 | 0 | 0 | 0 | 2026-11-12 07:31:57 UTC |
+| Offline tests | 3652 | 2 | 0 | 0 | 2026-11-14 17:35:13 UTC |
+| IBM i tests | 452 | 2 | 1 | 0 | 2026-11-14 17:20:04 UTC |
+| Django suite on IBM i | 3608 | 369 | 71 | 2 | 2026-11-14 16:51:11 UTC |
+| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 20:38:34 UTC |
 
 ### Django 6.0 ✅
 
@@ -48,10 +48,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3475 | 1 | 0 | 0 | 2026-11-12 07:25:16 UTC |
-| IBM i tests | 414 | 3 | 1 | 0 | 2026-11-09 21:04:32 UTC |
-| Django suite on IBM i | 2698 | 218 | 89 | 0 | 2026-11-09 03:01:31 UTC |
-| Replay tests | 3518 | 0 | 0 | 0 | 2026-11-12 09:47:48 UTC |
+| Offline tests | 3651 | 3 | 0 | 0 | 2026-11-14 17:29:06 UTC |
+| IBM i tests | 450 | 4 | 1 | 0 | 2026-11-14 14:25:17 UTC |
+| Django suite on IBM i | 3344 | 239 | 72 | 0 | 2026-11-14 13:56:23 UTC |
+| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 20:09:10 UTC |
 
 ### Django 5.2 ✅
 
@@ -62,10 +62,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3472 | 1 | 0 | 0 | 2026-11-12 08:03:17 UTC |
-| IBM i tests | 409 | 5 | 1 | 0 | 2026-11-08 22:09:10 UTC |
-| Django suite on IBM i | 2652 | 210 | 89 | 0 | 2026-11-07 20:27:31 UTC |
-| Replay tests | 3465 | 0 | 0 | 0 | 2026-11-12 08:03:57 UTC |
+| Offline tests | 3648 | 3 | 0 | 0 | 2026-11-14 17:24:30 UTC |
+| IBM i tests | 443 | 8 | 1 | 0 | 2026-11-14 11:32:06 UTC |
+| Django suite on IBM i | 3265 | 231 | 72 | 0 | 2026-11-14 11:03:41 UTC |
+| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 20:05:43 UTC |
 
 ### About the tests
 
@@ -76,7 +76,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
   (PUB400, IBM i 7.5): queries with model instances, schema changes, transactions,
   and every golden file executed on the server. They run for every backend change.
 - **Django suite on IBM i:** Django's official test suite, limited to the modules that use
-  the database and that this backend supports so far: `aggregation`, `basic`, `bulk_create`, `constraints`, `db_functions`, `expressions`, `expressions_window`, `indexes`, `inspectdb`, `introspection`, `lookup`, `migrate_signals`, `migrations`, `model_fields`, `model_indexes`, `ordering`, `queries`, `schema`, `transactions`. They run on
+  the database and that this backend supports so far: `aggregation`, `annotations`, `basic`, `bulk_create`, `constraints`, `dates`, `datetimes`, `db_functions`, `delete`, `expressions`, `expressions_case`, `expressions_window`, `get_or_create`, `indexes`, `inspectdb`, `introspection`, `lookup`, `many_to_many`, `migrate_signals`, `migrations`, `model_fields`, `model_indexes`, `ordering`, `prefetch_related`, `queries`, `schema`, `select_for_update`, `select_related`, `timezones`, `transactions`, `update`. They run on
   PUB400 before every release (the status run) and for the modules a change
   touches.
 - **Replay tests:** the SQL of every passing test of that Django test suite is
@@ -89,7 +89,7 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 database; **expected failures** are known Db2 for i limitations, each with a reason
 ([Known limitations](docs/user/Known-Limitations.md)).
 
-Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (66 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
+Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (77 enabled on Django 6.1) · All details: [docs/TEST_STATUS.md](docs/TEST_STATUS.md)
 <!-- tests:end -->
 
 <!-- status:start -->
@@ -101,10 +101,10 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (66 enabled on Django 6.1) �
 |---|---|---|
 | 0: the LOCK TABLE fix (#162) | done | [#241](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/241) |
 | 1: workflow polish, docs, the smoke set | done | [#244](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/244), [#245](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/245), [#246](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/246) |
-| 2: Python 3.15 (#233) | planned |  |
-| 3: QTEMP probes (flags, CHR / ASCII, system names, the LOB limit) | planned |  |
-| 4: lib_ probes: foreign keys across the two journals; #124 | planned |  |
-| 5: the backend branch (select_for_update, multiple connections, system names, #82, #95, more modules) | planned |  |
+| 2: Python 3.15 (#233) | done | [#247](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/247) |
+| 3: QTEMP probes (flags, CHR / ASCII, system names, the LOB limit) | done | [#248](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/248) |
+| 4: lib_ probes: foreign keys across the two journals; #124 | done | [#250](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/pull/250) |
+| 5: the backend branch (select_for_update, multiple connections, system names, #82, #95, more modules) | in progress |  |
 | 6: the final cycle on 6.1, 6.0 and 5.2 | planned |  |
 | 7: the status run and beta 4 | planned |  |
 
@@ -127,7 +127,6 @@ Open tracks:
 - Errors in `annotations` / `expressions_case`, outside the phase 2 modules ([#82](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/issues/82)).
 - Development runs on the shared PUB400 system; a dedicated IBM i is needed for the full test tier.
 - The LOB limit of a multi-row statement is measured for 1 and 2 LOB columns only (about 1,024 markers); with 3 and 5 own IBM i tests show that the batches work and that 1,080 or 1,100 markers are refused, not where the limit lies; a QTEMP probe in phase 7 ([IBMI_NOTES](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/IBMI_NOTES.md#returning-bulk-inserts-indexes-unique-nulls-cursors-phase-5-step-0)).
-- `select_for_update()` is off until phase 7: verified with two jobs on PUB400 (`lib_select_for_update`, #237), it needs `FOR UPDATE ... WITH RS`; `nowait` stays off ([phase 7](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/blob/main/docs/phases/phase-7.md)).
 <!-- status:end -->
 
 > [!WARNING]
