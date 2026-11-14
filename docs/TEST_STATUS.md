@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3652 | 2 | 0 | 0 | 2026-11-14 17:35:13 UTC |
+| Offline tests | 3654 | 2 | 0 | 0 | 2026-11-14 18:50:34 UTC |
 | IBM i tests | 452 | 2 | 1 | 0 | 2026-11-14 17:20:04 UTC |
-| Django suite on IBM i | 3608 | 369 | 71 | 2 | 2026-11-14 16:51:11 UTC |
-| Replay tests | 2544 | 0 | 0 | 0 | 2026-10-29 20:38:34 UTC |
+| Django suite on IBM i | 3475 | 281 | 71 | 0 | 2026-11-14 16:51:11 UTC |
+| Replay tests | 6193 | 1 | 0 | 0 | 2026-11-14 18:52:45 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3651 | 3 | 0 | 0 | 2026-11-14 17:29:06 UTC |
+| Offline tests | 3653 | 3 | 0 | 0 | 2026-11-14 18:44:20 UTC |
 | IBM i tests | 450 | 4 | 1 | 0 | 2026-11-14 14:25:17 UTC |
 | Django suite on IBM i | 3344 | 239 | 72 | 0 | 2026-11-14 13:56:23 UTC |
-| Replay tests | 2484 | 0 | 0 | 0 | 2026-10-29 20:09:10 UTC |
+| Replay tests | 6073 | 1 | 0 | 0 | 2026-11-14 18:45:07 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3648 | 3 | 0 | 0 | 2026-11-14 17:24:30 UTC |
+| Offline tests | 3650 | 3 | 0 | 0 | 2026-11-14 18:39:55 UTC |
 | IBM i tests | 443 | 8 | 1 | 0 | 2026-11-14 11:32:06 UTC |
 | Django suite on IBM i | 3265 | 231 | 72 | 0 | 2026-11-14 11:03:41 UTC |
-| Replay tests | 2440 | 0 | 0 | 0 | 2026-10-29 20:05:43 UTC |
+| Replay tests | 5881 | 1 | 0 | 0 | 2026-11-14 18:40:38 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,10 +73,10 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-10-29 20:40:08 UTC to 2026-11-14 16:51:11 UTC
+- **Runs:** 2026-11-14 08:40:58 UTC to 2026-11-14 16:51:11 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
 - **Python:** 3.14.8, 3.15.0
-- **Backend commits:** 457180a 2026-11-14, dd7f255 2026-10-29 (per module in the table)
+- **Backend commits:** 457180a 2026-11-14 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
@@ -97,11 +97,9 @@ The Django suite on IBM i per module and Django version.
 | bulk_create | 5.2 | 52 | 38 | 0 | 0 | 7 | 7 | 0 | OK | 2026-11-14 10:07:03 UTC | 457180a 2026-11-14 |
 | bulk_create | 6.0 | 59 | 43 | 0 | 0 | 9 | 7 | 0 | OK | 2026-11-14 13:00:17 UTC | 457180a 2026-11-14 |
 | bulk_create | 6.1 | 60 | 43 | 0 | 0 | 10 | 7 | 0 | OK | 2026-11-14 15:55:00 UTC | 457180a 2026-11-14 |
-| bulk_create | 6.1 | 60 | 16 | 1 | 0 | 43 | 0 | 0 | FAILED | 2026-10-29 20:40:08 UTC | dd7f255 2026-10-29 |
 | constraints | 5.2 | 103 | 91 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-14 10:09:03 UTC | 457180a 2026-11-14 |
 | constraints | 6.0 | 101 | 89 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-14 13:03:18 UTC | 457180a 2026-11-14 |
 | constraints | 6.1 | 102 | 89 | 0 | 0 | 13 | 0 | 0 | OK | 2026-11-14 15:58:04 UTC | 457180a 2026-11-14 |
-| constraints | 6.1 | 102 | 83 | 0 | 0 | 19 | 0 | 0 | OK | 2026-10-29 20:45:29 UTC | dd7f255 2026-10-29 |
 | dates | 5.2 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 11:02:41 UTC | 457180a 2026-11-14 |
 | dates | 6.0 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:55:21 UTC | 457180a 2026-11-14 |
 | dates | 6.1 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:50:15 UTC | 457180a 2026-11-14 |
@@ -129,7 +127,6 @@ The Django suite on IBM i per module and Django version.
 | indexes | 5.2 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-14 10:10:00 UTC | 457180a 2026-11-14 |
 | indexes | 6.0 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-14 13:04:15 UTC | 457180a 2026-11-14 |
 | indexes | 6.1 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-14 15:59:00 UTC | 457180a 2026-11-14 |
-| indexes | 6.1 | 31 | 6 | 1 | 0 | 24 | 0 | 0 | FAILED | 2026-10-29 20:47:25 UTC | dd7f255 2026-10-29 |
 | inspectdb | 5.2 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-14 10:04:29 UTC | 457180a 2026-11-14 |
 | inspectdb | 6.0 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-14 12:57:52 UTC | 457180a 2026-11-14 |
 | inspectdb | 6.1 | 31 | 19 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-14 15:52:33 UTC | 457180a 2026-11-14 |
@@ -154,7 +151,6 @@ The Django suite on IBM i per module and Django version.
 | model_indexes | 5.2 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-14 10:11:03 UTC | 457180a 2026-11-14 |
 | model_indexes | 6.0 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-14 13:05:15 UTC | 457180a 2026-11-14 |
 | model_indexes | 6.1 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-14 15:59:57 UTC | 457180a 2026-11-14 |
-| model_indexes | 6.1 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-10-29 20:48:52 UTC | dd7f255 2026-10-29 |
 | ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 08:47:06 UTC | 457180a 2026-11-14 |
 | ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 11:39:32 UTC | 457180a 2026-11-14 |
 | ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 14:32:21 UTC | 457180a 2026-11-14 |
@@ -289,6 +285,8 @@ The Django suite on IBM i per module and Django version.
 | the test looks for RETURNING in the SQL; Db2 for i returns columns with FINAL TABLE | 2 | 0 |
 | the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i | 1 | 0 |
 | under *CS a plain read of a row that another job locked with select_for_update() waits for the lock (the table's record wait, 60 s by default) and then fails with SQL0913; PostgreSQL readers do not wait (probes lib_select_for_update, record_wait) | 1 | 0 |
+
+*Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6)*: the lists without an option. With `OPTIONS["column_rename"] = "copy"`, which the settings of the Django suite on IBM i use, these tests run (a column is renamed by copying it), so the module table above counts them as passed, not as expected failures or skips.
 
 The tests per reason, as `features.py` lists them on Django 6.1 (`compat.py` adjusts a few entries per Django version):
 

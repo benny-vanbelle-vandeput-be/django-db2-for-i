@@ -22,7 +22,7 @@
 A release (replace the version with the one you want):
 
 ```sh
-pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0b3"
+pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0b4"
 ```
 
 The latest development state (unreleased, may break):
@@ -63,7 +63,7 @@ your system too, run the **smoke set**: 37 of the project's own IBM i tests,
 the most common patterns (the connection, inserts, queries, lookups,
 aggregates, functions, foreign keys, schema changes). It runs from a checkout
 of the repository, in its development container, not from your project. It
-is available from the release after 0.1.0b3 on.
+is available from 0.1.0b4 on.
 
 **What you need**
 

@@ -61,7 +61,6 @@ fragment per pull request; they are assembled here at release time.
 ### Known limitations
 - `bulk_create(ignore_conflicts=True)` (and `add()` / `set()` of a `ManyToManyField`) skips a row as soon as another job has inserted the same key, before that job commits; if it then rolls back, neither row is in the table. Verified with two jobs on IBM i 7.5, as are the SQL0803 / SQL0913 errors of a real race; Known Limitations now states results instead of IBM's documentation. (#239) (#239)
 - `DB_CASCADE` and `DB_SET_NULL` between tables in libraries with different journals: every delete of a parent row fails with SQL7008 (probe `lib_fk_across_journals`). Keep both tables in one journal, or use Django's own `CASCADE` / `SET_NULL`. (#250)
-- A model whose `db_table` is in another library than `NAME`: unique and check constraints fail like foreign keys (SQL5051), and an index lands in the `NAME` library (probe `lib_other_library`; support is planned in #124). (#250)
 - Removing a field (`DROP COLUMN` without a keyword) also drops an index or
   view on its column: Db2 for i's default is `CASCADE`. (#259)
 

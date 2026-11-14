@@ -55,6 +55,18 @@ BADGES_DIR = ROOT / "docs" / "badges"
 STATUS_DATA = ROOT / "docs" / "status.toml"
 README = ROOT / "README.md"
 
+# The run directories: test-results/<django-version>/. Anything else next to
+# them (probes/, cleanup/, archive/, a copied baseline) is never a run.
+VERSION_DIR = re.compile(r"\d+\.\d+")
+
+
+def version_dirs(results_dir: Path) -> list[Path]:
+    """The ``<django-version>`` directories of ``results_dir``, sorted."""
+    if not results_dir.is_dir():
+        return []
+    return sorted(p for p in results_dir.iterdir() if p.is_dir() and VERSION_DIR.fullmatch(p.name))
+
+
 REPO = "benny-vanbelle-vandeput-be/django-db2-for-i"
 RAW_MAIN = f"https://raw.githubusercontent.com/{REPO}/main"
 
@@ -142,9 +154,8 @@ def collect(
     a module that is not supported yet, or a leftover of an older layout.
     """
     found, ignored = [], []
-    for log in sorted(results_dir.glob("*/*.log")):
-        if log.parent.name == "probes":
-            continue
+    logs = [log for directory in version_dirs(results_dir) for log in directory.glob("*.log")]
+    for log in sorted(logs):
         if modules is not None and log.stem not in modules:
             ignored.append(f"{log.parent.name}/{log.name}")
             continue
@@ -168,15 +179,11 @@ def collect_label_groups(status: dict, results_dir: Path = RESULTS) -> list[Modu
     those of the logs found).
     """
     groups = []
-    if not results_dir.is_dir():
-        return groups
     for module in status.get("modules", []):
         labels = module.get("labels")
         if not labels:
             continue
-        for version_dir in sorted(p for p in results_dir.iterdir() if p.is_dir()):
-            if version_dir.name == "probes":
-                continue
+        for version_dir in version_dirs(results_dir):
             found = {
                 label: parse_log(path.read_text(errors="replace"), label, version_dir.name)
                 for label in labels
@@ -244,6 +251,16 @@ def feature_section() -> list[str]:
         lines.append(f"| {reason} | {failures} | {skips} |")
     if not reasons:
         lines.append("| (none) | 0 | 0 |")
+    from django_db2_for_i.features import REASON_NO_COLUMN_RENAME
+
+    if REASON_NO_COLUMN_RENAME in reasons:
+        lines += [
+            "",
+            f"*{REASON_NO_COLUMN_RENAME}*: the lists without an option. With"
+            ' `OPTIONS["column_rename"] = "copy"`, which the settings of the Django suite on'
+            " IBM i use, these tests run (a column is renamed by copying it), so the module"
+            " table above counts them as passed, not as expected failures or skips.",
+        ]
     # The tests themselves, per reason, as features.py lists them for the Django
     # version that generates this file (compat.py adds or removes a few per version).
     from django_db2_for_i import compat
