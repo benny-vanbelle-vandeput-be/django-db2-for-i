@@ -363,6 +363,12 @@ def test_status(session: nox.Session) -> None:
 
 
 @nox.session(python=NEWEST_PYTHON)
+def release_history(session: nox.Session) -> None:
+    """docs/RELEASE_HISTORY.md from the release tags (and an untagged __version__)."""
+    session.run("python", "scripts/release_history.py", *session.posargs)
+
+
+@nox.session(python=NEWEST_PYTHON)
 def ibmi_cleanup(session: nox.Session) -> None:
     """CHANGES THE IBM i (standing approval): drop listed leftovers; lists only without --yes.
 

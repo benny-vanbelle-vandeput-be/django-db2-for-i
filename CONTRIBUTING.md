@@ -363,7 +363,9 @@ Claude never create release tags; the maintainer creates and signs them.**
    the version), runs `python scripts/assemble_changelog.py release <version>`
    (the fragments in `changelog.d/` become a `## [<version>] - <date>` section
    of `CHANGELOG.md`, the comparison links are updated and the fragments
-   deleted), regenerates the status pages and FEATURES.md, runs `bin/check`,
+   deleted), regenerates the status pages, FEATURES.md and
+   [RELEASE_HISTORY.md](docs/RELEASE_HISTORY.md) (the new release added from
+   the working tree, the earlier ones from their tags), runs `bin/check`,
    pushes `chore/release-<version>` and opens the pull request with the
    status runs and corpus counts. It never tags and never creates releases;
    it ends by printing the steps below.
