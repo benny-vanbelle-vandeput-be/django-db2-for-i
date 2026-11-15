@@ -895,6 +895,10 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         value = db_default.value
         if value is not None:
             value = db_default.output_field.get_db_prep_save(value, self.connection)
+        elif isinstance(db_default.output_field, models.JSONField):
+            # JSONNull() (Django 6.1) or Value(None, JSONField()): JSON null, the
+            # text "null", not SQL NULL (which leaves the column without a default).
+            value = "null"
         return self._column_default_sql(field) % self.prepare_default(value), []
 
     # --- IBM i system names of tables and indexes (fields.py, #253) -------------

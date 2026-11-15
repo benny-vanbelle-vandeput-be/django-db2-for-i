@@ -17,9 +17,11 @@ from django.db.models import (
     ForeignKey,
     Index,
     IntegerField,
+    JSONField,
     OneToOneField,
     Q,
     UniqueConstraint,
+    Value,
 )
 from django.db.models.functions import Lower, Upper
 
@@ -285,6 +287,16 @@ CASES: tuple[Case, ...] = (
     Case("ddl/create_article", "create", _ddl(Article)),
     # A JSONField: an NCLOB without a CHECK (IS JSON is refused, lib_json_check).
     Case(JSONDOC, "create", _ddl(JSONDoc)),
+    # A JSONField whose db_default is JSON null (Value(None, JSONField()), Django
+    # 6.1's JSONNull()): DEFAULT 'null', the JSON text, not SQL NULL.
+    Case(
+        "ddl/add_field_json_null_default",
+        "alter",
+        _add_column(
+            JSONDoc, "extra", lambda: JSONField(db_default=Value(None, output_field=JSONField()))
+        ),
+        (JSONDOC,),
+    ),
     # Comments (printable ASCII only, schema.comment_text): COMMENT ON TABLE /
     # COLUMN with a plain constant, a quote doubled; removed with ''.
     Case(
