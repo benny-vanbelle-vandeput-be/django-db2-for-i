@@ -1,0 +1,1783 @@
+{
+  "probe": "json_primitives",
+  "utc": "20261115T125054Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (one table, gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "insert 1": {
+    "result": "ok"
+  },
+  "insert 2": {
+    "result": "ok"
+  },
+  "insert 3": {
+    "result": "ok"
+  },
+  "insert 4": {
+    "result": "ok"
+  },
+  "insert 5": {
+    "result": "ok"
+  },
+  "insert 6": {
+    "result": "ok"
+  },
+  "insert 7": {
+    "result": "ok"
+  },
+  "insert 8": {
+    "result": "ok"
+  },
+  "insert 9": {
+    "result": "ok"
+  },
+  "none: JSON_QUERY": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":1,\"d\":[10,20],\"s\":\"téxt\"}'"
+      ],
+      [
+        "2",
+        "'[10,20,30]'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "'{}'"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "none: JSON_QUERY OMIT QUOTES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":1,\"d\":[10,20],\"s\":\"téxt\"}'"
+      ],
+      [
+        "2",
+        "'[10,20,30]'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "'{}'"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "none: JSON_VALUE text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4000,
+        "precision": 4000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "none: JSON_VALUE DECFLOAT": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "none: JSON_EXISTS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "1"
+      ],
+      [
+        "3",
+        "0"
+      ],
+      [
+        "4",
+        "0"
+      ],
+      [
+        "5",
+        "0"
+      ],
+      [
+        "6",
+        "0"
+      ],
+      [
+        "7",
+        "0"
+      ],
+      [
+        "8",
+        "1"
+      ],
+      [
+        "9",
+        "0"
+      ]
+    ]
+  },
+  "none: key a": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'1'"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "none: position 1": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "'20'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "none: path as a marker": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":1,\"d\":[10,20],\"s\":\"téxt\"}'"
+      ],
+      [
+        "2",
+        "'[10,20,30]'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "'{}'"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "none: exact 42": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "none: exact 1.5": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "none: exact \"téxt 😀\"": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "none: exact true": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "none: exact false": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "none: exact null": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "none: exact {\"a\":1}": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "array: JSON_QUERY": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":1,\"d\":[10,20],\"s\":\"téxt\"}'"
+      ],
+      [
+        "2",
+        "'[10,20,30]'"
+      ],
+      [
+        "3",
+        "'42'"
+      ],
+      [
+        "4",
+        "'1.5'"
+      ],
+      [
+        "5",
+        "'\"téxt 😀\"'"
+      ],
+      [
+        "6",
+        "'true'"
+      ],
+      [
+        "7",
+        "'false'"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "array: JSON_QUERY OMIT QUOTES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":1,\"d\":[10,20],\"s\":\"téxt\"}'"
+      ],
+      [
+        "2",
+        "'[10,20,30]'"
+      ],
+      [
+        "3",
+        "'42'"
+      ],
+      [
+        "4",
+        "'1.5'"
+      ],
+      [
+        "5",
+        "'téxt 😀'"
+      ],
+      [
+        "6",
+        "'true'"
+      ],
+      [
+        "7",
+        "'false'"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "array: JSON_VALUE text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4000,
+        "precision": 4000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "'42'"
+      ],
+      [
+        "4",
+        "'1.5'"
+      ],
+      [
+        "5",
+        "'téxt 😀'"
+      ],
+      [
+        "6",
+        "'true'"
+      ],
+      [
+        "7",
+        "'false'"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "array: JSON_VALUE DECFLOAT": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "'42'"
+      ],
+      [
+        "4",
+        "'1.5'"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "array: JSON_EXISTS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "1"
+      ],
+      [
+        "3",
+        "1"
+      ],
+      [
+        "4",
+        "1"
+      ],
+      [
+        "5",
+        "1"
+      ],
+      [
+        "6",
+        "1"
+      ],
+      [
+        "7",
+        "1"
+      ],
+      [
+        "8",
+        "1"
+      ],
+      [
+        "9",
+        "0"
+      ]
+    ]
+  },
+  "array: key a": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'1'"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "array: position 1": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "'20'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "array: path as a marker": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":1,\"d\":[10,20],\"s\":\"téxt\"}'"
+      ],
+      [
+        "2",
+        "'[10,20,30]'"
+      ],
+      [
+        "3",
+        "'42'"
+      ],
+      [
+        "4",
+        "'1.5'"
+      ],
+      [
+        "5",
+        "'\"téxt 😀\"'"
+      ],
+      [
+        "6",
+        "'true'"
+      ],
+      [
+        "7",
+        "'false'"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "array: exact 42": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  "array: exact 1.5": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "4"
+      ]
+    ]
+  },
+  "array: exact \"téxt 😀\"": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "5"
+      ]
+    ]
+  },
+  "array: exact true": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6"
+      ]
+    ]
+  },
+  "array: exact false": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "7"
+      ]
+    ]
+  },
+  "array: exact null": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "array: exact {\"a\":1}": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "object: JSON_QUERY": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":1,\"d\":[10,20],\"s\":\"téxt\"}'"
+      ],
+      [
+        "2",
+        "'[10,20,30]'"
+      ],
+      [
+        "3",
+        "'42'"
+      ],
+      [
+        "4",
+        "'1.5'"
+      ],
+      [
+        "5",
+        "'\"téxt 😀\"'"
+      ],
+      [
+        "6",
+        "'true'"
+      ],
+      [
+        "7",
+        "'false'"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "object: JSON_QUERY OMIT QUOTES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":1,\"d\":[10,20],\"s\":\"téxt\"}'"
+      ],
+      [
+        "2",
+        "'[10,20,30]'"
+      ],
+      [
+        "3",
+        "'42'"
+      ],
+      [
+        "4",
+        "'1.5'"
+      ],
+      [
+        "5",
+        "'téxt 😀'"
+      ],
+      [
+        "6",
+        "'true'"
+      ],
+      [
+        "7",
+        "'false'"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "object: JSON_VALUE text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 4000,
+        "precision": 4000,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "'42'"
+      ],
+      [
+        "4",
+        "'1.5'"
+      ],
+      [
+        "5",
+        "'téxt 😀'"
+      ],
+      [
+        "6",
+        "'true'"
+      ],
+      [
+        "7",
+        "'false'"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "object: JSON_VALUE DECFLOAT": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 34,
+        "precision": 34,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "'42'"
+      ],
+      [
+        "4",
+        "'1.5'"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "object: JSON_EXISTS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "1"
+      ],
+      [
+        "3",
+        "1"
+      ],
+      [
+        "4",
+        "1"
+      ],
+      [
+        "5",
+        "1"
+      ],
+      [
+        "6",
+        "1"
+      ],
+      [
+        "7",
+        "1"
+      ],
+      [
+        "8",
+        "1"
+      ],
+      [
+        "9",
+        "0"
+      ]
+    ]
+  },
+  "object: key a": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'1'"
+      ],
+      [
+        "2",
+        "None"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "object: position 1": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "None"
+      ],
+      [
+        "2",
+        "'20'"
+      ],
+      [
+        "3",
+        "None"
+      ],
+      [
+        "4",
+        "None"
+      ],
+      [
+        "5",
+        "None"
+      ],
+      [
+        "6",
+        "None"
+      ],
+      [
+        "7",
+        "None"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "object: path as a marker": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'{\"a\":1,\"d\":[10,20],\"s\":\"téxt\"}'"
+      ],
+      [
+        "2",
+        "'[10,20,30]'"
+      ],
+      [
+        "3",
+        "'42'"
+      ],
+      [
+        "4",
+        "'1.5'"
+      ],
+      [
+        "5",
+        "'\"téxt 😀\"'"
+      ],
+      [
+        "6",
+        "'true'"
+      ],
+      [
+        "7",
+        "'false'"
+      ],
+      [
+        "8",
+        "None"
+      ],
+      [
+        "9",
+        "None"
+      ]
+    ]
+  },
+  "object: exact 42": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  "object: exact 1.5": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "4"
+      ]
+    ]
+  },
+  "object: exact \"téxt 😀\"": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "5"
+      ]
+    ]
+  },
+  "object: exact true": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "6"
+      ]
+    ]
+  },
+  "object: exact false": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "7"
+      ]
+    ]
+  },
+  "object: exact null": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "object: exact {\"a\":1}": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "right-hand side of each exact value": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      },
+      {
+        "name": "00004",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      },
+      {
+        "name": "00005",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      },
+      {
+        "name": "00006",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      },
+      {
+        "name": "00007",
+        "type": "str",
+        "size": 2147483647,
+        "precision": 2147483647,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'42'",
+        "'1.5'",
+        "'\"téxt 😀\"'",
+        "'true'",
+        "'false'",
+        "None",
+        "'{\"a\":1}'"
+      ]
+    ]
+  }
+}
