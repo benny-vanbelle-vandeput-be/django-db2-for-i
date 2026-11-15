@@ -1,0 +1,775 @@
+{
+  "probe": "comment_unicode",
+  "utc": "20261115T125156Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (one table, gone with the job)",
+  "create": {
+    "result": "ok"
+  },
+  "COMMENT ON TABLE, job CCSID: literal": {
+    "result": "ok"
+  },
+  "COMMENT ON TABLE, job CCSID: marker": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ? was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLPrepare)"
+  },
+  "COMMENT ON TABLE, job CCSID: EXECUTE IMMEDIATE": {
+    "result": "ok"
+  },
+  "COMMENT ON TABLE, job CCSID: PREPARE / EXECUTE": {
+    "result": "ok"
+  },
+  "COMMENT ON TABLE, job CCSID: read SYSTABLES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "TABLE_TEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON TABLE, job CCSID: read SYSCOLUMNS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON TABLE, job CCSID: read the object text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJTEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None",
+        "None",
+        "None"
+      ]
+    ]
+  },
+  "COMMENT ON TABLE, euro: literal": {
+    "result": "ok"
+  },
+  "COMMENT ON TABLE, euro: marker": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ? was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLPrepare)"
+  },
+  "COMMENT ON TABLE, euro: EXECUTE IMMEDIATE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'005000720069006300650020006 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "COMMENT ON TABLE, euro: PREPARE / EXECUTE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'005000720069006300650020006 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "COMMENT ON TABLE, euro: read SYSTABLES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "TABLE_TEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON TABLE, euro: read SYSCOLUMNS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON TABLE, euro: read the object text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJTEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None",
+        "None",
+        "None"
+      ]
+    ]
+  },
+  "COMMENT ON TABLE, emoji: literal": {
+    "result": "ok"
+  },
+  "COMMENT ON TABLE, emoji: marker": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ? was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLPrepare)"
+  },
+  "COMMENT ON TABLE, emoji: EXECUTE IMMEDIATE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'0053006D0069006C00650020D83 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "COMMENT ON TABLE, emoji: PREPARE / EXECUTE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'0053006D0069006C00650020D83 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "COMMENT ON TABLE, emoji: read SYSTABLES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "TABLE_TEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON TABLE, emoji: read SYSCOLUMNS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON TABLE, emoji: read the object text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJTEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None",
+        "None",
+        "None"
+      ]
+    ]
+  },
+  "COMMENT ON COLUMN, job CCSID: literal": {
+    "result": "ok"
+  },
+  "COMMENT ON COLUMN, job CCSID: marker": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ? was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLPrepare)"
+  },
+  "COMMENT ON COLUMN, job CCSID: EXECUTE IMMEDIATE": {
+    "result": "ok"
+  },
+  "COMMENT ON COLUMN, job CCSID: PREPARE / EXECUTE": {
+    "result": "ok"
+  },
+  "COMMENT ON COLUMN, job CCSID: read SYSTABLES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "TABLE_TEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON COLUMN, job CCSID: read SYSCOLUMNS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON COLUMN, job CCSID: read the object text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJTEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None",
+        "None",
+        "None"
+      ]
+    ]
+  },
+  "COMMENT ON COLUMN, euro: literal": {
+    "result": "ok"
+  },
+  "COMMENT ON COLUMN, euro: marker": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ? was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLPrepare)"
+  },
+  "COMMENT ON COLUMN, euro: EXECUTE IMMEDIATE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'005000720069006300650020006 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "COMMENT ON COLUMN, euro: PREPARE / EXECUTE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'005000720069006300650020006 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "COMMENT ON COLUMN, euro: read SYSTABLES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "TABLE_TEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON COLUMN, euro: read SYSCOLUMNS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON COLUMN, euro: read the object text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJTEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None",
+        "None",
+        "None"
+      ]
+    ]
+  },
+  "COMMENT ON COLUMN, emoji: literal": {
+    "result": "ok"
+  },
+  "COMMENT ON COLUMN, emoji: marker": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ? was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLPrepare)"
+  },
+  "COMMENT ON COLUMN, emoji: EXECUTE IMMEDIATE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'0053006D0069006C00650020D83 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "COMMENT ON COLUMN, emoji: PREPARE / EXECUTE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'0053006D0069006C00650020D83 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "COMMENT ON COLUMN, emoji: read SYSTABLES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "TABLE_TEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON COLUMN, emoji: read SYSCOLUMNS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "COMMENT ON COLUMN, emoji: read the object text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJTEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "None",
+        "None",
+        "None"
+      ]
+    ]
+  },
+  "LABEL ON TABLE, job CCSID: literal": {
+    "result": "ok"
+  },
+  "LABEL ON TABLE, job CCSID: marker": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ? was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLPrepare)"
+  },
+  "LABEL ON TABLE, job CCSID: EXECUTE IMMEDIATE": {
+    "result": "ok"
+  },
+  "LABEL ON TABLE, job CCSID: PREPARE / EXECUTE": {
+    "result": "ok"
+  },
+  "LABEL ON TABLE, job CCSID: read SYSTABLES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "TABLE_TEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "LABEL ON TABLE, job CCSID: read SYSCOLUMNS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "LABEL ON TABLE, job CCSID: read the object text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJTEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'Price'",
+        "'D799898385'",
+        "'00500072006900630065'"
+      ]
+    ]
+  },
+  "LABEL ON TABLE, euro: literal": {
+    "result": "ok"
+  },
+  "LABEL ON TABLE, euro: marker": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ? was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLPrepare)"
+  },
+  "LABEL ON TABLE, euro: EXECUTE IMMEDIATE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'005000720069006300650020006 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "LABEL ON TABLE, euro: PREPARE / EXECUTE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'005000720069006300650020006 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "LABEL ON TABLE, euro: read SYSTABLES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "TABLE_TEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "LABEL ON TABLE, euro: read SYSCOLUMNS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "LABEL ON TABLE, euro: read the object text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJTEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'Price in \\x1a'",
+        "'D799898385408995403F'",
+        "'0050007200690063006500200069006E0020001A'"
+      ]
+    ]
+  },
+  "LABEL ON TABLE, emoji: literal": {
+    "result": "ok"
+  },
+  "LABEL ON TABLE, emoji: marker": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token ? was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLPrepare)"
+  },
+  "LABEL ON TABLE, emoji: EXECUTE IMMEDIATE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'0053006D0069006C00650020D83 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "LABEL ON TABLE, emoji: PREPARE / EXECUTE": {
+    "result": "error",
+    "sqlstate": "42000",
+    "sqlcode": -104,
+    "message": "SQL0104 - Token UX'0053006D0069006C00650020D83 was not valid. Valid tokens: <CHARSTRING>. (-104) (SQLExecDirectW)"
+  },
+  "LABEL ON TABLE, emoji: read SYSTABLES": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "TABLE_TEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "LABEL ON TABLE, emoji: read SYSCOLUMNS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "LONG_COMMENT",
+        "type": "str",
+        "size": 2000,
+        "precision": 2000,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "LABEL ON TABLE, emoji: read the object text": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "OBJTEXT",
+        "type": "str",
+        "size": 50,
+        "precision": 50,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 100,
+        "precision": 100,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 200,
+        "precision": 200,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'Smile ='",
+        "'E294899385407E'",
+        "'0053006D0069006C00650020003D'"
+      ]
+    ]
+  }
+}

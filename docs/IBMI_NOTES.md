@@ -1118,6 +1118,25 @@ job CCSID before it is parsed, so text outside it is lost. Reading a comment
 back is not possible in QTEMP (probe 25). **`supports_comments` stays off**
 (phase 4 decision 7: only if any Unicode text works).
 
+**Comments with text outside the job CCSID** (`probes/qtemp_comment_unicode.py`,
+2026-11-15, PUB400, QTEMP only; `probes/results/comment_unicode.json`), with
+`Price in €` and `Smile 😀` on `COMMENT ON TABLE`, `COMMENT ON COLUMN` and
+`LABEL ON TABLE`:
+
+| Route | Result |
+|---|---|
+| a plain literal | **accepted**, but the text is damaged: `LABEL ON` read back through `QSYS2.OBJECT_STATISTICS` gives `Price in ` + SUB (hex `3F`) and `Smile =` |
+| `IS ?` (a parameter marker) | SQL0104, valid token `<CHARSTRING>` |
+| a dynamic compound statement: the text built in an `NVARCHAR` variable with `UX'...'`, then `EXECUTE IMMEDIATE` or `PREPARE` / `EXECUTE` | SQL0104: the built statement holds the text as a `UX'...'` constant again |
+| text in the job CCSID, every route but the marker | ok, read back unchanged |
+
+The probe sends its statement text as UTF-16 (`SQLExecDirectW`, no
+`setencoding`). The backend sends it as UTF-8 (`setencoding("utf-8", SQL_CHAR)`,
+drivers/pyodbc.py), and through that path the same literal is **refused with
+SQL0104** (own IBM i test `test_non_ascii_comments`, passed in the 2026-11-14
+status run). So the outcome depends on the statement encoding: refused or
+silently damaged, never stored. No route stores text outside the job CCSID.
+
 **Row length:** the largest NOT NULL `CHAR(n)` is 32,766 (nullable 32,765;
 SQL0604 beyond); two or three NOT NULL `CHAR` columns also total at most
 **32,766 bytes** (SQL0101 "statement too long or complex" beyond). That
@@ -2276,6 +2295,21 @@ nested object, `true`, keys with `'` and `%`), a second object, a root array, a 
 | `JSON_OBJECT('d' VALUE CAST(? AS DOUBLE))` of 30000.15 | `3.0000150000000001E4`, which Python reads as 30000.15 |
 | `LISTAGG(JSON_QUERY(C, ... OMIT QUOTES), CAST(? AS NVARCHAR(32)))` | **SQL0171**: `JSON_QUERY` returns a `CLOB` |
 | the same with `RETURNING NCLOB(1M) OMIT QUOTES`, also in `WITHIN GROUP (ORDER BY ...)` | ok |
+
+**Scalars at the top level, wrapped** (`probes/qtemp_json_primitives.py`, 2026-11-15, PUB400, QTEMP
+only; `probes/results/json_primitives.json`), for `supports_primitives_in_json_field`. An `NCLOB`
+holding an object, an array, `42`, `1.5`, `"téxt 😀"`, `true`, `false`, JSON `null` and SQL NULL; the
+column read as is (`$`), wrapped in an array (`'[' CONCAT C CONCAT ']'`, `$[0]`) and in an object
+(`'{"v":' CONCAT C CONCAT '}'`, `$.v`):
+
+| Form | As is (`$`) | Wrapped (array or object: the same results) |
+|---|---|---|
+| `JSON_QUERY` of a scalar | NULL (JSON `null`: `{}`) | `42`, `1.5`, `"téxt 😀"`, `true`, `false`; JSON `null` and SQL NULL: NULL |
+| `JSON_QUERY ... OMIT QUOTES` | NULL | the same, the string without quotes |
+| `JSON_VALUE ... RETURNING NVARCHAR(4000)` / `DECFLOAT(34)` | NULL | the scalar's text / the number (NULL for a string or boolean) |
+| `JSON_EXISTS` | false for a scalar, true for JSON `null` | true for every document but SQL NULL |
+| an object's key, an array's position below the root; the path as a marker | ok | ok (`$[0].a`, `$[0][1]`) |
+| `JSON_QUERY(<doc>, <root>) = JSON_QUERY(JSON_OBJECT('value' VALUE CAST(? AS NVARCHAR(4000)) FORMAT JSON), '$.value')` | no scalar matches | each scalar matches exactly its own row; the right-hand side of `null` is NULL, so JSON `null` needs `JSON_EXISTS` and `JSON_QUERY IS NULL`, as for a key |
 
 **Db functions** (`probes/qtemp_db_functions.py`), on `héllo 😀`, NULL, 7, 2.5 and 2.50:
 
