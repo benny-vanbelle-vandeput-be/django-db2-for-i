@@ -1125,14 +1125,17 @@ back is not possible in QTEMP (probe 25). **`supports_comments` stays off**
 
 | Route | Result |
 |---|---|
-| a plain literal | **accepted** (on 2026-10-26 it was SQL0104), but the text is damaged: `LABEL ON` read back through `QSYS2.OBJECT_STATISTICS` gives `Price in ` + SUB (hex `3F`) and `Smile =` |
+| a plain literal | **accepted**, but the text is damaged: `LABEL ON` read back through `QSYS2.OBJECT_STATISTICS` gives `Price in ` + SUB (hex `3F`) and `Smile =` |
 | `IS ?` (a parameter marker) | SQL0104, valid token `<CHARSTRING>` |
 | a dynamic compound statement: the text built in an `NVARCHAR` variable with `UX'...'`, then `EXECUTE IMMEDIATE` or `PREPARE` / `EXECUTE` | SQL0104: the built statement holds the text as a `UX'...'` constant again |
 | text in the job CCSID, every route but the marker | ok, read back unchanged |
 
-So no route stores text outside the job CCSID, and the plain literal now loses
-it without an error. **`supports_comments` stays off** (decision 2026-10-26
-unchanged); on it would silently damage `db_comment` text.
+The probe sends its statement text as UTF-16 (`SQLExecDirectW`, no
+`setencoding`). The backend sends it as UTF-8 (`setencoding("utf-8", SQL_CHAR)`,
+drivers/pyodbc.py), and through that path the same literal is **refused with
+SQL0104** (own IBM i test `test_non_ascii_comments`, passed in the 2026-11-14
+status run). So the outcome depends on the statement encoding: refused or
+silently damaged, never stored. No route stores text outside the job CCSID.
 
 **Row length:** the largest NOT NULL `CHAR(n)` is 32,766 (nullable 32,765;
 SQL0604 beyond); two or three NOT NULL `CHAR` columns also total at most

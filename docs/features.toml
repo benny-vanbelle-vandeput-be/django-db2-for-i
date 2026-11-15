@@ -142,7 +142,7 @@ can_defer_constraint_checks.description = "Constraint checks can be deferred to 
 can_defer_constraint_checks.off = "Db2 for i checks constraints per statement; nothing is deferrable."
 supports_combined_alters.description = "Several column changes are written as one `ALTER TABLE` statement."
 supports_comments.description = "`db_comment` and `db_table_comment` are stored as column and table comments."
-supports_comments.off = "`COMMENT ON` stores only text in the job CCSID: other characters are replaced without an error (`€` by a substitute character, an emoji by `=`), and a Unicode constant or a parameter marker is refused (probe `comment_unicode`, decision 2026-10-26)."
+supports_comments.off = "`COMMENT ON` stores only text in the job CCSID: other characters are refused (SQL0104, the backend's UTF-8 statement text) or replaced without an error (UTF-16 statement text), and a Unicode constant or a parameter marker is refused (probe `comment_unicode`, decision 2026-10-26)."
 supports_expression_defaults.description = "`db_default` can be an expression, not only a constant."
 supports_expression_defaults.off = "A column `DEFAULT` on Db2 for i takes only a constant or a special register: `1 + 1` and `CURRENT_TIMESTAMP + 1 DAY` are SQL0104, a function SQL0574 (probe `flag_review`)."
 supports_index_on_text_field.description = "Indexes on `TextField` columns."

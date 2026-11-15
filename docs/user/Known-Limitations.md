@@ -32,9 +32,9 @@ character can appear in SQL and in `NVARCHAR`, `NCHAR` and `NCLOB` columns
   CCSID; others fail with `SQL0104`.
 - **Comments**: `db_comment` and `db_table_comment` are not written to the
   database at all (`manage.py check` warns with `fields.W163` /
-  `models.W046`). `COMMENT ON` keeps only characters of the job CCSID and
-  replaces others without an error (`€` by a substitute character, an emoji
-  by `=`), so the backend writes no comments.
+  `models.W046`). `COMMENT ON` stores only characters of the job CCSID:
+  others are refused with `SQL0104`, or, from a client that sends its SQL
+  as UTF-16, replaced without an error.
 
 ### Run in a UTF-8 locale
 
