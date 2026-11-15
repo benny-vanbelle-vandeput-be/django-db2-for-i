@@ -229,6 +229,14 @@ requires Django 6.0 or later. The full list, with workarounds:
   [Django versions](docs/DJANGO_VERSIONS.md), [test status](docs/TEST_STATUS.md),
   [feature flags](docs/FEATURES.md), [offline query corpus](docs/REPLAY_TESTS.md).
 
+## Related projects
+
+- [django-db2-for-i-triggers](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i-triggers):
+  database triggers for Django models on Db2 for i, declared in
+  `Meta.triggers` and installed with migrations, in the style of
+  [django-pgtrigger](https://django-pgtrigger.readthedocs.io/). It uses this
+  backend. In early development: nothing released yet.
+
 ## Development
 
 All development and test runs happen in a container; the host only needs
