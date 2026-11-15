@@ -37,6 +37,11 @@ from tests.golden_cases.base import (
     exists,
     select,
 )
+
+try:  # Django 6.1+: JSONNull(); before, None means JSON null in an exact lookup.
+    from django.db.models import JSONNull
+except ImportError:
+    JSONNull = None
 from tests.testapp.models import Account, Author, Book, Contact, JSONDoc, Measure, Switch
 
 
@@ -54,6 +59,19 @@ def _last_insert_id(connection):
     connection.ops.last_insert_id(cursor, "testapp_author", "id")
     return [(cursor.sql, ())]
 
+
+# JSON null: the whole document, an IN list with it (whole document and key).
+JSON_NULL_CASES = (
+    (
+        ("exact_json_null", lambda: JSONDoc.objects.filter(data=JSONNull())),
+        ("in_json_null", lambda: JSONDoc.objects.filter(data__in=["x", JSONNull()])),
+        ("key_in_json_null", lambda: JSONDoc.objects.filter(data__n__in=[3, JSONNull()])),
+        # A Value() without a JSON output field: its JSON text, a plain marker.
+        ("in_values", lambda: JSONDoc.objects.filter(data__in=[Value(7), Value(True)])),
+    )
+    if JSONNull is not None
+    else (("exact_json_null", lambda: JSONDoc.objects.filter(data=None)),)
+)
 
 CASES: tuple[Case, ...] = (
     # Pagination (OFFSET / FETCH FIRST) and exists().
@@ -556,6 +574,12 @@ CASES: tuple[Case, ...] = (
             ("key_exact_object", lambda: JSONDoc.objects.filter(data__meta={"ok": True})),
             ("key_json_null", lambda: JSONDoc.objects.filter(data__x=None)),
             ("key_in", lambda: JSONDoc.objects.filter(data__n__in=[3, "a'b"])),
+            # The whole document, wrapped in an array so a top-level scalar is
+            # read too (supports_primitives_in_json_field, probe json_primitives).
+            ("exact_scalar", lambda: JSONDoc.objects.filter(data=42)),
+            ("exact_object", lambda: JSONDoc.objects.filter(data={"a": [1, "b"]})),
+            ("in_documents", lambda: JSONDoc.objects.filter(data__in=["x", {"a": 1}])),
+            *JSON_NULL_CASES,
             ("key_gt_number", lambda: JSONDoc.objects.filter(data__n__gt=10)),
             ("key_isnull", lambda: JSONDoc.objects.filter(data__tags__isnull=True)),
             ("has_keys", lambda: JSONDoc.objects.filter(data__has_keys=["a", "it's 100%"])),

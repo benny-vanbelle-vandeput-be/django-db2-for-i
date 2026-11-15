@@ -17,9 +17,11 @@ from django.db.models import (
     ForeignKey,
     Index,
     IntegerField,
+    JSONField,
     OneToOneField,
     Q,
     UniqueConstraint,
+    Value,
 )
 from django.db.models.functions import Lower, Upper
 
@@ -228,6 +230,23 @@ def _add_column(model, name, make_field):
     return build
 
 
+def _comments_and_back(model, name, table_comment, column_comment):
+    """A table comment and a column's db_comment set, then removed again
+    (COMMENT ON ... IS '', which Django writes for no comment)."""
+
+    def build(connection):
+        plain = lambda: _field(model, name)  # noqa: E731
+        commented = lambda: _field(model, name, db_comment=column_comment)  # noqa: E731
+        with connection.schema_editor(collect_sql=True, atomic=False) as editor:
+            editor.alter_db_table_comment(model, None, table_comment)
+            editor.alter_field(model, plain(), commented(), strict=True)
+            editor.alter_field(model, commented(), plain(), strict=True)
+            editor.alter_db_table_comment(model, table_comment, None)
+        return [(sql.removesuffix(";"), ()) for sql in editor.collected_sql]
+
+    return build
+
+
 def _drop(model):
     def build(connection):
         with connection.schema_editor(collect_sql=True, atomic=False) as editor:
@@ -268,6 +287,24 @@ CASES: tuple[Case, ...] = (
     Case("ddl/create_article", "create", _ddl(Article)),
     # A JSONField: an NCLOB without a CHECK (IS JSON is refused, lib_json_check).
     Case(JSONDOC, "create", _ddl(JSONDoc)),
+    # A JSONField whose db_default is JSON null (Value(None, JSONField()), Django
+    # 6.1's JSONNull()): DEFAULT 'null', the JSON text, not SQL NULL.
+    Case(
+        "ddl/add_field_json_null_default",
+        "alter",
+        _add_column(
+            JSONDoc, "extra", lambda: JSONField(db_default=Value(None, output_field=JSONField()))
+        ),
+        (JSONDOC,),
+    ),
+    # Comments (printable ASCII only, schema.comment_text): COMMENT ON TABLE /
+    # COLUMN with a plain constant, a quote doubled; removed with ''.
+    Case(
+        "ddl/db_comments",
+        "alter",
+        _comments_and_back(Schedule, "start", "Planned work, it's all", "Start (UTC)"),
+        (SCHEDULE,),
+    ),
     # Foreign keys: each foreign key of Link (create_link added them), to an
     # INTEGER, NVARCHAR, CHAR(32) (UUID) and key-to-a-key primary key, dropped
     # and added again; AddField of a nullable ForeignKey, of one to a

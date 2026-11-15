@@ -357,6 +357,7 @@ def test_expected_failures_are_grouped_by_fixed_reasons() -> None:
         features.REASON_TYPED_PARAMETER_MARKERS,
         features.REASON_UNTYPED_RAW_SQL_PARAMETER,
         features.REASON_PENDING_ROW_CHANGES,
+        features.REASON_ROWS_THEN_ALTER,
         features.REASON_NO_COLUMN_RENAME,
         features.REASON_POSTGRESQL_LIKE_INDEXES,
         features.REASON_TYPE_NOT_IN_PLACE,
@@ -397,10 +398,10 @@ def test_table_list_leaves_out_system_catalog_views() -> None:
             executed.append(sql)
 
         def fetchall(self):
-            return [("TESTAPP_AUTHOR", "T")]
+            return [("TESTAPP_AUTHOR", "T", "Authors")]
 
     tables = make_wrapper().introspection.get_table_list(Cursor())
-    assert [t.name for t in tables] == ["testapp_author"]
+    assert [(t.name, t.type, t.comment) for t in tables] == [("testapp_author", "t", "Authors")]
     assert "SYSTEM_TABLE = 'N'" in executed[0]
 
 

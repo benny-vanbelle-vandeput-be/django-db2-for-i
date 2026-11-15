@@ -235,6 +235,7 @@ unique within its own library only.
 | `django_db2_for_i.E003` | A table or index system name that is not valid, or one given for a name of at most 10 characters. |
 | `django_db2_for_i.E004` | Two tables or indexes with the same system name in one library. |
 | `django_db2_for_i.E005` | A `db_library` that is not a valid library name, or a model that names two different libraries. |
+| `django_db2_for_i.E006` | A `db_comment` or `db_table_comment` with a character outside printable ASCII ([Comments](Known-Limitations.md#comments)). |
 
 ## Common errors
 

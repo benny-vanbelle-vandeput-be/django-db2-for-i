@@ -30,11 +30,13 @@ character can appear in SQL and in `NVARCHAR`, `NCHAR` and `NCLOB` columns
   emoji, is refused with SQLSTATE `22018`, never replaced.
 - **Names**: table, column and alias names must use characters of the job
   CCSID; others fail with `SQL0104`.
-- **Comments**: `db_comment` and `db_table_comment` are not written to the
-  database at all (`manage.py check` warns with `fields.W163` /
-  `models.W046`). `COMMENT ON` stores only characters of the job CCSID:
-  others are refused with `SQL0104`, or, from a client that sends its SQL
-  as UTF-16, replaced without an error.
+- **Comments** (`db_comment`, `db_table_comment`): printable ASCII only.
+  `COMMENT ON` keeps only characters of the job CCSID (others fail with
+  `SQL0104`, or are replaced without an error), so the backend accepts only
+  text that every IBM i stores unchanged: any other character raises
+  `NotSupportedError` before the migration changes anything, and
+  `manage.py check --database default` reports it as `django_db2_for_i.E006`.
+  See [Comments](#comments).
 
 ### Run in a UTF-8 locale
 
@@ -744,8 +746,6 @@ work, through Db2 for i's `JSON_QUERY`, `JSON_VALUE` and `JSON_EXISTS`. Differen
   Db2 for i has no containment function.
 - **Negative array indexes** (`data__items__-1`) are not available
   (`NotSupportedError`): Db2 for i returns nothing for them.
-- **A document that is a single value** (a number, a string, `true`, `null`
-  at the top level) is stored and read back, but key lookups cannot reach it.
 - **A key with a double quote** (`data__has_key='a"b'`) cannot be written in
   a Db2 for i JSON path; such a lookup raises `NotSupportedError`. Other
   characters work, also `'`, `%`, `\` and emoji.
@@ -758,6 +758,24 @@ work, through Db2 for i's `JSON_QUERY`, `JSON_VALUE` and `JSON_EXISTS`. Differen
 - **JSON null and a missing key** read back the same (`None`) from a key
   transform; `data__key=None` matches JSON null only, and `data__key__isnull=True`
   a missing key.
+
+## Comments
+
+`db_comment` on a field and `db_table_comment` on a model are stored as
+`COMMENT ON COLUMN` / `COMMENT ON TABLE`, read back by introspection and
+`inspectdb`. On Db2 for i:
+
+- **Printable ASCII only** (space to `~`): `COMMENT ON` stores only characters
+  of the job CCSID, and depending on how the statement reaches the server it
+  refuses the others (`SQL0104`) or replaces them without an error (`€` by a
+  substitute character, an emoji by `=`). Any other character, also `é`, `ü`
+  or a tab, raises `NotSupportedError` before the migration changes anything,
+  so the same migration works the same on every IBM i. `manage.py check
+  --database default` (and `migrate`) report such a comment as
+  `django_db2_for_i.E006`.
+- **At most 2000 characters**, the length of the catalog's `LONG_COMMENT`.
+- A comment is a separate `COMMENT ON` statement after `CREATE TABLE` or
+  `ADD COLUMN`; changing only a comment changes nothing else in the table.
 
 ## A column that grew while a connection stays open
 

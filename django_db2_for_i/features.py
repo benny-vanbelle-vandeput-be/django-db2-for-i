@@ -32,6 +32,10 @@ REASON_PENDING_ROW_CHANGES = (
     "in the same transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in "
     "the transaction (SQL0910)"
 )
+REASON_ROWS_THEN_ALTER = (
+    "the test inserts rows and then alters the same table in one transaction; Db2 for i "
+    "refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910)"
+)
 REASON_NO_COLUMN_RENAME = "Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6)"
 REASON_POSTGRESQL_LIKE_INDEXES = (
     "the test counts PostgreSQL's deferred LIKE indexes; Db2 for i writes UNIQUE in the "
@@ -368,13 +372,20 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # CHECK (C IS JSON) is refused on an NCLOB (SQL0546, probe lib_json_check),
     # so introspection sees a plain LOB.
     can_introspect_json_field = False
-    # A root scalar is stored and read back, but JSON_QUERY and JSON_VALUE
-    # cannot reach it (NULL; probe json_functions).
-    supports_primitives_in_json_field = False
+    # A root scalar: JSON_QUERY and JSON_VALUE cannot reach it at "$" (NULL;
+    # probe json_functions), so whole-document lookups read the column wrapped in
+    # an array at "$[0]" (expressions.py; probe json_primitives).
+    supports_primitives_in_json_field = True
     # No containment function; path filters returned false (probe json_functions).
     supports_json_field_contains = False
     # $.d[-1] gives NULL without an error (probe json_functions).
     supports_json_negative_indexing = False
+
+    # COMMENT ON TABLE / COLUMN with printable ASCII only: other characters are
+    # replaced without an error (probe comment_unicode), so schema.py refuses
+    # them (decision 2026-11-15). No comment in ADD COLUMN: a separate COMMENT ON.
+    supports_comments = True
+    supports_comments_inline = False
 
     # Known failures of Django's own test suite, grouped by one fixed reason
     # string each (see the REASON_* constants). Filled from real runs (phase 1,
@@ -473,6 +484,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "migrations.test_operations.OperationTests.test_alter_field_change_blank_nullable_database_default_to_not_null",
             "migrations.test_operations.OperationTests.test_alter_field_change_nullable_to_database_default_not_null",
             "migrations.test_operations.OperationTests.test_alter_field_change_nullable_to_decimal_database_default_not_null",
+        },
+        # create_model, Author.objects.create(), then add_field in one schema_editor.
+        REASON_ROWS_THEN_ALTER: {
+            "schema.tests.SchemaTests.test_add_db_comment_and_default_charfield",
         },
         # RenameField / a new db_column: NotSupportedError (schema.py).
         REASON_NO_COLUMN_RENAME: {

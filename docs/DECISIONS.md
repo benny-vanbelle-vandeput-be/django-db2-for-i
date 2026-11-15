@@ -1877,3 +1877,27 @@ Lightweight records of non-obvious decisions: date, decision, why, alternatives.
   rewritten); the warning with the programs that use the table (`DSPPGMREF`, not
   wanted).
 
+## 2026-11-15: Comments on, printable ASCII only; JSON scalars at the top level
+- **Decision (project owner, the session of 2026-11-15):** replaces "2026-10-26:
+  supports_comments stays off". `supports_comments` is on: `db_comment` and
+  `db_table_comment` are written as `COMMENT ON COLUMN` / `COMMENT ON TABLE` and
+  read back from `LONG_COMMENT`. A comment with any character outside printable
+  ASCII (space to `~`) raises `NotSupportedError` before any SQL
+  (`schema.comment_text`), and the system check `django_db2_for_i.E006` reports
+  it. A change of only `db_comment` writes only the `COMMENT ON`.
+  `supports_primitives_in_json_field` is on as well: lookups on the whole
+  document read it wrapped in an array (`'[' CONCAT <col> CONCAT ']'`, `$[0]`).
+- **Why:** `COMMENT ON` keeps only characters of the job CCSID: through the
+  backend's UTF-8 statement text it refuses the others (SQL0104), from UTF-16
+  statement text it replaces them without an error (probe `comment_unicode`).
+  Table and column names already depend on the job CCSID the same way (the
+  server refuses them); printable ASCII is stored unchanged on every job CCSID,
+  so the same migration behaves the same on every IBM i, and nothing is
+  damaged silently. For JSON, Db2 for i's functions do not read a top-level
+  scalar at `$`, but read it as `$[0]` of the wrapped text (probe
+  `json_primitives`); paths below the root stay as they are (a scalar has no
+  keys, so NULL is right).
+- **Alternatives:** comments off (the 2026-10-26 decision); the characters of
+  the job CCSID (checked on the server), which would make a migration work on
+  one IBM i and fail on another; replacing or dropping other characters (silent
+  data loss). For JSON: keeping the flag off.

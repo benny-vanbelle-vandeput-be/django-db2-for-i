@@ -21,6 +21,10 @@
 - ``django_db2_for_i.E005``: a model's ``Meta.db_library`` is not a valid library
   name, or the model names a library twice (``db_library`` and a ``db_table`` of
   the form ``'LIB"."TABLE'``; apps.py, #124).
+- ``django_db2_for_i.E006``: a field's ``db_comment`` or a model's
+  ``db_table_comment`` has a character outside printable ASCII, which
+  ``COMMENT ON`` would replace without an error; the schema editor refuses it
+  (schema.comment_text, decision 2026-11-15).
 
 Both can be silenced with ``SILENCED_SYSTEM_CHECKS``; with W001 silenced the
 check does not query the server at all.
@@ -41,12 +45,12 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.core import checks
-from django.db import DatabaseError
+from django.db import DatabaseError, NotSupportedError
 from django.db.backends.base.validation import BaseDatabaseValidation
 
 from . import fields as system_names
 from .creation import _SYSTEM_NAME
-from .schema import split_table
+from .schema import comment_text, split_table
 
 W001 = "django_db2_for_i.W001"
 W002 = "django_db2_for_i.W002"
@@ -55,6 +59,7 @@ E002 = "django_db2_for_i.E002"
 E003 = "django_db2_for_i.E003"
 E004 = "django_db2_for_i.E004"
 E005 = "django_db2_for_i.E005"
+E006 = "django_db2_for_i.E006"
 
 JOURNAL_HINT = (
     "Create a QSQJRN journal in it, or journal the library with STRJRNLIB "
@@ -247,9 +252,39 @@ def check_object_system_names(models, max_length: int = 10) -> list[checks.Check
     return issues
 
 
+def check_comment(text, owner: str, obj) -> list[checks.CheckMessage]:
+    """E006 for a comment that ``COMMENT ON`` would damage."""
+    try:
+        comment_text(text, owner)
+    except NotSupportedError as exc:
+        return [
+            checks.Error(
+                str(exc),
+                hint="Use only printable ASCII characters in the comment.",
+                obj=obj,
+                id=E006,
+            )
+        ]
+    return []
+
+
+def check_table_comments(models) -> list[checks.CheckMessage]:
+    return [
+        issue
+        for model in models
+        for issue in check_comment(
+            model._meta.db_table_comment, f"table {model._meta.db_table!r}", model
+        )
+    ]
+
+
 class DatabaseValidation(BaseDatabaseValidation):
     def check_field(self, field, **kwargs):
-        return [*super().check_field(field, **kwargs), *check_system_name(field)]
+        issues = [*super().check_field(field, **kwargs), *check_system_name(field)]
+        if getattr(field, "db_comment", None):
+            owner = f"column {field.model._meta.db_table}.{field.column}"
+            issues += check_comment(field.db_comment, owner, field)
+        return issues
 
     def check(self, **kwargs):
         issues = super().check(**kwargs) + self._check_object_system_names(kwargs)
@@ -275,7 +310,7 @@ class DatabaseValidation(BaseDatabaseValidation):
             and not model._meta.swapped
             and router.allow_migrate_model(self.connection.alias, model)
         ]
-        return check_object_system_names(models)
+        return check_object_system_names(models) + check_table_comments(models)
 
     def _libraries(self) -> list[tuple[str, str]]:
         """(library, setting) for NAME and TEST["NAME"], without duplicates."""

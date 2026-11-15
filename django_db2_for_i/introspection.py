@@ -12,8 +12,9 @@ returns them in lowercase, Django's form (see operations.quote_name).
 from collections import namedtuple
 
 from django.db import DatabaseError
-from django.db.backends.base.introspection import BaseDatabaseIntrospection, TableInfo
+from django.db.backends.base.introspection import BaseDatabaseIntrospection
 from django.db.backends.base.introspection import FieldInfo as BaseFieldInfo
+from django.db.backends.base.introspection import TableInfo as BaseTableInfo
 from django.db.models import Index
 
 from django_db2_for_i import compat
@@ -115,8 +116,11 @@ def _in_library(sql: str, table_name: str) -> tuple[str, list[str]]:
 
 
 # get_table_description() rows: Django's fields plus whether the column is an
-# identity (get_field_type() turns it into an AutoField), as on PostgreSQL.
-FieldInfo = namedtuple("FieldInfo", [*BaseFieldInfo._fields, "is_autofield"])
+# identity (get_field_type() turns it into an AutoField) and its comment, as on
+# PostgreSQL.
+FieldInfo = namedtuple("FieldInfo", [*BaseFieldInfo._fields, "is_autofield", "comment"])
+# get_table_list() rows: Django's fields plus the table's comment (inspectdb).
+TableInfo = namedtuple("TableInfo", [*BaseTableInfo._fields, "comment"])
 
 # QSYS2.SYSTABLES.TABLE_TYPE -> Django's TableInfo type.
 TABLE_TYPES = {
@@ -171,13 +175,13 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         # SYSTEM_TABLE = 'N': leave out the SQL catalog views (SYSCST, ...)
         # that Db2 for i creates in a library with constraints.
         cursor.execute(
-            "SELECT TABLE_NAME, TABLE_TYPE FROM QSYS2.SYSTABLES "
+            "SELECT TABLE_NAME, TABLE_TYPE, LONG_COMMENT FROM QSYS2.SYSTABLES "
             f"WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_TYPE IN ({types}) "
             "AND SYSTEM_TABLE = 'N' ORDER BY TABLE_NAME"
         )
         return [
-            TableInfo(self.identifier_converter(name.rstrip()), TABLE_TYPES[kind.rstrip()])
-            for name, kind in cursor.fetchall()
+            TableInfo(self.identifier_converter(name.rstrip()), TABLE_TYPES[kind.rstrip()], comment)
+            for name, kind, comment in cursor.fetchall()
         ]
 
     def get_table_description(self, cursor, table_name: str) -> list[FieldInfo]:
@@ -195,7 +199,8 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         cursor.execute(
             *_in_library(
                 "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, LENGTH, "
-                "NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT, IS_IDENTITY "
+                "NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT, IS_IDENTITY, "
+                "LONG_COMMENT "
                 "FROM QSYS2.SYSCOLUMNS "
                 "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s "
                 "ORDER BY ORDINAL_POSITION",
@@ -217,6 +222,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
                 default=default,
                 collation=None,
                 is_autofield=identity.rstrip() == "YES",
+                comment=comment,
             )
             for (
                 name,
@@ -228,6 +234,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
                 nullable,
                 default,
                 identity,
+                comment,
             ) in rows
         ]
 

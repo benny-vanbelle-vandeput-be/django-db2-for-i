@@ -8,9 +8,9 @@ feature that is off. Descriptions: [`docs/features.toml`](features.toml).
 
 ✅ on · ❌ off · 🗓️ off, planned · – the flag does not exist in that Django version · 🚧 Django version still in development here.
 
-**77 flags enabled on Django 6.1.**
+**79 flags enabled on Django 6.1.**
 
-## Enabled (77)
+## Enabled (79)
 
 On in at least one supported Django version.
 
@@ -53,6 +53,7 @@ On in at least one supported Django version.
 | `supports_cast_with_precision` | `Cast()` to a type with a length or precision, e.g. `DecimalField(max_digits=...)`. | ✅ | ✅ | ✅ |
 | `supports_column_check_constraints` | CHECK constraints on a single column (e.g. `PositiveIntegerField`) are enforced by the database. | ✅ | ✅ | ✅ |
 | `supports_combined_alters` | Several column changes are written as one `ALTER TABLE` statement. | ✅ | ✅ | ✅ |
+| `supports_comments` | `db_comment` and `db_table_comment` are stored as column and table comments (on Db2 for i printable ASCII only; other text raises `NotSupportedError`). | ✅ | ✅ | ✅ |
 | `supports_date_lookup_using_string` | Lookups such as `__startswith` with a string on a date or datetime column. | ✅ | ✅ | ✅ |
 | `supports_default_in_lead_lag` | `Lead()` / `Lag()` with a `default`. | ✅ | ✅ | ✅ |
 | `supports_default_keyword_in_bulk_insert` | `bulk_create()` writes `DEFAULT` for fields with a `db_default`. | ✅ | ✅ | ✅ |
@@ -74,6 +75,7 @@ On in at least one supported Django version.
 | `supports_parentheses_in_compound` | Parts of a compound query may have their own `ORDER BY` / slice. | ✅ | ✅ | ✅ |
 | `supports_partial_indexes` | Indexes and unique constraints with a `condition`. | ✅ | ✅ | ✅ |
 | `supports_partially_nullable_unique_constraints` | Multi-column unique constraints where some columns are NULL. | ✅ | ✅ | ✅ |
+| `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | ✅ | ✅ | ✅ |
 | `supports_regex_backreferencing` | `regex` / `iregex` lookups support backreferences (ICU regular expressions). | ✅ | ✅ | ✅ |
 | `supports_select_difference` | `QuerySet.difference()` (`EXCEPT`). | ✅ | ✅ | ✅ |
 | `supports_select_for_update_with_limit` | `select_for_update()` on a sliced queryset. | ✅ | ✅ | ✅ |
@@ -94,7 +96,7 @@ On in at least one supported Django version.
 | `update_can_self_select` | An update whose filter has a subquery on the same table runs as one statement. | ✅ | ✅ | ✅ |
 | `uses_savepoints` | Nested `atomic()` blocks use savepoints. | ✅ | ✅ | ✅ |
 
-## Intentionally off (50)
+## Intentionally off (48)
 
 Off on purpose, with the reason.
 
@@ -123,8 +125,7 @@ Off on purpose, with the reason.
 | `supports_bit_aggregations` | The `BitAnd`, `BitOr` and `BitXor` aggregates (Django 6.1+). | – | – | ❌ | Db2 for i has no `BIT_AND` aggregate (SQL0204, probe queries). |
 | `supports_collation_on_charfield` | `CharField(db_collation=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104; with `CCSID 1200` SQL0683, probe `qtemp_later_flags`, IBMI_NOTES); sorting follows the job's sort sequence. |
 | `supports_collation_on_textfield` | `TextField(db_collation=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
-| `supports_comments` | `db_comment` and `db_table_comment` are stored as column and table comments. | ❌ | ❌ | ❌ | `COMMENT ON` stores only text in the job CCSID: other characters are refused (SQL0104, the backend's UTF-8 statement text) or replaced without an error (UTF-16 statement text), and a Unicode constant or a parameter marker is refused (probe `comment_unicode`, decision 2026-10-26). |
-| `supports_comments_inline` | Column comments are written in the `ADD COLUMN` statement itself. | ❌ | ❌ | ❌ | Column comments are off (`supports_comments`, decision 2026-10-26), so inline comments are too. |
+| `supports_comments_inline` | Column comments are written in the `ADD COLUMN` statement itself. | ❌ | ❌ | ❌ | Not needed: Django writes a separate `COMMENT ON COLUMN` after the `ADD COLUMN`, with the same result; a comment clause in `ADD COLUMN` was not tried. |
 | `supports_comparing_boolean_expr` | Conditions can be compared or tested with `IS NULL` (`WHERE (price > 0) IS NOT NULL`). | ❌ | ❌ | ❌ | Db2 for i rejects a predicate as an operand (SQL0104, SQL0199, probe queries). |
 | `supports_covering_indexes` | Indexes and unique constraints with `include` (covering indexes). | ❌ | ❌ | ❌ | Db2 for i takes no `INCLUDE` in `CREATE INDEX` (SQL0104, probe `qtemp_indexes`, IBMI_NOTES). |
 | `supports_default_in_bit_aggregations` | Bit aggregates with a `default` (Django 6.1+). | – | – | ❌ | There are no bit aggregates (`supports_bit_aggregations`). |
@@ -141,7 +142,6 @@ Off on purpose, with the reason.
 | `supports_non_deterministic_collations` | Non-deterministic (for example case-insensitive) collations in `db_collation`. | ❌ | ❌ | ❌ | Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `supports_nulls_distinct_unique_constraints` | `UniqueConstraint(nulls_distinct=...)`. | ❌ | ❌ | ❌ | Db2 for i takes no `NULLS DISTINCT` / `NULLS NOT DISTINCT` on an index or a constraint (SQL0199, probe `qtemp_unique_nulls`, IBMI_NOTES). |
 | `supports_order_by_nulls_modifier` | `NULLS FIRST` / `NULLS LAST` in `ORDER BY` (`F('x').asc(nulls_first=True)`). | ❌ | ❌ | ❌ | Db2 for i rejects `NULLS FIRST` / `NULLS LAST` (SQL0199, probe queries); Django's `ORDER BY x IS NOT NULL, x` emulation is used. |
-| `supports_primitives_in_json_field` | `JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays. | ❌ | ❌ | ❌ | Db2 for i's JSON functions cannot read a root scalar (NULL; probe `json_functions`); it is stored and read back, but key lookups on it give nothing. |
 | `supports_stored_generated_columns` | `GeneratedField(db_persist=True)`, stored generated columns. | ❌ | ❌ | ❌ | `GENERATED ALWAYS AS` takes only special registers (`USER`, ...), `DATA CHANGE OPERATION`, row change timestamps and identities, no expression over other columns (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES). |
 | `supports_tablespaces` | `db_tablespace` on models, fields and indexes. | ❌ | ❌ | ❌ | IBM i has no tablespaces: storage is single-level. `CREATE TABLE ... IN <name>` is accepted and means nothing (probe `phase7_flags`). |
 | `supports_timezones` | Datetimes are stored with their time zone. | ❌ | ❌ | ❌ | Db2 for i has no `TIMESTAMP WITH TIME ZONE`; datetimes are stored in UTC without zone. |

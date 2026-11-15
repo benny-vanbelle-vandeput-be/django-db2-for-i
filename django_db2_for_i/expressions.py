@@ -236,6 +236,7 @@ from django.db.models.expressions import (
 from django.db.models.fields.json import (
     HasKeyLookup,
     HasKeyOrArrayIndex,
+    JSONExact,
     KeyTextTransform,
     KeyTransform,
     KeyTransformExact,
@@ -521,9 +522,15 @@ class TypedNull(Expression):
 
 def _is_untyped_null(expression) -> bool:
     """An expression that compiles to a bare NULL: ``Value(None)`` without an
-    output_field, or a function of only such values (``Coalesce(None, None)``)."""
+    output_field, or a function of only such values (``Coalesce(None, None)``).
+    Not Django 6.1's ``JSONNull()``: a Value(None) with a JSONField of its own,
+    which compiles to JSON ``null``."""
     if isinstance(expression, Value):
-        return expression.value is None and explicit_output_field(expression) is None
+        return (
+            expression.value is None
+            and explicit_output_field(expression) is None
+            and not isinstance(expression._output_field_or_none, JSONField)
+        )
     if isinstance(expression, Func):
         sources = expression.get_source_expressions()
         return bool(sources) and all(_is_untyped_null(source) for source in sources)
@@ -1364,28 +1371,117 @@ def key_transform_exact_as_db2_for_i(self, compiler, connection):
 KeyTransformExact.as_db2_for_i = key_transform_exact_as_db2_for_i
 
 
+def _document(lhs: str) -> tuple[str, str]:
+    """The whole document wrapped in an array, and the path of its value: Db2 for
+    i's JSON functions do not read a scalar at the top level at ``$`` (NULL), but
+    read it as ``$[0]`` of the wrapped text (probe json_primitives)."""
+    return f"('[' CONCAT {lhs} CONCAT ']')", "'$[0]'"
+
+
+def _in_with_null(value_sql, value_params, null_sql, null_params, rhs, rhs_params):
+    """``<value> IN (...)`` whose list may hold JSON null (``"null"``), which
+    JSON_QUERY gives as NULL: that element becomes ``OR <null condition>``."""
+    if rhs.count("%s") != len(rhs_params) or "null" not in rhs_params:
+        return f"{value_sql} IN {_normalized_rhs(rhs, rhs_params)}", (*value_params, *rhs_params)
+    others = tuple(param for param in rhs_params if param != "null")
+    parts, params = [], []
+    if others:
+        listed = "(" + ", ".join(["%s"] * len(others)) + ")"
+        parts.append(f"{value_sql} IN {_normalized_rhs(listed, others)}")
+        params += [*value_params, *others]
+    parts.append(f"({null_sql})")
+    params += null_params
+    return "(" + " OR ".join(parts) + ")", tuple(params)
+
+
 def key_transform_in_as_db2_for_i(self, compiler, connection):
     lhs, lhs_params = self.process_lhs(compiler, connection)
     rhs, rhs_params = self.process_rhs(compiler, connection)
-    return f"{lhs} IN {_normalized_rhs(rhs, rhs_params)}", (*lhs_params, *rhs_params)
+    if not isinstance(self.lhs, KeyTransform):
+        return f"{lhs} IN {_normalized_rhs(rhs, rhs_params)}", (*lhs_params, *rhs_params)
+    has_key = HasKeyOrArrayIndex(self.lhs.lhs, self.lhs.key_name)
+    has_key_sql, has_key_params = has_key.as_db2_for_i(compiler, connection)
+    null_sql = f"CASE WHEN {has_key_sql} THEN 1 END = 1 AND {lhs} IS NULL"
+    return _in_with_null(lhs, lhs_params, null_sql, (*has_key_params, *lhs_params), rhs, rhs_params)
 
 
 KeyTransformIn.as_db2_for_i = key_transform_in_as_db2_for_i
 
 
+def _document_null(lhs: str, lhs_params) -> tuple[str, tuple]:
+    """The whole document is JSON null: it exists, and JSON_QUERY gives NULL."""
+    document, root = _document(lhs)
+    return (
+        f"JSON_EXISTS({document}, {root}) AND JSON_QUERY({document}, {root}) IS NULL",
+        (*lhs_params, *lhs_params),
+    )
+
+
+def json_exact_as_db2_for_i(self, compiler, connection):
+    """``data=<value>`` and ``data=JSONNull()`` on the whole document: both sides
+    as compact JSON text (the document wrapped, so a scalar at the top level is
+    read too); JSON null as "a document whose value JSON_QUERY gives as NULL".
+    Other right-hand sides (expressions) compare the text as Django does."""
+    lhs, lhs_params = self.process_lhs(compiler, connection)
+    rhs, rhs_params = self.process_rhs(compiler, connection)
+    if tuple(rhs_params) == ("null",) and rhs.count("%s") == 1:
+        # None (deprecated in Django 6.1) or JSONNull(), a typed marker then.
+        return _document_null(lhs, lhs_params)
+    if rhs != "%s" or len(rhs_params) != 1 or not isinstance(rhs_params[0], str):
+        return self.as_sql(compiler, connection)
+    document, root = _document(lhs)
+    return (
+        f"JSON_QUERY({document}, {root}) = {_normalized_rhs(rhs, rhs_params)}",
+        (*lhs_params, *rhs_params),
+    )
+
+
+JSONExact.as_db2_for_i = json_exact_as_db2_for_i
+
+
 def json_in_as_db2_for_i(self, compiler, connection):
     """``data__in=[...]`` on the whole document (Django 6.1): both sides as
-    compact JSON text, so whitespace in a stored document does not matter."""
+    compact JSON text, so whitespace in a stored document does not matter; the
+    document wrapped, so a scalar at the top level is read too; JSON null in the
+    list as in ``json_exact_as_db2_for_i``."""
     if isinstance(self.lhs, KeyTransform):
         return key_transform_in_as_db2_for_i(self, compiler, connection)
     lhs, lhs_params = self.process_lhs(compiler, connection)
     rhs, rhs_params = self.process_rhs(compiler, connection)
-    lhs = f"JSON_QUERY({lhs}, '$')"
-    return f"{lhs} IN {_normalized_rhs(rhs, rhs_params)}", (*lhs_params, *rhs_params)
+    document, root = _document(lhs)
+    null_sql, null_params = _document_null(lhs, lhs_params)
+    return _in_with_null(
+        f"JSON_QUERY({document}, {root})", lhs_params, null_sql, null_params, rhs, rhs_params
+    )
+
+
+def _json_in_value_parameter(resolve):
+    """Django 6.1's JSONIn turns a ``Value()`` without a JSON output field into a
+    JSON text parameter but keeps the Value's SQL, here a typed marker
+    (``CAST(? AS BOOLEAN)``), which then gets the JSON text (SQL0420, SQL0802):
+    on this backend the element is a plain marker, which json_in_as_db2_for_i
+    normalizes like any other JSON text."""
+
+    def resolve_expression_parameter(self, compiler, connection, sql, param):
+        sql, params = resolve(self, compiler, connection, sql, param)
+        if (
+            connection.vendor == "db2_for_i"
+            and isinstance(param, Value)
+            and not isinstance(param._output_field_or_none, JSONField)
+            and len(params) == 1
+            and isinstance(params[0], str)
+        ):
+            return "%s", params
+        return sql, params
+
+    return resolve_expression_parameter
 
 
 if JSONIn is not None:
     JSONIn.as_db2_for_i = json_in_as_db2_for_i
+    JSONIn.resolve_expression_parameter = _json_in_value_parameter(
+        JSONIn.resolve_expression_parameter
+    )
 
 
 def _is_number(value) -> bool:

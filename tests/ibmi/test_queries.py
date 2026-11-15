@@ -723,6 +723,59 @@ def test_json_field_saved_read_and_filtered(live, empty) -> None:
     assert [(g["data__meta__ok"], g["count"]) for g in grouped] == [(False, 1), (True, 1)]
 
 
+def test_json_field_scalars_at_the_top_level(live, empty) -> None:
+    """supports_primitives_in_json_field: a number, a decimal, a string, true,
+    false and JSON null as the whole document, beside an object, an array and SQL
+    NULL; saved and read back as model instances, filtered by the whole document
+    (wrapped in an array, read at $[0]: probe json_primitives), JSON null apart
+    from SQL NULL, and key lookups that find nothing below a scalar."""
+    from django.db.models import Value
+
+    try:  # Django 6.1+
+        from django.db.models import JSONNull
+    except ImportError:
+        JSONNull = None
+
+    docs = {
+        "int": 42,
+        "dec": 1.5,
+        "text": "téxt 😀",
+        "true": True,
+        "false": False,
+        "object": {"a": 1, "b": [1, "x"]},
+        "array": [10, 20],
+    }
+    for name, data in docs.items():
+        JSONDoc.objects.create(name=name, data=data)
+    JSONDoc.objects.create(name="json null", data=Value(None, JSONDoc._meta.get_field("data")))
+    JSONDoc.objects.create(name="sql null", data=None)
+    objects = JSONDoc.objects
+
+    def names(queryset):
+        return sorted(queryset.values_list("name", flat=True))
+
+    assert {d.name: d.data for d in objects.filter(name__in=docs)} == docs
+    assert names(objects.filter(data=42)) == ["int"]
+    assert names(objects.filter(data=1.5)) == ["dec"]
+    assert names(objects.filter(data="téxt 😀")) == ["text"]
+    assert names(objects.filter(data=True)) == ["true"]
+    assert names(objects.filter(data=False)) == ["false"]
+    assert names(objects.filter(data={"a": 1, "b": [1, "x"]})) == ["object"]
+    assert names(objects.filter(data=[10, 20])) == ["array"]
+    assert names(objects.filter(data__isnull=True)) == ["sql null"]
+    assert names(objects.filter(data__a=1)) == ["object"]
+    assert names(objects.filter(data__has_key="a")) == ["object"]
+    assert names(objects.filter(data__0=10)) == ["array"]
+    if JSONNull is not None:
+        assert names(objects.filter(data=JSONNull())) == ["json null"]
+        assert names(objects.filter(data__in=[42, "téxt 😀", JSONNull()])) == [
+            "int",
+            "json null",
+            "text",
+        ]
+        assert names(objects.filter(data__a__in=[1, JSONNull()])) == ["object"]
+
+
 def test_a_decimal_value_wider_than_its_field_comes_back_exact(live, empty) -> None:
     """#95: Value(Decimal) with more digits than its DecimalField keeps its own
     DECIMAL(p, s); the field's would be refused by the driver (probe decimal_values)."""

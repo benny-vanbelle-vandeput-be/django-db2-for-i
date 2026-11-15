@@ -283,41 +283,59 @@ def test_long_text_and_binary_round_trip(live, empty, text) -> None:
     assert bytes(document.data) == data
 
 
-def test_non_ascii_comments(live) -> None:
-    """COMMENT ON through Django's path (quote_value: a plain '...' constant).
-
-    supports_comments stays off; this checks the statements the flag would emit.
-    Characters of the job CCSID (273 on PUB400) work, quotes included. Others
-    (euro sign, emoji) make the constant a graphic one, which COMMENT ON
-    rejects (SQL0104, docs/IBMI_NOTES.md).
+def test_comments(live) -> None:
+    """supports_comments: db_table_comment and db_comment as COMMENT ON with a plain
+    constant (a quote doubled), read back through introspection (inspectdb's
+    source), removed again with ''. Text outside printable ASCII is refused
+    before any SQL (schema.comment_text, decision 2026-11-15): through the
+    backend's UTF-8 statement text, COMMENT ON refuses a character outside the
+    job CCSID (SQL0104), and from UTF-16 statement text it replaces it without
+    an error (probe comment_unicode). A comment of 2000 characters, the
+    catalog's LONG_COMMENT length, is stored whole; one more is refused.
     """
-    import django.db
+    from django.db import DatabaseError, NotSupportedError
 
-    table = Document._meta.db_table.upper()  # catalog names are upper case
-    with pytest.MonkeyPatch.context() as patch:
-        patch.setattr(live.features, "supports_comments", True)
+    table = Document._meta.db_table
+    field = Document._meta.get_field("text")
+
+    def comments():
+        with live.cursor() as cursor:
+            tables = {t.name: t.comment for t in live.introspection.get_table_list(cursor)}
+            columns = {
+                c.name: c.comment for c in live.introspection.get_table_description(cursor, table)
+            }
+        return tables[table], columns["text"]
+
+    def set_column(comment):
         with live.schema_editor() as editor:
-            editor.alter_db_table_comment(Document, None, "Grüße, O'Brien")
-            field = Document._meta.get_field("text")
-            editor.execute(editor._alter_column_comment_sql(Document, field, None, "Ä Ö Ü ß é")[0])
+            editor.execute(editor._alter_column_comment_sql(Document, field, None, comment)[0])
+
+    with live.schema_editor() as editor:
+        editor.alter_db_table_comment(Document, None, "Documents, O'Brien's")
+    set_column("Body text (max 1M)")
+    assert comments() == ("Documents, O'Brien's", "Body text (max 1M)")
+
+    for text in ("Grüße", "Price in €", "Smile \U0001f600", "tab\there"):
         with (
-            pytest.raises(django.db.ProgrammingError, match="SQL0104"),
+            pytest.raises(NotSupportedError, match="outside printable ASCII"),
             live.schema_editor() as editor,
         ):
-            editor.alter_db_table_comment(Document, None, "Grüße €")
-    with live.cursor() as cursor:
-        cursor.execute(
-            "SELECT LONG_COMMENT FROM QSYS2.SYSTABLES "
-            "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s",
-            [table],
-        )
-        assert cursor.fetchone() == ("Grüße, O'Brien",)
-        cursor.execute(
-            "SELECT LONG_COMMENT FROM QSYS2.SYSCOLUMNS "
-            "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s AND COLUMN_NAME = 'TEXT'",
-            [table],
-        )
-        assert cursor.fetchone() == ("Ä Ö Ü ß é",)
+            editor.alter_db_table_comment(Document, None, text)
+        with pytest.raises(NotSupportedError, match="outside printable ASCII"):
+            set_column(text)
+    assert comments() == ("Documents, O'Brien's", "Body text (max 1M)")
+
+    long = "x" * 1999 + "y"
+    with live.schema_editor() as editor:
+        editor.alter_db_table_comment(Document, None, long)
+    assert comments()[0] == long
+    with pytest.raises(DatabaseError), live.schema_editor() as editor:
+        editor.alter_db_table_comment(Document, None, long + "z")
+
+    with live.schema_editor() as editor:
+        editor.alter_db_table_comment(Document, None, None)
+    set_column(None)
+    assert comments() in [(None, None), ("", ""), (None, ""), ("", None)]
 
 
 # --- Identity reset and flush -----------------------------------------------------
