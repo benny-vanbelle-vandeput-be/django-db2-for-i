@@ -32,6 +32,10 @@ REASON_PENDING_ROW_CHANGES = (
     "in the same transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in "
     "the transaction (SQL0910)"
 )
+REASON_ROWS_THEN_ALTER = (
+    "the test inserts rows and then alters the same table in one transaction; Db2 for i "
+    "refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910)"
+)
 REASON_NO_COLUMN_RENAME = "Db2 for i has no statement to rename a column (IBM i 7.5 and 7.6)"
 REASON_POSTGRESQL_LIKE_INDEXES = (
     "the test counts PostgreSQL's deferred LIKE indexes; Db2 for i writes UNIQUE in the "
@@ -480,6 +484,10 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "migrations.test_operations.OperationTests.test_alter_field_change_blank_nullable_database_default_to_not_null",
             "migrations.test_operations.OperationTests.test_alter_field_change_nullable_to_database_default_not_null",
             "migrations.test_operations.OperationTests.test_alter_field_change_nullable_to_decimal_database_default_not_null",
+        },
+        # create_model, Author.objects.create(), then add_field in one schema_editor.
+        REASON_ROWS_THEN_ALTER: {
+            "schema.tests.SchemaTests.test_add_db_comment_and_default_charfield",
         },
         # RenameField / a new db_column: NotSupportedError (schema.py).
         REASON_NO_COLUMN_RENAME: {

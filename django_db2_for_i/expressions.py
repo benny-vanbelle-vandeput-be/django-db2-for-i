@@ -522,9 +522,15 @@ class TypedNull(Expression):
 
 def _is_untyped_null(expression) -> bool:
     """An expression that compiles to a bare NULL: ``Value(None)`` without an
-    output_field, or a function of only such values (``Coalesce(None, None)``)."""
+    output_field, or a function of only such values (``Coalesce(None, None)``).
+    Not Django 6.1's ``JSONNull()``: a Value(None) with a JSONField of its own,
+    which compiles to JSON ``null``."""
     if isinstance(expression, Value):
-        return expression.value is None and explicit_output_field(expression) is None
+        return (
+            expression.value is None
+            and explicit_output_field(expression) is None
+            and not isinstance(expression._output_field_or_none, JSONField)
+        )
     if isinstance(expression, Func):
         sources = expression.get_source_expressions()
         return bool(sources) and all(_is_untyped_null(source) for source in sources)
@@ -1449,8 +1455,33 @@ def json_in_as_db2_for_i(self, compiler, connection):
     )
 
 
+def _json_in_value_parameter(resolve):
+    """Django 6.1's JSONIn turns a ``Value()`` without a JSON output field into a
+    JSON text parameter but keeps the Value's SQL, here a typed marker
+    (``CAST(? AS BOOLEAN)``), which then gets the JSON text (SQL0420, SQL0802):
+    on this backend the element is a plain marker, which json_in_as_db2_for_i
+    normalizes like any other JSON text."""
+
+    def resolve_expression_parameter(self, compiler, connection, sql, param):
+        sql, params = resolve(self, compiler, connection, sql, param)
+        if (
+            connection.vendor == "db2_for_i"
+            and isinstance(param, Value)
+            and not isinstance(param._output_field_or_none, JSONField)
+            and len(params) == 1
+            and isinstance(params[0], str)
+        ):
+            return "%s", params
+        return sql, params
+
+    return resolve_expression_parameter
+
+
 if JSONIn is not None:
     JSONIn.as_db2_for_i = json_in_as_db2_for_i
+    JSONIn.resolve_expression_parameter = _json_in_value_parameter(
+        JSONIn.resolve_expression_parameter
+    )
 
 
 def _is_number(value) -> bool:

@@ -66,6 +66,8 @@ JSON_NULL_CASES = (
         ("exact_json_null", lambda: JSONDoc.objects.filter(data=JSONNull())),
         ("in_json_null", lambda: JSONDoc.objects.filter(data__in=["x", JSONNull()])),
         ("key_in_json_null", lambda: JSONDoc.objects.filter(data__n__in=[3, JSONNull()])),
+        # A Value() without a JSON output field: its JSON text, a plain marker.
+        ("in_values", lambda: JSONDoc.objects.filter(data__in=[Value(7), Value(True)])),
     )
     if JSONNull is not None
     else (("exact_json_null", lambda: JSONDoc.objects.filter(data=None)),)
