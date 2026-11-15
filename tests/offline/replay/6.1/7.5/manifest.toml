@@ -213,17 +213,17 @@ unpicklable = 0
 volatile = 0
 
 [modules.model_fields]
-captured = "2026-11-14"
+captured = "2026-11-15"
 level = "IBM i 7.5 on PUB400 (TR unknown, Db2 PTF Group unknown), Django 6.1.3.dev20261012092145"
 needs_database = 0
 no_sql = 0
-not_compiled = 5
+not_compiled = 9
 pickle_format = 2
-recorded = 226
+recorded = 514
 unencodable = 0
-unique = 210
+unique = 279
 unpicklable = 0
-volatile = 0
+volatile = 4
 
 [modules.ordering]
 captured = "2026-11-14"
