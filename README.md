@@ -223,6 +223,8 @@ requires Django 6.0 or later. The full list, with workarounds:
 - User documentation: [`docs/user/`](docs/user/Home.md), also published as the
   [wiki](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/wiki)
   (a generated mirror; edit `docs/user/`, never the wiki).
+- How it compares with IBM's `ibm_db_django`:
+  [Comparison with ibm_db_django](docs/user/Comparison-with-ibm_db_django.md).
 - Project history and plans: one record per phase in
   [`docs/phases/`](docs/phases/README.md); [CHANGELOG](CHANGELOG.md).
 - Developer notes: [decisions](docs/DECISIONS.md), [IBM i findings](docs/IBMI_NOTES.md),

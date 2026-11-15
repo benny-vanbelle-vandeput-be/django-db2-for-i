@@ -28,6 +28,7 @@ DATABASES = {"default": {"ENGINE": "django_db2_for_i", ...}}
 - [IBM i requirements](IBM-i-Requirements.md): journaling, authorities
 - [Known limitations](Known-Limitations.md)
 - [Troubleshooting](Troubleshooting.md): errors by SQLCODE
+- [Comparison with ibm_db_django](Comparison-with-ibm_db_django.md): IBM's Db2 backend, feature by feature
 
 ## Supported versions
 
