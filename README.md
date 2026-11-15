@@ -229,7 +229,8 @@ requires Django 6.0 or later. The full list, with workarounds:
   [`docs/phases/`](docs/phases/README.md); [CHANGELOG](CHANGELOG.md).
 - Developer notes: [decisions](docs/DECISIONS.md), [IBM i findings](docs/IBMI_NOTES.md),
   [Django versions](docs/DJANGO_VERSIONS.md), [test status](docs/TEST_STATUS.md),
-  [feature flags](docs/FEATURES.md), [offline query corpus](docs/REPLAY_TESTS.md).
+  [feature flags](docs/FEATURES.md), [offline query corpus](docs/REPLAY_TESTS.md),
+  [release history](docs/RELEASE_HISTORY.md) (flags and test results per release).
 
 ## Related projects
 
