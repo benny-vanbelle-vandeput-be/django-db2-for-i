@@ -16,7 +16,8 @@
 #   complete status run that passed, and the backend is unchanged since.
 # Then, on a new branch chore/release-<version>: commits the corpus, sets
 # __version__, assembles the CHANGELOG (scripts/assemble_changelog.py),
-# regenerates the status pages and FEATURES.md (nox -s test_status features),
+# regenerates the status pages, FEATURES.md and RELEASE_HISTORY.md
+# (nox -s test_status features release_history),
 # runs bin/check, commits, pushes the branch and opens the release pull
 # request. Needs no .env and never connects to an IBM i.
 #
@@ -76,7 +77,7 @@ run sed -i.bak "s/^__version__ = \".*\"$/__version__ = \"$version\"/" "$ROOT/dja
 run rm -f "$ROOT/django_db2_for_i/__init__.py.bak"
 container uv run --no-project python scripts/assemble_changelog.py release "$version" \
     || die "assembling the CHANGELOG failed; branch $branch is left for inspection"
-container nox -s test_status features || die "regenerating the status pages failed; branch $branch left"
+container nox -s test_status features release_history || die "regenerating the status pages failed; branch $branch left"
 run git -C "$ROOT" add -- django_db2_for_i/__init__.py CHANGELOG.md changelog.d README.md docs
 if [ "$DRY_RUN" = 0 ]; then
     # Staged entries ("M  path": a space in column 2) are the release commit;

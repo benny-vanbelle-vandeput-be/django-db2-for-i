@@ -380,7 +380,7 @@ def test_check_takes_the_combinations_from_the_noxfile(tmp_path) -> None:
 @needs_bin
 def test_status_regenerates_then_shows_the_lock(tmp_path) -> None:
     lines = run_bin(str(BIN / "status"), "--dry-run", tmp_path=tmp_path).stdout.splitlines()
-    assert lines[0].endswith("tests nox -s test_status features")
+    assert lines[0].endswith("tests nox -s test_status features release_history")
     assert lines[1].endswith("scripts/pub400_lock.py --status")
     only = run_bin(str(BIN / "status"), "--dry-run", "--no-write", tmp_path=tmp_path)
     assert "test_status" not in only.stdout
