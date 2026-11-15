@@ -38,6 +38,14 @@ DATABASES = {"default": {"ENGINE": "django_db2_for_i", ...}}
 | IBM i | 7.5 and later |
 | Driver | pyodbc 5.3+ with the IBM i Access ODBC Driver |
 
+## Related projects
+
+- [django-db2-for-i-triggers](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i-triggers):
+  database triggers for Django models on Db2 for i, declared in
+  `Meta.triggers` and installed with migrations, in the style of
+  [django-pgtrigger](https://django-pgtrigger.readthedocs.io/). It uses this
+  backend. In early development: nothing released yet.
+
 These pages are generated from `docs/user/` in the
 [repository](https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i);
 the wiki is a read-only mirror.
