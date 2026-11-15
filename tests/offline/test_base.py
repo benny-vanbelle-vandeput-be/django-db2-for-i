@@ -397,10 +397,10 @@ def test_table_list_leaves_out_system_catalog_views() -> None:
             executed.append(sql)
 
         def fetchall(self):
-            return [("TESTAPP_AUTHOR", "T")]
+            return [("TESTAPP_AUTHOR", "T", "Authors")]
 
     tables = make_wrapper().introspection.get_table_list(Cursor())
-    assert [t.name for t in tables] == ["testapp_author"]
+    assert [(t.name, t.type, t.comment) for t in tables] == [("testapp_author", "t", "Authors")]
     assert "SYSTEM_TABLE = 'N'" in executed[0]
 
 

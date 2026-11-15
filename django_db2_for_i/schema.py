@@ -60,6 +60,42 @@ def string_literal(value: str) -> str:
     return f"UX'{value.encode('utf-16-be').hex().upper()}'"
 
 
+def comment_text(text: str | None, owner: str) -> str:
+    """The text of a ``COMMENT ON`` for ``owner`` (``"table 'app_model'"``, ...);
+    NotSupportedError, before any SQL, when it has a character outside printable
+    ASCII.
+
+    ``COMMENT ON`` takes only a plain string constant and keeps only characters of
+    the job CCSID: others are replaced without an error (``€`` by a substitute
+    character, an emoji by ``=``; probe ``comment_unicode``, docs/IBMI_NOTES.md).
+    Printable ASCII is stored unchanged on every job CCSID, so a migration behaves
+    the same on every IBM i (decision 2026-11-15, docs/DECISIONS.md).
+    """
+    text = text or ""
+    if not all(" " <= char <= "~" for char in text):
+        others = "".join(sorted({char for char in text if not " " <= char <= "~"}))
+        raise NotSupportedError(
+            f"The comment {text!r} of {owner} has characters outside printable ASCII "
+            f"({others!r}). Db2 for i would replace them without an error, so the "
+            "Db2 for i backend accepts only printable ASCII in db_comment and "
+            "db_table_comment."
+        )
+    return text
+
+
+def only_the_comment_changes(old_field, new_field) -> bool:
+    """Whether ``db_comment`` is the only difference between two fields."""
+    if old_field.db_comment == new_field.db_comment or old_field.column != new_field.column:
+        return False
+    if old_field.many_to_many or new_field.many_to_many:
+        return False
+    _, old_path, old_args, old_kwargs = old_field.deconstruct()
+    _, new_path, new_args, new_kwargs = new_field.deconstruct()
+    old_kwargs.pop("db_comment", None)
+    new_kwargs.pop("db_comment", None)
+    return (old_path, old_args, old_kwargs) == (new_path, new_args, new_kwargs)
+
+
 def default_literal(value) -> str:
     """The SQL constant for a column DEFAULT; NotSupportedError without a rule.
 
@@ -685,6 +721,13 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             )
         if old_type and new_type and old_field.column and not self.collect_sql:
             self._refuse_changed_values(model, old_field, new_field, old_type, new_type)
+        if only_the_comment_changes(old_field, new_field):
+            # Django would also write ALTER COLUMN ... SET DATA TYPE with the same
+            # type: on IBM i a change of the table for nothing.
+            self.execute(
+                *self._alter_column_comment_sql(model, new_field, new_type, new_field.db_comment)
+            )
+            return None
         with self._field_change(), self._lob_without_db_index(old_field, new_field):
             return super().alter_field(model, old_field, new_field, strict=strict)
 
@@ -811,6 +854,17 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             raise ValueError(
                 f"Cannot quote parameter value {value!r} of type {type(value)}"
             ) from None
+
+    def alter_db_table_comment(self, model, old_db_table_comment, new_db_table_comment):
+        comment_text(new_db_table_comment, f"table {model._meta.db_table!r}")
+        super().alter_db_table_comment(model, old_db_table_comment, new_db_table_comment)
+
+    def _alter_column_comment_sql(self, model, new_field, new_type, new_db_comment):
+        comment_text(new_db_comment, f"column {model._meta.db_table}.{new_field.column}")
+        return super()._alter_column_comment_sql(model, new_field, new_type, new_db_comment)
+
+    def _comment_sql(self, comment):
+        return self.quote_value(comment_text(comment, "a column"))
 
     def prepare_default(self, value) -> str:
         """The literal for a DEFAULT clause; ``None`` means no default.

@@ -141,8 +141,7 @@ can_create_inline_fk.description = "A foreign key column added by a migration ge
 can_defer_constraint_checks.description = "Constraint checks can be deferred to the end of the transaction."
 can_defer_constraint_checks.off = "Db2 for i checks constraints per statement; nothing is deferrable."
 supports_combined_alters.description = "Several column changes are written as one `ALTER TABLE` statement."
-supports_comments.description = "`db_comment` and `db_table_comment` are stored as column and table comments."
-supports_comments.off = "`COMMENT ON` stores only text in the job CCSID: other characters are refused (SQL0104, the backend's UTF-8 statement text) or replaced without an error (UTF-16 statement text), and a Unicode constant or a parameter marker is refused (probe `comment_unicode`, decision 2026-10-26)."
+supports_comments.description = "`db_comment` and `db_table_comment` are stored as column and table comments (on Db2 for i printable ASCII only; other text raises `NotSupportedError`)."
 supports_expression_defaults.description = "`db_default` can be an expression, not only a constant."
 supports_expression_defaults.off = "A column `DEFAULT` on Db2 for i takes only a constant or a special register: `1 + 1` and `CURRENT_TIMESTAMP + 1 DAY` are SQL0104, a function SQL0574 (probe `flag_review`)."
 supports_index_on_text_field.description = "Indexes on `TextField` columns."
@@ -160,7 +159,7 @@ supports_collation_on_charfield.off = "Db2 for i takes no `COLLATE` clause on a 
 supports_collation_on_textfield.description = "`TextField(db_collation=...)`."
 supports_collation_on_textfield.off = "Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES)."
 supports_comments_inline.description = "Column comments are written in the `ADD COLUMN` statement itself."
-supports_comments_inline.off = "Column comments are off (`supports_comments`, decision 2026-10-26), so inline comments are too."
+supports_comments_inline.off = "Not needed: Django writes a separate `COMMENT ON COLUMN` after the `ADD COLUMN`, with the same result; a comment clause in `ADD COLUMN` was not tried."
 supports_non_deterministic_collations.description = "Non-deterministic (for example case-insensitive) collations in `db_collation`."
 supports_non_deterministic_collations.off = "Db2 for i takes no `COLLATE` clause on a column (SQL0104, probe `qtemp_later_flags`, IBMI_NOTES)."
 supports_stored_generated_columns.description = "`GeneratedField(db_persist=True)`, stored generated columns."
@@ -219,7 +218,6 @@ supports_on_delete_db_default.description = "`on_delete=DB_SET_DEFAULT` (Django 
 supports_on_delete_db_null.description = "`on_delete=DB_SET_NULL` (Django 6.1+)."
 supports_over_clause.description = "Window functions (`Window`, `OVER (...)`)."
 supports_primitives_in_json_field.description = "`JSONField` holds a plain number, string or boolean at the top level, not only objects and arrays."
-supports_primitives_in_json_field.off = "Db2 for i's JSON functions cannot read a root scalar (NULL; probe `json_functions`); it is stored and read back, but key lookups on it give nothing."
 
 # --- Not applicable ---------------------------------------------------------
 

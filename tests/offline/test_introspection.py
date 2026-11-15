@@ -251,6 +251,7 @@ def description_row(**values) -> tuple:
         "nullable": "N",
         "default": None,
         "identity": "NO ",
+        "comment": None,
     } | values
     return tuple(row.values())
 
@@ -258,7 +259,8 @@ def description_row(**values) -> tuple:
 def test_table_description_of_a_missing_table_raises() -> None:
     sql = (
         "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, LENGTH, "
-        "NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT, IS_IDENTITY "
+        "NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT, IS_IDENTITY, "
+        "LONG_COMMENT "
         "FROM QSYS2.SYSCOLUMNS "
         "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s "
         "ORDER BY ORDINAL_POSITION"
@@ -271,7 +273,8 @@ def test_table_description_of_a_missing_table_raises() -> None:
 def test_table_description() -> None:
     sql = (
         "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, LENGTH, "
-        "NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT, IS_IDENTITY "
+        "NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE, COLUMN_DEFAULT, IS_IDENTITY, "
+        "LONG_COMMENT "
         "FROM QSYS2.SYSCOLUMNS "
         "WHERE TABLE_SCHEMA = CURRENT SCHEMA AND TABLE_NAME = %s "
         "ORDER BY ORDINAL_POSITION"
@@ -289,7 +292,7 @@ def test_table_description() -> None:
                     scale=None,
                     default="'it''s'",
                 ),
-                description_row(name="PAGES", nullable="Y", default="NULL"),
+                description_row(name="PAGES", nullable="Y", default="NULL", comment="Pages"),
             ]
         }
     )
@@ -301,10 +304,10 @@ def test_table_description() -> None:
         ("title", "VARG", 200, 200),
         ("pages", "INTEGER", None, 4),
     ]
-    assert [(r.null_ok, r.default, r.is_autofield) for r in rows] == [
-        (False, None, True),
-        (False, "'it''s'", False),
-        (True, "NULL", False),
+    assert [(r.null_ok, r.default, r.is_autofield, r.comment) for r in rows] == [
+        (False, None, True, None),
+        (False, "'it''s'", False, None),
+        (True, "NULL", False, "Pages"),
     ]
     assert [introspection_.get_field_type(r.type_code, r) for r in rows] == [
         "AutoField",
