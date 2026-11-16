@@ -18,6 +18,24 @@ The full list of changes is in the
    `python manage.py migrate` as usual. Optional: run the smoke set against
    your IBM i ([Check your own IBM i](Installation.md#check-your-own-ibm-i)).
 
+## 0.1.0b5 (2026-11-16)
+
+- **Comments are stored now:** `db_comment` and `db_table_comment` become
+  `COMMENT ON COLUMN` / `COMMENT ON TABLE` in migrations, and introspection
+  and `inspectdb` read them back. Before, the backend ignored them. No new
+  migration is needed. A comment is written when a migration creates the
+  table or field, or changes the comment, so tables that already exist keep
+  no comment until then.
+- **Only printable ASCII in a comment.** Any other character (an accent, €,
+  an emoji) raises `NotSupportedError` before the migration changes anything,
+  and `manage.py check` reports it as `django_db2_for_i.E006`. Change such a
+  comment to plain ASCII before you upgrade. See
+  [Known limitations](Known-Limitations.md#comments).
+- **A `JSONField` whose whole value is a number, a string, `true`, `false`
+  or JSON null** is now found by `=`, `__in` and (Django 6.1) `JSONNull()`.
+  Before, such rows were stored and read back, but these lookups did not
+  match them, so a query may now return rows it did not return before.
+
 ## 0.1.0b4 (2026-11-14)
 
 - **New warning in migrations: `RecordFormatChanged` (`django_db2_for_i.W003`).**
