@@ -56,6 +56,11 @@ version = "6.2"
 state = "planned"
 
 [[releases]]
+tag = "v0.1.0b5"
+date = "2026-11-16"
+summary = "Comments (`db_comment`, `db_table_comment`, printable ASCII only) and JSON scalars at the top level of a `JSONField` (status runs on 5.2, 6.0 and 6.1, 41 runs each, 0 failed)."
+
+[[releases]]
 tag = "v0.1.0b4"
 date = "2026-11-14"
 summary = "Phase 7: system names, tables in another library, select_for_update, Python 3.15, the flags Db2 for i supports, column rename by copying (opt-in) (status runs on 5.2, 6.0 and 6.1, 41 runs each, 0 failed)."

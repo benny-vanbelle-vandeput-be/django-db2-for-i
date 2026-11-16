@@ -34,10 +34,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3747 | 2 | 0 | 0 | 2026-11-16 08:56:54 UTC |
+| Offline tests | 3747 | 2 | 0 | 0 | 2026-11-16 09:11:30 UTC |
 | IBM i tests | 462 | 2 | 1 | 0 | 2026-11-16 08:41:05 UTC |
 | Django suite on IBM i | 3509 | 246 | 72 | 0 | 2026-11-16 08:11:07 UTC |
-| Replay tests | 6245 | 1 | 0 | 0 | 2026-11-16 08:57:56 UTC |
+| Replay tests | 6245 | 1 | 0 | 0 | 2026-11-16 09:12:30 UTC |
 
 ### Django 6.0 ✅
 
@@ -48,10 +48,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3743 | 3 | 0 | 0 | 2026-11-16 08:50:01 UTC |
+| Offline tests | 3743 | 3 | 0 | 0 | 2026-11-16 09:06:18 UTC |
 | IBM i tests | 457 | 4 | 1 | 0 | 2026-11-16 05:43:50 UTC |
 | Django suite on IBM i | 3355 | 227 | 73 | 0 | 2026-11-16 05:14:55 UTC |
-| Replay tests | 6096 | 1 | 0 | 0 | 2026-11-16 08:50:49 UTC |
+| Replay tests | 6096 | 1 | 0 | 0 | 2026-11-16 09:06:57 UTC |
 
 ### Django 5.2 ✅
 
@@ -62,10 +62,10 @@ A Django database backend for **Db2 for IBM i** (AS/400, iSeries).
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3740 | 3 | 0 | 0 | 2026-11-16 08:45:36 UTC |
+| Offline tests | 3740 | 3 | 0 | 0 | 2026-11-16 09:02:01 UTC |
 | IBM i tests | 450 | 8 | 1 | 0 | 2026-11-16 02:59:33 UTC |
 | Django suite on IBM i | 3276 | 219 | 73 | 0 | 2026-11-16 02:31:12 UTC |
-| Replay tests | 5904 | 1 | 0 | 0 | 2026-11-16 08:46:24 UTC |
+| Replay tests | 5904 | 1 | 0 | 0 | 2026-11-16 09:02:39 UTC |
 
 ### About the tests
 
@@ -120,7 +120,7 @@ Feature flags: [docs/FEATURES.md](docs/FEATURES.md) (79 enabled on Django 6.1) �
 | [7](docs/phases/phase-7.md) | Polish and beta 4, then 1.0.0 | in progress |
 | [8](docs/phases/phase-8.md) | On a dedicated IBM i (starts when the system is available) | planned |
 
-Latest release: **`v0.1.0b4`** (2026-11-14): Phase 7: system names, tables in another library, select_for_update, Python 3.15, the flags Db2 for i supports, column rename by copying (opt-in) (status runs on 5.2, 6.0 and 6.1, 41 runs each, 0 failed). ([CHANGELOG](CHANGELOG.md))
+Latest release: **`v0.1.0b5`** (2026-11-16): Comments (`db_comment`, `db_table_comment`, printable ASCII only) and JSON scalars at the top level of a `JSONField` (status runs on 5.2, 6.0 and 6.1, 41 runs each, 0 failed). ([CHANGELOG](CHANGELOG.md))
 
 Open tracks:
 
@@ -173,7 +173,7 @@ Releases are published as
 from signed tags, not on PyPI. Install one from its tag:
 
 ```sh
-pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0b4"
+pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0b5"
 ```
 
 Details, and the first steps after installing (a journaled library, the

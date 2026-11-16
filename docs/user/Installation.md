@@ -22,7 +22,7 @@
 A release (replace the version with the one you want):
 
 ```sh
-pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0b4"
+pip install "django-db2-for-i @ git+https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i.git@v0.1.0b5"
 ```
 
 The latest development state (unreleased, may break):

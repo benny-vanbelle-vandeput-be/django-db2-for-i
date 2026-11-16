@@ -111,6 +111,8 @@ Switched on (11): `can_create_inline_fk`, `has_select_for_update`, `has_select_f
 
 ### v0.1.0b5 (2026-11-16): 79 on
 
+Comments (`db_comment`, `db_table_comment`, printable ASCII only) and JSON scalars at the top level of a `JSONField` (status runs on 5.2, 6.0 and 6.1, 41 runs each, 0 failed).
+
 Switched on (2): `supports_comments`, `supports_primitives_in_json_field`.
 
 ## Django suite on IBM i per release

@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3747 | 2 | 0 | 0 | 2026-11-16 08:56:54 UTC |
+| Offline tests | 3747 | 2 | 0 | 0 | 2026-11-16 09:11:30 UTC |
 | IBM i tests | 462 | 2 | 1 | 0 | 2026-11-16 08:41:05 UTC |
 | Django suite on IBM i | 3509 | 246 | 72 | 0 | 2026-11-16 08:11:07 UTC |
-| Replay tests | 6245 | 1 | 0 | 0 | 2026-11-16 08:57:56 UTC |
+| Replay tests | 6245 | 1 | 0 | 0 | 2026-11-16 09:12:30 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3743 | 3 | 0 | 0 | 2026-11-16 08:50:01 UTC |
+| Offline tests | 3743 | 3 | 0 | 0 | 2026-11-16 09:06:18 UTC |
 | IBM i tests | 457 | 4 | 1 | 0 | 2026-11-16 05:43:50 UTC |
 | Django suite on IBM i | 3355 | 227 | 73 | 0 | 2026-11-16 05:14:55 UTC |
-| Replay tests | 6096 | 1 | 0 | 0 | 2026-11-16 08:50:49 UTC |
+| Replay tests | 6096 | 1 | 0 | 0 | 2026-11-16 09:06:57 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3740 | 3 | 0 | 0 | 2026-11-16 08:45:36 UTC |
+| Offline tests | 3740 | 3 | 0 | 0 | 2026-11-16 09:02:01 UTC |
 | IBM i tests | 450 | 8 | 1 | 0 | 2026-11-16 02:59:33 UTC |
 | Django suite on IBM i | 3276 | 219 | 73 | 0 | 2026-11-16 02:31:12 UTC |
-| Replay tests | 5904 | 1 | 0 | 0 | 2026-11-16 08:46:24 UTC |
+| Replay tests | 5904 | 1 | 0 | 0 | 2026-11-16 09:02:39 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
