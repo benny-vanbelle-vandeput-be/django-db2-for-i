@@ -12,10 +12,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3654 | 2 | 0 | 0 | 2026-11-14 18:50:34 UTC |
-| IBM i tests | 452 | 2 | 1 | 0 | 2026-11-14 17:20:04 UTC |
-| Django suite on IBM i | 3475 | 281 | 71 | 0 | 2026-11-14 16:51:11 UTC |
-| Replay tests | 6193 | 1 | 0 | 0 | 2026-11-14 18:52:45 UTC |
+| Offline tests | 3747 | 2 | 0 | 0 | 2026-11-16 08:56:54 UTC |
+| IBM i tests | 462 | 2 | 1 | 0 | 2026-11-16 08:41:05 UTC |
+| Django suite on IBM i | 3509 | 246 | 72 | 0 | 2026-11-16 08:11:07 UTC |
+| Replay tests | 6245 | 1 | 0 | 0 | 2026-11-16 08:57:56 UTC |
 
 ## Django 6.0 ✅
 
@@ -26,10 +26,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3653 | 3 | 0 | 0 | 2026-11-14 18:44:20 UTC |
-| IBM i tests | 450 | 4 | 1 | 0 | 2026-11-14 14:25:17 UTC |
-| Django suite on IBM i | 3344 | 239 | 72 | 0 | 2026-11-14 13:56:23 UTC |
-| Replay tests | 6073 | 1 | 0 | 0 | 2026-11-14 18:45:07 UTC |
+| Offline tests | 3743 | 3 | 0 | 0 | 2026-11-16 08:50:01 UTC |
+| IBM i tests | 457 | 4 | 1 | 0 | 2026-11-16 05:43:50 UTC |
+| Django suite on IBM i | 3355 | 227 | 73 | 0 | 2026-11-16 05:14:55 UTC |
+| Replay tests | 6096 | 1 | 0 | 0 | 2026-11-16 08:50:49 UTC |
 
 ## Django 5.2 ✅
 
@@ -40,10 +40,10 @@ summaries in `test-results/`. Do not edit by hand.
 
 | Test set | Passed | Skipped | Expected failures | Failed | Last run |
 |---|---|---|---|---|---|
-| Offline tests | 3650 | 3 | 0 | 0 | 2026-11-14 18:39:55 UTC |
-| IBM i tests | 443 | 8 | 1 | 0 | 2026-11-14 11:32:06 UTC |
-| Django suite on IBM i | 3265 | 231 | 72 | 0 | 2026-11-14 11:03:41 UTC |
-| Replay tests | 5881 | 1 | 0 | 0 | 2026-11-14 18:40:38 UTC |
+| Offline tests | 3740 | 3 | 0 | 0 | 2026-11-16 08:45:36 UTC |
+| IBM i tests | 450 | 8 | 1 | 0 | 2026-11-16 02:59:33 UTC |
+| Django suite on IBM i | 3276 | 219 | 73 | 0 | 2026-11-16 02:31:12 UTC |
+| Replay tests | 5904 | 1 | 0 | 0 | 2026-11-16 08:46:24 UTC |
 
 - **Test sets:** four per Django version, see README's "About the tests".
   The names replace earlier ones:
@@ -73,10 +73,10 @@ summaries in `test-results/`. Do not edit by hand.
   [Known limitations](user/Known-Limitations.md)). If one starts passing, it is
   reported as an unexpected success and counted as failed.
 
-- **Runs:** 2026-11-14 08:40:58 UTC to 2026-11-14 16:51:11 UTC
+- **Runs:** 2026-11-16 00:10:37 UTC to 2026-11-16 08:11:07 UTC
 - **Django:** 5.2 (cae7247 2026-10-09), 6.0 (52e5ba1 2026-10-09), 6.1 (1e01021 2026-10-12)
 - **Python:** 3.14.8, 3.15.0
-- **Backend commits:** 457180a 2026-11-14 (per module in the table)
+- **Backend commits:** c6c60d7 2026-11-16 (per module in the table)
 - **IBM i:** 7.5 on PUB400
 
 ## Django test modules
@@ -85,99 +85,99 @@ The Django suite on IBM i per module and Django version.
 
 | Module | Django | Tests | Passed | Failures | Errors | Skipped | Expected failures | Unexpected successes | Result | Run | Backend commit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| aggregation | 5.2 | 140 | 140 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 08:49:21 UTC | 457180a 2026-11-14 |
-| aggregation | 6.0 | 156 | 153 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-14 11:41:54 UTC | 457180a 2026-11-14 |
-| aggregation | 6.1 | 168 | 154 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-14 14:34:50 UTC | 457180a 2026-11-14 |
-| annotations | 5.2 | 91 | 88 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-14 10:42:17 UTC | 457180a 2026-11-14 |
-| annotations | 6.0 | 92 | 89 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-14 13:36:02 UTC | 457180a 2026-11-14 |
-| annotations | 6.1 | 93 | 90 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-14 16:31:08 UTC | 457180a 2026-11-14 |
-| basic | 5.2 | 82 | 81 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 08:40:58 UTC | 457180a 2026-11-14 |
-| basic | 6.0 | 74 | 73 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 11:33:06 UTC | 457180a 2026-11-14 |
-| basic | 6.1 | 83 | 82 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 14:26:32 UTC | 457180a 2026-11-14 |
-| bulk_create | 5.2 | 52 | 38 | 0 | 0 | 7 | 7 | 0 | OK | 2026-11-14 10:07:03 UTC | 457180a 2026-11-14 |
-| bulk_create | 6.0 | 59 | 43 | 0 | 0 | 9 | 7 | 0 | OK | 2026-11-14 13:00:17 UTC | 457180a 2026-11-14 |
-| bulk_create | 6.1 | 60 | 43 | 0 | 0 | 10 | 7 | 0 | OK | 2026-11-14 15:55:00 UTC | 457180a 2026-11-14 |
-| constraints | 5.2 | 103 | 91 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-14 10:09:03 UTC | 457180a 2026-11-14 |
-| constraints | 6.0 | 101 | 89 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-14 13:03:18 UTC | 457180a 2026-11-14 |
-| constraints | 6.1 | 102 | 89 | 0 | 0 | 13 | 0 | 0 | OK | 2026-11-14 15:58:04 UTC | 457180a 2026-11-14 |
-| dates | 5.2 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 11:02:41 UTC | 457180a 2026-11-14 |
-| dates | 6.0 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:55:21 UTC | 457180a 2026-11-14 |
-| dates | 6.1 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:50:15 UTC | 457180a 2026-11-14 |
-| datetimes | 5.2 | 7 | 6 | 0 | 0 | 0 | 1 | 0 | OK | 2026-11-14 11:03:10 UTC | 457180a 2026-11-14 |
-| datetimes | 6.0 | 7 | 6 | 0 | 0 | 0 | 1 | 0 | OK | 2026-11-14 13:55:53 UTC | 457180a 2026-11-14 |
-| datetimes | 6.1 | 7 | 6 | 0 | 0 | 0 | 1 | 0 | OK | 2026-11-14 16:50:40 UTC | 457180a 2026-11-14 |
-| db_functions | 5.2 | 363 | 321 | 0 | 0 | 26 | 16 | 0 | OK | 2026-11-14 10:11:28 UTC | 457180a 2026-11-14 |
-| db_functions | 6.0 | 363 | 321 | 0 | 0 | 26 | 16 | 0 | OK | 2026-11-14 13:05:39 UTC | 457180a 2026-11-14 |
-| db_functions | 6.1 | 371 | 325 | 0 | 0 | 30 | 16 | 0 | OK | 2026-11-14 16:00:23 UTC | 457180a 2026-11-14 |
-| delete | 5.2 | 59 | 58 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 10:45:16 UTC | 457180a 2026-11-14 |
-| delete | 6.0 | 60 | 59 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:38:46 UTC | 457180a 2026-11-14 |
-| delete | 6.1 | 64 | 63 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:34:05 UTC | 457180a 2026-11-14 |
-| expressions | 5.2 | 208 | 204 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-14 08:50:53 UTC | 457180a 2026-11-14 |
-| expressions | 6.0 | 212 | 208 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-14 11:43:43 UTC | 457180a 2026-11-14 |
-| expressions | 6.1 | 213 | 209 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-14 14:36:34 UTC | 457180a 2026-11-14 |
-| expressions_case | 5.2 | 89 | 88 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 10:43:31 UTC | 457180a 2026-11-14 |
-| expressions_case | 6.0 | 89 | 88 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:37:10 UTC | 457180a 2026-11-14 |
-| expressions_case | 6.1 | 90 | 89 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:32:18 UTC | 457180a 2026-11-14 |
-| expressions_window | 5.2 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-14 10:16:06 UTC | 457180a 2026-11-14 |
-| expressions_window | 6.0 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-14 13:10:26 UTC | 457180a 2026-11-14 |
-| expressions_window | 6.1 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-14 16:05:10 UTC | 457180a 2026-11-14 |
-| get_or_create | 5.2 | 49 | 48 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 11:00:20 UTC | 457180a 2026-11-14 |
-| get_or_create | 6.0 | 49 | 48 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:52:55 UTC | 457180a 2026-11-14 |
-| get_or_create | 6.1 | 49 | 48 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:48:04 UTC | 457180a 2026-11-14 |
-| indexes | 5.2 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-14 10:10:00 UTC | 457180a 2026-11-14 |
-| indexes | 6.0 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-14 13:04:15 UTC | 457180a 2026-11-14 |
-| indexes | 6.1 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-14 15:59:00 UTC | 457180a 2026-11-14 |
-| inspectdb | 5.2 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-14 10:04:29 UTC | 457180a 2026-11-14 |
-| inspectdb | 6.0 | 28 | 18 | 0 | 0 | 10 | 0 | 0 | OK | 2026-11-14 12:57:52 UTC | 457180a 2026-11-14 |
-| inspectdb | 6.1 | 31 | 19 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-14 15:52:33 UTC | 457180a 2026-11-14 |
-| introspection | 5.2 | 21 | 20 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 10:02:01 UTC | 457180a 2026-11-14 |
-| introspection | 6.0 | 21 | 20 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 12:55:34 UTC | 457180a 2026-11-14 |
-| introspection | 6.1 | 24 | 23 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 15:49:28 UTC | 457180a 2026-11-14 |
-| lookup | 5.2 | 100 | 92 | 0 | 0 | 6 | 2 | 0 | OK | 2026-11-14 08:47:57 UTC | 457180a 2026-11-14 |
-| lookup | 6.0 | 100 | 94 | 0 | 0 | 4 | 2 | 0 | OK | 2026-11-14 11:40:25 UTC | 457180a 2026-11-14 |
-| lookup | 6.1 | 148 | 142 | 0 | 0 | 4 | 2 | 0 | OK | 2026-11-14 14:33:09 UTC | 457180a 2026-11-14 |
-| many_to_many | 5.2 | 39 | 38 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 10:59:05 UTC | 457180a 2026-11-14 |
-| many_to_many | 6.0 | 38 | 37 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:51:45 UTC | 457180a 2026-11-14 |
-| many_to_many | 6.1 | 42 | 41 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:46:56 UTC | 457180a 2026-11-14 |
-| migrate_signals | 5.2 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 10:06:30 UTC | 457180a 2026-11-14 |
-| migrate_signals | 6.0 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 12:59:47 UTC | 457180a 2026-11-14 |
-| migrate_signals | 6.1 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 15:54:33 UTC | 457180a 2026-11-14 |
-| migrations | 5.2 | 784 | 754 | 0 | 0 | 21 | 9 | 0 | OK | 2026-11-14 08:53:06 UTC | 457180a 2026-11-14 |
-| migrations | 6.0 | 811 | 780 | 0 | 0 | 22 | 9 | 0 | OK | 2026-11-14 11:46:19 UTC | 457180a 2026-11-14 |
-| migrations | 6.1 | 825 | 794 | 0 | 0 | 22 | 9 | 0 | OK | 2026-11-14 14:38:52 UTC | 457180a 2026-11-14 |
-| model_fields | 5.2 | 97 | 82 | 0 | 0 | 11 | 4 | 0 | OK | 2026-11-14 10:16:53 UTC | 457180a 2026-11-14 |
-| model_fields | 6.0 | 102 | 84 | 0 | 0 | 14 | 4 | 0 | OK | 2026-11-14 13:11:12 UTC | 457180a 2026-11-14 |
-| model_fields | 6.1 | 129 | 88 | 0 | 0 | 37 | 4 | 0 | OK | 2026-11-14 16:05:55 UTC | 457180a 2026-11-14 |
-| model_indexes | 5.2 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-14 10:11:03 UTC | 457180a 2026-11-14 |
-| model_indexes | 6.0 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-14 13:05:15 UTC | 457180a 2026-11-14 |
-| model_indexes | 6.1 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-14 15:59:57 UTC | 457180a 2026-11-14 |
-| ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 08:47:06 UTC | 457180a 2026-11-14 |
-| ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 11:39:32 UTC | 457180a 2026-11-14 |
-| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 14:32:21 UTC | 457180a 2026-11-14 |
-| prefetch_related | 5.2 | 121 | 120 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 10:54:57 UTC | 457180a 2026-11-14 |
-| prefetch_related | 6.0 | 130 | 129 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 13:47:50 UTC | 457180a 2026-11-14 |
-| prefetch_related | 6.1 | 135 | 134 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 16:42:56 UTC | 457180a 2026-11-14 |
-| queries | 5.2 | 493 | 473 | 0 | 0 | 14 | 6 | 0 | OK | 2026-11-14 10:18:34 UTC | 457180a 2026-11-14 |
-| queries | 6.0 | 495 | 475 | 0 | 0 | 14 | 6 | 0 | OK | 2026-11-14 13:12:58 UTC | 457180a 2026-11-14 |
-| queries | 6.1 | 506 | 487 | 0 | 0 | 14 | 5 | 0 | OK | 2026-11-14 16:07:39 UTC | 457180a 2026-11-14 |
-| schema | 5.2 | 220 | 148 | 0 | 0 | 59 | 13 | 0 | OK | 2026-11-14 09:48:47 UTC | 457180a 2026-11-14 |
-| schema | 6.0 | 222 | 149 | 0 | 0 | 60 | 13 | 0 | OK | 2026-11-14 12:42:45 UTC | 457180a 2026-11-14 |
-| schema | 6.1 | 227 | 154 | 0 | 0 | 60 | 13 | 0 | OK | 2026-11-14 15:35:42 UTC | 457180a 2026-11-14 |
-| select_for_update | 5.2 | 38 | 23 | 0 | 0 | 6 | 9 | 0 | OK | 2026-11-14 10:36:01 UTC | 457180a 2026-11-14 |
-| select_for_update | 6.0 | 38 | 23 | 0 | 0 | 6 | 9 | 0 | OK | 2026-11-14 13:29:53 UTC | 457180a 2026-11-14 |
-| select_for_update | 6.1 | 38 | 23 | 0 | 0 | 6 | 9 | 0 | OK | 2026-11-14 16:25:14 UTC | 457180a 2026-11-14 |
-| select_related | 5.2 | 20 | 20 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 10:54:12 UTC | 457180a 2026-11-14 |
-| select_related | 6.0 | 20 | 20 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 13:47:04 UTC | 457180a 2026-11-14 |
-| select_related | 6.1 | 25 | 25 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-14 16:42:14 UTC | 457180a 2026-11-14 |
-| timezones | 5.2 | 67 | 55 | 0 | 0 | 11 | 1 | 0 | OK | 2026-11-14 11:03:41 UTC | 457180a 2026-11-14 |
-| timezones | 6.0 | 86 | 74 | 0 | 0 | 11 | 1 | 0 | OK | 2026-11-14 13:56:23 UTC | 457180a 2026-11-14 |
-| timezones | 6.1 | 86 | 74 | 0 | 0 | 11 | 1 | 0 | OK | 2026-11-14 16:51:11 UTC | 457180a 2026-11-14 |
-| transactions | 5.2 | 87 | 86 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 08:42:15 UTC | 457180a 2026-11-14 |
-| transactions | 6.0 | 87 | 86 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 11:34:28 UTC | 457180a 2026-11-14 |
-| transactions | 6.1 | 88 | 87 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-14 14:27:52 UTC | 457180a 2026-11-14 |
-| update | 5.2 | 30 | 25 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-14 10:53:22 UTC | 457180a 2026-11-14 |
-| update | 6.0 | 34 | 29 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-14 13:46:19 UTC | 457180a 2026-11-14 |
-| update | 6.1 | 34 | 29 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-14 16:41:32 UTC | 457180a 2026-11-14 |
+| aggregation | 5.2 | 140 | 140 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 00:18:55 UTC | c6c60d7 2026-11-16 |
+| aggregation | 6.0 | 156 | 153 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-16 03:08:13 UTC | c6c60d7 2026-11-16 |
+| aggregation | 6.1 | 168 | 154 | 0 | 0 | 14 | 0 | 0 | OK | 2026-11-16 05:53:14 UTC | c6c60d7 2026-11-16 |
+| annotations | 5.2 | 91 | 88 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-16 02:11:34 UTC | c6c60d7 2026-11-16 |
+| annotations | 6.0 | 92 | 89 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-16 04:55:27 UTC | c6c60d7 2026-11-16 |
+| annotations | 6.1 | 93 | 90 | 0 | 0 | 3 | 0 | 0 | OK | 2026-11-16 07:50:14 UTC | c6c60d7 2026-11-16 |
+| basic | 5.2 | 82 | 81 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 00:10:37 UTC | c6c60d7 2026-11-16 |
+| basic | 6.0 | 74 | 73 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 03:00:19 UTC | c6c60d7 2026-11-16 |
+| basic | 6.1 | 83 | 82 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 05:44:58 UTC | c6c60d7 2026-11-16 |
+| bulk_create | 5.2 | 52 | 38 | 0 | 0 | 7 | 7 | 0 | OK | 2026-11-16 01:36:37 UTC | c6c60d7 2026-11-16 |
+| bulk_create | 6.0 | 59 | 43 | 0 | 0 | 9 | 7 | 0 | OK | 2026-11-16 04:21:49 UTC | c6c60d7 2026-11-16 |
+| bulk_create | 6.1 | 60 | 43 | 0 | 0 | 10 | 7 | 0 | OK | 2026-11-16 07:12:33 UTC | c6c60d7 2026-11-16 |
+| constraints | 5.2 | 103 | 91 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-16 01:38:28 UTC | c6c60d7 2026-11-16 |
+| constraints | 6.0 | 101 | 89 | 0 | 0 | 12 | 0 | 0 | OK | 2026-11-16 04:24:38 UTC | c6c60d7 2026-11-16 |
+| constraints | 6.1 | 102 | 89 | 0 | 0 | 13 | 0 | 0 | OK | 2026-11-16 07:15:31 UTC | c6c60d7 2026-11-16 |
+| dates | 5.2 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 02:30:11 UTC | c6c60d7 2026-11-16 |
+| dates | 6.0 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 05:13:57 UTC | c6c60d7 2026-11-16 |
+| dates | 6.1 | 7 | 6 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 08:10:07 UTC | c6c60d7 2026-11-16 |
+| datetimes | 5.2 | 7 | 6 | 0 | 0 | 0 | 1 | 0 | OK | 2026-11-16 02:30:40 UTC | c6c60d7 2026-11-16 |
+| datetimes | 6.0 | 7 | 6 | 0 | 0 | 0 | 1 | 0 | OK | 2026-11-16 05:14:25 UTC | c6c60d7 2026-11-16 |
+| datetimes | 6.1 | 7 | 6 | 0 | 0 | 0 | 1 | 0 | OK | 2026-11-16 08:10:36 UTC | c6c60d7 2026-11-16 |
+| db_functions | 5.2 | 363 | 321 | 0 | 0 | 26 | 16 | 0 | OK | 2026-11-16 01:41:03 UTC | c6c60d7 2026-11-16 |
+| db_functions | 6.0 | 363 | 321 | 0 | 0 | 26 | 16 | 0 | OK | 2026-11-16 04:26:48 UTC | c6c60d7 2026-11-16 |
+| db_functions | 6.1 | 371 | 325 | 0 | 0 | 30 | 16 | 0 | OK | 2026-11-16 07:18:08 UTC | c6c60d7 2026-11-16 |
+| delete | 5.2 | 59 | 58 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 02:14:24 UTC | c6c60d7 2026-11-16 |
+| delete | 6.0 | 60 | 59 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 04:58:11 UTC | c6c60d7 2026-11-16 |
+| delete | 6.1 | 64 | 63 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 07:53:12 UTC | c6c60d7 2026-11-16 |
+| expressions | 5.2 | 208 | 204 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-16 00:20:28 UTC | c6c60d7 2026-11-16 |
+| expressions | 6.0 | 212 | 208 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-16 03:09:48 UTC | c6c60d7 2026-11-16 |
+| expressions | 6.1 | 213 | 209 | 0 | 0 | 2 | 2 | 0 | OK | 2026-11-16 05:54:56 UTC | c6c60d7 2026-11-16 |
+| expressions_case | 5.2 | 89 | 88 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 02:12:45 UTC | c6c60d7 2026-11-16 |
+| expressions_case | 6.0 | 89 | 88 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 04:56:33 UTC | c6c60d7 2026-11-16 |
+| expressions_case | 6.1 | 90 | 89 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 07:51:31 UTC | c6c60d7 2026-11-16 |
+| expressions_window | 5.2 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-16 01:45:54 UTC | c6c60d7 2026-11-16 |
+| expressions_window | 6.0 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-16 04:31:11 UTC | c6c60d7 2026-11-16 |
+| expressions_window | 6.1 | 75 | 66 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-16 07:23:12 UTC | c6c60d7 2026-11-16 |
+| get_or_create | 5.2 | 49 | 48 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 02:27:54 UTC | c6c60d7 2026-11-16 |
+| get_or_create | 6.0 | 49 | 48 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 05:11:39 UTC | c6c60d7 2026-11-16 |
+| get_or_create | 6.1 | 49 | 48 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 08:07:42 UTC | c6c60d7 2026-11-16 |
+| indexes | 5.2 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-16 01:39:28 UTC | c6c60d7 2026-11-16 |
+| indexes | 6.0 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-16 04:25:32 UTC | c6c60d7 2026-11-16 |
+| indexes | 6.1 | 31 | 11 | 0 | 0 | 18 | 2 | 0 | OK | 2026-11-16 07:16:30 UTC | c6c60d7 2026-11-16 |
+| inspectdb | 5.2 | 28 | 19 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-16 01:34:07 UTC | c6c60d7 2026-11-16 |
+| inspectdb | 6.0 | 28 | 19 | 0 | 0 | 9 | 0 | 0 | OK | 2026-11-16 04:19:28 UTC | c6c60d7 2026-11-16 |
+| inspectdb | 6.1 | 31 | 20 | 0 | 0 | 11 | 0 | 0 | OK | 2026-11-16 07:09:58 UTC | c6c60d7 2026-11-16 |
+| introspection | 5.2 | 21 | 21 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 01:31:20 UTC | c6c60d7 2026-11-16 |
+| introspection | 6.0 | 21 | 21 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 04:17:06 UTC | c6c60d7 2026-11-16 |
+| introspection | 6.1 | 24 | 24 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 07:06:16 UTC | c6c60d7 2026-11-16 |
+| lookup | 5.2 | 100 | 92 | 0 | 0 | 6 | 2 | 0 | OK | 2026-11-16 00:17:27 UTC | c6c60d7 2026-11-16 |
+| lookup | 6.0 | 100 | 94 | 0 | 0 | 4 | 2 | 0 | OK | 2026-11-16 03:06:51 UTC | c6c60d7 2026-11-16 |
+| lookup | 6.1 | 148 | 142 | 0 | 0 | 4 | 2 | 0 | OK | 2026-11-16 05:51:38 UTC | c6c60d7 2026-11-16 |
+| many_to_many | 5.2 | 39 | 38 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 02:26:48 UTC | c6c60d7 2026-11-16 |
+| many_to_many | 6.0 | 38 | 37 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 05:10:34 UTC | c6c60d7 2026-11-16 |
+| many_to_many | 6.1 | 42 | 41 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 08:06:34 UTC | c6c60d7 2026-11-16 |
+| migrate_signals | 5.2 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 01:36:05 UTC | c6c60d7 2026-11-16 |
+| migrate_signals | 6.0 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 04:21:22 UTC | c6c60d7 2026-11-16 |
+| migrate_signals | 6.1 | 3 | 3 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 07:12:03 UTC | c6c60d7 2026-11-16 |
+| migrations | 5.2 | 784 | 755 | 0 | 0 | 20 | 9 | 0 | OK | 2026-11-16 00:22:41 UTC | c6c60d7 2026-11-16 |
+| migrations | 6.0 | 811 | 781 | 0 | 0 | 21 | 9 | 0 | OK | 2026-11-16 03:12:00 UTC | c6c60d7 2026-11-16 |
+| migrations | 6.1 | 825 | 795 | 0 | 0 | 21 | 9 | 0 | OK | 2026-11-16 05:57:18 UTC | c6c60d7 2026-11-16 |
+| model_fields | 5.2 | 97 | 85 | 0 | 0 | 8 | 4 | 0 | OK | 2026-11-16 01:46:41 UTC | c6c60d7 2026-11-16 |
+| model_fields | 6.0 | 102 | 87 | 0 | 0 | 11 | 4 | 0 | OK | 2026-11-16 04:31:54 UTC | c6c60d7 2026-11-16 |
+| model_fields | 6.1 | 129 | 114 | 0 | 0 | 11 | 4 | 0 | OK | 2026-11-16 07:23:59 UTC | c6c60d7 2026-11-16 |
+| model_indexes | 5.2 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-16 01:40:36 UTC | c6c60d7 2026-11-16 |
+| model_indexes | 6.0 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-16 04:26:26 UTC | c6c60d7 2026-11-16 |
+| model_indexes | 6.1 | 30 | 28 | 0 | 0 | 2 | 0 | 0 | OK | 2026-11-16 07:17:40 UTC | c6c60d7 2026-11-16 |
+| ordering | 5.2 | 34 | 34 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 00:16:37 UTC | c6c60d7 2026-11-16 |
+| ordering | 6.0 | 35 | 35 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 03:06:03 UTC | c6c60d7 2026-11-16 |
+| ordering | 6.1 | 43 | 43 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 05:50:50 UTC | c6c60d7 2026-11-16 |
+| prefetch_related | 5.2 | 121 | 120 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 02:23:02 UTC | c6c60d7 2026-11-16 |
+| prefetch_related | 6.0 | 130 | 129 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 05:06:50 UTC | c6c60d7 2026-11-16 |
+| prefetch_related | 6.1 | 135 | 134 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 08:02:34 UTC | c6c60d7 2026-11-16 |
+| queries | 5.2 | 493 | 473 | 0 | 0 | 14 | 6 | 0 | OK | 2026-11-16 01:48:43 UTC | c6c60d7 2026-11-16 |
+| queries | 6.0 | 495 | 475 | 0 | 0 | 14 | 6 | 0 | OK | 2026-11-16 04:33:40 UTC | c6c60d7 2026-11-16 |
+| queries | 6.1 | 506 | 487 | 0 | 0 | 14 | 5 | 0 | OK | 2026-11-16 07:26:13 UTC | c6c60d7 2026-11-16 |
+| schema | 5.2 | 220 | 153 | 0 | 0 | 53 | 14 | 0 | OK | 2026-11-16 01:17:32 UTC | c6c60d7 2026-11-16 |
+| schema | 6.0 | 222 | 154 | 0 | 0 | 54 | 14 | 0 | OK | 2026-11-16 04:04:34 UTC | c6c60d7 2026-11-16 |
+| schema | 6.1 | 227 | 159 | 0 | 0 | 54 | 14 | 0 | OK | 2026-11-16 06:52:28 UTC | c6c60d7 2026-11-16 |
+| select_for_update | 5.2 | 38 | 23 | 0 | 0 | 6 | 9 | 0 | OK | 2026-11-16 02:05:23 UTC | c6c60d7 2026-11-16 |
+| select_for_update | 6.0 | 38 | 23 | 0 | 0 | 6 | 9 | 0 | OK | 2026-11-16 04:49:34 UTC | c6c60d7 2026-11-16 |
+| select_for_update | 6.1 | 38 | 23 | 0 | 0 | 6 | 9 | 0 | OK | 2026-11-16 07:43:57 UTC | c6c60d7 2026-11-16 |
+| select_related | 5.2 | 20 | 20 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 02:22:19 UTC | c6c60d7 2026-11-16 |
+| select_related | 6.0 | 20 | 20 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 05:06:09 UTC | c6c60d7 2026-11-16 |
+| select_related | 6.1 | 25 | 25 | 0 | 0 | 0 | 0 | 0 | OK | 2026-11-16 08:01:49 UTC | c6c60d7 2026-11-16 |
+| timezones | 5.2 | 67 | 55 | 0 | 0 | 11 | 1 | 0 | OK | 2026-11-16 02:31:12 UTC | c6c60d7 2026-11-16 |
+| timezones | 6.0 | 86 | 74 | 0 | 0 | 11 | 1 | 0 | OK | 2026-11-16 05:14:55 UTC | c6c60d7 2026-11-16 |
+| timezones | 6.1 | 86 | 74 | 0 | 0 | 11 | 1 | 0 | OK | 2026-11-16 08:11:07 UTC | c6c60d7 2026-11-16 |
+| transactions | 5.2 | 87 | 86 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 00:11:57 UTC | c6c60d7 2026-11-16 |
+| transactions | 6.0 | 87 | 86 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 03:01:32 UTC | c6c60d7 2026-11-16 |
+| transactions | 6.1 | 88 | 87 | 0 | 0 | 1 | 0 | 0 | OK | 2026-11-16 05:46:18 UTC | c6c60d7 2026-11-16 |
+| update | 5.2 | 30 | 25 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-16 02:21:33 UTC | c6c60d7 2026-11-16 |
+| update | 6.0 | 34 | 29 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-16 05:05:27 UTC | c6c60d7 2026-11-16 |
+| update | 6.1 | 34 | 29 | 0 | 0 | 5 | 0 | 0 | OK | 2026-11-16 08:01:00 UTC | c6c60d7 2026-11-16 |
 
 ## Feature flags set to True by the backend
 
@@ -216,6 +216,7 @@ The Django suite on IBM i per module and Django version.
 - `supports_cast_with_precision`
 - `supports_column_check_constraints`
 - `supports_combined_alters`
+- `supports_comments`
 - `supports_date_lookup_using_string`
 - `supports_default_in_lead_lag`
 - `supports_default_keyword_in_bulk_insert`
@@ -236,6 +237,7 @@ The Django suite on IBM i per module and Django version.
 - `supports_parentheses_in_compound`
 - `supports_partial_indexes`
 - `supports_partially_nullable_unique_constraints`
+- `supports_primitives_in_json_field`
 - `supports_regex_backreferencing`
 - `supports_select_difference`
 - `supports_select_for_update_with_limit`
@@ -281,6 +283,7 @@ The Django suite on IBM i per module and Django version.
 | parameter markers are typed: untyped markers on both sides of a comparison compare wrongly on Db2 for i | 1 | 0 |
 | the test counts PostgreSQL's deferred LIKE indexes; Db2 for i writes UNIQUE in the ADD COLUMN and defers nothing | 1 | 0 |
 | the test counts the word EXTRACT in the SQL; Db2 for i writes YEAR(...) and the like | 6 | 0 |
+| the test inserts rows and then alters the same table in one transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910) | 1 | 0 |
 | the test looks for FOR UPDATE right before WHERE (for_update_after_from, SQL Server's form); Db2 for i writes FOR UPDATE ... WITH RS at the end | 1 | 0 |
 | the test looks for RETURNING in the SQL; Db2 for i returns columns with FINAL TABLE | 2 | 0 |
 | the test looks for a lowercase column name in the SQL; names are uppercase on Db2 for i | 1 | 0 |
@@ -494,6 +497,12 @@ The tests per reason, as `features.py` lists them on Django 6.1 (`compat.py` adj
 
 </details>
 
+<details><summary>the test inserts rows and then alters the same table in one transaction; Db2 for i refuses an ALTER TABLE on a table with row changes in the transaction (SQL0910) (1)</summary>
+
+- `schema.tests.SchemaTests.test_add_db_comment_and_default_charfield` (expected failure)
+
+</details>
+
 <details><summary>the test looks for FOR UPDATE right before WHERE (for_update_after_from, SQL Server's form); Db2 for i writes FOR UPDATE ... WITH RS at the end (1)</summary>
 
 - `select_for_update.tests.SelectForUpdateTests.test_for_update_after_from` (expected failure)
@@ -521,4 +530,4 @@ The tests per reason, as `features.py` lists them on Django 6.1 (`compat.py` adj
 
 ## Golden files
 
-669 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).
+690 goldens, 0 unverified; unverifiable on PUB400: 0 (`tests/offline/golden/unverifiable.toml`, with the reason and what makes each verifiable).

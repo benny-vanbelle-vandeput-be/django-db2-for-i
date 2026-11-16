@@ -10,6 +10,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Changes since the last release are in [changelog.d/](changelog.d/), one
 fragment per pull request; they are assembled here at release time.
 
+## [0.1.0b5] - 2026-11-16
+
+### Added
+- `docs/RELEASE_HISTORY.md` shows, per release, the feature flags that were on,
+  which ones each release switched on, and the test results of the status run.
+  `scripts/release_history.py` (`nox -s release_history`) generates it from the
+  release tags. `bin/release-prepare` and `bin/status` regenerate it, so every
+  release pull request adds its own row. (#266)
+
+### Enabled features
+- `supports_comments`: `db_comment` and `db_table_comment` are stored as
+  `COMMENT ON COLUMN` / `COMMENT ON TABLE` and read back by introspection and
+  `inspectdb`. Only printable ASCII is accepted. Other characters raise
+  `NotSupportedError` before the migration changes anything, and
+  `manage.py check` reports them as `django_db2_for_i.E006`. Db2 for i stores
+  only characters of the job CCSID, and replaces or refuses the others. (#269)
+- `supports_primitives_in_json_field`: a `JSONField` whose whole value is a
+  number, a string, `true`, `false` or JSON null can be filtered with `=`,
+  `__in` and (Django 6.1) `JSONNull()`. Before, it was stored and read back,
+  but these lookups did not find it. (#269)
+
+### Fixed
+- Contributors: the replay session (`nox -s replay`, part of `bin/check`) writes its counts to `test-results/<django>/sets/corpus.json` again, so the "Replay tests" row of the status pages is up to date; since #254 it kept the counts of 2026-10-29. A changelog fragment that ends with its own pull request number no longer gets it twice. (#262)
+
 ## [0.1.0b4] - 2026-11-14
 
 ### Added
@@ -713,7 +737,8 @@ The tag is not moved or recreated.
   escaped quotes in DEFAULT constants wrongly. Unsupported values raise
   `NotSupportedError`.
 
-[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b4...HEAD
+[Unreleased]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b5...HEAD
+[0.1.0b5]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b4...v0.1.0b5
 [0.1.0b4]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b3...v0.1.0b4
 [0.1.0b3]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b2...v0.1.0b3
 [0.1.0b2]: https://github.com/benny-vanbelle-vandeput-be/django-db2-for-i/compare/v0.1.0b1...v0.1.0b2

@@ -5,7 +5,7 @@
 How the enabled feature flags and the test results grew from release to
 release.
 
-> **Up to date with v0.1.0b4 (2026-11-14).** `bin/release-prepare`
+> **Up to date with v0.1.0b5 (2026-11-16).** `bin/release-prepare`
 > adds every new release to this page in the release pull request.
 
 **Where the numbers come from**
@@ -33,21 +33,22 @@ release.
 | v0.1.0b2 | 2026-11-02 | 53 | 6.1, 6.0, 5.2 | 16 | 2314 | 205 | 63 | 0 | 559 |
 | v0.1.0b3 | 2026-11-11 | 66 | 6.1, 6.0, 5.2 | 19 | 2807 | 262 | 88 | 0 | 648 |
 | v0.1.0b4 | 2026-11-14 | 77 | 6.1, 6.0, 5.2 | 31 | 3475 | 281 | 71 | 0 | 669 |
+| v0.1.0b5 | 2026-11-16 | 79 | 6.1, 6.0, 5.2 | 31 | 3509 | 246 | 72 | 0 | 690 |
 
 ```mermaid
 xychart-beta
     title "Feature flags on"
-    x-axis [a1, a2, a3, a4, a5, b1, b2, b3, b4]
-    y-axis "flags" 0 --> 85
-    line [7, 7, 22, 22, 34, 34, 53, 66, 77]
+    x-axis [a1, a2, a3, a4, a5, b1, b2, b3, b4, b5]
+    y-axis "flags" 0 --> 87
+    line [7, 7, 22, 22, 34, 34, 53, 66, 77, 79]
 ```
 
 ```mermaid
 xychart-beta
     title "Django tests passed on IBM i (Django 6.1)"
-    x-axis [a1, a2, a3, a4, a5, b1, b2, b3, b4]
-    y-axis "tests" 0 --> 3823
-    line [165, 165, 1189, 1189, 2117, 2117, 2314, 2807, 3475]
+    x-axis [a1, a2, a3, a4, a5, b1, b2, b3, b4, b5]
+    y-axis "tests" 0 --> 3860
+    line [165, 165, 1189, 1189, 2117, 2117, 2314, 2807, 3475, 3509]
 ```
 
 ## Feature flags per release
@@ -108,6 +109,10 @@ Phase 7: system names, tables in another library, select_for_update, Python 3.15
 
 Switched on (11): `can_create_inline_fk`, `has_select_for_update`, `has_select_for_update_of`, `has_select_for_update_skip_locked`, `select_for_update_of_column`, `supports_combined_alters`, `supports_date_lookup_using_string`, `supports_paramstyle_pyformat`, `supports_select_for_update_with_limit`, `supports_uuid4_function`, `test_db_allows_multiple_connections`.
 
+### v0.1.0b5 (2026-11-16): 79 on
+
+Switched on (2): `supports_comments`, `supports_primitives_in_json_field`.
+
 ## Django suite on IBM i per release
 
 Django's own test modules on IBM i, summed over the modules supported at that
@@ -136,6 +141,9 @@ release.
 | v0.1.0b4 | 6.1 | 31 | 3827 | 3475 | 0 | 281 | 71 |
 | v0.1.0b4 | 6.0 | 31 | 3655 | 3344 | 0 | 239 | 72 |
 | v0.1.0b4 | 5.2 | 31 | 3568 | 3265 | 0 | 231 | 72 |
+| v0.1.0b5 | 6.1 | 31 | 3827 | 3509 | 0 | 246 | 72 |
+| v0.1.0b5 | 6.0 | 31 | 3655 | 3355 | 0 | 227 | 73 |
+| v0.1.0b5 | 5.2 | 31 | 3568 | 3276 | 0 | 219 | 73 |
 
 ## Test sets per release
 
@@ -163,3 +171,6 @@ release whose TEST_STATUS has this table (0.1.0a4). The sets were renamed in
 | v0.1.0b4 | 6.1 | 3654 / 2 / 0 / 0 | 452 / 2 / 1 / 0 | 3475 / 281 / 71 / 0 | 6193 / 1 / 0 / 0 |
 | v0.1.0b4 | 6.0 | 3653 / 3 / 0 / 0 | 450 / 4 / 1 / 0 | 3344 / 239 / 72 / 0 | 6073 / 1 / 0 / 0 |
 | v0.1.0b4 | 5.2 | 3650 / 3 / 0 / 0 | 443 / 8 / 1 / 0 | 3265 / 231 / 72 / 0 | 5881 / 1 / 0 / 0 |
+| v0.1.0b5 | 6.1 | 3747 / 2 / 0 / 0 | 462 / 2 / 1 / 0 | 3509 / 246 / 72 / 0 | 6245 / 1 / 0 / 0 |
+| v0.1.0b5 | 6.0 | 3743 / 3 / 0 / 0 | 457 / 4 / 1 / 0 | 3355 / 227 / 73 / 0 | 6096 / 1 / 0 / 0 |
+| v0.1.0b5 | 5.2 | 3740 / 3 / 0 / 0 | 450 / 8 / 1 / 0 | 3276 / 219 / 73 / 0 | 5904 / 1 / 0 / 0 |
