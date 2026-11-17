@@ -3083,6 +3083,34 @@ only, three connections one after another, autocommit off;
   all, so a journaled table in a library is not expected to behave differently;
   that part is not measured.
 
+### Data mapping errors in `UPDATE` and `INSERT ... SELECT` (`probes/qtemp_update_mapping_errors.py`, remediation P-3)
+
+For audit finding F-04 (select lists turn data mapping errors into NULL; the
+user docs said an `UPDATE` then writes that NULL). 2026-11-17, PUB400, QTEMP
+only, CMT=0; `probes/results/update_mapping_errors.json`.
+
+- **A write never stores the NULL: it fails, and the row stays as it was.** For a
+  nullable and a NOT NULL column alike:
+  - `UPDATE ... SET n = CAST(s AS INTEGER)` with `'abc'`: SQL0420;
+  - `UPDATE ... SET n = n / z` with `z` = 0: SQL0802;
+  - `UPDATE ... SET ts = ts + 30 DAYS` near 9999-12-31: SQL0183 (SQLSTATE 22008);
+  - `ts + 1000000000000000 MICROSECONDS`: SQL0406 (22018);
+  - the backend's own SQL for `F("ts") + timedelta(days=30)`
+    (`ts + INTEGER(CAST(? AS BIGINT) / 86400000000) DAYS + MOD(...) MICROSECONDS`):
+    SQL0183;
+  - the same values through `INSERT ... SELECT`: the same errors, no row added.
+- **In a select list the same expressions give NULL without an error or
+  warning** (the backend's datetime + duration, and `TS + 30 DAYS`), as found
+  before (`fetch_errors`, `mapping_errors`).
+- **A `CASE` that tests the value raises the error itself:**
+  `CASE WHEN TS + 30 DAYS IS NULL THEN RAISE_ERROR(...) ELSE TS + 30 DAYS END`
+  fails with SQL0183 (22008) at fetch, before `RAISE_ERROR` is reached.
+  `RAISE_ERROR('22008', ...)` inside `CASE` is accepted on 7.5: taken, it gives
+  SQL0438 with the text; not taken, the other branch's value.
+- So F-04 holds for select lists only (reads, annotations, `values()`), not for
+  writes. The user docs' sentence "In an update this writes NULL" was wrong and
+  is corrected in Known-Limitations ("Durations").
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

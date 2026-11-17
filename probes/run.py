@@ -18,7 +18,8 @@ Usage (inside the "tests" container):
                     phase7_flags | record_wait | decimal_values |
                     supplementary_chars | qualified_names | flag_review |
                     column_copy | comment_unicode | json_primitives |
-                    current_timestamp_zone | cmt_none
+                    current_timestamp_zone | cmt_none |
+                    update_mapping_errors
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -102,6 +103,7 @@ import qtemp_tuple_in
 import qtemp_tuple_lookups
 import qtemp_type_changes
 import qtemp_unique_nulls
+import qtemp_update_mapping_errors
 import qtemp_window
 from _common import ProbeError, Settings, connect, write_result
 
@@ -176,6 +178,7 @@ PROBES = {
     "json_primitives": qtemp_json_primitives,
     "current_timestamp_zone": qtemp_current_timestamp_zone,
     "cmt_none": qtemp_cmt_none,
+    "update_mapping_errors": qtemp_update_mapping_errors,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
