@@ -1,0 +1,61 @@
+{
+  "probe": "in_list_limit",
+  "utc": "20261117T075948Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "read-only (SYSIBM.SYSDUMMY1)",
+  "1000 markers": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ],
+    "seconds": 0.55
+  },
+  "2000 markers": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ],
+    "seconds": 1.35
+  },
+  "4000 markers": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ],
+    "seconds": 3.24
+  }
+}

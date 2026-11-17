@@ -1,0 +1,164 @@
+{
+  "probe": "decimal_assignment",
+  "utc": "20261117T074716Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (one table), CMT=0",
+  "create": {
+    "result": "ok"
+  },
+  "plain marker, 1.005": {
+    "result": "error",
+    "sqlstate": "22001",
+    "sqlcode": 30126,
+    "message": "Column 2: Character data right truncation. (30126) (SQLExecDirectW)"
+  },
+  "plain marker, 1.005: stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 2
+      }
+    ],
+    "rows": []
+  },
+  "plain marker, 1.2345": {
+    "result": "error",
+    "sqlstate": "22001",
+    "sqlcode": 30126,
+    "message": "Column 2: Character data right truncation. (30126) (SQLExecDirectW)"
+  },
+  "plain marker, 1.2345: stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 2
+      }
+    ],
+    "rows": []
+  },
+  "plain marker, 1.004": {
+    "result": "error",
+    "sqlstate": "22001",
+    "sqlcode": 30126,
+    "message": "Column 2: Character data right truncation. (30126) (SQLExecDirectW)"
+  },
+  "plain marker, 1.004: stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 2
+      }
+    ],
+    "rows": []
+  },
+  "plain marker, 1.23": {
+    "result": "ok"
+  },
+  "plain marker, 1.23: stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 2
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('1.23')"
+      ]
+    ]
+  },
+  "typed marker, 1.005": {
+    "result": "error",
+    "sqlstate": "22001",
+    "sqlcode": 30126,
+    "message": "Column 2: Character data right truncation. (30126) (SQLExecDirectW)"
+  },
+  "typed marker, 1.005: stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 2
+      }
+    ],
+    "rows": []
+  },
+  "typed marker, 1.2345": {
+    "result": "error",
+    "sqlstate": "22001",
+    "sqlcode": 30126,
+    "message": "Column 2: Character data right truncation. (30126) (SQLExecDirectW)"
+  },
+  "typed marker, 1.2345: stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 2
+      }
+    ],
+    "rows": []
+  },
+  "typed marker, 1.004": {
+    "result": "error",
+    "sqlstate": "22001",
+    "sqlcode": 30126,
+    "message": "Column 2: Character data right truncation. (30126) (SQLExecDirectW)"
+  },
+  "typed marker, 1.004: stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 2
+      }
+    ],
+    "rows": []
+  },
+  "typed marker, 1.23": {
+    "result": "ok"
+  },
+  "typed marker, 1.23: stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "D",
+        "type": "Decimal",
+        "size": 5,
+        "precision": 5,
+        "scale": 2
+      }
+    ],
+    "rows": [
+      [
+        "Decimal('1.23')"
+      ]
+    ]
+  }
+}

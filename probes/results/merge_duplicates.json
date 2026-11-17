@@ -1,0 +1,134 @@
+{
+  "probe": "merge_duplicates",
+  "utc": "20261117T080006Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (one table), CMT=0",
+  "create": {
+    "result": "ok"
+  },
+  "unique index": {
+    "result": "ok"
+  },
+  "upsert, key in the target": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -788,
+    "message": "SQL0788 - Duplicate row identified for MERGE target PMRGD in QTEMP. (-788) (SQLExecDirectW)"
+  },
+  "upsert, key in the target: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "V",
+        "type": "str",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'a'"
+      ]
+    ]
+  },
+  "upsert, key not in the target": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "upsert, key not in the target: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "V",
+        "type": "str",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'a'"
+      ]
+    ]
+  },
+  "insert only, key not in the target": {
+    "result": "error",
+    "sqlstate": "23000",
+    "sqlcode": -803,
+    "message": "SQL0803 - Duplicate key value specified. (-803) (SQLExecDirectW)"
+  },
+  "insert only, key not in the target: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "V",
+        "type": "str",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'a'"
+      ]
+    ]
+  },
+  "insert only, key in the target": {
+    "result": "ok"
+  },
+  "insert only, key in the target: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "V",
+        "type": "str",
+        "size": 5,
+        "precision": 5,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'x'"
+      ]
+    ]
+  }
+}
