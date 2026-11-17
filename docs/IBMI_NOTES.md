@@ -3062,6 +3062,27 @@ datetimes in the connection's zone). 2026-11-17, PUB400, own job only, no object
   dedicated IBM i. Until then F-01 stays a hypothesis for such systems, and the
   remediation item B-4 cannot be checked on PUB400 beyond the UTC case.
 
+### `ROLLBACK` and savepoints without commitment control (`probes/qtemp_cmt_none.py`, remediation P-2)
+
+For audit finding F-02 (`isolation_level="*NONE"` is passed as `CMT=0` while the
+features still claim transactions and savepoints). 2026-11-17, PUB400, QTEMP
+only, three connections one after another, autocommit off;
+`probes/results/cmt_none.json`.
+
+- **`CMT=0` (`*NONE`): every statement is final, and nothing reports it.**
+  After `INSERT` and `ROLLBACK` the row is still there (count 1). `SAVEPOINT`,
+  `ROLLBACK TO SAVEPOINT` and `RELEASE SAVEPOINT` are all accepted without an
+  error or warning, but the rollback to the savepoint undoes nothing (count 2),
+  and neither does a later `ROLLBACK`. So under `*NONE` an error inside
+  `atomic()` leaves every write before it in the table, while Django believes
+  it rolled back. F-02 is confirmed.
+- `CMT=1` (`*CS`) and `CMT=2` (`*CHG`): a write to the QTEMP table is refused
+  with SQL7008 (QTEMP tables have no journal), as expected; `ROLLBACK`,
+  `SAVEPOINT` and `ROLLBACK TO SAVEPOINT` themselves are accepted.
+- Measured on a QTEMP table. Under `*NONE` there is no commitment control at
+  all, so a journaled table in a library is not expected to behave differently;
+  that part is not measured.
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

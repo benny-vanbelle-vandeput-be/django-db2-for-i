@@ -1,0 +1,253 @@
+{
+  "probe": "cmt_none",
+  "utc": "20261117T065348Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (one table per connection); three connections, one at a time",
+  "CMT=0 (*NONE): create": {
+    "result": "ok"
+  },
+  "CMT=0 (*NONE): commit the create": {
+    "result": "ok"
+  },
+  "CMT=0 (*NONE): insert 1": {
+    "result": "ok"
+  },
+  "CMT=0 (*NONE): rollback": {
+    "result": "ok"
+  },
+  "CMT=0 (*NONE): count after rollback": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "CMT=0 (*NONE): savepoint": {
+    "result": "ok"
+  },
+  "CMT=0 (*NONE): insert 2": {
+    "result": "ok"
+  },
+  "CMT=0 (*NONE): rollback to savepoint": {
+    "result": "ok"
+  },
+  "CMT=0 (*NONE): count after rollback to savepoint": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "CMT=0 (*NONE): release savepoint": {
+    "result": "ok"
+  },
+  "CMT=0 (*NONE): final rollback": {
+    "result": "ok"
+  },
+  "CMT=0 (*NONE): final count": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "CMT=1 (*CS): create": {
+    "result": "ok"
+  },
+  "CMT=1 (*CS): commit the create": {
+    "result": "ok"
+  },
+  "CMT=1 (*CS): insert 1": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - PCMTN in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "CMT=1 (*CS): rollback": {
+    "result": "ok"
+  },
+  "CMT=1 (*CS): count after rollback": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "CMT=1 (*CS): savepoint": {
+    "result": "ok"
+  },
+  "CMT=1 (*CS): insert 2": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - PCMTN in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "CMT=1 (*CS): rollback to savepoint": {
+    "result": "ok"
+  },
+  "CMT=1 (*CS): count after rollback to savepoint": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "CMT=1 (*CS): release savepoint": {
+    "result": "ok"
+  },
+  "CMT=1 (*CS): final rollback": {
+    "result": "ok"
+  },
+  "CMT=1 (*CS): final count": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "CMT=2 (*CHG): create": {
+    "result": "ok"
+  },
+  "CMT=2 (*CHG): commit the create": {
+    "result": "ok"
+  },
+  "CMT=2 (*CHG): insert 1": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - PCMTN in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "CMT=2 (*CHG): rollback": {
+    "result": "ok"
+  },
+  "CMT=2 (*CHG): count after rollback": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "CMT=2 (*CHG): savepoint": {
+    "result": "ok"
+  },
+  "CMT=2 (*CHG): insert 2": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -7008,
+    "message": "SQL7008 - PCMTN in QTEMP not valid for operation. (-7008) (SQLExecDirectW)"
+  },
+  "CMT=2 (*CHG): rollback to savepoint": {
+    "result": "ok"
+  },
+  "CMT=2 (*CHG): count after rollback to savepoint": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "CMT=2 (*CHG): release savepoint": {
+    "result": "ok"
+  },
+  "CMT=2 (*CHG): final rollback": {
+    "result": "ok"
+  },
+  "CMT=2 (*CHG): final count": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  }
+}
