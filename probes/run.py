@@ -18,7 +18,7 @@ Usage (inside the "tests" container):
                     phase7_flags | record_wait | decimal_values |
                     supplementary_chars | qualified_names | flag_review |
                     column_copy | comment_unicode | json_primitives |
-                    current_timestamp_zone
+                    current_timestamp_zone | cmt_none
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -41,6 +41,7 @@ import qtemp_bulk_lobs
 import qtemp_bulk_types
 import qtemp_catalog
 import qtemp_check_constraint_unjournaled
+import qtemp_cmt_none
 import qtemp_column_copy
 import qtemp_comment_unicode
 import qtemp_compound_parts
@@ -174,6 +175,7 @@ PROBES = {
     "comment_unicode": qtemp_comment_unicode,
     "json_primitives": qtemp_json_primitives,
     "current_timestamp_zone": qtemp_current_timestamp_zone,
+    "cmt_none": qtemp_cmt_none,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
