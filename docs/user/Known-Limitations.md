@@ -648,17 +648,21 @@ Python's `timedelta.max` (999,999,999 days) does not fit. A `timedelta`
 outside that range is refused with a `ValueError` before anything is sent,
 in saves, filters and `Value()`.
 
-**Results outside years 1 to 9999 become NULL, silently.** Adding a duration
-to a date, time or datetime gives NULL instead of an error when the result
-falls outside the timestamp range. In an update this **writes NULL**:
+**Results outside years 1 to 9999 become NULL when they are read.** Adding a
+duration to a date, time or datetime gives NULL instead of an error when the
+result falls outside the timestamp range, in a select list: an annotation,
+`values()`, or a value read back. A write fails instead and changes nothing:
 
 ```python
-# A deadline near 9999-12-31 plus 30 days: DEADLINE becomes NULL, no error.
+# A deadline near 9999-12-31 plus 30 days: DataError (SQL0183), no row changed.
 Task.objects.update(deadline=F("deadline") + timedelta(days=30))
+# The same expression read: due is None for that row, no error.
+Task.objects.annotate(due=F("deadline") + timedelta(days=30))
 ```
 
-Validate ranges in the application before such updates (for example, filter
-out rows whose result would pass year 9999, or check the duration first).
+Validate ranges in the application where a NULL in a result would mislead (for
+example, filter out rows whose result would pass year 9999, or check the
+duration first).
 
 `TimeField + DurationField` wraps at 24 hours, as on PostgreSQL, and has no
 fractional seconds (see "TimeField has no fractional seconds").

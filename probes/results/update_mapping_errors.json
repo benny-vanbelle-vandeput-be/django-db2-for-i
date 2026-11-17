@@ -1,0 +1,868 @@
+{
+  "probe": "update_mapping_errors",
+  "utc": "20261117T071129Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (one table, gone with the job), CMT=0",
+  "create": {
+    "result": "ok"
+  },
+  "UPDATE, cast 'abc', nullable": {
+    "result": "error",
+    "message": "('HY000', '[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0420 - Value for cast argument not valid. (-420) (SQLExecDirectW)')"
+  },
+  "UPDATE, cast 'abc', nullable: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "UPDATE, cast 'abc', NOT NULL": {
+    "result": "error",
+    "message": "('HY000', '[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0420 - Value for cast argument not valid. (-420) (SQLExecDirectW)')"
+  },
+  "UPDATE, cast 'abc', NOT NULL: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "UPDATE, divide by zero, nullable": {
+    "result": "error",
+    "message": "('HY000', '[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0802 - Data conversion or data mapping error. (-802) (SQLExecDirectW)')"
+  },
+  "UPDATE, divide by zero, nullable: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "UPDATE, divide by zero, NOT NULL": {
+    "result": "error",
+    "message": "('HY000', '[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0802 - Data conversion or data mapping error. (-802) (SQLExecDirectW)')"
+  },
+  "UPDATE, divide by zero, NOT NULL: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "UPDATE, timestamp + 30 days, nullable": {
+    "result": "error",
+    "message": "('22008', '[22008] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0183 - Result of date or timestamp expression not valid. (-183) (SQLExecDirectW)')"
+  },
+  "UPDATE, timestamp + 30 days, nullable: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "UPDATE, timestamp + 30 days, NOT NULL": {
+    "result": "error",
+    "message": "('22008', '[22008] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0183 - Result of date or timestamp expression not valid. (-183) (SQLExecDirectW)')"
+  },
+  "UPDATE, timestamp + 30 days, NOT NULL: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "UPDATE, timestamp + 10**15 microseconds, nullable": {
+    "result": "error",
+    "message": "('22018', '[22018] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0406 - Conversion error on assignment to column TS. (-406) (SQLExecDirectW)')"
+  },
+  "UPDATE, timestamp + 10**15 microseconds, nullable: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "UPDATE, timestamp + 10**15 microseconds, NOT NULL": {
+    "result": "error",
+    "message": "('22018', '[22018] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0406 - Conversion error on assignment to column TSNN. (-406) (SQLExecDirectW)')"
+  },
+  "UPDATE, timestamp + 10**15 microseconds, NOT NULL: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "INSERT ... SELECT, cast 'abc', nullable": {
+    "result": "error",
+    "message": "('HY000', '[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0420 - Value for cast argument not valid. (-420) (SQLExecDirectW)')"
+  },
+  "INSERT ... SELECT, cast 'abc', nullable: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "INSERT ... SELECT, cast 'abc', NOT NULL": {
+    "result": "error",
+    "message": "('HY000', '[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0420 - Value for cast argument not valid. (-420) (SQLExecDirectW)')"
+  },
+  "INSERT ... SELECT, cast 'abc', NOT NULL: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "INSERT ... SELECT, divide by zero, nullable": {
+    "result": "error",
+    "message": "('HY000', '[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0802 - Data conversion or data mapping error. (-802) (SQLExecDirectW)')"
+  },
+  "INSERT ... SELECT, divide by zero, nullable: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "INSERT ... SELECT, divide by zero, NOT NULL": {
+    "result": "error",
+    "message": "('HY000', '[HY000] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0802 - Data conversion or data mapping error. (-802) (SQLExecDirectW)')"
+  },
+  "INSERT ... SELECT, divide by zero, NOT NULL: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "INSERT ... SELECT, timestamp + 30 days, nullable": {
+    "result": "error",
+    "message": "('22008', '[22008] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0183 - Result of date or timestamp expression not valid. (-183) (SQLExecDirectW)')"
+  },
+  "INSERT ... SELECT, timestamp + 30 days, nullable: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "INSERT ... SELECT, timestamp + 30 days, NOT NULL": {
+    "result": "error",
+    "message": "('22008', '[22008] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0183 - Result of date or timestamp expression not valid. (-183) (SQLExecDirectW)')"
+  },
+  "INSERT ... SELECT, timestamp + 30 days, NOT NULL: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "UPDATE, backend's datetime + duration": {
+    "result": "error",
+    "message": "('22008', '[22008] [IBM][System i Access ODBC Driver][DB2 for i5/OS]SQL0183 - Result of date or timestamp expression not valid. (-183) (SQLExecDirectW)')"
+  },
+  "UPDATE, backend's datetime + duration: rows after": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "N",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "NN",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "TS",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      },
+      {
+        "name": "TSNN",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "5",
+        "5",
+        "datetime.datetime(9999, 12, 30, 0, 0)",
+        "datetime.datetime(9999, 12, 30, 0, 0)"
+      ]
+    ]
+  },
+  "SELECT, backend's datetime + duration": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "SELECT, TS + 30 DAYS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "datetime",
+        "size": 26,
+        "precision": 26,
+        "scale": 6
+      }
+    ],
+    "rows": [
+      [
+        "None"
+      ]
+    ]
+  },
+  "RAISE_ERROR in CASE, taken": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -438,
+    "message": "SQL0438 - datetime overflow (-438) (SQLFetch)"
+  },
+  "RAISE_ERROR in CASE, not taken": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "RAISE_ERROR when the value is NULL": {
+    "result": "error",
+    "sqlstate": "22008",
+    "sqlcode": -183,
+    "message": "SQL0183 - Result of date or timestamp expression not valid. (-183) (SQLFetch)"
+  }
+}
