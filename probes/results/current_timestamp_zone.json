@@ -1,0 +1,121 @@
+{
+  "probe": "current_timestamp_zone",
+  "utc": "20261117T063649Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "own job only: its time zone is changed and put back (*SYS); no objects",
+  "system values": {
+    "result": "ok",
+    "rows": [
+      {
+        "ZONE_VALUE_NAME": "QUTCOFFSET",
+        "ZONE_VALUE": "+0000"
+      },
+      {
+        "ZONE_VALUE_NAME": "QTIMZON",
+        "ZONE_VALUE": "Q0000UTC"
+      }
+    ]
+  },
+  "as connected: clock": {
+    "result": "ok",
+    "client_utc_before": "2026-11-17T06:36:48.331222",
+    "client_utc_after": "2026-11-17T06:36:48.463492",
+    "current_timestamp": "2026-11-17T06:36:48.555449",
+    "current_timezone": "0",
+    "current_timestamp_minus_timezone": "2026-11-17T06:36:48.555449",
+    "derived_utc_minus_client_before_s": 0.224,
+    "current_timestamp_minus_client_before_s": 0.224,
+    "round_trip_s": 0.132
+  },
+  "as connected: own job": {
+    "result": "ok",
+    "rows": [
+      {
+        "TIMEZONE_DESCRIPTION": "Q0000UTC",
+        "TIMEZONE_CURRENT_OFFSET": "0",
+        "TIMEZONE_FULL_NAME": "Coordinated Universal Time",
+        "TIMEZONE_ABBREVIATED_NAME": "UTC"
+      }
+    ]
+  },
+  "CHGJOB TIMZON(QN0500EST3)": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -443,
+    "message": "CPF0006 - Errors occurred in command. (-443) (SQLExecDirectW)"
+  },
+  "CHGJOB TIMZON(QN0500EST3): job log": {
+    "result": "ok",
+    "messages": [
+      "SQL0443: Trigger program or external routine detected an error.",
+      "SQL0443: Trigger program or external routine detected an error.",
+      "CPF0006: Errors occurred in command.",
+      "CPF0001: Error found on CHGJOB command.",
+      "CPD0043: Keyword TIMZON not valid for this command.",
+      "SQL799C: The following special registers have been set: CLIENT_APPLNAME: PYTHON"
+    ]
+  },
+  "CHGJOB TIMZON(QP0100CET)": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -443,
+    "message": "CPF0006 - Errors occurred in command. (-443) (SQLExecDirectW)"
+  },
+  "CHGJOB TIMZON(QP0100CET): job log": {
+    "result": "ok",
+    "messages": [
+      "SQL0443: Trigger program or external routine detected an error.",
+      "SQL0443: Trigger program or external routine detected an error.",
+      "CPF0006: Errors occurred in command.",
+      "CPF0001: Error found on CHGJOB command.",
+      "CPD0043: Keyword TIMZON not valid for this command.",
+      "SQL0443: Trigger program or external routine detected an error."
+    ]
+  },
+  "CHGJOB TIMZON(QP0530IST)": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -443,
+    "message": "CPF0006 - Errors occurred in command. (-443) (SQLExecDirectW)"
+  },
+  "CHGJOB TIMZON(QP0530IST): job log": {
+    "result": "ok",
+    "messages": [
+      "SQL0443: Trigger program or external routine detected an error.",
+      "SQL0443: Trigger program or external routine detected an error.",
+      "CPF0006: Errors occurred in command.",
+      "CPF0001: Error found on CHGJOB command.",
+      "CPD0043: Keyword TIMZON not valid for this command.",
+      "SQL0443: Trigger program or external routine detected an error."
+    ]
+  },
+  "CHGJOB TIMZON(*SYS)": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -443,
+    "message": "CPF0006 - Errors occurred in command. (-443) (SQLExecDirectW)"
+  },
+  "back to *SYS: clock": {
+    "result": "ok",
+    "client_utc_before": "2026-11-17T06:36:49.501992",
+    "client_utc_after": "2026-11-17T06:36:49.622734",
+    "current_timestamp": "2026-11-17T06:36:49.725958",
+    "current_timezone": "0",
+    "current_timestamp_minus_timezone": "2026-11-17T06:36:49.725958",
+    "derived_utc_minus_client_before_s": 0.224,
+    "current_timestamp_minus_client_before_s": 0.224,
+    "round_trip_s": 0.121
+  },
+  "back to *SYS: own job": {
+    "result": "ok",
+    "rows": [
+      {
+        "TIMEZONE_DESCRIPTION": "Q0000UTC",
+        "TIMEZONE_CURRENT_OFFSET": "0",
+        "TIMEZONE_FULL_NAME": "Coordinated Universal Time",
+        "TIMEZONE_ABBREVIATED_NAME": "UTC"
+      }
+    ]
+  }
+}
