@@ -3038,6 +3038,30 @@ PUB400 (IBM i 7.5), 2026-11-12, read-only (`SYSIBM.SYSDUMMY1`). Result:
   `DECIMAL(p, s)` (expressions.py), as #78 does for strings: exact, as on Django's
   other backends. Narrowing it in SQL would give NULL silently.
 
+### `CURRENT TIMESTAMP` and the job's time zone (`probes/qtemp_current_timestamp_zone.py`, remediation P-1)
+
+For audit finding F-01 (`Now()` is `CURRENT_TIMESTAMP`, while the backend stores
+datetimes in the connection's zone). 2026-11-17, PUB400, own job only, no objects;
+`probes/results/current_timestamp_zone.json`.
+
+- The system values are `QTIMZON` = `Q0000UTC` and `QUTCOFFSET` = `+0000`, and
+  the database server job has the same zone (`QSYS2.ACTIVE_JOB_INFO`:
+  `TIMEZONE_DESCRIPTION` `Q0000UTC`, `TIMEZONE_CURRENT_OFFSET` 0).
+- `CURRENT TIMEZONE` is 0, so `CURRENT TIMESTAMP` and
+  `CURRENT TIMESTAMP - CURRENT TIMEZONE` are the same value. Both were 0.24 s after
+  the client's UTC clock before the statement, with a round trip of 0.14 to 0.15 s.
+  So on PUB400 `CURRENT TIMESTAMP` is UTC, and `Now()` matches the backend's
+  default connection zone (UTC).
+- A job cannot change its own zone: `CHGJOB TIMZON(...)` is refused with
+  `CPD0043` "Keyword TIMZON not valid for this command" (seen as CPF0001 /
+  CPF0006 / SQL0443 through `QCMDEXC`), also for `*SYS`.
+- **Not settled:** what `CURRENT TIMESTAMP` and `CURRENT TIMEZONE` give on a
+  system or job whose zone is not UTC. PUB400 cannot show it (its zone is UTC,
+  and the job cannot change it). That needs an IBM i with another `QTIMZON`, or a
+  job that gets another zone from its job description or user profile, so a
+  dedicated IBM i. Until then F-01 stays a hypothesis for such systems, and the
+  remediation item B-4 cannot be checked on PUB400 beyond the UTC case.
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one
