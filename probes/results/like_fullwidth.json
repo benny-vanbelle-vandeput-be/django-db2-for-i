@@ -1,0 +1,186 @@
+{
+  "probe": "like_fullwidth",
+  "utc": "20261117T072907Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (one table), CMT=0",
+  "create": {
+    "result": "ok"
+  },
+  "stored": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "S",
+        "type": "str",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00003",
+        "type": "str",
+        "size": 40,
+        "precision": 40,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "'a％b'",
+        "'0061FF050062'"
+      ],
+      [
+        "2",
+        "'a＿b'",
+        "'0061FF3F0062'"
+      ],
+      [
+        "3",
+        "'axb'",
+        "'006100780062'"
+      ],
+      [
+        "4",
+        "'axyb'",
+        "'0061007800790062'"
+      ]
+    ]
+  },
+  "LIKE ? ESCAPE, full-width percent, unescaped": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ],
+      [
+        "3"
+      ],
+      [
+        "4"
+      ]
+    ]
+  },
+  "LIKE ? ESCAPE, full-width low line, unescaped": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ],
+      [
+        "3"
+      ]
+    ]
+  },
+  "LIKE ? ESCAPE, full-width percent, escaped": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "LIKE ? ESCAPE, full-width low line, escaped": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "LIKE ? ESCAPE, ASCII percent (control)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ],
+      [
+        "2"
+      ],
+      [
+        "3"
+      ],
+      [
+        "4"
+      ]
+    ]
+  },
+  "LIKE ? ESCAPE, ASCII percent, escaped (control)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "contains form, full-width percent": {
+    "result": "error",
+    "sqlstate": "22018",
+    "sqlcode": 30200,
+    "message": "Column 1: CWBNL0107 - Converted 2 bytes, 1 errors found beginning at offset 0 (scp=1202 tcp=273 siso=1 pad=0 sl=2 tl=327"
+  }
+}
