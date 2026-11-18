@@ -139,7 +139,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # A second connection works on the same test library (phase 7, answer 6).
     # PUB400 allows up to three connections for lock and concurrency tests
     # (#236); a Django test that needs more is skipped with that reason (none
-    # in the supported modules so far: basic and transactions use one or two).
+    # in the supported modules so far: the tests that need a second connection
+    # use two).
     test_db_allows_multiple_connections = True
     # DDL is not parameterized: defaults are written as literals.
     requires_literal_defaults = True
@@ -321,9 +322,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_on_delete_db_cascade = True
     supports_on_delete_db_default = True
     supports_on_delete_db_null = True
-    # RENAME INDEX (probe 24). Combined alters stay off: Db2 for i accepts
-    # several clauses in one ALTER TABLE only without commas, and Django joins
-    # them with ", ".
+    # RENAME INDEX (probe 24).
     can_rename_index = True
 
     # Introspection
@@ -545,9 +544,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "migrations.test_operations.OperationTests.test_add_constraint_percent_escaping",
             "migrations.test_operations.OperationTests.test_create_model_constraint_percent_escaping",
         },
-        # sql.rfind("headline") on the CREATE INDEX of a partial index, which
-        # quotes "HEADLINE"; the index itself is covered by the golden
-        # ddl/add_index_partial and tests/ibmi/test_schema.py.
         # assertIsNotNone(instance.pk) after an upsert; the rows themselves are
         # right (probe qtemp_merge, Known Limitations).
         REASON_MERGE_RETURNS_NO_ROWS: {
@@ -559,6 +555,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_two_fields_unique_fields_both",
             "bulk_create.tests.BulkCreateTests.test_update_conflicts_unique_two_fields_unique_fields_one",
         },
+        # sql.rfind("headline") on the CREATE INDEX of a partial index, which
+        # quotes "HEADLINE"; the index itself is covered by the golden
+        # ddl/add_index_partial and tests/ibmi/test_schema.py.
         REASON_LOWERCASE_NAME_IN_SQL: {
             "indexes.tests.PartialIndexTests.test_multiple_conditions",
         },
@@ -577,8 +576,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "model_fields.test_jsonfield.TestQuerying.test_key_sql_injection_escape",
             "model_fields.test_jsonfield.TestQuerying.test_lookups_special_chars_double_quotes",
         },
-        # assertIn("RETURNING ...", sql). The other tests of the module read the returned
-        # values, and pass.
         REASON_READERS_WAIT_FOR_ROW_LOCKS: {
             "select_for_update.tests.SelectForUpdateTests.test_block",
         },
@@ -601,6 +598,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         REASON_POSTGRESQL_LIKE_INDEXES: {
             "indexes.tests.SchemaIndexesTests.test_alter_field_unique_false_removes_deferred_sql",
         },
+        # assertIn("RETURNING ...", sql). The other tests of the module read the returned
+        # values, and pass.
         REASON_FINAL_TABLE_NOT_RETURNING: {
             "queries.test_db_returning.ReturningValuesTests.test_insert_returning",
             "queries.test_db_returning.ReturningValuesTests.test_insert_returning_multiple",
