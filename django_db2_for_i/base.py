@@ -171,6 +171,13 @@ class FormatStyleCursor:
             self.cursor.executemany(convert_placeholders(sql), rows)
         return self
 
+    def callproc(self, procname: str, params=None, kparams=None):
+        """Refused: pyodbc has no ``callproc()`` (Known Limitations)."""
+        raise NotSupportedError(
+            "cursor.callproc() is not available on Db2 for i with pyodbc; "
+            'call the procedure with cursor.execute("CALL LIB.PROC(%s, %s)", [a, b]).'
+        )
+
     def __getattr__(self, name: str) -> Any:
         return getattr(self.cursor, name)
 

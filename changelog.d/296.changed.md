@@ -1,0 +1,1 @@
+`manage.py dbshell` and `cursor.callproc()` now fail with a clear message (a `CommandError` and a `NotSupportedError`) instead of Django's generic `NotImplementedError` and an `AttributeError`. Both are listed under "Not available on Db2 for i" in Known Limitations; call a procedure with `cursor.execute("CALL ...")`.

@@ -90,6 +90,21 @@ def test_executemany_without_rows_does_nothing() -> None:
     assert raw.calls == []
 
 
+@pytest.mark.parametrize("args", [("LIB.PROC",), ("LIB.PROC", [1]), ("LIB.PROC", [], {"a": 1})])
+def test_callproc_is_refused_with_a_clear_error(args) -> None:
+    raw = RecordingCursor()
+    with pytest.raises(django.db.NotSupportedError, match=r"callproc\(\) is not available"):
+        FormatStyleCursor(raw).callproc(*args)
+    assert raw.calls == []
+
+
+def test_dbshell_is_refused_with_a_clear_error() -> None:
+    from django.core.management.base import CommandError
+
+    with pytest.raises(CommandError, match="dbshell is not available for Db2 for i"):
+        connection.client.runshell([])
+
+
 def test_execute_with_dict_params_converts() -> None:
     raw = RecordingCursor()
     FormatStyleCursor(raw).execute(

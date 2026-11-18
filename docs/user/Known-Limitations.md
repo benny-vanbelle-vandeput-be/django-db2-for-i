@@ -852,6 +852,13 @@ Db2 for i has no equivalent for these Django features, so they stay off
   has no `EXCLUDE` in a window frame (Django's `exclusion=`), and a `RANGE`
   frame with a fixed distance works on numbers only: over a date or timestamp
   it is refused (SQL0182). Window functions work otherwise.
+- **`manage.py dbshell`.** The backend starts no command-line SQL client;
+  `dbshell` stops with a message saying so. Use IBM i Access Client
+  Solutions (Run SQL Scripts), or `manage.py shell` with
+  `django.db.connection.cursor()`.
+- **`cursor.callproc()`.** pyodbc has no `callproc()`; the backend raises
+  `NotSupportedError`. Call a procedure with `execute()` instead:
+  `cursor.execute("CALL MYLIB.MYPROC(%s, %s)", [a, b])`.
 
 Django's system checks report the first three when a model uses them.
 
