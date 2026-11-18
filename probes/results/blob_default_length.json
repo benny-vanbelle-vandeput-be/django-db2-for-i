@@ -1,0 +1,89 @@
+{
+  "probe": "blob_default_length",
+  "utc": "20261117T074747Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (one table), CMT=0",
+  "create": {
+    "result": "ok"
+  },
+  "512 KiB into BLOB": {
+    "result": "ok"
+  },
+  "512 KiB into BLOB: stored length": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "524288"
+      ]
+    ]
+  },
+  "1 MiB into BLOB": {
+    "result": "ok"
+  },
+  "1 MiB into BLOB: stored length": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1048576"
+      ]
+    ]
+  },
+  "2 MiB into BLOB": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -404,
+    "message": "SQL0404 - Value for column or variable B too long. (-404) (SQLParamData)"
+  },
+  "2 MiB into BLOB: stored length": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "5 MiB into BLOB(10M)": {
+    "result": "ok"
+  },
+  "5 MiB into BLOB(10M): stored length": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "5242880"
+      ]
+    ]
+  }
+}

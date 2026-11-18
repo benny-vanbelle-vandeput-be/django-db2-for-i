@@ -20,7 +20,8 @@ Usage (inside the "tests" container):
                     column_copy | comment_unicode | json_primitives |
                     current_timestamp_zone | cmt_none |
                     update_mapping_errors | trailing_blanks | like_fullwidth |
-                    ccsid_65535
+                    ccsid_65535 | decimal_assignment | in_list_limit |
+                    blob_default_length | query_timeout | merge_duplicates
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -38,6 +39,7 @@ import sys
 import qtemp_add_column_default
 import qtemp_alter_column
 import qtemp_alter_table
+import qtemp_blob_default_length
 import qtemp_bulk
 import qtemp_bulk_lobs
 import qtemp_bulk_types
@@ -54,6 +56,7 @@ import qtemp_current_timestamp_zone
 import qtemp_cursors
 import qtemp_db_function_args
 import qtemp_db_functions
+import qtemp_decimal_assignment
 import qtemp_decimal_values
 import qtemp_drop_column
 import qtemp_durations
@@ -63,6 +66,7 @@ import qtemp_fetch_errors
 import qtemp_final_table_after_alter
 import qtemp_flag_review
 import qtemp_float_text
+import qtemp_in_list_limit
 import qtemp_in_subquery
 import qtemp_indexes
 import qtemp_journal_check
@@ -80,6 +84,7 @@ import qtemp_lob_index
 import qtemp_long_string_params
 import qtemp_mapping_errors
 import qtemp_merge
+import qtemp_merge_duplicates
 import qtemp_numeric_params
 import qtemp_own_jobs
 import qtemp_packages
@@ -89,6 +94,7 @@ import qtemp_qaqqini_inquiry
 import qtemp_qaqqini_lifecycle
 import qtemp_qualified_names
 import qtemp_queries
+import qtemp_query_timeout
 import qtemp_reachability
 import qtemp_record_wait
 import qtemp_renames
@@ -186,6 +192,11 @@ PROBES = {
     "trailing_blanks": qtemp_trailing_blanks,
     "like_fullwidth": qtemp_like_fullwidth,
     "ccsid_65535": qtemp_ccsid_65535,
+    "decimal_assignment": qtemp_decimal_assignment,
+    "in_list_limit": qtemp_in_list_limit,
+    "blob_default_length": qtemp_blob_default_length,
+    "query_timeout": qtemp_query_timeout,
+    "merge_duplicates": qtemp_merge_duplicates,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 

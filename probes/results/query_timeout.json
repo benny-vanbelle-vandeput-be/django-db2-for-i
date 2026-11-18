@@ -1,0 +1,49 @@
+{
+  "probe": "query_timeout",
+  "utc": "20261117T074804Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "own job only (a 5-second DLYJOB); no objects",
+  "timeout 1: DLYJOB 5 s": {
+    "result": "ok",
+    "seconds": 5.09
+  },
+  "timeout 1: VALUES 1 afterwards": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "timeout 0: DLYJOB 5 s": {
+    "result": "ok",
+    "seconds": 5.08
+  },
+  "timeout 0: VALUES 1 afterwards": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  }
+}

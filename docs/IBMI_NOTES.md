@@ -3150,6 +3150,60 @@ described as `bytearray` and returned as `b'\xc1\xc2\xc3'`; cast to
 columns, so what `inspectdb` reads for such a column (F-21) needs a table in a
 library: an own IBM i test (B-20), not a `qtemp_` probe.
 
+### Decimals, marker count, BLOB length, query timeout, MERGE duplicates (remediation P-5)
+
+For audit findings F-06, F-10, F-14, F-07 and F-16. 2026-11-17, PUB400, QTEMP
+only or read-only, CMT=0, one connection per probe, one probe at a time;
+`probes/results/decimal_assignment.json`, `in_list_limit.json`,
+`blob_default_length.json`, `query_timeout.json`, `merge_duplicates.json`.
+
+**A Decimal with more decimals than its column is refused, not rounded**
+(`probes/qtemp_decimal_assignment.py`). `INSERT` into `DECIMAL(5, 2)` of
+`1.005`, `1.2345` and `1.004`, through a plain marker (as a model save) and
+through `CAST(? AS DECIMAL(5, 2))`: each 22001 "Character data right
+truncation" from the driver, no row written. `1.23` is stored as `1.23`. F-06 is
+confirmed: `save()` raises `DataError` where PostgreSQL rounds.
+
+**Far fewer than 32,767 parameter markers** (`probes/qtemp_in_list_limit.py`).
+`SELECT 1 FROM SYSIBM.SYSDUMMY1 WHERE 1 IN (?, ..., ?)`:
+- 32,766, 32,767 and 32,768 markers: SQL0901 "SQL system error" at prepare, at
+  once (first run only; not sent again, as SQL0901 is a system error);
+- 1,000 markers 0.55 s, 2,000 markers 1.35 s, 4,000 markers 3.24 s: accepted,
+  and the prepare time grows faster than the count;
+- a bisection that started at 16,383 markers had not finished after more than
+  10 minutes and was stopped (its container was stopped by hand). The exact
+  limit lies between 4,000 and 32,766 and is not measured; on a shared system
+  it should not be.
+- So F-10 holds and the limit for `max_query_params` must be well below 32,767;
+  a value near 4,000 is measured to work in about 3 s.
+
+**`BLOB` without a length holds 1 MiB** (`probes/qtemp_blob_default_length.py`).
+512 KiB and 1 MiB into a `BLOB` column are stored in full; 2 MiB is refused with
+SQL0404 "Value for column or variable B too long". 5 MiB into `BLOB(10M)` is
+stored in full (the driver's chunked path works). F-14 is confirmed: a
+`BinaryField` value over 1 MiB fails.
+
+**The driver's query timeout does not stop a `CALL`** (`probes/qtemp_query_timeout.py`).
+With pyodbc `Connection.timeout = 1`, `CALL QSYS2.QCMDEXC('DLYJOB DLY(5)')` runs
+its full 5.09 s without an error, the same as with `timeout = 0`; the
+connection stays usable. Whether the timeout stops a long `SELECT` is not
+measured (a deliberately slow query would load the shared system). F-07 stays
+open; a query timeout option would need a dedicated IBM i to test.
+
+**A MERGE with a duplicate key in its own source** (`probes/qtemp_merge_duplicates.py`).
+Target with a unique index on `ID`, source `(1, 'a'), (1, 'b')`:
+- `WHEN MATCHED ... WHEN NOT MATCHED`, key in the target: SQL0788 "Duplicate
+  row identified for MERGE target", SQLSTATE HY000. The backend classifies
+  neither (no SQLSTATE class, no SQLCODE entry), so it is not an
+  `IntegrityError`;
+- the same, key not in the target: SQL0803 (23000), an `IntegrityError`;
+- `WHEN NOT MATCHED THEN INSERT` only, key not in the target: SQL0803 (23000);
+  key in the target: no error, the row unchanged.
+- Under CMT=0 the failed MERGE kept its first row (`(1, 'a')` after the error):
+  without commitment control a failed statement is not undone. With the
+  backend's default (`*CS`, journaled table) this is not expected, and not
+  measured here.
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one
