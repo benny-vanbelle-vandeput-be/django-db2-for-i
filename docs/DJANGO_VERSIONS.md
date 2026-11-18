@@ -156,6 +156,36 @@ per-version lists, `tests/offline/golden/<version>/`, its line in
 `DJANGO_PYTHONS` (noxfile) and its range in `pyproject.toml`, then updating
 this file.
 
+## Adding a Django version: check these first
+
+The backend changes three things in Django itself when it is imported. Each
+is scoped to this backend or idempotent today, but each depends on Django
+internals that a new version (6.2 LTS first) may rename, move or change. The
+review of a new version checks them before anything else (audit finding F-23,
+[docs/audit](audit/TECHNICAL_AUDIT.md)):
+
+- [ ] **`apps.py`: the `Meta` options.** `allow_meta_options()` adds
+  `db_system_name` and `db_library` to `DEFAULT_NAMES` in
+  `django.db.models.options` and in `django.db.migrations.state`. Check that
+  both modules still have `DEFAULT_NAMES` as a tuple that Django reads at
+  model creation, and that `CreateModel` still keeps the options
+  (`tests/offline/test_other_library.py`, and the IBM i tests
+  `tests/ibmi/test_system_names.py` and `tests/ibmi/test_other_library.py`).
+- [ ] **`compat.install_duration_adapter()`.** Before 6.1 it replaces
+  `DurationField.get_db_prep_value` so values pass the backend's range check.
+  For a new version, check that `DJANGO_CALLS_ADAPT_DURATIONFIELD_VALUE` is
+  true (Django calls `adapt_durationfield_value()` itself), so the adapter
+  stays a no-op there.
+- [ ] **The `as_db2_for_i` hooks in `expressions.py`.** About 30 methods are
+  set on Django's own classes (`Value`, `Case`, `CombinedExpression`,
+  `Lookup`, the tuple lookups, `Avg`, `StringAgg`, `DurationExpression`, the
+  database functions, ...). Django calls them only for this vendor, and
+  each builds on the class's `as_sql()`. For a new version, check that every
+  class still exists under the imported name, that the attributes the hook
+  reads (`self.lhs`, `self.rhs`, `self.cases`, ...) did not change, and that
+  the new version's own `as_sql()` did not take over what a hook does; the
+  goldens of the new series show any difference.
+
 ## Testing per version
 The four test sets are described in [CONTRIBUTING.md](../CONTRIBUTING.md#test-sets).
 - **Offline tests:** every Python × every supported Django version, in CI.
