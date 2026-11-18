@@ -1,11 +1,12 @@
 """Smoke check: Django's connection.cursor() against the configured IBM i.
 
-No test database is created; the tests run SELECT statements on the single
-connection of the ``default`` alias, and write only to a QTEMP table.
+No test database is created; the tests run SELECT statements (and one
+``DLYJOB`` of the own job) on the single connection of the ``default`` alias,
+and write only to a QTEMP table.
 """
 
 import pytest
-from django.db import ProgrammingError, connection
+from django.db import NotSupportedError, ProgrammingError, connection
 
 from django_db2_for_i.drivers import pyodbc as pyodbc_driver
 
@@ -30,6 +31,17 @@ def test_placeholders_and_percent(live) -> None:
         # Without params the SQL is sent as is.
         cursor.execute("SELECT '100%' FROM SYSIBM.SYSDUMMY1")
         assert cursor.fetchone() == ("100%",)
+
+
+def test_call_with_execute_and_callproc_refused(live) -> None:
+    """A procedure is called with execute("CALL ...") and parameters; callproc()
+    is refused (Known Limitations). DLYJOB delays only this job, one second."""
+    with live.cursor() as cursor:
+        cursor.execute("CALL QSYS2.QCMDEXC(%s)", ["DLYJOB DLY(1)"])
+        with pytest.raises(NotSupportedError, match=r"callproc\(\) is not available"):
+            cursor.callproc("QSYS2.QCMDEXC", ["DLYJOB DLY(1)"])
+        cursor.execute("SELECT 1 FROM SYSIBM.SYSDUMMY1")
+        assert cursor.fetchone() == (1,)
 
 
 def test_trailing_semicolon(live) -> None:
