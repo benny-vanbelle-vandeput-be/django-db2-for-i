@@ -1,0 +1,97 @@
+{
+  "probe": "ccsid_65535",
+  "utc": "20261117T072916Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (one table), CMT=0",
+  "create": {
+    "result": "ok"
+  },
+  "insert": {
+    "result": "ok"
+  },
+  "fetch": {
+    "result": "ok",
+    "description": [
+      {
+        "name": "C",
+        "type": "bytearray",
+        "size": 3
+      },
+      {
+        "name": "V",
+        "type": "bytearray",
+        "size": 3
+      }
+    ],
+    "python": [
+      {
+        "type": "bytes",
+        "repr": "b'\\xc1\\xc2\\xc3'"
+      },
+      {
+        "type": "bytes",
+        "repr": "b'\\xc1\\xc2\\xc3'"
+      }
+    ]
+  },
+  "SYSCOLUMNS": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "COLUMN_NAME",
+        "type": "str",
+        "size": 128,
+        "precision": 128,
+        "scale": 0
+      },
+      {
+        "name": "DATA_TYPE",
+        "type": "str",
+        "size": 8,
+        "precision": 8,
+        "scale": 0
+      },
+      {
+        "name": "LENGTH",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "CCSID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": []
+  },
+  "as text (CCSID 37)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "str",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "str",
+        "size": 3,
+        "precision": 3,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "'ABC'",
+        "'ABC'"
+      ]
+    ]
+  }
+}

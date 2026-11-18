@@ -1,0 +1,529 @@
+{
+  "probe": "trailing_blanks",
+  "utc": "20261117T073032Z",
+  "host": "<HOST>",
+  "ssl": true,
+  "scope": "QTEMP only (one table per type), CMT=0",
+  "NVARCHAR: create": {
+    "result": "ok"
+  },
+  "NVARCHAR: count = 'abc' (literal)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "NVARCHAR: count = ? ('abc')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "NVARCHAR: count = ? ('abc ')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "NVARCHAR: count IN ('abc')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "NVARCHAR: groups (GROUP BY)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "NVARCHAR: groups (DISTINCT)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "NVARCHAR: count LIKE ? ESCAPE ('abc')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "NVARCHAR: count LIKE ? ESCAPE ('abc ')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "NVARCHAR: lengths": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "3"
+      ],
+      [
+        "2",
+        "4"
+      ]
+    ]
+  },
+  "NVARCHAR: UNIQUE index over 'abc' and 'abc '": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -603,
+    "message": "SQL0603 - Unique index cannot be created because of duplicate keys. (-603) (SQLExecDirectW)"
+  },
+  "VARCHAR: create": {
+    "result": "ok"
+  },
+  "VARCHAR: count = 'abc' (literal)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "VARCHAR: count = ? ('abc')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "VARCHAR: count = ? ('abc ')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "VARCHAR: count IN ('abc')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "VARCHAR: groups (GROUP BY)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "VARCHAR: groups (DISTINCT)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "VARCHAR: count LIKE ? ESCAPE ('abc')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "VARCHAR: count LIKE ? ESCAPE ('abc ')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "VARCHAR: lengths": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "3"
+      ],
+      [
+        "2",
+        "4"
+      ]
+    ]
+  },
+  "VARCHAR: UNIQUE index over 'abc' and 'abc '": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -603,
+    "message": "SQL0603 - Unique index cannot be created because of duplicate keys. (-603) (SQLExecDirectW)"
+  },
+  "CHAR: create": {
+    "result": "ok"
+  },
+  "CHAR: count = 'abc' (literal)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "CHAR: count = ? ('abc')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "CHAR: count = ? ('abc ')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "CHAR: count IN ('abc')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "2"
+      ]
+    ]
+  },
+  "CHAR: groups (GROUP BY)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "CHAR: groups (DISTINCT)": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "CHAR: count LIKE ? ESCAPE ('abc')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "CHAR: count LIKE ? ESCAPE ('abc ')": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "00001",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  "CHAR: lengths": {
+    "result": "ok",
+    "columns": [
+      {
+        "name": "ID",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      },
+      {
+        "name": "00002",
+        "type": "int",
+        "size": 10,
+        "precision": 10,
+        "scale": 0
+      }
+    ],
+    "rows": [
+      [
+        "1",
+        "10"
+      ],
+      [
+        "2",
+        "10"
+      ]
+    ]
+  },
+  "CHAR: UNIQUE index over 'abc' and 'abc '": {
+    "result": "error",
+    "sqlstate": "HY000",
+    "sqlcode": -603,
+    "message": "SQL0603 - Unique index cannot be created because of duplicate keys. (-603) (SQLExecDirectW)"
+  }
+}

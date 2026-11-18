@@ -3111,6 +3111,45 @@ only, CMT=0; `probes/results/update_mapping_errors.json`.
   writes. The user docs' sentence "In an update this writes NULL" was wrong and
   is corrected in Known-Limitations ("Durations").
 
+### Trailing blanks, full-width LIKE wildcards, FOR BIT DATA (remediation P-4)
+
+For audit findings F-05, F-15 and F-21. 2026-11-17, PUB400, QTEMP only, CMT=0;
+`probes/results/trailing_blanks.json`, `like_fullwidth.json`, `ccsid_65535.json`.
+
+**`'abc'` and `'abc '` are equal** (`probes/qtemp_trailing_blanks.py`), for
+`NVARCHAR` (the backend's `CharField`), `VARCHAR` and `CHAR` alike:
+- `=` with a literal or a parameter marker (`'abc'` and `'abc '` each find both
+  rows), `IN`: both rows;
+- `GROUP BY` and `COUNT(DISTINCT ...)`: one group;
+- a unique index over the two rows is refused with SQL0603 (duplicate keys);
+- `LIKE` does not pad: on `NVARCHAR` / `VARCHAR`, `LIKE 'abc'` finds only
+  `'abc'` and `LIKE 'abc '` only `'abc '`. On `CHAR(10)` neither matches (the
+  stored value is padded to 10). `LENGTH` keeps the blank for `NVARCHAR` /
+  `VARCHAR` (3 and 4), `CHAR` gives 10 for both.
+- F-05 is confirmed: `exact`, `in`, `unique`, `distinct` and `values()` with
+  grouping treat a trailing blank as absent; `contains`, `startswith` and the
+  other `LIKE` lookups do not.
+
+**Full-width `％` and `＿` are LIKE wildcards** (`probes/qtemp_like_fullwidth.py`),
+on an `NVARCHAR` column with `a％b`, `a＿b`, `axb`, `axyb`:
+- the pattern `a％b` (U+FF05) matches all four rows, as `a%b` does; `a＿b`
+  (U+FF3F) matches the three with one character between `a` and `b`, as `a_b`;
+- with the backend's escape character before them (`a\％b`, `a\＿b`,
+  `ESCAPE '\'`) each matches only its own row, so escaping them works.
+- F-15 is confirmed: a `contains` / `startswith` value with `％` or `＿` today
+  matches more than it should.
+- A parameter concatenated with a job-CCSID literal (`'%' || ? || '%'`) fails
+  with CWBNL0107 for `％` (the marker gets CCSID 273, which has no `％`). The
+  backend does not send a parameter that way (it adds `%` in Python), so this
+  is a probe artifact, recorded here so it is not taken for a finding.
+
+**`FOR BIT DATA` columns come back as `bytes`** (`probes/qtemp_ccsid_65535.py`):
+`CHAR(3) FOR BIT DATA` and `VARCHAR(3) FOR BIT DATA` with `X'C1C2C3'` are
+described as `bytearray` and returned as `b'\xc1\xc2\xc3'`; cast to
+`VARCHAR(3) CCSID 37` they read `ABC`. `QSYS2.SYSCOLUMNS` lists no QTEMP
+columns, so what `inspectdb` reads for such a column (F-21) needs a table in a
+library: an own IBM i test (B-20), not a `qtemp_` probe.
+
 ## String encoding investigation (`nox -s probe_encoding`)
 
 2026-10-17, PUB400 (IBM i 7.5, job CCSID 273), `probe_encoding`: one

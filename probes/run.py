@@ -19,7 +19,8 @@ Usage (inside the "tests" container):
                     supplementary_chars | qualified_names | flag_review |
                     column_copy | comment_unicode | json_primitives |
                     current_timestamp_zone | cmt_none |
-                    update_mapping_errors
+                    update_mapping_errors | trailing_blanks | like_fullwidth |
+                    ccsid_65535
                                        (own connection attributes, run alone)
     nox -s probe -- session
 
@@ -41,6 +42,7 @@ import qtemp_bulk
 import qtemp_bulk_lobs
 import qtemp_bulk_types
 import qtemp_catalog
+import qtemp_ccsid_65535
 import qtemp_check_constraint_unjournaled
 import qtemp_cmt_none
 import qtemp_column_copy
@@ -72,6 +74,7 @@ import qtemp_later_flags
 import qtemp_leftovers
 import qtemp_libraries
 import qtemp_library_journal
+import qtemp_like_fullwidth
 import qtemp_listagg
 import qtemp_lob_index
 import qtemp_long_string_params
@@ -97,6 +100,7 @@ import qtemp_string_limits
 import qtemp_supplementary_chars
 import qtemp_system_info
 import qtemp_system_names
+import qtemp_trailing_blanks
 import qtemp_transaction_start
 import qtemp_trunc
 import qtemp_tuple_in
@@ -179,6 +183,9 @@ PROBES = {
     "current_timestamp_zone": qtemp_current_timestamp_zone,
     "cmt_none": qtemp_cmt_none,
     "update_mapping_errors": qtemp_update_mapping_errors,
+    "trailing_blanks": qtemp_trailing_blanks,
+    "like_fullwidth": qtemp_like_fullwidth,
+    "ccsid_65535": qtemp_ccsid_65535,
 }
 USAGE = f"usage: run.py [{'|'.join(PROBES)}|all] ..."
 
